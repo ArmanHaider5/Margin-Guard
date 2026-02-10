@@ -1,0 +1,120 @@
+# RCI (Root Cause Identifier) - EDX Consulting Platform
+
+## Overview
+
+RCI (Root Cause Identifier) is an AI-powered diagnostic consulting platform branded under EDX (Efficiency, Deployment, Excellence). It helps consultants identify root causes of operational problems in SMEs (Small and Medium Enterprises) using the 4M framework (Money, Manpower, Materials, Machinery) and AI-assisted analysis.
+
+The platform has two primary user types:
+- **Admin/Consultant**: Manages knowledge base, client organizations, uploads documents, runs AI diagnostics, and generates PDF reports
+- **Clients (Paying Companies)**: View their issues, diagnoses, and solutions through a dedicated read-only portal
+
+Key capabilities include AI-powered root cause analysis governed by curated knowledge libraries (not free-form AI generation), support for 13+ industries with 146+ industry-specific problems, document parsing (Excel, Word, PDF, PowerPoint), PDF report generation with professional branding, and a management dashboard view.
+
+The main application lives in the `RCI-Root-Cause-Identifier/` directory. The root-level `package.json` contains shared utility dependencies, while `.replit_integration_files/` contains Replit-provided integration utilities (chat, audio, image, batch processing).
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend
+- **Framework**: React 18 with TypeScript (Single Page Application)
+- **Bundler**: Vite with `@vitejs/plugin-react`
+- **Routing**: Wouter (lightweight React router)
+- **Server State**: TanStack Query v5 for data fetching/caching
+- **Local State**: React hooks and Context API (e.g., `RoleContext` for view mode switching)
+- **UI Components**: Shadcn UI (built on Radix UI primitives) with "new-york" style variant
+- **Styling**: Tailwind CSS with CSS custom properties for theming (light/dark mode support)
+- **Font**: Inter via Google Fonts CDN
+- **Design Philosophy**: Utilitarian, productivity-focused — clear information hierarchy, minimal visual distraction, flat neutral color palette
+
+### Backend
+- **Runtime**: Node.js with Express
+- **Language**: TypeScript (ESM modules)
+- **Dev Server**: tsx + Vite dev middleware (`server/index-dev.ts`)
+- **Production Build**: esbuild bundles server; Vite bundles client to `dist/public/`
+- **File Uploads**: Multer with disk storage in `uploads/` directory (50MB limit)
+- **Authentication**: Replit OpenID Connect (OIDC) via Passport.js with PostgreSQL session store (`connect-pg-simple`)
+- **PDF Generation**: PDFKit for multiple report types (diagnostic exports, analysis reports, consulting proposals)
+
+### AI Integration
+- **Provider**: OpenAI API (via Replit AI Integrations proxy — uses `AI_INTEGRATIONS_OPENAI_BASE_URL` and `AI_INTEGRATIONS_OPENAI_API_KEY`)
+- **Model**: GPT-5 (as configured in `ai-analyzer.ts`)
+- **Critical Governance Rule**: AI does NOT freely generate root causes or recommendations. It selects ONLY from curated knowledge libraries:
+  - `shared/root-cause-library.ts` — Authoritative root cause entries with unique IDs
+  - `shared/recommendation-archetypes.ts` — Pre-approved intervention patterns
+  - `shared/problem-library.ts` — 146+ categorized operational problems
+  - `shared/industry-problems.ts` — Industry-specific problem definitions
+- **Analysis Pipeline**: `bulk-analyzer.ts` orchestrates knowledge-governed analysis; `diagnostic-composer.ts` produces rule-based narrative synthesis (no AI-generated prose in reports)
+- **Retry Logic**: `p-retry` with rate limit detection for API resilience
+
+### Data Layer
+- **Database**: PostgreSQL (via `@neondatabase/serverless` driver + `pg` Pool)
+- **ORM**: Drizzle ORM with PostgreSQL dialect
+- **Schema**: Defined in `shared/schema.ts` using `drizzle-orm/pg-core`
+- **Migrations**: Drizzle Kit (`drizzle-kit push`) with config in `drizzle.config.ts`
+- **Validation**: `drizzle-zod` for generating Zod schemas from Drizzle tables
+- **Key Tables**: `users`, `sessions`, `clients`, `clientDocuments`, `clientAnalyses`, `diagnosticSessions`, `diagnosticCases`, `customProblems`
+- **Architectural Rule**: All diagnostics MUST belong to a Client — no free-floating analyses allowed
+
+### Shared Code (`shared/` directory)
+The `shared/` directory contains code used by both frontend and backend:
+- `schema.ts` — Database schema, types, and Zod validators
+- `root-cause-library.ts` — Institutional root cause knowledge base
+- `recommendation-archetypes.ts` — Pre-approved recommendation templates
+- `problem-library.ts` — Categorized operational problems
+- `industry-problems.ts` — Industry-specific problem definitions
+- `diagnostic-composer.ts` — Rule-based narrative composition
+- `analysis-builder.ts` — Knowledge-governed output assembly
+- `evidence-signals.ts` — Document-based evidence extraction (term matching)
+- `export-types.ts` — TypeScript types for PDF export configurations
+
+### Key Routing Structure
+- `/admin` — Consultant dashboard, client management, analysis
+- `/management` — Read-only management overview dashboard
+- `/clients/:clientId/diagnostics/new` — Canonical route for starting diagnostics (always bound to a client)
+- `/client/*` — Client portal (read-only view of their issues/analyses)
+- `/demo` — Demo mode for pitching potential clients (no auth required)
+- `/api/execution/*` — Execution module routes (separate route file)
+
+### Path Aliases
+- `@/*` → `./client/src/*`
+- `@shared/*` → `./shared/*`
+- `@assets` → `./attached_assets/`
+
+## External Dependencies
+
+### Database
+- **PostgreSQL** — Primary data store, connected via `DATABASE_URL` environment variable
+- **Neon Serverless** (`@neondatabase/serverless`) — PostgreSQL driver (Neon-compatible)
+- **pg** — Standard Node.js PostgreSQL client (used for session store and connection pooling)
+
+### AI Services
+- **OpenAI API** — Accessed through Replit AI Integrations proxy
+  - `AI_INTEGRATIONS_OPENAI_BASE_URL` — API base URL
+  - `AI_INTEGRATIONS_OPENAI_API_KEY` — API key
+  - Used for diagnostic analysis (root cause matching, not free generation)
+
+### Authentication
+- **Replit OIDC** — OpenID Connect authentication via `ISSUER_URL` (defaults to `https://replit.com/oidc`)
+- **Session Management** — `express-session` with `connect-pg-simple` PostgreSQL store
+- **Environment Variables**: `REPL_ID`, `SESSION_SECRET`, `ISSUER_URL`
+
+### Document Processing
+- **xlsx** — Excel/CSV file parsing
+- **mammoth** — Word document (.docx) text extraction
+- **pdfkit** — PDF generation (reports, exports)
+
+### Key NPM Packages
+- `drizzle-orm` + `drizzle-kit` — Database ORM and migration tooling
+- `drizzle-zod` + `zod` — Schema validation
+- `openai` — OpenAI SDK
+- `p-retry` + `p-limit` — Retry logic and concurrency control for API calls
+- `multer` — File upload handling
+- `passport` — Authentication middleware
+- `memoizee` — Function memoization (OIDC config caching)
+- `date-fns` — Date formatting
+- `@tanstack/react-query` — Server state management
+- `wouter` — Client-side routing
+- `lucide-react` — Icon library
