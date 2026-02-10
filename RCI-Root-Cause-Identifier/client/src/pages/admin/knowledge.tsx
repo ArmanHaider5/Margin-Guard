@@ -1,9 +1,3 @@
-/**
- * RCI Brain - Admin Knowledge Page
- * 
- * RCI Brain v2: Added "Use in Case" workflow allowing consultants to attach
- * root cause patterns from the knowledge library directly to active cases.
- */
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -22,14 +16,21 @@ const categoryMap: Record<string, "Process" | "People" | "Systems" | "Governance
   Machinery: "Systems",
 };
 
+const availableIndustries = [
+  ...new Set(rootCauseLibrary.flatMap((rc) => rc.applicableIndustries)),
+].sort();
+
 const patterns = rootCauseLibrary.map((rc) => ({
   id: rc.id,
   title: rc.title,
   category: categoryMap[rc.category] || ("Process" as const),
+  fourMCategory: rc.category,
   frequency: (rc.baseConfidence >= 80 ? "Common" : rc.baseConfidence >= 70 ? "Moderate" : "Rare") as "Common" | "Moderate" | "Rare",
   industries: rc.applicableIndustries,
   summary: `${rc.whyItMatters} ${rc.interventionDirection}`,
   hasV2Fields: !!(rc.validationChecklist && rc.validationChecklist.length > 0),
+  symptomTags: rc.symptomTags,
+  baseConfidence: rc.baseConfidence,
 }));
 
 const mockArchetypes = [
@@ -57,7 +58,6 @@ const mockContexts = [
 export default function AdminKnowledge() {
   const { toast } = useToast();
 
-  // RCI Brain v2: Fetch active cases for "Use in Case" workflow
   const { data: cases } = useQuery<DiagnosticCase[]>({
     queryKey: ["/api/admin/cases"],
   });
@@ -116,6 +116,7 @@ export default function AdminKnowledge() {
           industryContexts={mockContexts}
           activeCases={activeCases}
           onAttachPattern={handleAttachPattern}
+          availableIndustries={availableIndustries}
         />
       </div>
     </div>
