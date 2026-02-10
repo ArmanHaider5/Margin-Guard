@@ -190,6 +190,7 @@ export interface AnalysisFinding {
   evidenceAnchors?: EvidenceAnchor[];
   evidenceStrength?: EvidenceStrength;
   narrativeTone?: NarrativeTone;
+  collapsedNote?: string;
 }
 
 // Cost Saving Opportunity

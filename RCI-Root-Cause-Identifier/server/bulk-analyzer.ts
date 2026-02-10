@@ -293,19 +293,39 @@ function getDominantSeverity(findings: AnalysisFinding[]): SeverityLevel {
  * ============================================================================
  */
 
-// Build evidence anchors from evidence signals matching a finding's 4M category
+// Build evidence anchors from evidence signals matching a finding's 4M category.
+// Only includes anchors with concrete document names and specific matched terms.
+// Generic placeholders are rejected — findings without concrete anchors get no anchors.
+const GENERIC_ANCHOR_TERMS = new Set([
+  "operational data", "pattern match", "uploaded operational documents",
+  "uploaded document", "money category detected", "document analysis",
+]);
+
 function buildEvidenceAnchorsForFinding(
   category: FourMCategory,
   evidenceSignals: EvidenceSignal[]
 ): EvidenceAnchor[] {
   const matchingSignals = evidenceSignals.filter(s => s.category === category);
-  return matchingSignals.map(signal => ({
-    documentName: (signal.sourceDocuments && signal.sourceDocuments.length > 0)
+  const anchors: EvidenceAnchor[] = [];
+
+  for (const signal of matchingSignals) {
+    const docName = (signal.sourceDocuments && signal.sourceDocuments.length > 0)
       ? signal.sourceDocuments.join(", ")
-      : "Uploaded document",
-    signal: signal.matchedTerms.slice(0, 3).join(", "),
-    interpretation: signal.description,
-  }));
+      : null;
+    const concreteTerms = signal.matchedTerms.filter(
+      t => !GENERIC_ANCHOR_TERMS.has(t.toLowerCase())
+    );
+    if (!docName || GENERIC_ANCHOR_TERMS.has(docName.toLowerCase()) || concreteTerms.length === 0) {
+      continue;
+    }
+    anchors.push({
+      documentName: docName,
+      signal: concreteTerms.slice(0, 3).join(", "),
+      interpretation: signal.description,
+    });
+  }
+
+  return anchors;
 }
 
 // Determine evidence strength: STRONG requires at least 2 anchors
@@ -328,9 +348,9 @@ function determineNarrativeTone(strength: EvidenceStrength): NarrativeTone {
 // Apply narrative tone prefix to description text
 function applyNarrativePrefix(text: string, tone: NarrativeTone): string {
   switch (tone) {
-    case "EXPLORATORY": return `Early signals suggest: ${text}`;
-    case "DIAGNOSTIC": return `There is a recurring pattern indicating: ${text}`;
-    case "CONCLUSIVE": return `The evidence consistently shows: ${text}`;
+    case "EXPLORATORY": return `Preliminary observation: ${text}`;
+    case "DIAGNOSTIC": return `Supported hypothesis: ${text}`;
+    case "CONCLUSIVE": return `Confirmed finding: ${text}`;
     default: return text;
   }
 }
@@ -384,9 +404,9 @@ function enrichFindingWithEvidence(
 }
 
 // Duplicate root cause collapsing:
-// When more than 2 findings share the same 4M category, rank by evidence strength
-// then severity and keep only the top 2 (primary + secondary). Distinct root causes
-// within a category are preserved — collapsing only trims overflow.
+// General rule: max 2 findings per 4M category (primary + secondary).
+// Money-specific rule: if multiple Money findings are WEAK or MODERATE,
+// keep only the strongest 1 and add a collapsed note.
 function collapseDuplicateFindings(findings: AnalysisFinding[]): AnalysisFinding[] {
   const grouped: Record<string, AnalysisFinding[]> = {};
   for (const f of findings) {
@@ -399,47 +419,50 @@ function collapseDuplicateFindings(findings: AnalysisFinding[]): AnalysisFinding
   const strengthOrder: Record<string, number> = { STRONG: 3, MODERATE: 2, WEAK: 1 };
   const severityOrder: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
 
+  const sortByStrength = (arr: AnalysisFinding[]) => {
+    arr.sort((a, b) => {
+      const sa = strengthOrder[a.evidenceStrength || "WEAK"];
+      const sb = strengthOrder[b.evidenceStrength || "WEAK"];
+      if (sb !== sa) return sb - sa;
+      return (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
+    });
+  };
+
   for (const category of Object.keys(grouped)) {
     const group = grouped[category];
-    if (group.length <= 2) {
-      result.push(...group);
-      continue;
-    }
 
-    // First deduplicate by root cause title — keep the strongest variant
+    // Deduplicate by root cause title — keep strongest variant
     const byRootCause: Record<string, AnalysisFinding[]> = {};
     for (const f of group) {
       const rcKey = f.causes[0] || f.title;
       if (!byRootCause[rcKey]) byRootCause[rcKey] = [];
       byRootCause[rcKey].push(f);
     }
-
     const deduped: AnalysisFinding[] = [];
     for (const variants of Object.values(byRootCause)) {
-      if (variants.length === 1) {
-        deduped.push(variants[0]);
-      } else {
-        // Keep the variant with strongest evidence
-        variants.sort((a, b) => {
-          const sa = strengthOrder[a.evidenceStrength || "WEAK"];
-          const sb = strengthOrder[b.evidenceStrength || "WEAK"];
-          if (sb !== sa) return sb - sa;
-          return (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
-        });
-        deduped.push(variants[0]);
+      sortByStrength(variants);
+      deduped.push(variants[0]);
+    }
+
+    // Money-specific collapsing: if multiple Money findings with WEAK/MODERATE,
+    // keep only the primary and annotate with collapsed note
+    if (category === "Money" && deduped.length > 1) {
+      sortByStrength(deduped);
+      const nonStrong = deduped.filter(f => (f.evidenceStrength || "WEAK") !== "STRONG");
+      if (nonStrong.length > 1) {
+        const suppressedCount = nonStrong.length - 1;
+        const primary = { ...deduped[0], collapsedNote: `${suppressedCount} related financial impact${suppressedCount > 1 ? "s" : ""} observed (collapsed)` };
+        const strongOnes = deduped.filter(f => (f.evidenceStrength || "WEAK") === "STRONG" && f !== deduped[0]);
+        result.push(primary, ...strongOnes);
+        continue;
       }
     }
 
-    // Now cap at 2 per category: primary (strongest) + secondary
+    // General cap: max 2 per category
     if (deduped.length <= 2) {
       result.push(...deduped);
     } else {
-      deduped.sort((a, b) => {
-        const sa = strengthOrder[a.evidenceStrength || "WEAK"];
-        const sb = strengthOrder[b.evidenceStrength || "WEAK"];
-        if (sb !== sa) return sb - sa;
-        return (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
-      });
+      sortByStrength(deduped);
       result.push(deduped[0], deduped[1]);
     }
   }
@@ -459,32 +482,15 @@ function applyEvidenceDrivenEnrichment(
   return collapseDuplicateFindings(enriched);
 }
 
-// Generate baseline evidence signals for fallback analysis paths (V2/mock mode).
+// Generate synthetic evidence signals for fallback analysis paths (V2/mock mode).
 // In real document-driven analysis, signals come from extractEvidenceSignalsFromDocuments().
-// These synthetic signals ensure the enrichment pipeline runs even without uploaded documents,
-// producing MODERATE-strength findings that prompt the user to upload documents.
-function generateMockEvidenceSignals(
+// Without uploaded documents, findings are marked EXPLORATORY with no concrete anchors.
+function generateFallbackEvidenceSignals(
   findings: AnalysisFinding[],
   isBaseline: boolean
 ): EvidenceSignal[] {
-  if (isBaseline) return []; // No evidence signals for baseline mode
-  
-  // Create one signal per represented 4M category
-  const categories = new Set(findings.map(f => f.fourMCategory));
-  const signals: EvidenceSignal[] = [];
-  
-  for (const category of categories) {
-    signals.push({
-      signalId: `sig-mock-${category.toLowerCase()}`,
-      category,
-      description: `Evidence patterns detected for ${category} category from uploaded documents`,
-      matchedTerms: ["operational data", "pattern match"],
-      strength: findings.filter(f => f.fourMCategory === category).length >= 2 ? "strong" : "medium",
-      sourceDocuments: ["Uploaded operational documents"],
-    });
-  }
-  
-  return signals;
+  if (isBaseline) return [];
+  return [];
 }
 
 /**
@@ -1709,11 +1715,9 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
       ? "low" 
       : "substantiated";
   
-  // Evidence-driven enrichment: apply evidence anchors, strength, tone, and duplicate collapsing
-  const mockSignals = generateMockEvidenceSignals(findings, isBaseline);
-  const enrichedFindings = mockSignals.length > 0
-    ? applyEvidenceDrivenEnrichment(findings, mockSignals, "Manufacturing")
-    : findings;
+  // Evidence-driven enrichment: always run pipeline — empty signals → EXPLORATORY tone
+  const fallbackSignals = generateFallbackEvidenceSignals(findings, isBaseline);
+  const enrichedFindings = applyEvidenceDrivenEnrichment(findings, fallbackSignals, "Manufacturing");
 
   return {
     findings: enrichedFindings,
@@ -1902,11 +1906,9 @@ function generateMockAnalysisResult(input: AnalysisInput, isBaseline: boolean): 
     ? `This is an initial diagnostic based on stated problems and industry patterns${contextFocusPhrase}. Upload documents to strengthen confidence. Stated problem: "${problemStatement}".`
     : `This diagnostic is evidence-enriched and incorporates uploaded documents to validate and prioritise root causes${contextFocusPhrase}. Evidence supports the stated problem: "${problemStatement}".`;
   
-  // Evidence-driven enrichment: apply evidence anchors, strength, tone, and duplicate collapsing
-  const mockSignals = generateMockEvidenceSignals(findings, isBaseline);
-  const enrichedFindings = mockSignals.length > 0
-    ? applyEvidenceDrivenEnrichment(findings, mockSignals, industry)
-    : findings;
+  // Evidence-driven enrichment: always run pipeline — empty signals → EXPLORATORY tone
+  const fallbackSignals = generateFallbackEvidenceSignals(findings, isBaseline);
+  const enrichedFindings = applyEvidenceDrivenEnrichment(findings, fallbackSignals, industry);
 
   return {
     findings: enrichedFindings,

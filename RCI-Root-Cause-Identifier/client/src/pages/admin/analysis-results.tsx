@@ -249,9 +249,6 @@ export default function AnalysisResults() {
         </div>
       </div>
 
-      {/* Diagnostic Mode Indicator */}
-      {/* Diagnostic mode is finalised once and treated as the single source of truth. */}
-      {/* All downstream consumers read from analysis.analysisMode */}
       <Card className="p-4 border-l-4 border-l-primary" data-testid="card-mode-indicator">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
@@ -264,10 +261,10 @@ export default function AnalysisResults() {
             </span>
             {analysis.confidence && (
               <Badge 
-                variant={analysis.confidence === "preliminary" ? "secondary" : "default"}
+                variant={analysis.confidence === "preliminary" ? "secondary" : analysis.confidence === "low" ? "outline" : "default"}
                 data-testid="badge-confidence"
               >
-                {analysis.confidence === "preliminary" ? "Preliminary" : "Substantiated"}
+                {analysis.confidence === "preliminary" ? "Preliminary" : analysis.confidence === "low" ? "Low Confidence" : "Substantiated"}
               </Badge>
             )}
           </div>
@@ -337,75 +334,114 @@ export default function AnalysisResults() {
               WEAK: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", label: "Weak" },
             };
             const esStyle = finding.evidenceStrength ? evidenceStrengthColors[finding.evidenceStrength] : null;
+            const confidenceText: Record<string, string> = {
+              STRONG: "High confidence — validated by document evidence",
+              MODERATE: "Moderate confidence — hypothesis supported by partial evidence",
+              WEAK: "Low confidence — requires further document evidence to validate",
+            };
             return (
               <Card key={finding.id || idx} className="p-4 border-l-4" style={{ borderLeftColor: 'currentColor' }}>
-                <div className="flex items-start gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-2">
-                      <h3 className="font-semibold">{finding.title}</h3>
-                      <Badge className={`${colors.bg} ${colors.text}`}>{finding.fourMCategory}</Badge>
-                      <Badge className={`${severity.bg} ${severity.text}`}>{finding.severity}</Badge>
-                      {finding.frequency > 1 && (
-                        <Badge variant="outline">{finding.frequency}x occurrences</Badge>
-                      )}
-                      {esStyle && (
-                        <Badge className={`${esStyle.bg} ${esStyle.text}`}>
-                          Evidence: {esStyle.label}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-muted-foreground mb-3">{finding.description}</p>
-                    
-                    {finding.causes && finding.causes.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-sm font-medium mb-1">Root Causes:</p>
-                        <ul className="text-sm text-muted-foreground list-disc list-inside">
-                          {finding.causes.map((cause, i) => <li key={i}>{cause}</li>)}
-                        </ul>
-                      </div>
+                <div className="flex-1">
+                  {/* Header: Title + Badges */}
+                  <div className="flex items-center gap-2 flex-wrap mb-4">
+                    <h3 className="font-semibold">{finding.title}</h3>
+                    <Badge className={`${colors.bg} ${colors.text}`}>{finding.fourMCategory}</Badge>
+                    <Badge className={`${severity.bg} ${severity.text}`}>{finding.severity}</Badge>
+                    {esStyle && (
+                      <Badge className={`${esStyle.bg} ${esStyle.text}`}>
+                        {esStyle.label}
+                      </Badge>
                     )}
-                    
+                  </div>
+
+                  <div className="space-y-3 text-sm">
+                    {/* What We Observed */}
                     {finding.evidenceAnchors && finding.evidenceAnchors.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-sm font-medium mb-1 flex items-center gap-1">
-                          <Lightbulb className="w-4 h-4" /> Evidence Anchors:
+                      <div>
+                        <p className="font-medium mb-1 flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5 text-muted-foreground" /> What We Observed
                         </p>
-                        <div className="space-y-2 ml-1">
+                        <ul className="space-y-1 ml-5">
                           {finding.evidenceAnchors.map((anchor: any, i: number) => (
-                            <div key={i} className="pl-3 border-l-2 border-muted text-sm">
-                              <p className="text-xs text-muted-foreground">{anchor.documentName}</p>
-                              <p className="font-medium">{anchor.signal}</p>
-                              <p className="text-muted-foreground">{anchor.interpretation}</p>
-                            </div>
+                            <li key={i} className="list-disc text-muted-foreground">
+                              <span className="font-medium text-foreground">{anchor.signal}</span>
+                              <span className="text-xs ml-1">({anchor.documentName})</span>
+                            </li>
                           ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {finding.evidence && finding.evidence.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-sm font-medium mb-1 flex items-center gap-1">
-                          <Lightbulb className="w-4 h-4" /> Evidence:
-                        </p>
-                        <ul className="text-sm text-muted-foreground list-disc list-inside">
-                          {finding.evidence.map((ev: string, i: number) => <li key={i}>{ev}</li>)}
                         </ul>
                       </div>
                     )}
 
-                    {finding.estimatedCostImpact && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <DollarSign className="w-4 h-4 text-emerald-500" />
-                        <span className="font-medium">Estimated Impact:</span>
-                        <span>{finding.estimatedCostImpact}</span>
+                    {/* What This Indicates */}
+                    {finding.causes && finding.causes.length > 0 && (
+                      <div>
+                        <p className="font-medium mb-1 flex items-center gap-1">
+                          <Target className="w-3.5 h-3.5 text-muted-foreground" /> What This Indicates
+                        </p>
+                        <ul className="ml-5">
+                          {finding.causes.map((cause: string, i: number) => (
+                            <li key={i} className="list-disc text-muted-foreground">{cause}</li>
+                          ))}
+                        </ul>
                       </div>
                     )}
 
-                    {finding.evidenceStrength === "WEAK" && (
-                      <p className="text-xs text-muted-foreground italic mt-2">
-                        Insufficient evidence — further document review recommended.
+                    {/* Why It Matters */}
+                    {finding.description && (
+                      <div>
+                        <p className="font-medium mb-1 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Why It Matters
+                        </p>
+                        <p className="text-muted-foreground ml-5">{finding.description}</p>
+                      </div>
+                    )}
+
+                    {/* Suggested Intervention Direction */}
+                    {finding.evidence && finding.evidence.length > 0 && (
+                      <div>
+                        <p className="font-medium mb-1 flex items-center gap-1">
+                          <Lightbulb className="w-3.5 h-3.5 text-muted-foreground" /> Supporting Evidence
+                        </p>
+                        <ul className="ml-5">
+                          {finding.evidence.map((ev: string, i: number) => (
+                            <li key={i} className="list-disc text-muted-foreground">{ev}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Estimated Impact */}
+                    {finding.estimatedCostImpact && (
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="font-medium">Estimated Impact:</span>
+                        <span className="text-muted-foreground">{finding.estimatedCostImpact}</span>
+                      </div>
+                    )}
+
+                    {/* Collapsed Note */}
+                    {finding.collapsedNote && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 italic ml-5">
+                        {finding.collapsedNote}
                       </p>
                     )}
+
+                    {/* Confidence & Next Evidence */}
+                    <div className="pt-2 border-t">
+                      <p className="font-medium mb-1 flex items-center gap-1">
+                        <Shield className="w-3.5 h-3.5 text-muted-foreground" /> Confidence & Next Evidence to Validate
+                      </p>
+                      <p className="text-muted-foreground ml-5 text-xs">
+                        {finding.evidenceStrength
+                          ? confidenceText[finding.evidenceStrength] || confidenceText.WEAK
+                          : confidenceText.WEAK}
+                      </p>
+                      {finding.evidenceStrength === "WEAK" && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 ml-5 mt-1">
+                          Upload relevant documents to strengthen this finding.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>

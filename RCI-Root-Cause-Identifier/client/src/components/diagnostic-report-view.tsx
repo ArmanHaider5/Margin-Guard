@@ -39,6 +39,12 @@ const evidenceStrengthStyles: Record<string, { bg: string; text: string; label: 
   WEAK: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", label: "Weak" },
 };
 
+const confidenceLabel: Record<string, string> = {
+  STRONG: "High confidence — validated by document evidence",
+  MODERATE: "Moderate confidence — hypothesis supported by partial evidence",
+  WEAK: "Low confidence — requires further document evidence to validate",
+};
+
 function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPrimary: boolean }) {
   const colors = fourMColors[finding.category as keyof typeof fourMColors] || fourMColors.Money;
   const strengthStyle = finding.evidenceStrength
@@ -50,8 +56,9 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
       className={`p-4 ${isPrimary ? "border-l-4 border-l-primary" : ""}`}
       data-testid={`finding-${finding.id}`}
     >
-      <div className="flex items-center gap-2 flex-wrap mb-3">
-        <h3 className="font-semibold">{finding.title}</h3>
+      {/* Header: Title + Badges */}
+      <div className="flex items-center gap-2 flex-wrap mb-4">
+        <h3 className="font-semibold text-base">{finding.title}</h3>
         <Badge className={`${colors.bg} ${colors.text}`}>{finding.category}</Badge>
         {isPrimary && (
           <Badge variant="default" data-testid={`badge-primary-${finding.id}`}>
@@ -63,60 +70,84 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
             className={`${strengthStyle.bg} ${strengthStyle.text}`}
             data-testid={`badge-evidence-strength-${finding.id}`}
           >
-            Evidence: {strengthStyle.label}
+            {strengthStyle.label}
           </Badge>
         )}
       </div>
       
-      <div className="space-y-4 text-sm">
-        <div data-testid={`finding-rootcause-${finding.id}`}>
-          <p className="font-medium text-muted-foreground mb-1">Root Cause:</p>
-          <p>{finding.title}</p>
-        </div>
-        
-        <div data-testid={`finding-whyitmatters-${finding.id}`}>
-          <p className="font-medium text-muted-foreground mb-1">Why It Matters:</p>
-          <p>{finding.whyItMatters}</p>
-        </div>
-        
-        <div data-testid={`finding-intervention-${finding.id}`}>
-          <p className="font-medium text-muted-foreground mb-1">Intervention Direction:</p>
-          <p>{finding.interventionDirection}</p>
-        </div>
-
+      <div className="space-y-3 text-sm">
+        {/* What We Observed */}
         {finding.evidenceAnchors && finding.evidenceAnchors.length > 0 && (
-          <div 
-            className="pt-2 border-t"
-            data-testid={`finding-evidence-anchors-${finding.id}`}
-          >
-            <p className="font-medium text-muted-foreground mb-2 flex items-center gap-1">
-              <FileText className="w-4 h-4" /> Evidence Anchors:
+          <div data-testid={`finding-evidence-anchors-${finding.id}`}>
+            <p className="font-medium mb-1 flex items-center gap-1">
+              <FileText className="w-3.5 h-3.5 text-muted-foreground" /> What We Observed
             </p>
-            <div className="space-y-2">
+            <ul className="space-y-1 ml-5">
               {finding.evidenceAnchors.map((anchor, idx) => (
-                <div key={idx} className="pl-3 border-l-2 border-muted">
-                  <p className="text-xs text-muted-foreground">{anchor.documentName}</p>
-                  <p className="font-medium">{anchor.signal}</p>
-                  <p className="text-muted-foreground">{anchor.interpretation}</p>
-                </div>
+                <li key={idx} className="list-disc text-muted-foreground">
+                  <span className="font-medium text-foreground">{anchor.signal}</span>
+                  <span className="text-xs ml-1">({anchor.documentName})</span>
+                </li>
               ))}
-            </div>
-          </div>
-        )}
-        
-        {finding.evidenceNote && (
-          <div 
-            className="pt-2 border-t border-dashed"
-            data-testid={`finding-evidence-${finding.id}`}
-          >
-            <p className="text-muted-foreground italic">{finding.evidenceNote}</p>
+            </ul>
           </div>
         )}
 
-        {finding.evidenceStrength === "WEAK" && (
-          <p className="text-xs text-muted-foreground italic">
-            Insufficient evidence — further document review recommended.
+        {/* What This Indicates */}
+        <div data-testid={`finding-rootcause-${finding.id}`}>
+          <p className="font-medium mb-1 flex items-center gap-1">
+            <Target className="w-3.5 h-3.5 text-muted-foreground" /> What This Indicates
           </p>
+          <p className="text-muted-foreground ml-5">{finding.title}</p>
+        </div>
+        
+        {/* Why It Matters */}
+        <div data-testid={`finding-whyitmatters-${finding.id}`}>
+          <p className="font-medium mb-1 flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Why It Matters
+          </p>
+          <p className="text-muted-foreground ml-5">{finding.whyItMatters}</p>
+        </div>
+        
+        {/* Suggested Intervention Direction */}
+        <div data-testid={`finding-intervention-${finding.id}`}>
+          <p className="font-medium mb-1 flex items-center gap-1">
+            <Lightbulb className="w-3.5 h-3.5 text-muted-foreground" /> Suggested Intervention Direction
+          </p>
+          <ul className="ml-5">
+            <li className="list-disc text-muted-foreground">{finding.interventionDirection}</li>
+          </ul>
+        </div>
+
+        {/* Confidence & Next Evidence */}
+        <div className="pt-2 border-t" data-testid={`finding-confidence-${finding.id}`}>
+          <p className="font-medium mb-1 flex items-center gap-1">
+            <Shield className="w-3.5 h-3.5 text-muted-foreground" /> Confidence & Next Evidence to Validate
+          </p>
+          <p className="text-muted-foreground ml-5 text-xs">
+            {finding.evidenceStrength
+              ? confidenceLabel[finding.evidenceStrength] || confidenceLabel.WEAK
+              : confidenceLabel.WEAK}
+          </p>
+          {finding.evidenceStrength === "WEAK" && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 ml-5 mt-1">
+              Upload relevant documents to strengthen this finding.
+            </p>
+          )}
+        </div>
+
+        {/* Collapsed Note */}
+        {finding.collapsedNote && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 italic ml-5">
+            {finding.collapsedNote}
+          </p>
+        )}
+
+        {/* Evidence Note */}
+        {finding.evidenceNote && (
+          <div data-testid={`finding-evidence-${finding.id}`}>
+            <p className="text-muted-foreground italic text-xs ml-5">{finding.evidenceNote}</p>
+          </div>
         )}
       </div>
     </Card>

@@ -1,0 +1,52 @@
+RCI vNext – FINDINGS OUTPUT CLEANUP (UX + EVIDENCE SPECIFICITY)
+
+Objective:
+Make Findings outputs concrete, non-generic, and professionally structured so they are sellable to clients.
+
+Instructions:
+
+1. Enforce concrete Evidence Anchors:
+   - Evidence anchors must reference:
+     - documentName (file name)
+     - specific signal (metric, anomaly, quote)
+   - Do NOT allow generic anchors like:
+     "uploaded operational documents"
+     "pattern match"
+     "money category detected"
+   - If concrete anchors cannot be extracted, mark finding as EXPLORATORY and require user confirmation before display.
+
+2. Collapse overlapping Money-category findings:
+   - If multiple findings belong to Money and evidenceStrength is WEAK or MODERATE:
+       - Keep 1 primary Money finding (highest evidenceStrength)
+       - Suppress additional Money findings
+   - Add a note: "Related financial impacts observed (collapsed)"
+
+3. Redesign Findings UI into structured sections:
+   Replace paragraph blocks with clear sections:
+   - Finding Title
+   - Category | Severity | Evidence Strength (badges)
+   - What We Observed (Evidence Anchors - bullet points)
+   - What This Indicates (Root Cause Hypothesis)
+   - Why It Matters (Industry-specific lens)
+   - Suggested Intervention Direction (bulleted)
+   - Confidence & Next Evidence to Validate
+
+4. Remove repetitive phrasing:
+   - Eliminate:
+     "There is a recurring pattern indicating..."
+     "Why It Matters:" inline paragraph style
+   - Replace with section headers + concise bullets
+
+5. Update Diagnostic Confidence messaging:
+   - Only show "Evidence insufficient" when evidenceStrength = WEAK
+   - Do NOT show both "Evidence: Moderate" and "Diagnostic Confidence: Low" simultaneously
+   - Align tone:
+       STRONG → assertive
+       MODERATE → hypothesis
+       WEAK → exploratory
+
+6. Do NOT change underlying scoring logic.
+7. Do NOT break existing APIs or case workflows.
+8. Keep backwards compatibility with existing Findings data.
+
+Confirm once complete.

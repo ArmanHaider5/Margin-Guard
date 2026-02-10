@@ -39,6 +39,7 @@ export interface DiagnosticFinding {
   evidenceAnchors?: DiagnosticEvidenceAnchor[];
   evidenceStrength?: "WEAK" | "MODERATE" | "STRONG";
   narrativeTone?: "EXPLORATORY" | "DIAGNOSTIC" | "CONCLUSIVE";
+  collapsedNote?: string;
 }
 
 export interface InterventionTheme {
