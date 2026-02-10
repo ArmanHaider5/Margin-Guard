@@ -59,6 +59,27 @@ export interface CaseReference {
   outcome: CaseOutcome;
 }
 
+// RCI Brain v2: Standardised symptom taxonomy for symptom → root cause mapping
+// Used by getLikelyRootCauses() to score and rank root causes from observed symptoms
+export const SYMPTOM_TAGS = [
+  "MISSED_DEADLINES",
+  "COST_OVERRUNS",
+  "HIGH_REWORK",
+  "LOW_ACCOUNTABILITY",
+  "FREQUENT_ESCALATIONS",
+  "QUALITY_ESCAPES",
+  "FIRE_FIGHTING_CULTURE",
+  "LOW_SYSTEM_ADOPTION",
+  "CASH_FLOW_PRESSURE",
+  "HIGH_TURNOVER",
+  "KNOWLEDGE_LOSS",
+  "SUPPLY_DISRUPTION",
+  "CAPACITY_BOTTLENECK",
+  "CUSTOMER_COMPLAINTS",
+  "MARGIN_EROSION",
+] as const;
+export type SymptomTag = (typeof SYMPTOM_TAGS)[number];
+
 /**
  * Primary Context - The main focus area for a root cause.
  * Used for context weighting during selection.
@@ -120,6 +141,10 @@ export interface RootCauseEntry {
   highLeverageFix?: string;
   preventionStrategy?: string;
   caseReferences?: CaseReference[];
+
+  // RCI Brain v2 — Symptom taxonomy tags for symptom → root cause mapping
+  // Used by getLikelyRootCauses() to score matches from observed symptoms
+  symptomTags?: SymptomTag[];
 }
 
 export const rootCauseLibrary: RootCauseEntry[] = [
@@ -171,6 +196,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
     highLeverageFix: "Implement weekly billing submission deadlines tied to project milestones.",
     preventionStrategy: "Automated billing triggers linked to project milestone completion records.",
     caseReferences: [],
+    symptomTags: ["COST_OVERRUNS", "MISSED_DEADLINES", "CASH_FLOW_PRESSURE"],
   },
   {
     id: "rc-m001b",
@@ -215,6 +241,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
     highLeverageFix: "Enforce automated credit hold triggers at defined aging thresholds.",
     preventionStrategy: "Monthly credit review meetings with aging reports and escalation tracking.",
     caseReferences: [],
+    symptomTags: ["CASH_FLOW_PRESSURE", "MARGIN_EROSION", "LOW_ACCOUNTABILITY"],
   },
   {
     id: "rc-m001c",
@@ -525,6 +552,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
     highLeverageFix: "Establish mandatory procedure-change training sign-off before go-live.",
     preventionStrategy: "Quarterly training audits linked to procedure revision dates.",
     caseReferences: [],
+    symptomTags: ["HIGH_REWORK", "QUALITY_ESCAPES", "CUSTOMER_COMPLAINTS"],
   },
   {
     id: "rc-mp002",
@@ -569,6 +597,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
     highLeverageFix: "Introduce structured onboarding and mentoring for newly promoted supervisors.",
     preventionStrategy: "Regular supervisor engagement reviews with action-tracked outcomes.",
     caseReferences: [],
+    symptomTags: ["HIGH_TURNOVER", "KNOWLEDGE_LOSS", "LOW_ACCOUNTABILITY", "FIRE_FIGHTING_CULTURE"],
   },
   {
     id: "rc-mp003",
@@ -784,6 +813,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
     highLeverageFix: "Implement daily cycle counting for high-value and fast-moving items.",
     preventionStrategy: "Real-time stock movement recording at every transaction point.",
     caseReferences: [],
+    symptomTags: ["SUPPLY_DISRUPTION", "COST_OVERRUNS", "LOW_SYSTEM_ADOPTION"],
   },
   {
     id: "rc-mt002",
@@ -828,6 +858,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
     highLeverageFix: "Introduce supplier scorecards with automatic escalation at threshold breaches.",
     preventionStrategy: "Dual-sourcing strategy for all critical material categories.",
     caseReferences: [],
+    symptomTags: ["SUPPLY_DISRUPTION", "MISSED_DEADLINES", "CUSTOMER_COMPLAINTS", "FREQUENT_ESCALATIONS"],
   },
   {
     id: "rc-mt003",
@@ -1009,6 +1040,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
     highLeverageFix: "Lock PM schedules into production planning as non-negotiable time blocks.",
     preventionStrategy: "Condition-based monitoring to supplement calendar-based PM schedules.",
     caseReferences: [],
+    symptomTags: ["QUALITY_ESCAPES", "FIRE_FIGHTING_CULTURE", "CAPACITY_BOTTLENECK", "MISSED_DEADLINES"],
   },
   {
     id: "rc-mc001b",
@@ -1051,6 +1083,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
     highLeverageFix: "Conduct asset criticality assessment to prioritise replacement sequencing.",
     preventionStrategy: "Asset lifecycle register with proactive replacement triggers.",
     caseReferences: [],
+    symptomTags: ["FIRE_FIGHTING_CULTURE", "COST_OVERRUNS", "CAPACITY_BOTTLENECK"],
   },
   {
     id: "rc-mc001c",
@@ -1850,6 +1883,79 @@ export function getCausesByIndustry(industry: string): RootCauseEntry[] {
     return false;
   });
 }
+// ======================================================
+// RCI Brain v2: SYMPTOM → ROOT CAUSE MAPPING ENGINE
+// ======================================================
+// Scores root causes by symptom tag overlap, with optional industry/category boosting.
+// Returns ranked results for use in future diagnostic workflow UI.
+
+export interface ScoredRootCause {
+  entry: RootCauseEntry;
+  confidenceScore: number; // 0–100 scale
+  matchedTags: SymptomTag[];
+}
+
+export interface GetLikelyRootCausesOptions {
+  industry?: string;
+  category?: FourMCategory;
+}
+
+export function getLikelyRootCauses(
+  observedSymptoms: SymptomTag[],
+  options?: GetLikelyRootCausesOptions,
+): ScoredRootCause[] {
+  if (observedSymptoms.length === 0) return [];
+
+  const results: ScoredRootCause[] = [];
+
+  for (const entry of rootCauseLibrary) {
+    const entryTags = entry.symptomTags;
+    if (!entryTags || entryTags.length === 0) continue;
+
+    const matchedTags = observedSymptoms.filter((s) => entryTags.includes(s));
+    if (matchedTags.length === 0) continue;
+
+    // Base score: proportion of observed symptoms that match this entry's tags
+    let score = (matchedTags.length / observedSymptoms.length) * 70;
+
+    // Boost: proportion of entry's tags that are covered (rewards specificity)
+    score += (matchedTags.length / entryTags.length) * 15;
+
+    // Industry match boost
+    if (options?.industry) {
+      const industryMatch = entry.applicableIndustries.some(
+        (ind) => ind.toLowerCase() === options.industry!.toLowerCase(),
+      );
+      if (industryMatch) {
+        score += 10;
+      } else if (entry.crossIndustry) {
+        score += 5;
+      }
+    }
+
+    // Category match boost
+    if (options?.category && entry.category === options.category) {
+      score += 5;
+    }
+
+    results.push({
+      entry,
+      confidenceScore: Math.min(Math.round(score), 100),
+      matchedTags: matchedTags as SymptomTag[],
+    });
+  }
+
+  // Sort by confidence descending, then by baseConfidence as tiebreaker
+  results.sort((a, b) => {
+    if (b.confidenceScore !== a.confidenceScore) {
+      return b.confidenceScore - a.confidenceScore;
+    }
+    return b.entry.baseConfidence - a.entry.baseConfidence;
+  });
+
+  return results;
+}
+
 // ======================================================
 // RCI MANUFACTURING ROOT CAUSE LIBRARY v2 (PERNAS-GRADE)
 // ======================================================
