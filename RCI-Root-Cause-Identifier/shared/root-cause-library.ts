@@ -52,6 +52,13 @@ export type InterventionType =
   | "advisory"
   | "consultant-required";
 
+// RCI Brain v2: Case outcome tracking for pattern card references
+export type CaseOutcome = "worked" | "partial" | "failed";
+export interface CaseReference {
+  caseId: string;
+  outcome: CaseOutcome;
+}
+
 /**
  * Primary Context - The main focus area for a root cause.
  * Used for context weighting during selection.
@@ -105,6 +112,14 @@ export interface RootCauseEntry {
   archetypeIds: string[];
   whyItMatters: string;
   interventionDirection: string;
+
+  // RCI Brain v2 — Pattern Card extensions (optional for backward compatibility)
+  // Used in future diagnostic workflow for validation and prevention guidance
+  validationChecklist?: string[];
+  antiPatterns?: string[];
+  highLeverageFix?: string;
+  preventionStrategy?: string;
+  caseReferences?: CaseReference[];
 }
 
 export const rootCauseLibrary: RootCauseEntry[] = [
@@ -143,6 +158,19 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Delayed billing approvals extend the cash conversion cycle and strain working capital.",
     interventionDirection:
       "Billing submission discipline and approval tracking protocols.",
+    // RCI Brain v2 pattern card fields
+    validationChecklist: [
+      "Average days from work completion to billing submission",
+      "Percentage of progress claims submitted on time",
+      "Number of billing rejections per month",
+    ],
+    antiPatterns: [
+      "Batching all progress claims at month-end instead of upon completion",
+      "Relying on informal verbal approvals before submitting invoices",
+    ],
+    highLeverageFix: "Implement weekly billing submission deadlines tied to project milestones.",
+    preventionStrategy: "Automated billing triggers linked to project milestone completion records.",
+    caseReferences: [],
   },
   {
     id: "rc-m001b",
@@ -174,6 +202,19 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Weak credit enforcement allows receivables to age beyond recovery thresholds.",
     interventionDirection:
       "Credit control procedures with escalation timelines.",
+    // RCI Brain v2 pattern card fields
+    validationChecklist: [
+      "Receivables aging report reviewed weekly",
+      "Credit terms formally documented per customer",
+      "Escalation actions taken within defined thresholds",
+    ],
+    antiPatterns: [
+      "Extending credit limits without reassessing customer payment history",
+      "Allowing sales team to override credit holds without approval",
+    ],
+    highLeverageFix: "Enforce automated credit hold triggers at defined aging thresholds.",
+    preventionStrategy: "Monthly credit review meetings with aging reports and escalation tracking.",
+    caseReferences: [],
   },
   {
     id: "rc-m001c",
@@ -471,6 +512,19 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Untrained staff execute tasks inconsistently, increasing errors and rework.",
     interventionDirection:
       "Training programmes aligned to current procedures with regular updates.",
+    // RCI Brain v2 pattern card fields
+    validationChecklist: [
+      "Training records exist for all current procedures",
+      "Staff can demonstrate competency on updated processes",
+      "Training completion rate tracked per department",
+    ],
+    antiPatterns: [
+      "One-time training with no refresher schedule",
+      "Relying on peer-to-peer informal knowledge transfer",
+    ],
+    highLeverageFix: "Establish mandatory procedure-change training sign-off before go-live.",
+    preventionStrategy: "Quarterly training audits linked to procedure revision dates.",
+    caseReferences: [],
   },
   {
     id: "rc-mp002",
@@ -502,6 +556,19 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Supervisor turnover disrupts team continuity and operational knowledge.",
     interventionDirection:
       "Retention factors and succession planning for key roles.",
+    // RCI Brain v2 pattern card fields
+    validationChecklist: [
+      "Supervisor tenure tracked and trended over 12 months",
+      "Exit interview data analysed for systemic causes",
+      "Succession plans documented for all supervisory roles",
+    ],
+    antiPatterns: [
+      "Promoting top performers without leadership readiness assessment",
+      "Treating turnover as an HR problem rather than an operational risk",
+    ],
+    highLeverageFix: "Introduce structured onboarding and mentoring for newly promoted supervisors.",
+    preventionStrategy: "Regular supervisor engagement reviews with action-tracked outcomes.",
+    caseReferences: [],
   },
   {
     id: "rc-mp003",
@@ -704,6 +771,19 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Inaccurate inventory data leads to unreliable ordering and allocation decisions.",
     interventionDirection:
       "Stock tracking accuracy through systematic counting and recording.",
+    // RCI Brain v2 pattern card fields
+    validationChecklist: [
+      "Physical stock count matches system records within 2% tolerance",
+      "Stock movements recorded in real time at point of transaction",
+      "Cycle counting schedule maintained and adhered to",
+    ],
+    antiPatterns: [
+      "Annual stock take as the sole inventory verification method",
+      "Manual spreadsheet tracking alongside a system of record",
+    ],
+    highLeverageFix: "Implement daily cycle counting for high-value and fast-moving items.",
+    preventionStrategy: "Real-time stock movement recording at every transaction point.",
+    caseReferences: [],
   },
   {
     id: "rc-mt002",
@@ -735,6 +815,19 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Unreliable suppliers disrupt production schedules and customer commitments.",
     interventionDirection:
       "Supplier performance metrics with escalation mechanisms.",
+    // RCI Brain v2 pattern card fields
+    validationChecklist: [
+      "On-time delivery rate tracked per supplier per month",
+      "Supplier performance review conducted quarterly",
+      "Alternative suppliers identified for critical materials",
+    ],
+    antiPatterns: [
+      "Sole-sourcing critical materials without backup suppliers",
+      "Accepting repeated late deliveries without formal escalation",
+    ],
+    highLeverageFix: "Introduce supplier scorecards with automatic escalation at threshold breaches.",
+    preventionStrategy: "Dual-sourcing strategy for all critical material categories.",
+    caseReferences: [],
   },
   {
     id: "rc-mt003",
@@ -903,6 +996,19 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Deferred maintenance accelerates equipment wear and increases failure probability.",
     interventionDirection:
       "Preventive maintenance scheduling with compliance tracking.",
+    // RCI Brain v2 pattern card fields
+    validationChecklist: [
+      "Preventive maintenance schedule exists and is current",
+      "PM completion rate exceeds 90% per month",
+      "Unplanned breakdown frequency tracked and trending down",
+    ],
+    antiPatterns: [
+      "Deferring maintenance to meet production deadlines",
+      "Treating preventive maintenance as optional when equipment appears functional",
+    ],
+    highLeverageFix: "Lock PM schedules into production planning as non-negotiable time blocks.",
+    preventionStrategy: "Condition-based monitoring to supplement calendar-based PM schedules.",
+    caseReferences: [],
   },
   {
     id: "rc-mc001b",
@@ -932,6 +1038,19 @@ export const rootCauseLibrary: RootCauseEntry[] = [
     whyItMatters:
       "Obsolete equipment lacks manufacturer support and reliable spare parts supply.",
     interventionDirection: "Asset lifecycle review and replacement planning.",
+    // RCI Brain v2 pattern card fields
+    validationChecklist: [
+      "Asset age and remaining useful life documented",
+      "Spare parts availability confirmed with suppliers",
+      "Replacement timeline and budget allocated",
+    ],
+    antiPatterns: [
+      "Running equipment beyond manufacturer-recommended service life without assessment",
+      "Stockpiling spare parts for discontinued models instead of planning replacement",
+    ],
+    highLeverageFix: "Conduct asset criticality assessment to prioritise replacement sequencing.",
+    preventionStrategy: "Asset lifecycle register with proactive replacement triggers.",
+    caseReferences: [],
   },
   {
     id: "rc-mc001c",
