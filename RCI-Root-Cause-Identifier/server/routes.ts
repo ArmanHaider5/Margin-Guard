@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { analyzeSymptom } from "./ai-analyzer";
 import { z } from "zod";
 import { problemLibrary } from "@shared/problem-library";
+import { getCauseById } from "@shared/root-cause-library";
 import { allIndustryProblems, getProblemsByIndustry, industryLabels, getIndustryStats, getTotalProblemCount, type Industry } from "@shared/industry-problems";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import multer from "multer";
@@ -1137,6 +1138,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Finalise case error:", error);
       res.status(500).json({ error: "Failed to finalise case" });
+    }
+  });
+
+  // RCI Brain v2: Attach a root cause pattern to a case
+  // Snapshots the pattern's current fields — does NOT mutate the source RootCauseEntry
+  app.post("/api/admin/cases/:id/attach-pattern", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const existingCase = await storage.getDiagnosticCase(req.params.id);
+      if (!existingCase) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      if (existingCase.status === "finalised") {
+        return res.status(400).json({ error: "Cannot modify a finalised case" });
+      }
+
+      const attachSchema = z.object({
+        rootCauseId: z.string().min(1),
+      });
+
+      const { rootCauseId } = attachSchema.parse(req.body);
+      const rootCauseEntry = getCauseById(rootCauseId);
+
+      if (!rootCauseEntry) {
+        return res.status(404).json({ error: "Root cause pattern not found in library" });
+      }
+
+      const snapshot = {
+        patternName: rootCauseEntry.title,
+        validationChecklist: rootCauseEntry.validationChecklist || [],
+        antiPatterns: rootCauseEntry.antiPatterns || [],
+        highLeverageFix: rootCauseEntry.highLeverageFix || "",
+        preventionStrategy: rootCauseEntry.preventionStrategy || "",
+      };
+
+      const updatedCase = await storage.updateDiagnosticCase(req.params.id, {
+        rootCausePatternId: rootCauseId,
+        rootCauseSnapshot: snapshot,
+      });
+
+      res.json(updatedCase);
+    } catch (error) {
+      console.error("Attach pattern error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to attach pattern to case" });
     }
   });
 

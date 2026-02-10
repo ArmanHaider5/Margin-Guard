@@ -38,10 +38,15 @@ import {
   FileText,
   X,
   Download,
+  Brain,
+  CheckSquare,
+  AlertOctagon,
+  Zap,
+  Shield,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
-import type { DiagnosticCase } from "@shared/schema";
+import type { DiagnosticCase, RootCausePatternSnapshot } from "@shared/schema";
 
 interface CaseWithLegacy extends DiagnosticCase {
   isLegacy?: boolean;
@@ -457,6 +462,87 @@ export default function CaseDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* RCI Brain v2: Display attached root cause pattern snapshot */}
+            {diagnosticCase.rootCauseSnapshot && (() => {
+              const snap = diagnosticCase.rootCauseSnapshot as RootCausePatternSnapshot;
+              return (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-primary" />
+                      <CardTitle className="text-base">Linked Root Cause Pattern</CardTitle>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Snapshot at time of diagnosis</p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium" data-testid="text-pattern-name">
+                        {snap.patternName}
+                      </p>
+                    </div>
+
+                    {snap.validationChecklist?.length > 0 && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <CheckSquare className="w-3 h-3" />
+                          Validation Checklist
+                        </div>
+                        <ul className="space-y-1">
+                          {snap.validationChecklist.map((item: string, i: number) => (
+                            <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                              <span className="text-primary mt-0.5">&#8226;</span>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {snap.antiPatterns?.length > 0 && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <AlertOctagon className="w-3 h-3" />
+                          Anti-Patterns to Avoid
+                        </div>
+                        <ul className="space-y-1">
+                          {snap.antiPatterns.map((item: string, i: number) => (
+                            <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                              <span className="text-destructive mt-0.5">&#8226;</span>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {snap.highLeverageFix && (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <Zap className="w-3 h-3" />
+                          High-Leverage Fix
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {snap.highLeverageFix}
+                        </p>
+                      </div>
+                    )}
+
+                    {snap.preventionStrategy && (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <Shield className="w-3 h-3" />
+                          Prevention Strategy
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {snap.preventionStrategy}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
 
             <Card>
               <CardHeader>

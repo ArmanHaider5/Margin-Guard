@@ -1,15 +1,36 @@
+/**
+ * RCI Brain - Admin Knowledge Page
+ * 
+ * RCI Brain v2: Added "Use in Case" workflow allowing consultants to attach
+ * root cause patterns from the knowledge library directly to active cases.
+ */
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { RCIKnowledgeLibrary } from "@/components/rci-knowledge-library";
+import type { CaseOption } from "@/components/rci-knowledge-library";
 import { ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { rootCauseLibrary } from "@shared/root-cause-library";
+import type { DiagnosticCase } from "@shared/schema";
 
-const mockPatterns = [
-  { id: "p1", title: "Manufacturing Cost Variance", category: "Process" as const, frequency: "Common" as const, industries: ["Manufacturing", "Construction"], summary: "Unexplained increases in production costs often stem from untracked process deviations, material waste, or unmonitored rework cycles." },
-  { id: "p2", title: "Supervisory Knowledge Gap", category: "People" as const, frequency: "Moderate" as const, industries: ["Hospitality", "Healthcare", "Retail"], summary: "Loss of institutional knowledge due to turnover in supervisory roles leads to inconsistent decision-making and exception handling." },
-  { id: "p3", title: "Legacy System Visibility Gap", category: "Systems" as const, frequency: "Common" as const, industries: ["Healthcare", "Manufacturing", "Logistics"], summary: "Older ERP and inventory systems lack real-time data capabilities, forcing manual reconciliation and delayed decisions." },
-  { id: "p4", title: "Cross-Department Accountability Void", category: "Governance" as const, frequency: "Moderate" as const, industries: ["Property Development", "Oil & Gas"], summary: "Shared processes without clear ownership result in issues falling through the cracks between departments." },
-  { id: "p5", title: "Quality Control Checkpoint Gaps", category: "Process" as const, frequency: "Common" as const, industries: ["Manufacturing", "F&B", "Construction"], summary: "Missing or informal quality gates allow defects to propagate downstream, increasing rework and customer complaints." },
-];
+const categoryMap: Record<string, "Process" | "People" | "Systems" | "Governance"> = {
+  Money: "Process",
+  Manpower: "People",
+  Materials: "Systems",
+  Machinery: "Systems",
+};
+
+const patterns = rootCauseLibrary.map((rc) => ({
+  id: rc.id,
+  title: rc.title,
+  category: categoryMap[rc.category] || ("Process" as const),
+  frequency: (rc.baseConfidence >= 80 ? "Common" : rc.baseConfidence >= 70 ? "Moderate" : "Rare") as "Common" | "Moderate" | "Rare",
+  industries: rc.applicableIndustries,
+  summary: `${rc.whyItMatters} ${rc.interventionDirection}`,
+  hasV2Fields: !!(rc.validationChecklist && rc.validationChecklist.length > 0),
+}));
 
 const mockArchetypes = [
   { id: "a1", name: "Process Redesign with Embedded Controls", applicableRootCauses: ["Process gaps", "Quality issues"], complexity: "Medium" as const, summary: "Restructure workflows to include mandatory checkpoints and automated controls that prevent deviation." },
@@ -34,6 +55,41 @@ const mockContexts = [
 ];
 
 export default function AdminKnowledge() {
+  const { toast } = useToast();
+
+  // RCI Brain v2: Fetch active cases for "Use in Case" workflow
+  const { data: cases } = useQuery<DiagnosticCase[]>({
+    queryKey: ["/api/admin/cases"],
+  });
+
+  const activeCases: CaseOption[] = (cases || [])
+    .filter((c) => c.status === "draft")
+    .map((c) => ({
+      id: c.id,
+      clientName: c.clientName,
+      problemStatement: c.problemStatement,
+      status: c.status || "draft",
+    }));
+
+  const handleAttachPattern = async (patternId: string, caseId: string) => {
+    try {
+      await apiRequest("POST", `/api/admin/cases/${caseId}/attach-pattern`, {
+        rootCauseId: patternId,
+      });
+      toast({
+        title: "Pattern Attached",
+        description: "Root cause pattern has been linked to the case.",
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to attach pattern to case.",
+        variant: "destructive",
+      });
+      throw new Error("Failed to attach");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b">
@@ -54,10 +110,12 @@ export default function AdminKnowledge() {
 
       <div className="container mx-auto px-4 py-8">
         <RCIKnowledgeLibrary
-          rootCausePatterns={mockPatterns}
+          rootCausePatterns={patterns}
           solutionArchetypes={mockArchetypes}
           preventionFrameworks={mockFrameworks}
           industryContexts={mockContexts}
+          activeCases={activeCases}
+          onAttachPattern={handleAttachPattern}
         />
       </div>
     </div>

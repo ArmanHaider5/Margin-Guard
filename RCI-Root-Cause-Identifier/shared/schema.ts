@@ -496,6 +496,10 @@ export const diagnosticCases = pgTable("diagnostic_cases", {
   consultingScope: jsonb("consulting_scope").$type<ConsultingScopeData>(),
   consultantNotes: text("consultant_notes"),
   status: varchar("status").$type<CaseStatus>().default("draft"),
+  // RCI Brain v2: Optional link to a root cause pattern from the knowledge library
+  // Used by "Use in Case" workflow — snapshot is frozen at time of attachment
+  rootCausePatternId: varchar("root_cause_pattern_id"),
+  rootCauseSnapshot: jsonb("root_cause_snapshot").$type<RootCausePatternSnapshot>(),
   createdBy: varchar("created_by").notNull(), // Consultant user ID
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -511,6 +515,16 @@ export interface DiagnosticOutputSnapshot {
   predictions?: RecurrencePrediction[];
   analysisType?: AnalysisType;
   analysisDate?: string;
+}
+
+// RCI Brain v2: Snapshot of a root cause pattern attached to a case
+// Frozen at time of attachment — does NOT mutate the source RootCauseEntry
+export interface RootCausePatternSnapshot {
+  patternName: string;
+  validationChecklist: string[];
+  antiPatterns: string[];
+  highLeverageFix: string;
+  preventionStrategy: string;
 }
 
 // Consulting Scope Data

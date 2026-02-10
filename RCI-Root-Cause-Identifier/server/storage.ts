@@ -32,6 +32,7 @@ import {
   type CaseStatus,
   type DiagnosticOutputSnapshot,
   type ConsultingScopeData,
+  type RootCausePatternSnapshot,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, count, and } from "drizzle-orm";
@@ -144,6 +145,8 @@ export interface IStorage {
     consultingScope: ConsultingScopeData;
     consultantNotes: string;
     status: CaseStatus;
+    rootCausePatternId: string;
+    rootCauseSnapshot: RootCausePatternSnapshot;
   }>): Promise<DiagnosticCase | undefined>;
   deleteDiagnosticCase(id: string): Promise<boolean>;
   finaliseDiagnosticCase(id: string): Promise<DiagnosticCase | undefined>;
@@ -641,6 +644,8 @@ export class DatabaseStorage implements IStorage {
     consultingScope: ConsultingScopeData;
     consultantNotes: string;
     status: CaseStatus;
+    rootCausePatternId: string;
+    rootCauseSnapshot: RootCausePatternSnapshot;
   }>): Promise<DiagnosticCase | undefined> {
     const [diagnosticCase] = await db
       .update(diagnosticCases)
