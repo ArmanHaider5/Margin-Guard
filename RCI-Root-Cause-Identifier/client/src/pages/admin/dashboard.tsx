@@ -83,8 +83,7 @@ export default function AdminDashboard() {
                       </p>
                       <Link href="/admin/clients">
                         <Button data-testid="button-go-to-clients">
-                          <Building2 className="w-4 h-4 mr-2" />
-                          Go to Clients
+                          Select a Client to Continue
                         </Button>
                       </Link>
                     </div>
@@ -107,27 +106,6 @@ export default function AdminDashboard() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Link href="/admin/clients">
-                <Card className="cursor-pointer hover-elevate">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-                    <CardTitle className="text-sm font-medium">Client Organizations</CardTitle>
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        {statsLoading ? (
-                          <Skeleton className="h-6 w-12" />
-                        ) : (
-                          <span className="text-lg font-semibold">{stats?.totalClients || 0} clients</span>
-                        )}
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-
               {/* Case Memory is displayed ONLY within the Client Overview - institutional rule */}
               <Link href="/knowledge">
                 <Card className="cursor-pointer hover-elevate">

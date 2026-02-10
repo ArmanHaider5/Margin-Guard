@@ -195,14 +195,6 @@ export default function AdminClients() {
                   {searchQuery ? "No clients match your search" : "Add your first client to get started"}
                 </p>
               </div>
-              {!searchQuery && (
-                <Link href="/admin/clients/new">
-                  <Button data-testid="button-add-first-client">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Your First Client
-                  </Button>
-                </Link>
-              )}
             </div>
           </Card>
         )}
