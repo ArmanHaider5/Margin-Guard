@@ -208,12 +208,6 @@ export default function AdminDashboard() {
                 <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Link href="/admin/clients/new">
-                  <Button variant="outline" className="w-full justify-start" data-testid="button-add-client">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Add New Client
-                  </Button>
-                </Link>
                 {isConsultant && (
                   <>
                     <Link href="/admin/knowledge">
