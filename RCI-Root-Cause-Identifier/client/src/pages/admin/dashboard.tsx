@@ -10,7 +10,6 @@ import { useRole } from "@/contexts/role-context";
 import { 
   AlertTriangle,
   Building2, 
-  ChevronRight,
   Brain,
   FolderOpen
 } from "lucide-react";
@@ -105,23 +104,6 @@ export default function AdminDashboard() {
               </Card>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Case Memory is displayed ONLY within the Client Overview - institutional rule */}
-              <Link href="/knowledge">
-                <Card className="cursor-pointer hover-elevate">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-                    <CardTitle className="text-sm font-medium">Knowledge Library</CardTitle>
-                    <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Root causes and recommendations</span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            </div>
           </div>
 
           <div className="space-y-6">
