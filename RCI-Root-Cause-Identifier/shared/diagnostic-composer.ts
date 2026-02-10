@@ -20,6 +20,13 @@ import type { EvidenceSignal } from "./evidence-signals";
 
 export type AnalysisMode = "quick" | "deep";
 
+// Evidence anchor for linking findings to document-derived signals
+export interface DiagnosticEvidenceAnchor {
+  documentName: string;
+  signal: string;
+  interpretation: string;
+}
+
 export interface DiagnosticFinding {
   id: string;
   title: string;
@@ -28,6 +35,10 @@ export interface DiagnosticFinding {
   interventionDirection: string;
   isDominant: boolean;
   evidenceNote?: string;
+  // Evidence-driven fields (optional for backward compatibility)
+  evidenceAnchors?: DiagnosticEvidenceAnchor[];
+  evidenceStrength?: "WEAK" | "MODERATE" | "STRONG";
+  narrativeTone?: "EXPLORATORY" | "DIAGNOSTIC" | "CONCLUSIVE";
 }
 
 export interface InterventionTheme {
@@ -345,29 +356,87 @@ export function composeDiagnosticReport(input: ComposeDiagnosticInput): Diagnost
     dominantCategory
   );
   
-  // Check if a cause has matching evidence signals (Deep Analysis only)
-  const hasMatchingEvidence = (category: FourMCategory): boolean => {
+  // Get matching evidence signals for a category (Deep Analysis only)
+  const getMatchingSignals = (category: FourMCategory): EvidenceSignal[] => {
     if (analysisMode !== "deep" || !evidenceSignals || evidenceSignals.length === 0) {
-      return false;
+      return [];
     }
-    return evidenceSignals.some(signal => signal.category === category);
+    return evidenceSignals.filter(signal => signal.category === category);
+  };
+
+  // Determine evidence strength from matching signals
+  const determineEvidenceStrength = (signals: EvidenceSignal[]): "WEAK" | "MODERATE" | "STRONG" => {
+    if (signals.length === 0) return "WEAK";
+    const strongCount = signals.filter(s => s.strength === "strong").length;
+    const mediumCount = signals.filter(s => s.strength === "medium").length;
+    // STRONG requires at least 2 evidence anchors (per spec)
+    if (signals.length >= 2 && (strongCount > 0 || mediumCount >= 2)) return "STRONG";
+    if (signals.length >= 1 && (strongCount > 0 || mediumCount > 0)) return "MODERATE";
+    return "WEAK";
+  };
+
+  // Determine narrative tone based on evidence strength
+  const determineNarrativeTone = (strength: "WEAK" | "MODERATE" | "STRONG"): "EXPLORATORY" | "DIAGNOSTIC" | "CONCLUSIVE" => {
+    if (strength === "STRONG") return "CONCLUSIVE";
+    if (strength === "MODERATE") return "DIAGNOSTIC";
+    return "EXPLORATORY";
+  };
+
+  // Build evidence anchors from matching signals
+  const buildEvidenceAnchors = (signals: EvidenceSignal[]): DiagnosticEvidenceAnchor[] => {
+    return signals.map(signal => ({
+      documentName: (signal.sourceDocuments && signal.sourceDocuments.length > 0) 
+        ? signal.sourceDocuments.join(", ") 
+        : "Uploaded document",
+      signal: signal.matchedTerms.slice(0, 3).join(", "),
+      interpretation: signal.description,
+    }));
+  };
+
+  // Apply narrative tone to whyItMatters text
+  const applyNarrativeTone = (text: string, tone: "EXPLORATORY" | "DIAGNOSTIC" | "CONCLUSIVE"): string => {
+    switch (tone) {
+      case "EXPLORATORY":
+        return `Early signals suggest: ${text}`;
+      case "DIAGNOSTIC":
+        return `There is a recurring pattern indicating: ${text}`;
+      case "CONCLUSIVE":
+        return `The evidence consistently shows: ${text}`;
+      default:
+        return text;
+    }
   };
   
-  // Convert to DiagnosticFinding with optional evidence note
-  // Evidence note added ONLY in Deep Analysis when matching evidence exists
+  // Convert to DiagnosticFinding with evidence-driven fields
   const toDiagnosticFinding = (cause: SelectedRootCause, isDominant: boolean): DiagnosticFinding => {
+    const matchingSignals = getMatchingSignals(cause.category);
+    const evidenceStrength = determineEvidenceStrength(matchingSignals);
+    const narrativeTone = determineNarrativeTone(evidenceStrength);
+    const evidenceAnchors = buildEvidenceAnchors(matchingSignals);
+
     const finding: DiagnosticFinding = {
       id: cause.id,
       title: cause.title,
       category: cause.category,
-      whyItMatters: cause.whyItMatters || "Impact requires further assessment.",
+      whyItMatters: matchingSignals.length > 0
+        ? applyNarrativeTone(cause.whyItMatters || "Impact requires further assessment.", narrativeTone)
+        : cause.whyItMatters || "Impact requires further assessment.",
       interventionDirection: cause.interventionDirection || "Intervention approach to be determined.",
-      isDominant
+      isDominant,
+      evidenceAnchors: evidenceAnchors.length > 0 ? evidenceAnchors : undefined,
+      evidenceStrength: matchingSignals.length > 0 ? evidenceStrength : undefined,
+      narrativeTone: matchingSignals.length > 0 ? narrativeTone : undefined,
     };
     
-    // Add evidence note for dominant findings with matching evidence (Deep mode only)
-    if (isDominant && hasMatchingEvidence(cause.category)) {
-      finding.evidenceNote = "Supporting evidence observed in uploaded records.";
+    // Evidence note: evidence-based phrasing (replaces old "Based on problem description")
+    if (isDominant && matchingSignals.length > 0) {
+      finding.evidenceNote = evidenceStrength === "STRONG"
+        ? "Supported by consistent document-derived evidence."
+        : evidenceStrength === "MODERATE"
+          ? "Supported by partial document-derived evidence."
+          : "Insufficient evidence — further document review recommended.";
+    } else if (isDominant && matchingSignals.length === 0 && analysisMode === "deep") {
+      finding.evidenceNote = "No matching document evidence found for this category.";
     }
     
     return finding;

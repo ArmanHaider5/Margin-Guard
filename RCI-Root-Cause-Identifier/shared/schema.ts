@@ -161,6 +161,19 @@ export const clientAnalyses = pgTable("client_analyses", {
   completedAt: timestamp("completed_at"),
 });
 
+// Evidence anchor: links a finding to a specific document signal
+export interface EvidenceAnchor {
+  documentName: string;
+  signal: string;        // metric, anomaly, or quote
+  interpretation: string;
+}
+
+// Evidence-driven finding strength levels
+export type EvidenceStrength = "WEAK" | "MODERATE" | "STRONG";
+
+// Narrative tone controls language style in finding descriptions
+export type NarrativeTone = "EXPLORATORY" | "DIAGNOSTIC" | "CONCLUSIVE";
+
 // Analysis Finding structure
 export interface AnalysisFinding {
   id: string;
@@ -173,6 +186,10 @@ export interface AnalysisFinding {
   causes: string[];
   estimatedCostImpact?: string;
   evidence: string[]; // References to source documents/data
+  // Evidence-driven fields (optional for backward compatibility)
+  evidenceAnchors?: EvidenceAnchor[];
+  evidenceStrength?: EvidenceStrength;
+  narrativeTone?: NarrativeTone;
 }
 
 // Cost Saving Opportunity

@@ -331,6 +331,12 @@ export default function AnalysisResults() {
           {findings.map((finding, idx) => {
             const colors = fourMColors[finding.fourMCategory] || fourMColors.Money;
             const severity = severityColors[finding.severity] || severityColors.medium;
+            const evidenceStrengthColors: Record<string, { bg: string; text: string; label: string }> = {
+              STRONG: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", label: "Strong" },
+              MODERATE: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", label: "Moderate" },
+              WEAK: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", label: "Weak" },
+            };
+            const esStyle = finding.evidenceStrength ? evidenceStrengthColors[finding.evidenceStrength] : null;
             return (
               <Card key={finding.id || idx} className="p-4 border-l-4" style={{ borderLeftColor: 'currentColor' }}>
                 <div className="flex items-start gap-4">
@@ -341,6 +347,11 @@ export default function AnalysisResults() {
                       <Badge className={`${severity.bg} ${severity.text}`}>{finding.severity}</Badge>
                       {finding.frequency > 1 && (
                         <Badge variant="outline">{finding.frequency}x occurrences</Badge>
+                      )}
+                      {esStyle && (
+                        <Badge className={`${esStyle.bg} ${esStyle.text}`}>
+                          Evidence: {esStyle.label}
+                        </Badge>
                       )}
                     </div>
                     <p className="text-muted-foreground mb-3">{finding.description}</p>
@@ -354,6 +365,23 @@ export default function AnalysisResults() {
                       </div>
                     )}
                     
+                    {finding.evidenceAnchors && finding.evidenceAnchors.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-sm font-medium mb-1 flex items-center gap-1">
+                          <Lightbulb className="w-4 h-4" /> Evidence Anchors:
+                        </p>
+                        <div className="space-y-2 ml-1">
+                          {finding.evidenceAnchors.map((anchor: any, i: number) => (
+                            <div key={i} className="pl-3 border-l-2 border-muted text-sm">
+                              <p className="text-xs text-muted-foreground">{anchor.documentName}</p>
+                              <p className="font-medium">{anchor.signal}</p>
+                              <p className="text-muted-foreground">{anchor.interpretation}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {finding.evidence && finding.evidence.length > 0 && (
                       <div className="mb-3">
                         <p className="text-sm font-medium mb-1 flex items-center gap-1">
@@ -371,6 +399,12 @@ export default function AnalysisResults() {
                         <span className="font-medium">Estimated Impact:</span>
                         <span>{finding.estimatedCostImpact}</span>
                       </div>
+                    )}
+
+                    {finding.evidenceStrength === "WEAK" && (
+                      <p className="text-xs text-muted-foreground italic mt-2">
+                        Insufficient evidence — further document review recommended.
+                      </p>
                     )}
                   </div>
                 </div>

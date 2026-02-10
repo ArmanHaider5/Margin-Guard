@@ -42,7 +42,7 @@ import { composeDiagnosticReport, type DiagnosticReport } from "./diagnostic-com
 import { extractEvidenceSignalsFromDocuments, type ProcessedDocument } from "./evidence-signals";
 
 // Re-export DiagnosticReport types for consumers
-export type { DiagnosticReport, DiagnosticFinding, InterventionTheme } from "./diagnostic-composer";
+export type { DiagnosticReport, DiagnosticFinding, DiagnosticEvidenceAnchor, InterventionTheme } from "./diagnostic-composer";
 
 /**
  * ============================================================================
@@ -250,6 +250,55 @@ function getIndustryLanguage(industry: string): IndustryLanguage {
         fixApproach: "Assign clear delivery ownership at each stage"
       };
   }
+}
+
+// Evidence-driven industry interpretation layer
+// Varies "Why It Matters" wording by industry for Money findings
+export type IndustryMoneyInterpretation = {
+  whyItMattersOverride: string;
+  signalInterpretations: Record<string, string>;
+};
+
+const INDUSTRY_MONEY_INTERPRETATIONS: Record<string, IndustryMoneyInterpretation> = {
+  manufacturing: {
+    whyItMattersOverride: "Financial leakage in manufacturing often ties to WIP accumulation, unplanned downtime costs, overtime spend, and inventory carrying costs that erode margins.",
+    signalInterpretations: {
+      "overdue": "Overdue payments may indicate cash tied up in WIP or slow receivables from production delays.",
+      "cash flow problem": "Cash flow gaps in manufacturing commonly stem from inventory carrying costs and production scheduling mismatches.",
+      "late payment": "Late payments may reflect downstream production bottlenecks causing invoicing delays.",
+    },
+  },
+  healthcare: {
+    whyItMattersOverride: "Healthcare financial issues frequently tie to reimbursement delays, payer mix imbalances, and capacity utilisation shortfalls that reduce revenue per bed.",
+    signalInterpretations: {
+      "overdue": "Overdue payments may reflect claim denials or slow reimbursement cycles from insurers.",
+      "cash flow problem": "Cash flow strain in healthcare often correlates with payer mix issues and delayed reimbursements.",
+      "late payment": "Late payments may indicate coding or documentation issues causing claim processing delays.",
+    },
+  },
+  logistics: {
+    whyItMattersOverride: "Logistics financial pressure often stems from fuel cost volatility, SLA penalty exposure, and route inefficiencies that compress already thin margins.",
+    signalInterpretations: {
+      "overdue": "Overdue receivables in logistics may indicate SLA disputes or documentation gaps delaying payment.",
+      "cash flow problem": "Cash flow issues frequently link to fuel price spikes and delayed shipper payments.",
+      "late payment": "Late payments may reflect disputed delivery penalties or complex multi-party billing.",
+    },
+  },
+};
+
+// Get industry-specific Money interpretation (returns null if no match)
+export function getIndustryMoneyInterpretation(industry: string): IndustryMoneyInterpretation | null {
+  const lower = (industry || "").toLowerCase();
+  if (lower.includes("manufacturing") || lower.includes("construction")) {
+    return INDUSTRY_MONEY_INTERPRETATIONS.manufacturing;
+  }
+  if (lower.includes("healthcare") || lower.includes("hospital") || lower.includes("pharma")) {
+    return INDUSTRY_MONEY_INTERPRETATIONS.healthcare;
+  }
+  if (lower.includes("logistics") || lower.includes("shipping") || lower.includes("transport")) {
+    return INDUSTRY_MONEY_INTERPRETATIONS.logistics;
+  }
+  return null;
 }
 
 export interface RootCauseOutput {

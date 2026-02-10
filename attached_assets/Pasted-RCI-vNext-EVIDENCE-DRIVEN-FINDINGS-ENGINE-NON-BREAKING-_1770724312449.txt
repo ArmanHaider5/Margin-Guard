@@ -1,0 +1,54 @@
+RCI vNext – EVIDENCE-DRIVEN FINDINGS ENGINE (NON-BREAKING UPGRADE)
+
+Objective:
+Upgrade the Findings generator to be evidence-driven, industry-aware, and non-generic so outputs feel consulting-grade and sellable.
+
+Instructions:
+
+1. Extend Finding model to include:
+   - evidenceAnchors: {
+       documentName: string;
+       signal: string;        // metric, anomaly, or quote
+       interpretation: string;
+     }[]
+   - evidenceStrength: "WEAK" | "MODERATE" | "STRONG"
+   - narrativeTone: "EXPLORATORY" | "DIAGNOSTIC" | "CONCLUSIVE"
+
+2. Update Findings generation logic:
+   - Derive findings primarily from detected evidence signals in uploaded documents
+   - Require at least 2 evidenceAnchors for STRONG confidence
+   - If fewer than 2 anchors exist:
+       - Set evidenceStrength = WEAK
+       - Set narrativeTone = EXPLORATORY
+   - Map evidence patterns to root cause patterns (do not guess from problem text alone)
+
+3. Add lightweight industry interpretation layer:
+   - Manufacturing: tie Money findings to WIP, downtime, overtime, inventory carrying cost
+   - Healthcare: tie Money findings to reimbursement delays, payer mix, capacity utilisation
+   - Logistics: tie Money findings to fuel cost volatility, SLA penalties, route inefficiencies
+   - Use this layer to vary "Why It Matters" wording by industry
+
+4. Implement duplicate root cause collapsing:
+   - If multiple findings map to the same root cause category:
+       - Keep 1 primary finding (highest evidenceStrength)
+       - Allow 1 secondary finding
+       - Suppress additional duplicates
+
+5. Vary narrative language by narrativeTone:
+   - EXPLORATORY: "Early signals suggest...", "Initial evidence indicates..."
+   - DIAGNOSTIC: "There is a recurring pattern indicating..."
+   - CONCLUSIVE: "The evidence consistently shows..."
+
+6. Update Findings UI rendering:
+   - Display Evidence Anchors section (document name + signal)
+   - Display Evidence Strength badge (Weak / Moderate / Strong)
+   - Update warning copy:
+       - Replace "Based on problem description" with evidence-based phrasing
+       - Only show "insufficient evidence" when evidenceStrength = WEAK
+
+7. Do NOT remove existing fields.
+8. Do NOT break existing APIs, routes, permissions, or workflows.
+9. Keep backwards compatibility with existing findings.
+10. Add minimal inline comments for future learning loop integration.
+
+Confirm once complete.

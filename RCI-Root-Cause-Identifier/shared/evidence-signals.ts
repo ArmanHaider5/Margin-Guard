@@ -20,6 +20,8 @@ export type EvidenceSignal = {
   description: string;
   matchedTerms: string[];
   strength: "weak" | "medium" | "strong";
+  // Evidence-driven: track which documents contributed to this signal
+  sourceDocuments?: string[];
 };
 
 export interface ProcessedDocument {
@@ -162,6 +164,22 @@ export function extractEvidenceSignalsFromDocuments(
 
   const signals: EvidenceSignal[] = [];
 
+  // Track which documents contribute to each signal category
+  const categoryDocNames: Record<string, string[]> = {};
+  for (const doc of documents) {
+    const docContent = (doc.content || "").toLowerCase();
+    if (!docContent.trim()) continue;
+    for (const rule of SIGNAL_RULES) {
+      const hasMatch = rule.terms.some(term => docContent.includes(term.toLowerCase()));
+      if (hasMatch) {
+        if (!categoryDocNames[rule.category]) categoryDocNames[rule.category] = [];
+        if (!categoryDocNames[rule.category].includes(doc.name)) {
+          categoryDocNames[rule.category].push(doc.name);
+        }
+      }
+    }
+  }
+
   for (const rule of SIGNAL_RULES) {
     const { count, matchedTerms } = countTermOccurrences(combinedContent, rule.terms);
 
@@ -174,7 +192,8 @@ export function extractEvidenceSignalsFromDocuments(
         category: rule.category,
         description: rule.descriptionTemplate(matchedTerms),
         matchedTerms: sortedTerms,
-        strength: determineStrength(count)
+        strength: determineStrength(count),
+        sourceDocuments: categoryDocNames[rule.category] || [],
       };
       signals.push(signal);
     }

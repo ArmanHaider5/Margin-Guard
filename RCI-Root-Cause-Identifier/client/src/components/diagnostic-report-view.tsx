@@ -33,8 +33,17 @@ interface DiagnosticReportViewProps {
   report: DiagnosticReport;
 }
 
+const evidenceStrengthStyles: Record<string, { bg: string; text: string; label: string }> = {
+  STRONG: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", label: "Strong" },
+  MODERATE: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", label: "Moderate" },
+  WEAK: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", label: "Weak" },
+};
+
 function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPrimary: boolean }) {
   const colors = fourMColors[finding.category as keyof typeof fourMColors] || fourMColors.Money;
+  const strengthStyle = finding.evidenceStrength
+    ? evidenceStrengthStyles[finding.evidenceStrength] || evidenceStrengthStyles.WEAK
+    : null;
   
   return (
     <Card 
@@ -47,6 +56,14 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
         {isPrimary && (
           <Badge variant="default" data-testid={`badge-primary-${finding.id}`}>
             Primary
+          </Badge>
+        )}
+        {strengthStyle && (
+          <Badge 
+            className={`${strengthStyle.bg} ${strengthStyle.text}`}
+            data-testid={`badge-evidence-strength-${finding.id}`}
+          >
+            Evidence: {strengthStyle.label}
           </Badge>
         )}
       </div>
@@ -66,6 +83,26 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
           <p className="font-medium text-muted-foreground mb-1">Intervention Direction:</p>
           <p>{finding.interventionDirection}</p>
         </div>
+
+        {finding.evidenceAnchors && finding.evidenceAnchors.length > 0 && (
+          <div 
+            className="pt-2 border-t"
+            data-testid={`finding-evidence-anchors-${finding.id}`}
+          >
+            <p className="font-medium text-muted-foreground mb-2 flex items-center gap-1">
+              <FileText className="w-4 h-4" /> Evidence Anchors:
+            </p>
+            <div className="space-y-2">
+              {finding.evidenceAnchors.map((anchor, idx) => (
+                <div key={idx} className="pl-3 border-l-2 border-muted">
+                  <p className="text-xs text-muted-foreground">{anchor.documentName}</p>
+                  <p className="font-medium">{anchor.signal}</p>
+                  <p className="text-muted-foreground">{anchor.interpretation}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         
         {finding.evidenceNote && (
           <div 
@@ -74,6 +111,12 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
           >
             <p className="text-muted-foreground italic">{finding.evidenceNote}</p>
           </div>
+        )}
+
+        {finding.evidenceStrength === "WEAK" && (
+          <p className="text-xs text-muted-foreground italic">
+            Insufficient evidence — further document review recommended.
+          </p>
         )}
       </div>
     </Card>
