@@ -39,7 +39,7 @@ import type { RootCauseSelection, SelectedRootCause, FourMCategory, SelectionCon
 import { selectRootCausesFromLibrary } from "./root-cause-library";
 import { getArchetypeById } from "./recommendation-archetypes";
 import { composeDiagnosticReport, type DiagnosticReport } from "./diagnostic-composer";
-import { extractEvidenceSignalsFromDocuments, type ProcessedDocument } from "./evidence-signals";
+import { extractEvidenceSignalsFromDocuments, extractConcreteSignals, type ProcessedDocument } from "./evidence-signals";
 
 // Re-export DiagnosticReport types for consumers
 export type { DiagnosticReport, DiagnosticFinding, DiagnosticEvidenceAnchor, InterventionTheme } from "./diagnostic-composer";
@@ -160,8 +160,17 @@ export function runAnalysis(input: RunAnalysisInput): RunAnalysisOutput {
   };
   const dynamicAnalysis = buildDynamicAnalysis(analysisInput, rootCauseSelection);
 
-  // Compose diagnostic report using rule-based templates
-  // Pass evidenceSignals for Deep Analysis narrative enrichment
+  let concreteSignals: import("./evidence-signals").CategorisedExtractedSignal[] = [];
+  if (mode === "deep" && documents && documents.length > 0) {
+    const processedDocsForSignals: ProcessedDocument[] = documents.map((doc, idx) => ({
+      id: `doc-${idx}`,
+      name: doc.name || `Document ${idx + 1}`,
+      content: doc.content || doc.text || doc.data || "",
+      type: "document"
+    }));
+    concreteSignals = extractConcreteSignals(processedDocsForSignals);
+  }
+
   const diagnosticReport = composeDiagnosticReport({
     analysisMode: mode,
     selectedRootCauses: rootCauseSelection,
@@ -169,6 +178,7 @@ export function runAnalysis(input: RunAnalysisInput): RunAnalysisOutput {
     selectedContext: selectedContext as PrimaryContext | undefined,
     documentsPresent: documents !== undefined && documents.length > 0,
     evidenceSignals: selectionContext.evidenceSignals,
+    concreteSignals,
   });
 
   // Confidence level based on mode

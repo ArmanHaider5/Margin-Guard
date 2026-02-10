@@ -16,7 +16,8 @@ import {
   FileText,
   AlertCircle,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  ClipboardCheck
 } from "lucide-react";
 import { useState } from "react";
 import type { DiagnosticReport, DiagnosticFinding, InterventionTheme } from "@shared/diagnostic-composer";
@@ -39,24 +40,20 @@ const evidenceStrengthStyles: Record<string, { bg: string; text: string; label: 
   WEAK: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", label: "Weak" },
 };
 
-const confidenceLabel: Record<string, string> = {
-  STRONG: "High confidence — validated by document evidence",
-  MODERATE: "Moderate confidence — hypothesis supported by partial evidence",
-  WEAK: "Low confidence — requires further document evidence to validate",
-};
-
 function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPrimary: boolean }) {
   const colors = fourMColors[finding.category as keyof typeof fourMColors] || fourMColors.Money;
   const strengthStyle = finding.evidenceStrength
     ? evidenceStrengthStyles[finding.evidenceStrength] || evidenceStrengthStyles.WEAK
     : null;
   
+  const hasSignals = finding.evidenceAnchors && finding.evidenceAnchors.length > 0;
+  const noSignalsFallback = !hasSignals && finding.evidenceStrength === "WEAK";
+
   return (
     <Card 
       className={`p-4 ${isPrimary ? "border-l-4 border-l-primary" : ""}`}
       data-testid={`finding-${finding.id}`}
     >
-      {/* Header: Title + Badges */}
       <div className="flex items-center gap-2 flex-wrap mb-4">
         <h3 className="font-semibold text-base">{finding.title}</h3>
         <Badge className={`${colors.bg} ${colors.text}`}>{finding.category}</Badge>
@@ -76,14 +73,13 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
       </div>
       
       <div className="space-y-3 text-sm">
-        {/* What We Observed */}
-        {finding.evidenceAnchors && finding.evidenceAnchors.length > 0 && (
+        {hasSignals && (
           <div data-testid={`finding-evidence-anchors-${finding.id}`}>
             <p className="font-medium mb-1 flex items-center gap-1">
               <FileText className="w-3.5 h-3.5 text-muted-foreground" /> What We Observed
             </p>
             <ul className="space-y-1 ml-5">
-              {finding.evidenceAnchors.map((anchor, idx) => (
+              {finding.evidenceAnchors!.map((anchor, idx) => (
                 <li key={idx} className="list-disc text-muted-foreground">
                   <span className="font-medium text-foreground">{anchor.signal}</span>
                   <span className="text-xs ml-1">({anchor.documentName})</span>
@@ -93,23 +89,35 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
           </div>
         )}
 
-        {/* What This Indicates */}
         <div data-testid={`finding-rootcause-${finding.id}`}>
           <p className="font-medium mb-1 flex items-center gap-1">
             <Target className="w-3.5 h-3.5 text-muted-foreground" /> What This Indicates
           </p>
           <p className="text-muted-foreground ml-5">{finding.title}</p>
         </div>
-        
-        {/* Why It Matters */}
-        <div data-testid={`finding-whyitmatters-${finding.id}`}>
-          <p className="font-medium mb-1 flex items-center gap-1">
-            <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Why It Matters
-          </p>
-          <p className="text-muted-foreground ml-5">{finding.whyItMatters}</p>
-        </div>
-        
-        {/* Suggested Intervention Direction */}
+
+        {finding.impactObserved && finding.impactObserved.length > 0 && (
+          <div data-testid={`finding-impact-${finding.id}`}>
+            <p className="font-medium mb-1 flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Impact Observed (Industry Context)
+            </p>
+            <ul className="space-y-1 ml-5">
+              {finding.impactObserved.map((bullet, idx) => (
+                <li key={idx} className="list-disc text-muted-foreground">{bullet}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {!finding.impactObserved && finding.whyItMatters && (
+          <div data-testid={`finding-whyitmatters-${finding.id}`}>
+            <p className="font-medium mb-1 flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> What This Indicates
+            </p>
+            <p className="text-muted-foreground ml-5">{finding.whyItMatters}</p>
+          </div>
+        )}
+
         <div data-testid={`finding-intervention-${finding.id}`}>
           <p className="font-medium mb-1 flex items-center gap-1">
             <Lightbulb className="w-3.5 h-3.5 text-muted-foreground" /> Suggested Intervention Direction
@@ -119,31 +127,33 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
           </ul>
         </div>
 
-        {/* Confidence & Next Evidence */}
-        <div className="pt-2 border-t" data-testid={`finding-confidence-${finding.id}`}>
-          <p className="font-medium mb-1 flex items-center gap-1">
-            <Shield className="w-3.5 h-3.5 text-muted-foreground" /> Confidence & Next Evidence to Validate
-          </p>
-          <p className="text-muted-foreground ml-5 text-xs">
-            {finding.evidenceStrength
-              ? confidenceLabel[finding.evidenceStrength] || confidenceLabel.WEAK
-              : confidenceLabel.WEAK}
-          </p>
-          {finding.evidenceStrength === "WEAK" && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 ml-5 mt-1">
-              Upload relevant documents to strengthen this finding.
+        {finding.whatToValidateNext && finding.whatToValidateNext.length > 0 && (
+          <div className="pt-2 border-t" data-testid={`finding-validate-${finding.id}`}>
+            <p className="font-medium mb-1 flex items-center gap-1">
+              <ClipboardCheck className="w-3.5 h-3.5 text-muted-foreground" /> What to Validate Next
             </p>
-          )}
-        </div>
+            <ul className="space-y-1 ml-5">
+              {finding.whatToValidateNext.map((doc, idx) => (
+                <li key={idx} className="list-disc text-muted-foreground text-xs">{doc}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-        {/* Collapsed Note */}
+        {noSignalsFallback && (
+          <div className="pt-2 border-t" data-testid={`finding-no-signals-${finding.id}`}>
+            <p className="text-xs text-amber-600 dark:text-amber-400 ml-5 italic">
+              No concrete operational or financial signals extracted yet. Upload Ops, Finance, or Maintenance records to strengthen this finding.
+            </p>
+          </div>
+        )}
+
         {finding.collapsedNote && (
           <p className="text-xs text-amber-600 dark:text-amber-400 italic ml-5">
             {finding.collapsedNote}
           </p>
         )}
 
-        {/* Evidence Note */}
         {finding.evidenceNote && (
           <div data-testid={`finding-evidence-${finding.id}`}>
             <p className="text-muted-foreground italic text-xs ml-5">{finding.evidenceNote}</p>
@@ -176,7 +186,6 @@ export function DiagnosticReportView({ report }: DiagnosticReportViewProps) {
   
   return (
     <div className="space-y-6">
-      {/* Mode Indicator */}
       <Card className="p-4 border-l-4 border-l-primary" data-testid="card-report-mode">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary" />
@@ -192,7 +201,6 @@ export function DiagnosticReportView({ report }: DiagnosticReportViewProps) {
         </div>
       </Card>
 
-      {/* Executive Summary */}
       <Card className="p-6" data-testid="card-executive-summary">
         <div className="flex items-start gap-3">
           <Target className="w-6 h-6 text-primary mt-0.5 flex-shrink-0" />
@@ -205,7 +213,6 @@ export function DiagnosticReportView({ report }: DiagnosticReportViewProps) {
         </div>
       </Card>
 
-      {/* Context Shift Notice */}
       {report.contextShiftNote && (
         <Card className="p-4 border-l-4 border-l-amber-500" data-testid="card-context-shift">
           <div className="flex items-start gap-3">
@@ -220,7 +227,6 @@ export function DiagnosticReportView({ report }: DiagnosticReportViewProps) {
         </Card>
       )}
 
-      {/* Primary Findings */}
       <Card className="p-6" data-testid="card-primary-findings">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5" />
@@ -241,7 +247,6 @@ export function DiagnosticReportView({ report }: DiagnosticReportViewProps) {
         </div>
       </Card>
 
-      {/* Secondary Findings (Collapsible) */}
       {hasSecondaryFindings && (
         <Card className="p-6" data-testid="card-secondary-findings">
           <button
@@ -272,7 +277,6 @@ export function DiagnosticReportView({ report }: DiagnosticReportViewProps) {
         </Card>
       )}
 
-      {/* Intervention Themes */}
       {report.interventionThemes.length > 0 && (
         <Card className="p-6" data-testid="card-intervention-themes">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -287,7 +291,6 @@ export function DiagnosticReportView({ report }: DiagnosticReportViewProps) {
         </Card>
       )}
 
-      {/* Prevention Focus */}
       {report.preventionFocus.length > 0 && (
         <Card className="p-6" data-testid="card-prevention-focus">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -309,7 +312,6 @@ export function DiagnosticReportView({ report }: DiagnosticReportViewProps) {
         </Card>
       )}
 
-      {/* Summary Stats */}
       <div className="text-center text-sm text-muted-foreground" data-testid="text-stats-summary">
         {totalFindings} root cause{totalFindings !== 1 ? "s" : ""} identified
         {report.interventionThemes.length > 0 && ` • ${report.interventionThemes.length} intervention theme${report.interventionThemes.length !== 1 ? "s" : ""}`}

@@ -16,7 +16,7 @@
  */
 
 import type { RootCauseSelection, SelectedRootCause, FourMCategory, PrimaryContext } from "./root-cause-library";
-import type { EvidenceSignal } from "./evidence-signals";
+import type { EvidenceSignal, CategorisedExtractedSignal } from "./evidence-signals";
 
 export type AnalysisMode = "quick" | "deep";
 
@@ -40,6 +40,9 @@ export interface DiagnosticFinding {
   evidenceStrength?: "WEAK" | "MODERATE" | "STRONG";
   narrativeTone?: "EXPLORATORY" | "DIAGNOSTIC" | "CONCLUSIVE";
   collapsedNote?: string;
+  // Signal-driven impact and validation (vNext)
+  impactObserved?: string[];
+  whatToValidateNext?: string[];
 }
 
 export interface InterventionTheme {
@@ -66,6 +69,7 @@ export interface ComposeDiagnosticInput {
   selectedContext?: PrimaryContext;
   documentsPresent: boolean;
   evidenceSignals?: EvidenceSignal[];
+  concreteSignals?: CategorisedExtractedSignal[];
 }
 
 /**
@@ -316,7 +320,7 @@ function composeExecutiveSummary(
  * Uses rule-based templated composition only - NO AI-generated text.
  */
 export function composeDiagnosticReport(input: ComposeDiagnosticInput): DiagnosticReport {
-  const { analysisMode, selectedRootCauses, industry, selectedContext, documentsPresent, evidenceSignals } = input;
+  const { analysisMode, selectedRootCauses, industry, selectedContext, documentsPresent, evidenceSignals, concreteSignals } = input;
   
   const allCauses: SelectedRootCause[] = selectedRootCauses.categories
     ?.flatMap(cat => cat.causes || []) || [];
@@ -356,90 +360,175 @@ export function composeDiagnosticReport(input: ComposeDiagnosticInput): Diagnost
     contextShift,
     dominantCategory
   );
-  
-  // Get matching evidence signals for a category (Deep Analysis only)
-  const getMatchingSignals = (category: FourMCategory): EvidenceSignal[] => {
-    if (analysisMode !== "deep" || !evidenceSignals || evidenceSignals.length === 0) {
-      return [];
-    }
-    return evidenceSignals.filter(signal => signal.category === category);
+
+  const concreteSignalsList = concreteSignals || [];
+  const termSignalsList = evidenceSignals || [];
+
+  const getMatchingConcreteSignals = (category: FourMCategory): CategorisedExtractedSignal[] => {
+    return concreteSignalsList.filter(s => s.category === category);
   };
 
-  // Determine evidence strength from matching signals
-  const determineEvidenceStrength = (signals: EvidenceSignal[]): "WEAK" | "MODERATE" | "STRONG" => {
-    if (signals.length === 0) return "WEAK";
-    const strongCount = signals.filter(s => s.strength === "strong").length;
-    const mediumCount = signals.filter(s => s.strength === "medium").length;
-    // STRONG requires at least 2 evidence anchors (per spec)
-    if (signals.length >= 2 && (strongCount > 0 || mediumCount >= 2)) return "STRONG";
-    if (signals.length >= 1 && (strongCount > 0 || mediumCount > 0)) return "MODERATE";
+  const getMatchingTermSignals = (category: FourMCategory): EvidenceSignal[] => {
+    if (analysisMode !== "deep") return [];
+    return termSignalsList.filter(signal => signal.category === category);
+  };
+
+  const computeEvidenceStrength = (
+    concreteCount: number,
+    termSignals: EvidenceSignal[],
+    anchorCount: number
+  ): "WEAK" | "MODERATE" | "STRONG" => {
+    if (anchorCount === 0) return "WEAK";
+    const strongTerms = termSignals.filter(s => s.strength === "strong").length;
+    const mediumTerms = termSignals.filter(s => s.strength === "medium").length;
+    if (concreteCount >= 2 || (anchorCount >= 2 && (strongTerms > 0 || mediumTerms >= 2))) return "STRONG";
+    if (concreteCount >= 1 || (anchorCount >= 1 && (strongTerms > 0 || mediumTerms > 0))) return "MODERATE";
     return "WEAK";
   };
 
-  // Determine narrative tone based on evidence strength
-  const determineNarrativeTone = (strength: "WEAK" | "MODERATE" | "STRONG"): "EXPLORATORY" | "DIAGNOSTIC" | "CONCLUSIVE" => {
+  const computeNarrativeTone = (strength: "WEAK" | "MODERATE" | "STRONG"): "EXPLORATORY" | "DIAGNOSTIC" | "CONCLUSIVE" => {
     if (strength === "STRONG") return "CONCLUSIVE";
     if (strength === "MODERATE") return "DIAGNOSTIC";
     return "EXPLORATORY";
   };
 
-  // Build evidence anchors from matching signals
-  const buildEvidenceAnchors = (signals: EvidenceSignal[]): DiagnosticEvidenceAnchor[] => {
-    return signals.map(signal => ({
-      documentName: (signal.sourceDocuments && signal.sourceDocuments.length > 0) 
-        ? signal.sourceDocuments.join(", ") 
-        : "Uploaded document",
-      signal: signal.matchedTerms.slice(0, 3).join(", "),
-      interpretation: signal.description,
-    }));
+  const buildAnchors = (category: FourMCategory): DiagnosticEvidenceAnchor[] => {
+    const anchors: DiagnosticEvidenceAnchor[] = [];
+    const seen = new Set<string>();
+
+    const matching = getMatchingConcreteSignals(category);
+    for (const sig of matching) {
+      const key = `${sig.documentName}:${sig.signal}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      anchors.push({
+        documentName: sig.documentName,
+        signal: sig.signal,
+        interpretation: sig.rawText,
+      });
+      if (anchors.length >= 5) break;
+    }
+
+    if (anchors.length === 0) {
+      const termSigs = getMatchingTermSignals(category);
+      for (const signal of termSigs) {
+        const docName = (signal.sourceDocuments && signal.sourceDocuments.length > 0)
+          ? signal.sourceDocuments.join(", ")
+          : null;
+        if (!docName) continue;
+        anchors.push({
+          documentName: docName,
+          signal: signal.matchedTerms.slice(0, 3).join(", "),
+          interpretation: signal.description,
+        });
+        if (anchors.length >= 5) break;
+      }
+    }
+
+    return anchors;
   };
 
-  // Apply narrative tone to whyItMatters text
-  const applyNarrativeTone = (text: string, tone: "EXPLORATORY" | "DIAGNOSTIC" | "CONCLUSIVE"): string => {
-    switch (tone) {
-      case "EXPLORATORY":
-        return `Early signals suggest: ${text}`;
-      case "DIAGNOSTIC":
-        return `There is a recurring pattern indicating: ${text}`;
-      case "CONCLUSIVE":
-        return `The evidence consistently shows: ${text}`;
-      default:
-        return text;
-    }
+  const INDUSTRY_IMPACT_CHAINS: Record<string, Record<FourMCategory, string[]>> = {
+    manufacturing: {
+      Money: ["WIP accumulation ties up working capital", "Unplanned overtime inflates labour cost per unit"],
+      Manpower: ["Skill gaps drive rework and quality variation", "Overtime fatigue reduces output quality"],
+      Machinery: ["Downtime cascades into schedule slippage", "Deferred maintenance increases breakdown frequency"],
+      Materials: ["Stockouts halt production lines", "Quality rejections trigger rework and waste"],
+    },
+    healthcare: {
+      Money: ["Reimbursement delays compress operating cashflow", "Capacity under-utilisation increases fixed cost per patient"],
+      Manpower: ["Staff shortages increase patient wait times", "Burnout drives turnover and locum costs"],
+      Machinery: ["Equipment downtime delays diagnostic workflows", "System outages disrupt patient record access"],
+      Materials: ["Supply shortages delay treatment protocols", "Expired stock incurs waste and compliance risk"],
+    },
+    logistics: {
+      Money: ["SLA penalties directly erode margins", "Fuel cost volatility compresses route profitability"],
+      Manpower: ["Driver shortage increases overtime and route delays", "Dispatch errors from understaffing cause SLA breaches"],
+      Machinery: ["Fleet breakdowns cause delivery failures", "Aging vehicles increase fuel consumption per km"],
+      Materials: ["Warehouse stockout delays order fulfilment", "Supplier delays cascade into customer delivery SLAs"],
+    },
   };
-  
-  // Convert to DiagnosticFinding with evidence-driven fields
+
+  const getIndustryKeyForComposer = (ind: string): string => {
+    const lower = (ind || "").toLowerCase();
+    if (lower.includes("manufacturing") || lower.includes("construction")) return "manufacturing";
+    if (lower.includes("healthcare") || lower.includes("hospital")) return "healthcare";
+    if (lower.includes("logistics") || lower.includes("shipping") || lower.includes("transport")) return "logistics";
+    return "general";
+  };
+
+  const buildImpactBullets = (category: FourMCategory): string[] => {
+    const bullets: string[] = [];
+    const matching = getMatchingConcreteSignals(category);
+    for (const sig of matching.slice(0, 3)) {
+      bullets.push(`${sig.signal} (${sig.documentName})`);
+    }
+    const indKey = getIndustryKeyForComposer(industry);
+    const chains = INDUSTRY_IMPACT_CHAINS[indKey];
+    if (chains && chains[category]) {
+      for (const b of chains[category]) {
+        if (bullets.length >= 5) break;
+        bullets.push(b);
+      }
+    }
+    return bullets;
+  };
+
+  const VALIDATION_DOCS: Record<FourMCategory, string[]> = {
+    Money: [
+      "Aged receivables report (last 3 months)",
+      "Monthly P&L or management accounts",
+      "Cash flow statement or forecast",
+    ],
+    Manpower: [
+      "Overtime log or attendance records",
+      "Staff turnover report (last 12 months)",
+      "Training records or competency matrix",
+    ],
+    Machinery: [
+      "Maintenance log or work order history",
+      "Equipment downtime register",
+      "Asset condition or inspection report",
+    ],
+    Materials: [
+      "Inventory reconciliation report",
+      "Supplier delivery performance log",
+      "Quality rejection or rework register",
+    ],
+  };
+
   const toDiagnosticFinding = (cause: SelectedRootCause, isDominant: boolean): DiagnosticFinding => {
-    const matchingSignals = getMatchingSignals(cause.category);
-    const evidenceStrength = determineEvidenceStrength(matchingSignals);
-    const narrativeTone = determineNarrativeTone(evidenceStrength);
-    const evidenceAnchors = buildEvidenceAnchors(matchingSignals);
+    const matchingConcrete = getMatchingConcreteSignals(cause.category);
+    const matchingTerms = getMatchingTermSignals(cause.category);
+    const anchors = buildAnchors(cause.category);
+    const hasAnySignals = matchingConcrete.length > 0 || matchingTerms.length > 0;
+
+    const evidenceStrength = computeEvidenceStrength(matchingConcrete.length, matchingTerms, anchors.length);
+    const narrativeTone = computeNarrativeTone(evidenceStrength);
+    const impactBullets = buildImpactBullets(cause.category);
+
+    const whatToValidateNext = hasAnySignals
+      ? (VALIDATION_DOCS[cause.category] || []).slice(0, 2)
+      : (VALIDATION_DOCS[cause.category] || []).slice(0, 3);
 
     const finding: DiagnosticFinding = {
       id: cause.id,
       title: cause.title,
       category: cause.category,
-      whyItMatters: matchingSignals.length > 0
-        ? applyNarrativeTone(cause.whyItMatters || "Impact requires further assessment.", narrativeTone)
-        : cause.whyItMatters || "Impact requires further assessment.",
+      whyItMatters: cause.whyItMatters || "Impact requires further assessment.",
       interventionDirection: cause.interventionDirection || "Intervention approach to be determined.",
       isDominant,
-      evidenceAnchors: evidenceAnchors.length > 0 ? evidenceAnchors : undefined,
-      evidenceStrength: matchingSignals.length > 0 ? evidenceStrength : undefined,
-      narrativeTone: matchingSignals.length > 0 ? narrativeTone : undefined,
+      evidenceAnchors: anchors.length > 0 ? anchors : undefined,
+      evidenceStrength,
+      narrativeTone,
+      impactObserved: impactBullets.length > 0 ? impactBullets : undefined,
+      whatToValidateNext: whatToValidateNext.length > 0 ? whatToValidateNext : undefined,
     };
-    
-    // Evidence note: evidence-based phrasing (replaces old "Based on problem description")
-    if (isDominant && matchingSignals.length > 0) {
-      finding.evidenceNote = evidenceStrength === "STRONG"
-        ? "Supported by consistent document-derived evidence."
-        : evidenceStrength === "MODERATE"
-          ? "Supported by partial document-derived evidence."
-          : "Insufficient evidence — further document review recommended.";
-    } else if (isDominant && matchingSignals.length === 0 && analysisMode === "deep") {
+
+    if (isDominant && !hasAnySignals && analysisMode === "deep") {
       finding.evidenceNote = "No matching document evidence found for this category.";
     }
-    
+
     return finding;
   };
   

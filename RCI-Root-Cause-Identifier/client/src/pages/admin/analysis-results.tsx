@@ -19,7 +19,8 @@ import {
   Target,
   FolderOpen,
   Loader2,
-  Download
+  Download,
+  ClipboardCheck
 } from "lucide-react";
 import type { ClientAnalysis, Client, FourMCategory } from "@shared/schema";
 import { DiagnosticReportView } from "@/components/diagnostic-report-view";
@@ -334,15 +335,11 @@ export default function AnalysisResults() {
               WEAK: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", label: "Weak" },
             };
             const esStyle = finding.evidenceStrength ? evidenceStrengthColors[finding.evidenceStrength] : null;
-            const confidenceText: Record<string, string> = {
-              STRONG: "High confidence — validated by document evidence",
-              MODERATE: "Moderate confidence — hypothesis supported by partial evidence",
-              WEAK: "Low confidence — requires further document evidence to validate",
-            };
+            const hasSignals = finding.evidenceAnchors && finding.evidenceAnchors.length > 0;
+            const noSignalsFallback = !hasSignals && finding.evidenceStrength === "WEAK";
             return (
               <Card key={finding.id || idx} className="p-4 border-l-4" style={{ borderLeftColor: 'currentColor' }}>
                 <div className="flex-1">
-                  {/* Header: Title + Badges */}
                   <div className="flex items-center gap-2 flex-wrap mb-4">
                     <h3 className="font-semibold">{finding.title}</h3>
                     <Badge className={`${colors.bg} ${colors.text}`}>{finding.fourMCategory}</Badge>
@@ -355,14 +352,13 @@ export default function AnalysisResults() {
                   </div>
 
                   <div className="space-y-3 text-sm">
-                    {/* What We Observed */}
-                    {finding.evidenceAnchors && finding.evidenceAnchors.length > 0 && (
+                    {hasSignals && (
                       <div>
                         <p className="font-medium mb-1 flex items-center gap-1">
                           <FileText className="w-3.5 h-3.5 text-muted-foreground" /> What We Observed
                         </p>
                         <ul className="space-y-1 ml-5">
-                          {finding.evidenceAnchors.map((anchor: any, i: number) => (
+                          {finding.evidenceAnchors!.map((anchor: any, i: number) => (
                             <li key={i} className="list-disc text-muted-foreground">
                               <span className="font-medium text-foreground">{anchor.signal}</span>
                               <span className="text-xs ml-1">({anchor.documentName})</span>
@@ -372,7 +368,6 @@ export default function AnalysisResults() {
                       </div>
                     )}
 
-                    {/* What This Indicates */}
                     {finding.causes && finding.causes.length > 0 && (
                       <div>
                         <p className="font-medium mb-1 flex items-center gap-1">
@@ -386,17 +381,28 @@ export default function AnalysisResults() {
                       </div>
                     )}
 
-                    {/* Why It Matters */}
-                    {finding.description && (
+                    {finding.impactObserved && finding.impactObserved.length > 0 && (
                       <div>
                         <p className="font-medium mb-1 flex items-center gap-1">
-                          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Why It Matters
+                          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Impact Observed (Industry Context)
+                        </p>
+                        <ul className="space-y-1 ml-5">
+                          {finding.impactObserved.map((bullet: string, i: number) => (
+                            <li key={i} className="list-disc text-muted-foreground">{bullet}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {!finding.impactObserved && finding.description && (
+                      <div>
+                        <p className="font-medium mb-1 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> What This Indicates
                         </p>
                         <p className="text-muted-foreground ml-5">{finding.description}</p>
                       </div>
                     )}
 
-                    {/* Suggested Intervention Direction */}
                     {finding.evidence && finding.evidence.length > 0 && (
                       <div>
                         <p className="font-medium mb-1 flex items-center gap-1">
@@ -410,7 +416,6 @@ export default function AnalysisResults() {
                       </div>
                     )}
 
-                    {/* Estimated Impact */}
                     {finding.estimatedCostImpact && (
                       <div className="flex items-center gap-2">
                         <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
@@ -419,29 +424,32 @@ export default function AnalysisResults() {
                       </div>
                     )}
 
-                    {/* Collapsed Note */}
+                    {finding.whatToValidateNext && finding.whatToValidateNext.length > 0 && (
+                      <div className="pt-2 border-t">
+                        <p className="font-medium mb-1 flex items-center gap-1">
+                          <ClipboardCheck className="w-3.5 h-3.5 text-muted-foreground" /> What to Validate Next
+                        </p>
+                        <ul className="space-y-1 ml-5">
+                          {finding.whatToValidateNext.map((doc: string, i: number) => (
+                            <li key={i} className="list-disc text-muted-foreground text-xs">{doc}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {noSignalsFallback && (
+                      <div className="pt-2 border-t">
+                        <p className="text-xs text-amber-600 dark:text-amber-400 ml-5 italic">
+                          No concrete operational or financial signals extracted yet. Upload Ops, Finance, or Maintenance records to strengthen this finding.
+                        </p>
+                      </div>
+                    )}
+
                     {finding.collapsedNote && (
                       <p className="text-xs text-amber-600 dark:text-amber-400 italic ml-5">
                         {finding.collapsedNote}
                       </p>
                     )}
-
-                    {/* Confidence & Next Evidence */}
-                    <div className="pt-2 border-t">
-                      <p className="font-medium mb-1 flex items-center gap-1">
-                        <Shield className="w-3.5 h-3.5 text-muted-foreground" /> Confidence & Next Evidence to Validate
-                      </p>
-                      <p className="text-muted-foreground ml-5 text-xs">
-                        {finding.evidenceStrength
-                          ? confidenceText[finding.evidenceStrength] || confidenceText.WEAK
-                          : confidenceText.WEAK}
-                      </p>
-                      {finding.evidenceStrength === "WEAK" && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 ml-5 mt-1">
-                          Upload relevant documents to strengthen this finding.
-                        </p>
-                      )}
-                    </div>
                   </div>
                 </div>
               </Card>

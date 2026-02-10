@@ -52,7 +52,7 @@ import {
 import { rootCauseLibrary, manufacturingRootCausesV2, type RootCauseEntry } from "@shared/root-cause-library";
 import { recommendationArchetypes, type RecommendationArchetype, type SeverityLevel } from "@shared/recommendation-archetypes";
 import { allIndustryProblems, type IndustryProblem } from "@shared/industry-problems";
-import { type EvidenceSignal } from "@shared/evidence-signals";
+import { type EvidenceSignal, type CategorisedExtractedSignal } from "@shared/evidence-signals";
 import { getIndustryMoneyInterpretation } from "@shared/analysis-builder";
 
 /**
@@ -283,58 +283,86 @@ function getDominantSeverity(findings: AnalysisFinding[]): SeverityLevel {
 
 /**
  * ============================================================================
- * EVIDENCE-DRIVEN FINDINGS ENGINE
+ * EVIDENCE-DRIVEN FINDINGS ENGINE (vNext - Signal Extraction)
  * ============================================================================
  * 
- * Enriches findings with evidence anchors, evidence strength, narrative tone,
- * industry-specific interpretation, and duplicate root cause collapsing.
+ * Enriches findings with:
+ * - Concrete signal-based evidence anchors (metrics + events from documents)
+ * - Evidence strength and narrative tone
+ * - Industry-specific impact narratives (signal-backed bullet points)
+ * - "What to Validate Next" prompts (specific documents to request)
+ * - Duplicate root cause collapsing
  * 
  * Non-breaking: all new fields are optional. Existing findings pass through unchanged.
  * ============================================================================
  */
 
-// Build evidence anchors from evidence signals matching a finding's 4M category.
-// Only includes anchors with concrete document names and specific matched terms.
-// Generic placeholders are rejected — findings without concrete anchors get no anchors.
-const GENERIC_ANCHOR_TERMS = new Set([
-  "operational data", "pattern match", "uploaded operational documents",
-  "uploaded document", "money category detected", "document analysis",
-]);
-
-function buildEvidenceAnchorsForFinding(
+// Build evidence anchors from extracted concrete signals (metrics + events)
+// matching a finding's 4M category. Only concrete signals are used — no generic terms.
+function buildEvidenceAnchorsFromSignals(
   category: FourMCategory,
+  concreteSignals: CategorisedExtractedSignal[],
   evidenceSignals: EvidenceSignal[]
 ): EvidenceAnchor[] {
-  const matchingSignals = evidenceSignals.filter(s => s.category === category);
   const anchors: EvidenceAnchor[] = [];
+  const seen = new Set<string>();
 
-  for (const signal of matchingSignals) {
-    const docName = (signal.sourceDocuments && signal.sourceDocuments.length > 0)
-      ? signal.sourceDocuments.join(", ")
-      : null;
-    const concreteTerms = signal.matchedTerms.filter(
-      t => !GENERIC_ANCHOR_TERMS.has(t.toLowerCase())
-    );
-    if (!docName || GENERIC_ANCHOR_TERMS.has(docName.toLowerCase()) || concreteTerms.length === 0) {
-      continue;
-    }
+  const matchingConcreteSignals = concreteSignals.filter(s => s.category === category);
+  for (const sig of matchingConcreteSignals) {
+    const key = `${sig.documentName}:${sig.signal}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     anchors.push({
-      documentName: docName,
-      signal: concreteTerms.slice(0, 3).join(", "),
-      interpretation: signal.description,
+      documentName: sig.documentName,
+      signal: sig.signal,
+      interpretation: sig.rawText,
     });
+    if (anchors.length >= 5) break;
+  }
+
+  if (anchors.length === 0) {
+    const matchingTermSignals = evidenceSignals.filter(s => s.category === category);
+    for (const signal of matchingTermSignals) {
+      const docName = (signal.sourceDocuments && signal.sourceDocuments.length > 0)
+        ? signal.sourceDocuments.join(", ")
+        : null;
+      if (!docName) continue;
+      const concreteTerms = signal.matchedTerms.filter(
+        t => t.length > 3 && !GENERIC_ANCHOR_TERMS.has(t.toLowerCase())
+      );
+      if (concreteTerms.length === 0) continue;
+      const key = `${docName}:${concreteTerms[0]}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      anchors.push({
+        documentName: docName,
+        signal: concreteTerms.slice(0, 3).join(", "),
+        interpretation: signal.description,
+      });
+      if (anchors.length >= 5) break;
+    }
   }
 
   return anchors;
 }
 
-// Determine evidence strength: STRONG requires at least 2 anchors
-function determineEvidenceStrength(anchors: EvidenceAnchor[], signals: EvidenceSignal[]): EvidenceStrength {
+const GENERIC_ANCHOR_TERMS = new Set([
+  "operational data", "pattern match", "uploaded operational documents",
+  "uploaded document", "money category detected", "document analysis",
+]);
+
+// Determine evidence strength based on concrete signal count + term signals
+function determineEvidenceStrength(
+  anchors: EvidenceAnchor[],
+  concreteSignals: CategorisedExtractedSignal[],
+  termSignals: EvidenceSignal[]
+): EvidenceStrength {
   if (anchors.length === 0) return "WEAK";
-  const strongSignals = signals.filter(s => s.strength === "strong").length;
-  const mediumSignals = signals.filter(s => s.strength === "medium").length;
-  if (anchors.length >= 2 && (strongSignals > 0 || mediumSignals >= 2)) return "STRONG";
-  if (anchors.length >= 1 && (strongSignals > 0 || mediumSignals > 0)) return "MODERATE";
+  const concreteCount = concreteSignals.length;
+  const strongTerms = termSignals.filter(s => s.strength === "strong").length;
+  const mediumTerms = termSignals.filter(s => s.strength === "medium").length;
+  if (concreteCount >= 2 || (anchors.length >= 2 && (strongTerms > 0 || mediumTerms >= 2))) return "STRONG";
+  if (concreteCount >= 1 || (anchors.length >= 1 && (strongTerms > 0 || mediumTerms > 0))) return "MODERATE";
   return "WEAK";
 }
 
@@ -345,61 +373,183 @@ function determineNarrativeTone(strength: EvidenceStrength): NarrativeTone {
   return "EXPLORATORY";
 }
 
-// Apply narrative tone prefix to description text
-function applyNarrativePrefix(text: string, tone: NarrativeTone): string {
-  switch (tone) {
-    case "EXPLORATORY": return `Preliminary observation: ${text}`;
-    case "DIAGNOSTIC": return `Supported hypothesis: ${text}`;
-    case "CONCLUSIVE": return `Confirmed finding: ${text}`;
-    default: return text;
-  }
+// Industry-specific impact chain maps: category → industry → impact bullet patterns
+const INDUSTRY_IMPACT_CHAINS: Record<string, Record<FourMCategory, string[]>> = {
+  manufacturing: {
+    Money: [
+      "WIP accumulation ties up working capital",
+      "Unplanned overtime inflates labour cost per unit",
+      "Margin erosion from throughput losses",
+    ],
+    Manpower: [
+      "Skill gaps drive rework and quality variation",
+      "Overtime fatigue reduces output quality",
+      "Turnover disrupts production line continuity",
+    ],
+    Machinery: [
+      "Downtime cascades into schedule slippage",
+      "Deferred maintenance increases breakdown frequency",
+      "Equipment aging raises repair-to-replace cost ratio",
+    ],
+    Materials: [
+      "Stockouts halt production lines",
+      "Quality rejections trigger rework and waste",
+      "Supplier delays cascade into delivery commitments",
+    ],
+  },
+  healthcare: {
+    Money: [
+      "Reimbursement delays compress operating cashflow",
+      "Payer mix imbalances reduce revenue per encounter",
+      "Capacity under-utilisation increases fixed cost per patient",
+    ],
+    Manpower: [
+      "Staff shortages increase patient wait times",
+      "Burnout drives turnover and locum costs",
+      "Training gaps create clinical risk exposure",
+    ],
+    Machinery: [
+      "Equipment downtime delays diagnostic workflows",
+      "Deferred calibration affects clinical accuracy",
+      "System outages disrupt patient record access",
+    ],
+    Materials: [
+      "Supply shortages delay treatment protocols",
+      "Expired stock incurs waste and compliance risk",
+      "Vendor disruptions affect critical consumables",
+    ],
+  },
+  logistics: {
+    Money: [
+      "SLA penalties directly erode margins",
+      "Fuel cost volatility compresses route profitability",
+      "Late invoicing delays cash conversion cycle",
+    ],
+    Manpower: [
+      "Driver shortage increases overtime and route delays",
+      "High turnover raises recruitment and training costs",
+      "Dispatch errors from understaffing cause SLA breaches",
+    ],
+    Machinery: [
+      "Fleet breakdowns cause delivery failures",
+      "Deferred maintenance increases roadside incident risk",
+      "Aging vehicles increase fuel consumption per km",
+    ],
+    Materials: [
+      "Warehouse stockout delays order fulfilment",
+      "Damaged goods in transit trigger returns and credits",
+      "Supplier delays cascade into customer delivery SLAs",
+    ],
+  },
+};
+
+function getIndustryKey(industry: string): string {
+  const lower = (industry || "").toLowerCase();
+  if (lower.includes("manufacturing") || lower.includes("construction")) return "manufacturing";
+  if (lower.includes("healthcare") || lower.includes("hospital") || lower.includes("pharma")) return "healthcare";
+  if (lower.includes("logistics") || lower.includes("shipping") || lower.includes("transport")) return "logistics";
+  return "general";
 }
 
-// Enrich a single finding with evidence-driven fields
+// Build impact bullets from extracted signals + industry chain
+function buildImpactObserved(
+  category: FourMCategory,
+  concreteSignals: CategorisedExtractedSignal[],
+  industry: string
+): string[] {
+  const bullets: string[] = [];
+  const matchingSignals = concreteSignals.filter(s => s.category === category);
+
+  for (const sig of matchingSignals.slice(0, 3)) {
+    bullets.push(`${sig.signal} (${sig.documentName})`);
+  }
+
+  const industryKey = getIndustryKey(industry);
+  const chains = INDUSTRY_IMPACT_CHAINS[industryKey];
+  if (chains && chains[category]) {
+    const industryBullets = chains[category];
+    for (const b of industryBullets.slice(0, 2)) {
+      if (bullets.length >= 5) break;
+      bullets.push(b);
+    }
+  }
+
+  return bullets;
+}
+
+// Determine what documents to request next based on category
+const VALIDATION_DOCS: Record<FourMCategory, string[]> = {
+  Money: [
+    "Aged receivables report (last 3 months)",
+    "Monthly P&L or management accounts",
+    "Cash flow statement or forecast",
+  ],
+  Manpower: [
+    "Overtime log or attendance records",
+    "Staff turnover report (last 12 months)",
+    "Training records or competency matrix",
+  ],
+  Machinery: [
+    "Maintenance log or work order history",
+    "Equipment downtime register",
+    "Asset condition or inspection report",
+  ],
+  Materials: [
+    "Inventory reconciliation report",
+    "Supplier delivery performance log",
+    "Quality rejection or rework register",
+  ],
+};
+
+function buildWhatToValidateNext(
+  category: FourMCategory,
+  hasConcreteSignals: boolean
+): string[] {
+  const docs = VALIDATION_DOCS[category] || [];
+  if (!hasConcreteSignals) {
+    return docs.slice(0, 3);
+  }
+  return docs.slice(0, 2);
+}
+
+// Enrich a single finding with signal-driven evidence fields
 function enrichFindingWithEvidence(
   finding: AnalysisFinding,
   evidenceSignals: EvidenceSignal[],
+  concreteSignals: CategorisedExtractedSignal[],
   industry: string
 ): AnalysisFinding {
-  const matchingSignals = evidenceSignals.filter(s => s.category === finding.fourMCategory);
-  if (matchingSignals.length === 0) {
+  const matchingTermSignals = evidenceSignals.filter(s => s.category === finding.fourMCategory);
+  const matchingConcreteSignals = concreteSignals.filter(s => s.category === finding.fourMCategory);
+  const hasAnySignals = matchingTermSignals.length > 0 || matchingConcreteSignals.length > 0;
+
+  if (!hasAnySignals) {
     return {
       ...finding,
       evidenceStrength: "WEAK",
       narrativeTone: "EXPLORATORY",
-      description: applyNarrativePrefix(finding.description, "EXPLORATORY"),
+      impactObserved: [],
+      whatToValidateNext: buildWhatToValidateNext(finding.fourMCategory, false),
     };
   }
 
-  const anchors = buildEvidenceAnchorsForFinding(finding.fourMCategory, evidenceSignals);
-  const strength = determineEvidenceStrength(anchors, matchingSignals);
+  const anchors = buildEvidenceAnchorsFromSignals(finding.fourMCategory, concreteSignals, evidenceSignals);
+  const strength = determineEvidenceStrength(anchors, matchingConcreteSignals, matchingTermSignals);
   const tone = determineNarrativeTone(strength);
 
-  // Apply industry-specific "Why It Matters" override for Money findings
-  // Rewrites the description block's "Why It Matters" section with industry-aware wording
-  let enrichedDescription = finding.description;
-  if (finding.fourMCategory === "Money") {
-    const interpretation = getIndustryMoneyInterpretation(industry);
-    if (interpretation) {
-      enrichedDescription = enrichedDescription.replace(
-        /Why It Matters:\n[^\n]+/,
-        `Why It Matters:\n${interpretation.whyItMattersOverride}`
-      );
-    }
-  }
-
-  // Apply narrative tone prefix to description
-  enrichedDescription = applyNarrativePrefix(enrichedDescription, tone);
+  const impactObserved = buildImpactObserved(finding.fourMCategory, concreteSignals, industry);
+  const whatToValidateNext = buildWhatToValidateNext(finding.fourMCategory, matchingConcreteSignals.length > 0);
 
   return {
     ...finding,
-    description: enrichedDescription,
     evidence: strength === "WEAK"
       ? ["Insufficient document evidence — further review recommended"]
       : finding.evidence,
     evidenceAnchors: anchors.length > 0 ? anchors : undefined,
     evidenceStrength: strength,
     narrativeTone: tone,
+    impactObserved: impactObserved.length > 0 ? impactObserved : undefined,
+    whatToValidateNext: whatToValidateNext.length > 0 ? whatToValidateNext : undefined,
   };
 }
 
@@ -474,11 +624,10 @@ function collapseDuplicateFindings(findings: AnalysisFinding[]): AnalysisFinding
 function applyEvidenceDrivenEnrichment(
   findings: AnalysisFinding[],
   evidenceSignals: EvidenceSignal[],
-  industry: string
+  industry: string,
+  concreteSignals: CategorisedExtractedSignal[] = []
 ): AnalysisFinding[] {
-  // Step 1: Enrich each finding with evidence data
-  const enriched = findings.map(f => enrichFindingWithEvidence(f, evidenceSignals, industry));
-  // Step 2: Collapse duplicates (same 4M category)
+  const enriched = findings.map(f => enrichFindingWithEvidence(f, evidenceSignals, concreteSignals, industry));
   return collapseDuplicateFindings(enriched);
 }
 

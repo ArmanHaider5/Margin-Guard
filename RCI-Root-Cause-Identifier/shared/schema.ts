@@ -191,6 +191,9 @@ export interface AnalysisFinding {
   evidenceStrength?: EvidenceStrength;
   narrativeTone?: NarrativeTone;
   collapsedNote?: string;
+  // Signal-driven impact and validation (vNext)
+  impactObserved?: string[];
+  whatToValidateNext?: string[];
 }
 
 // Cost Saving Opportunity
