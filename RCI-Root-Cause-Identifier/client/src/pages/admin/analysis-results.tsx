@@ -192,6 +192,7 @@ export default function AnalysisResults() {
   }
 
   const isPipelineBlocked = findings.length === 0 && analysis.summary?.includes("Evidence pipeline not active");
+  const isNoSignals = findings.length === 0 && analysis.summary?.includes("No operational or financial signals detected");
 
   if (!diagnosticReport && findings.length === 0) {
     return (
@@ -206,6 +207,17 @@ export default function AnalysisResults() {
               </p>
               <p className="text-sm text-muted-foreground mb-4">
                 Upload processed documents and re-run this analysis to activate signal-driven diagnostics.
+              </p>
+            </>
+          ) : isNoSignals ? (
+            <>
+              <AlertCircle className="w-12 h-12 mx-auto text-amber-500 mb-4" />
+              <h2 className="text-xl font-semibold mb-2">No Signals Detected</h2>
+              <p className="text-muted-foreground mb-4">
+                No operational or financial signals detected. Please upload Ops, Maintenance, QC, or Finance documents.
+              </p>
+              <p className="text-sm text-muted-foreground mb-4">
+                The signal extractor could not find actionable data in the uploaded documents. Try uploading different document types.
               </p>
             </>
           ) : (

@@ -723,7 +723,6 @@ function hasOperationalEvidence(concreteSignals: CategorisedExtractedSignal[]): 
 }
 
 function enforceCausalOrdering(findings: AnalysisFinding[], industry: string, concreteSignals: CategorisedExtractedSignal[]): AnalysisFinding[] {
-  if (industry.toLowerCase() !== "manufacturing") return findings;
   if (!hasOperationalEvidence(concreteSignals)) return findings;
 
   const operational = findings.filter(f => OPERATIONAL_CATEGORIES.has(f.fourMCategory));
@@ -1761,8 +1760,32 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
   // Score = problem statement relevance + document evidence + discovery bonus
   // ============================================================================
   
-  // Extract document text for evidence matching (Deep Analysis only)
   const processedDocs = documents.filter(d => d.status === "processed" && d.extractedData);
+  const docInputs: ProcessedDocument[] = processedDocs.map(d => ({
+    id: d.id,
+    name: d.fileName,
+    content: d.extractedData?.rawText || "",
+    type: d.fileType || "other",
+  }));
+
+  const concreteSignals = extractConcreteSignals(docInputs);
+  const evidenceSignals = extractEvidenceSignalsFromDocuments(docInputs);
+
+  console.log(`MANUFACTURING V2: Extracted ${concreteSignals.length} concrete signals, ${evidenceSignals.length} evidence signals`);
+
+  if (!isBaseline && concreteSignals.length === 0 && evidenceSignals.length === 0) {
+    console.log(`MANUFACTURING V2: HARD FAIL — no signals extracted from ${docInputs.length} document(s)`);
+    return {
+      findings: [],
+      summary: "No operational or financial signals detected. Please upload Ops, Maintenance, QC, or Finance documents.",
+      costSavingOpportunities: [],
+      predictions: [],
+      analysisMode: "evidence-enriched",
+      confidence: "low",
+      isMockMode: false,
+    };
+  }
+
   const documentText = processedDocs
     .map(d => d.extractedData?.rawText || "")
     .join(" ")
@@ -1771,23 +1794,37 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
   
   const problemText = (problemStatement || "").toLowerCase();
   const hasProblemStatement = problemText.length > 0;
+  const observedSymptoms = new Set(input.selectedSymptoms || []);
   
-  console.log(`MANUFACTURING V2 SCORING: Problem statement: ${hasProblemStatement ? 'YES' : 'NO'}, Document evidence: ${hasDocumentEvidence ? 'YES' : 'NO'}`);
+  console.log(`MANUFACTURING V2 SCORING: Problem statement: ${hasProblemStatement ? 'YES' : 'NO'}, Document evidence: ${hasDocumentEvidence ? 'YES' : 'NO'}, Symptoms: ${observedSymptoms.size}`);
   
-  // Score each root cause with balanced evidence scoring
+  const signalCategories = new Set(concreteSignals.map(s => s.category));
+
   const scoredCauses = manufacturingRootCausesV2.map((rc) => {
-    let score = 0; // Start from zero for balanced scoring
+    let score = 0;
     let isContextMatched = false;
     let problemMatches = 0;
     let documentMatches = 0;
+    let symptomMatches = 0;
     
-    // Context boost for matching categories (additive layer)
     if (contextMatchedCategories.size > 0 && contextMatchedCategories.has(rc.category)) {
-      score += 5; // Small context boost
+      score += 5;
       isContextMatched = true;
     }
+
+    if (observedSymptoms.size > 0 && rc.symptomTags) {
+      for (const tag of rc.symptomTags) {
+        if (observedSymptoms.has(tag)) {
+          symptomMatches++;
+          score += 12;
+        }
+      }
+    }
+
+    if (signalCategories.has(rc.category as any)) {
+      score += 8;
+    }
     
-    // Score evidence signals against problem statement (+10 per match)
     if (hasProblemStatement) {
       for (const signal of rc.evidenceSignals || []) {
         if (problemText.includes(signal.toLowerCase())) {
@@ -1797,7 +1834,6 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
       }
     }
     
-    // Score evidence signals against document text (+15 per match)
     if (hasDocumentEvidence) {
       for (const signal of rc.evidenceSignals || []) {
         if (documentText.includes(signal.toLowerCase())) {
@@ -1807,7 +1843,6 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
       }
     }
     
-    // Bonus if BOTH problem statement AND documents match this root cause (+10)
     if (problemMatches > 0 && documentMatches > 0) {
       score += 10;
     }
@@ -1818,6 +1853,7 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
       isContextMatched,
       problemMatches,
       documentMatches,
+      symptomMatches,
     };
   });
   
@@ -1835,37 +1871,27 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
   const thresholdPassed = scoredCauses.filter(item => item.score >= INCLUSION_THRESHOLD);
   const thresholdFailed = scoredCauses.filter(item => item.score < INCLUSION_THRESHOLD);
   
-  // ============================================================================
-  // SAFE DIAGNOSTIC FLOOR (TEMPORARY)
-  // If NO root causes pass threshold, select TOP 1-2 highest scoring as fallback
-  // Mark these with low confidence for wet runs and demos
-  // ============================================================================
   let selectedWithMeta: typeof scoredCauses;
-  let usingSafeDiagnosticFloor = false;
-  let diagnosticConfidenceOverride: string | null = null;
-  let safeDiagnosticBanner: string | null = null;
-  
+
   if (thresholdPassed.length === 0) {
-    // FALLBACK: No root causes passed threshold - use safe diagnostic floor
-    usingSafeDiagnosticFloor = true;
-    diagnosticConfidenceOverride = "Low (Evidence Insufficient)";
-    safeDiagnosticBanner = "Findings are indicative due to limited documentary evidence.";
-    
-    // Select top 1-2 highest scoring (even below threshold)
-    const fallbackCount = Math.min(2, scoredCauses.length);
-    selectedWithMeta = scoredCauses.slice(0, fallbackCount);
-    
-    console.log(`MANUFACTURING V2 SAFE FLOOR: No causes passed threshold (>= ${INCLUSION_THRESHOLD})`);
-    console.log(`MANUFACTURING V2 SAFE FLOOR: Using top ${fallbackCount} as fallback with LOW confidence`);
+    console.log(`MANUFACTURING V2: HARD FAIL — no root causes passed evidence threshold (>= ${INCLUSION_THRESHOLD})`);
+    return {
+      findings: [],
+      summary: "No operational or financial signals detected. Please upload Ops, Maintenance, QC, or Finance documents.",
+      costSavingOpportunities: [],
+      predictions: [],
+      analysisMode: "evidence-enriched",
+      confidence: "low",
+      isMockMode: false,
+    };
   } else {
-    // NORMAL: Evidence-based selection
     const maxFindings = 6;
     selectedWithMeta = thresholdPassed.slice(0, maxFindings);
   }
   
   // Log threshold results
   console.log(`MANUFACTURING V2 THRESHOLD: ${thresholdPassed.length} passed (>= ${INCLUSION_THRESHOLD}), ${thresholdFailed.length} excluded`);
-  console.log(`MANUFACTURING V2: Selected ${selectedWithMeta.length} root causes (${usingSafeDiagnosticFloor ? 'SAFE FLOOR' : 'evidence-based'})`);
+  console.log(`MANUFACTURING V2: Selected ${selectedWithMeta.length} root causes (evidence-based)`);
   
   // Count categories represented
   const categoriesRepresented = new Set(selectedWithMeta.map(item => item.cause.category));
@@ -1877,39 +1903,29 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
     if (item.documentMatches > 0) matchInfo.push(`docs:${item.documentMatches}`);
     if (item.problemMatches > 0 && item.documentMatches > 0) matchInfo.push("+bonus");
     if (item.isContextMatched) matchInfo.push("ctx");
-    if (usingSafeDiagnosticFloor) matchInfo.push("FLOOR");
+    if (item.symptomMatches > 0) matchInfo.push(`symptoms:${item.symptomMatches}`);
     const matchStr = matchInfo.length > 0 ? ` [${matchInfo.join(", ")}]` : "";
     console.log(`  ${idx + 1}. [${item.cause.id}] ${item.cause.title} (score: ${item.score})${matchStr}`);
   });
   
-  // Log excluded causes for transparency
-  if (thresholdFailed.length > 0 && !usingSafeDiagnosticFloor) {
+  if (thresholdFailed.length > 0) {
     console.log(`MANUFACTURING V2: Top 3 excluded (below threshold):`);
     thresholdFailed.slice(0, 3).forEach((item, idx) => {
       console.log(`  - [${item.cause.id}] ${item.cause.title} (score: ${item.score})`);
     });
   }
   
-  // Generate findings from V2 root causes
   const findings: AnalysisFinding[] = selectedWithMeta.map((item, idx) => {
     const rc = item.cause;
     const isOutOfContext = diagnosticContexts && diagnosticContexts.length > 0 && !item.isContextMatched;
-    // Downgrade severity when using safe floor (low confidence findings)
-    const severity = isBaseline || usingSafeDiagnosticFloor 
+    const severity = isBaseline
       ? "medium" 
       : (["high", "medium", "critical"] as const)[idx % 3];
-    const prefix = isBaseline ? "[PRELIMINARY] " : (usingSafeDiagnosticFloor ? "[INDICATIVE] " : "");
+    const prefix = isBaseline ? "[PRELIMINARY] " : "";
     
-    // Add explanation notes based on context
     let contextNote = "";
     if (isOutOfContext) {
       contextNote = "\n\n📌 Note: This factor emerged from evidence analysis despite falling outside the primary diagnostic focus.";
-    }
-    
-    // Add safe floor confidence note
-    let safeFloorNote = "";
-    if (usingSafeDiagnosticFloor) {
-      safeFloorNote = `\n\n⚠️ Diagnostic Confidence: ${diagnosticConfidenceOverride}\nThis finding is included as an indicative result due to limited documentary evidence supporting the stated problem.`;
     }
     
     const normalizedCategory = normalizeCategory(rc.category);
@@ -1917,18 +1933,16 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
     return {
       id: `finding-mfgv2-${idx}-${rc.id}`,
       title: `${prefix}${rc.title}`,
-      description: `Root Cause:\n${rc.title}\n\nWhy It Matters:\n${rc.whyItMatters}\n\nIntervention Direction:\n${rc.interventionDirection}${isBaseline ? "\n\n⚠️ Note: This is a preliminary finding based on baseline assessment. Document evidence is required for confirmation." : ""}${contextNote}${safeFloorNote}`,
+      description: `Root Cause:\n${rc.title}\n\nWhy It Matters:\n${rc.whyItMatters}\n\nIntervention Direction:\n${rc.interventionDirection}${isBaseline ? "\n\n⚠️ Note: This is a preliminary finding based on baseline assessment. Document evidence is required for confirmation." : ""}${contextNote}`,
       fourMCategory: normalizedCategory,
       indicator: categoryToIndicator[normalizedCategory],
       severity,
       frequency: idx + 1,
       causes: [rc.title],
-      estimatedCostImpact: isBaseline || usingSafeDiagnosticFloor ? undefined : `RM ${(10000 + idx * 5000).toLocaleString()}`,
+      estimatedCostImpact: isBaseline ? undefined : `RM ${(10000 + idx * 5000).toLocaleString()}`,
       evidence: isBaseline 
         ? ["Derived from stated problem — upload documents to strengthen evidence"]
-        : usingSafeDiagnosticFloor
-          ? ["Evidence insufficient — indicative finding only"]
-          : [`Evidence from Manufacturing operational data`, `Pattern matched from document analysis`],
+        : [`Evidence from Manufacturing operational data`, `Signal extracted from uploaded documents`],
     };
   });
   
@@ -1965,11 +1979,13 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
     ? ` with focus on ${diagnosticContexts.map(c => c.toLowerCase()).join(" and ")} factors`
     : "";
   
+  const symptomPhrase = input.selectedSymptoms && input.selectedSymptoms.length > 0
+    ? ` Observed symptoms: ${input.selectedSymptoms.join(", ")}.`
+    : "";
+
   const summaryPrefix = isBaseline 
     ? `This is an initial diagnostic based on stated problems and Manufacturing industry patterns${contextFocusPhrase}. Upload documents to strengthen confidence. Stated problem: "${problemStatement}".`
-    : usingSafeDiagnosticFloor
-      ? `⚠️ ${safeDiagnosticBanner}\n\nThis diagnostic${contextFocusPhrase} did not find strong documentary evidence for the stated problem: "${problemStatement}".`
-      : `This diagnostic is evidence-enriched and incorporates uploaded documents to validate and prioritise root causes${contextFocusPhrase}. Evidence supports the stated problem: "${problemStatement}".`;
+    : `Using document-derived signals and observed symptoms.${contextFocusPhrase}${symptomPhrase} Evidence supports the stated problem: "${problemStatement}".`;
   
   // Dynamic summary based on evidence-based findings
   const categoryList = Array.from(categoriesRepresented);
@@ -1977,31 +1993,25 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
     ? ` across ${categoryList.length} area${categoryList.length > 1 ? 's' : ''} (${categoryList.join(", ")})` 
     : "";
   
-  const findingsPhrase = usingSafeDiagnosticFloor
-    ? `Included ${findings.length} indicative root cause${findings.length > 1 ? 's' : ''}${categoryPhrase} for ${clientName}. These findings require additional documentary validation.`
-    : findings.length > 0
-      ? `Identified ${findings.length} root cause${findings.length > 1 ? 's' : ''}${categoryPhrase} in Manufacturing operations for ${clientName}.`
-      : `No root causes met the evidence threshold for ${clientName}. Consider uploading additional documents or refining the problem statement.`;
+  const findingsPhrase = findings.length > 0
+    ? `Identified ${findings.length} root cause${findings.length > 1 ? 's' : ''}${categoryPhrase} in Manufacturing operations for ${clientName}.`
+    : `No root causes met the evidence threshold for ${clientName}. Consider uploading additional documents or refining the problem statement.`;
   
-  // Determine confidence level
   const confidenceLevel = isBaseline 
     ? "preliminary" 
-    : usingSafeDiagnosticFloor 
-      ? "low" 
-      : "substantiated";
+    : "substantiated";
   
-  // Evidence-driven enrichment: always run pipeline — empty signals → EXPLORATORY tone
-  const fallbackSignals = generateFallbackEvidenceSignals(findings, isBaseline);
-  const enrichedFindings = applyEvidenceDrivenEnrichment(findings, fallbackSignals, "Manufacturing");
+  const enrichmentSignals = isBaseline ? generateFallbackEvidenceSignals(findings, true) : evidenceSignals;
+  const enrichedFindings = applyEvidenceDrivenEnrichment(findings, enrichmentSignals, "Manufacturing", concreteSignals);
 
   return {
     findings: enrichedFindings,
-    summary: `${summaryPrefix} ${findingsPhrase} [MANUFACTURING V2 LIBRARY ACTIVE]`,
+    summary: `${summaryPrefix} ${findingsPhrase}`,
     costSavingOpportunities,
     predictions,
     analysisMode: isBaseline ? "baseline" : "evidence-enriched",
     confidence: confidenceLevel,
-    isMockMode: true,
+    isMockMode: isBaseline,
   };
 }
 
@@ -2042,6 +2052,19 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   const evidenceSignals = extractEvidenceSignalsFromDocuments(docInputs);
 
   console.log(`SIGNAL-DRIVEN DEEP: Extracted ${concreteSignals.length} concrete signals, ${evidenceSignals.length} evidence signals`);
+
+  if (concreteSignals.length === 0 && evidenceSignals.length === 0) {
+    console.log(`SIGNAL-DRIVEN DEEP: HARD FAIL — no signals extracted from ${docInputs.length} document(s)`);
+    return {
+      findings: [],
+      summary: "No operational or financial signals detected. Please upload Ops, Maintenance, QC, or Finance documents.",
+      costSavingOpportunities: [],
+      predictions: [],
+      analysisMode: "evidence-enriched",
+      confidence: "low",
+      isMockMode: false,
+    };
+  }
 
   const documentText = processedDocs
     .map(d => d.extractedData?.rawText || "")
@@ -2118,14 +2141,18 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   const thresholdPassed = scoredCauses.filter(item => item.score >= INCLUSION_THRESHOLD);
 
   let selectedWithMeta: typeof scoredCauses;
-  let usingSafeDiagnosticFloor = false;
-  let safeDiagnosticBanner: string | null = null;
 
   if (thresholdPassed.length === 0) {
-    usingSafeDiagnosticFloor = true;
-    safeDiagnosticBanner = "Findings are indicative due to limited documentary evidence.";
-    selectedWithMeta = scoredCauses.slice(0, 2);
-    console.log(`SIGNAL-DRIVEN DEEP: No causes passed threshold (>= ${INCLUSION_THRESHOLD}), using safe floor`);
+    console.log(`SIGNAL-DRIVEN DEEP: HARD FAIL — no root causes passed evidence threshold (>= ${INCLUSION_THRESHOLD})`);
+    return {
+      findings: [],
+      summary: "No operational or financial signals detected. Please upload Ops, Maintenance, QC, or Finance documents.",
+      costSavingOpportunities: [],
+      predictions: [],
+      analysisMode: "evidence-enriched",
+      confidence: "low",
+      isMockMode: false,
+    };
   } else {
     selectedWithMeta = thresholdPassed.slice(0, 6);
   }
@@ -2143,9 +2170,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   const findings: AnalysisFinding[] = selectedWithMeta.map((item, idx) => {
     const rc = item.cause;
     const isOutOfContext = diagnosticContexts && diagnosticContexts.length > 0 && !item.isContextMatched;
-    const severity = usingSafeDiagnosticFloor
-      ? "medium"
-      : (["high", "medium", "critical"] as const)[idx % 3];
+    const severity = (["high", "medium", "critical"] as const)[idx % 3];
 
     let contextNote = "";
     if (isOutOfContext) {
@@ -2161,10 +2186,8 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
       severity,
       frequency: idx + 1,
       causes: [rc.title],
-      estimatedCostImpact: usingSafeDiagnosticFloor ? undefined : `RM ${(10000 + idx * 5000).toLocaleString()}`,
-      evidence: usingSafeDiagnosticFloor
-        ? ["Evidence insufficient — indicative finding only"]
-        : [`Evidence from ${industry} operational data`, `Signal extracted from uploaded documents`],
+      estimatedCostImpact: `RM ${(10000 + idx * 5000).toLocaleString()}`,
+      evidence: [`Evidence from ${industry} operational data`, `Signal extracted from uploaded documents`],
     };
   });
 
@@ -2202,9 +2225,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     ? ` Observed symptoms: ${input.selectedSymptoms.join(", ")}.`
     : "";
 
-  const summaryPrefix = usingSafeDiagnosticFloor
-    ? `⚠️ ${safeDiagnosticBanner}\n\nThis diagnostic${contextFocusPhrase} did not find strong documentary evidence for the stated problem: "${problemStatement}".${symptomPhrase}`
-    : `Using document-derived signals and observed symptoms.${contextFocusPhrase}${symptomPhrase} Evidence supports the stated problem: "${problemStatement}".`;
+  const summaryPrefix = `Using document-derived signals and observed symptoms.${contextFocusPhrase}${symptomPhrase} Evidence supports the stated problem: "${problemStatement}".`;
 
   const enrichedFindings = applyEvidenceDrivenEnrichment(findings, evidenceSignals, industry, concreteSignals);
 
@@ -2220,7 +2241,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     costSavingOpportunities,
     predictions,
     analysisMode: "evidence-enriched",
-    confidence: usingSafeDiagnosticFloor ? "low" : "substantiated",
+    confidence: "substantiated",
     isMockMode: false,
   };
 }
