@@ -238,6 +238,66 @@ const METRIC_PATTERNS: MetricPattern[] = [
     formatter: (m) => `${m[1]} reimbursement delays`,
     category: "Money",
   },
+  {
+    regex: /(\d+)\s+(?:line\s+stop|line\s+stoppage|production\s+stop)s?\b/gi,
+    formatter: (m) => `${m[1]} line stops`,
+    category: "Machinery",
+  },
+  {
+    regex: /(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)\s+(?:of\s+)?(?:line\s+stop|line\s+stoppage)/gi,
+    formatter: (m) => `${m[1]} hours line stoppage`,
+    category: "Machinery",
+  },
+  {
+    regex: /(?:PM|preventive\s+maintenance)\s+(?:overdue|backlog|pending|deferred)\s*(?:[:=]\s*)?(\d+)/gi,
+    formatter: (m) => `${m[1]} PM tasks overdue`,
+    category: "Machinery",
+  },
+  {
+    regex: /(?:open|outstanding|pending)\s+(?:maintenance\s+)?(?:ticket|work\s+order)s?\s*(?:[:=]\s*)?(\d+)/gi,
+    formatter: (m) => `${m[1]} open maintenance tickets`,
+    category: "Machinery",
+  },
+  {
+    regex: /(?:maintenance|repair)\s+(?:backlog|overdue)\s*(?:[:=]\s*)?(\d+)/gi,
+    formatter: (m) => `${m[1]} maintenance items overdue`,
+    category: "Machinery",
+  },
+  {
+    regex: /(?:scrap|wastage|waste)\s*(?:rate\s*)?[+↑]?\s*(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `Scrap rate ${m[1]}%`,
+    category: "Materials",
+  },
+  {
+    regex: /(\d+)\s+(?:scrap|waste)\s+(?:units?|items?|pieces?)/gi,
+    formatter: (m) => `${m[1]} scrap units`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:return|returns|customer\s+return)s?\s*(?:[:=]\s*)?(\d+)/gi,
+    formatter: (m) => `${m[1]} returns`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:overtime|OT)\s+(?:cost|expense|spend)\s*(?:[:=]\s*)?(?:\$|RM|USD|MYR)?\s*(\d[\d,]*(?:\.\d{2})?)/gi,
+    formatter: (m) => `Overtime cost ${m[1]}`,
+    category: "Money",
+  },
+  {
+    regex: /(?:margin|gross\s+margin|profit\s+margin)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `Margin at ${m[1]}%`,
+    category: "Money",
+  },
+  {
+    regex: /(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)\s+(?:overtime|OT)/gi,
+    formatter: (m) => `${m[1]} hours overtime`,
+    category: "Manpower",
+  },
+  {
+    regex: /(?:resignation|quit|left)s?\s*(?:[:=]\s*)?(\d+)\s*(?:staff|employee|worker|people)?/gi,
+    formatter: (m) => `${m[1]} resignations`,
+    category: "Manpower",
+  },
 ];
 
 function extractMetricsFromDocument(doc: ProcessedDocument): CategorisedExtractedSignal[] {
@@ -371,6 +431,41 @@ const EVENT_PATTERNS: EventPattern[] = [
     regex: /(?:staff|employee)\s+(?:resignation|turnover|attrition)/gi,
     formatter: () => "Staff turnover event",
     category: "Manpower",
+  },
+  {
+    regex: /(?:line\s+stop|line\s+stoppage|production\s+halt|production\s+stop)/gi,
+    formatter: () => "Line stop event",
+    category: "Machinery",
+  },
+  {
+    regex: /\bPM\s+(?:overdue|missed|skipped)\b/g,
+    formatter: () => "PM schedule overdue",
+    category: "Machinery",
+  },
+  {
+    regex: /(?:open|outstanding|pending)\s+(?:maintenance\s+)?(?:tickets?|work\s+orders?)/gi,
+    formatter: () => "Open maintenance tickets",
+    category: "Machinery",
+  },
+  {
+    regex: /(?:scrap|wastage|waste)\s+(?:increase|rising|high|excessive)/gi,
+    formatter: () => "Scrap/waste issue",
+    category: "Materials",
+  },
+  {
+    regex: /(?:customer|product)\s+(?:return|rejection|complaint)s?/gi,
+    formatter: () => "Customer returns/complaints",
+    category: "Materials",
+  },
+  {
+    regex: /(?:margin|profit)\s+(?:pressure|erosion|decline|compression)/gi,
+    formatter: () => "Margin pressure",
+    category: "Money",
+  },
+  {
+    regex: /(?:overtime|OT)\s+(?:cost|expense)\s+(?:increase|rising|high|excessive)/gi,
+    formatter: () => "Overtime cost escalation",
+    category: "Money",
   },
 ];
 

@@ -336,7 +336,8 @@ export default function AnalysisResults() {
             };
             const esStyle = finding.evidenceStrength ? evidenceStrengthColors[finding.evidenceStrength] : null;
             const hasSignals = finding.evidenceAnchors && finding.evidenceAnchors.length > 0;
-            const noSignalsFallback = !hasSignals && finding.evidenceStrength === "WEAK";
+            const hasAnyConcreteOutput = hasSignals || (finding.impactObserved && finding.impactObserved.length > 0);
+            const noSignalsFallback = !hasAnyConcreteOutput && finding.evidenceStrength === "WEAK";
             return (
               <Card key={finding.id || idx} className="p-4 border-l-4" style={{ borderLeftColor: 'currentColor' }}>
                 <div className="flex-1">

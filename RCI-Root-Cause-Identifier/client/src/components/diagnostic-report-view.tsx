@@ -47,7 +47,8 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
     : null;
   
   const hasSignals = finding.evidenceAnchors && finding.evidenceAnchors.length > 0;
-  const noSignalsFallback = !hasSignals && finding.evidenceStrength === "WEAK";
+  const hasAnyConcreteOutput = hasSignals || (finding.impactObserved && finding.impactObserved.length > 0);
+  const noSignalsFallback = !hasAnyConcreteOutput && finding.evidenceStrength === "WEAK";
 
   return (
     <Card 
