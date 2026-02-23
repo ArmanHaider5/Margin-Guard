@@ -558,14 +558,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const doc = await storage.getClientDocument(docId);
       if (!doc) return;
+      
+      console.log(`AUTO-PROCESS: Starting ${doc.fileName} (type=${doc.fileType}, path=${doc.filePath})`);
       await storage.updateClientDocument(doc.id, { status: "processing" });
+      
       const extractedData = await parseDocument(doc.filePath, doc.fileType);
+      const textLen = extractedData.rawText?.length || 0;
+      
+      console.log(`AUTO-PROCESS: ${doc.fileName} — extracted ${textLen} chars of text`);
+      
+      if (textLen < 100) {
+        const failMsg = doc.fileType === 'pdf' 
+          ? "Could not extract readable text from this PDF. If this is a scanned document, please upload a text-based report or export as Excel."
+          : "Could not extract enough readable text from this document. Try uploading a different format (Excel or text-based PDF).";
+        
+        console.warn(`AUTO-PROCESS: ${doc.fileName} — text extraction too short (${textLen} chars), marking as extraction failure`);
+        await storage.updateClientDocument(doc.id, {
+          status: "error",
+          extractedData,
+          processingError: failMsg,
+          processedAt: new Date(),
+        });
+        return;
+      }
+      
+      console.log(`AUTO-PROCESS: ${doc.fileName} — first 300 chars: ${extractedData.rawText?.slice(0, 300)}`);
+      
       await storage.updateClientDocument(doc.id, {
         status: "processed",
         extractedData,
         processedAt: new Date(),
       });
-      console.log(`AUTO-PROCESS: Document ${doc.fileName} processed successfully`);
+      console.log(`AUTO-PROCESS: Document ${doc.fileName} processed successfully (${textLen} chars)`);
     } catch (err) {
       console.error(`AUTO-PROCESS: Document ${docId} failed:`, err);
       await storage.updateClientDocument(docId, {

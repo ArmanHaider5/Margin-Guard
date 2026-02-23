@@ -108,9 +108,11 @@ The `shared/` directory contains code used by both frontend and backend:
 - **Environment Variables**: `REPL_ID`, `SESSION_SECRET`, `ISSUER_URL`
 
 ### Document Processing
-- **xlsx** — Excel/CSV file parsing
+- **xlsx** — Excel/CSV file parsing (header-value paired text output for signal extraction)
 - **mammoth** — Word document (.docx) text extraction
+- **pdf-parse** — PDF text extraction (body text + tables)
 - **pdfkit** — PDF generation (reports, exports)
+- **Text extraction validation** — Documents with <100 chars of extracted text are marked as extraction failures with user-facing error messages
 
 ### Key NPM Packages
 - `drizzle-orm` + `drizzle-kit` — Database ORM and migration tooling

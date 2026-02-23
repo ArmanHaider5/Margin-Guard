@@ -358,28 +358,34 @@ export default function ClientDiagnosticsNew() {
                   const Icon = fileTypeIcons[doc.fileType] || File;
                   const isSelected = selectedDocs.includes(doc.id);
                   return (
-                    <div 
-                      key={doc.id}
-                      onClick={() => toggleDoc(doc.id)}
-                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        isSelected ? "border-primary bg-primary/5" : "hover-elevate"
-                      }`}
-                      data-testid={`doc-select-${doc.id}`}
-                    >
-                      <Checkbox checked={isSelected} />
-                      <Icon className="w-5 h-5 text-muted-foreground" />
-                      <span className="flex-1 truncate">{doc.fileName}</span>
-                      <Badge variant={doc.status === "processed" ? "secondary" : doc.status === "error" ? "destructive" : "outline"}>
-                        {doc.status === "processing" ? (
-                          <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Processing&hellip;</>
-                        ) : doc.status === "processed" ? (
-                          <><CheckCircle2 className="w-3 h-3 mr-1" /> Processed</>
-                        ) : doc.status === "error" ? (
-                          <><AlertTriangle className="w-3 h-3 mr-1" /> Failed</>
-                        ) : (
-                          "Uploaded"
-                        )}
-                      </Badge>
+                    <div key={doc.id}>
+                      <div 
+                        onClick={() => toggleDoc(doc.id)}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          isSelected ? "border-primary bg-primary/5" : "hover-elevate"
+                        }`}
+                        data-testid={`doc-select-${doc.id}`}
+                      >
+                        <Checkbox checked={isSelected} />
+                        <Icon className="w-5 h-5 text-muted-foreground" />
+                        <span className="flex-1 truncate">{doc.fileName}</span>
+                        <Badge variant={doc.status === "processed" ? "secondary" : doc.status === "error" ? "destructive" : "outline"}>
+                          {doc.status === "processing" ? (
+                            <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Processing&hellip;</>
+                          ) : doc.status === "processed" ? (
+                            <><CheckCircle2 className="w-3 h-3 mr-1" /> Processed</>
+                          ) : doc.status === "error" ? (
+                            <><AlertTriangle className="w-3 h-3 mr-1" /> Failed</>
+                          ) : (
+                            "Uploaded"
+                          )}
+                        </Badge>
+                      </div>
+                      {doc.status === "error" && doc.processingError && (
+                        <div className="ml-8 mt-1 mb-1 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 rounded px-2 py-1">
+                          {doc.processingError}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

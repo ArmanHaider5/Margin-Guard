@@ -49,12 +49,31 @@ export async function parseExcelFile(filePath: string): Promise<ExtractedDocumen
       rows,
     });
 
+    allText.push(`Sheet: ${sheetName}`);
+    allText.push(headers.join(' | '));
+
+    for (const row of rows) {
+      const rowParts: string[] = [];
+      for (let i = 0; i < row.length; i++) {
+        const cellVal = row[i];
+        if (!cellVal || cellVal === '') continue;
+        const header = headers[i] || '';
+        if (header) {
+          rowParts.push(`${header}: ${cellVal}`);
+        } else {
+          rowParts.push(cellVal);
+        }
+      }
+      if (rowParts.length > 0) {
+        allText.push(rowParts.join(' | '));
+      }
+    }
+
     for (const row of jsonData) {
       for (const cell of row as any[]) {
         if (cell === null || cell === undefined) continue;
         
         const cellStr = String(cell);
-        allText.push(cellStr);
 
         const numValue = parseFloat(cellStr.replace(/[^0-9.-]/g, ''));
         if (!isNaN(numValue) && numValue > 100) {
@@ -72,12 +91,84 @@ export async function parseExcelFile(filePath: string): Promise<ExtractedDocumen
         }
       }
     }
+
+    const namedJson = XLSX.utils.sheet_to_json<Record<string, any>>(sheet);
+    for (const row of namedJson) {
+      const parts: string[] = [];
+      for (const [key, value] of Object.entries(row)) {
+        if (value !== null && value !== undefined && String(value).trim() !== '') {
+          parts.push(`${key} ${String(value)}`);
+        }
+      }
+      if (parts.length > 0) {
+        allText.push(parts.join(' '));
+      }
+    }
+  }
+
+  const rawText = allText.join('\n').slice(0, 100000);
+
+  console.log(`EXCEL PARSER: ${filePath}`);
+  console.log(`EXCEL PARSER: rawText.length = ${rawText.length}`);
+  console.log(`EXCEL PARSER: first 500 chars: ${rawText.slice(0, 500)}`);
+
+  return {
+    rawText,
+    tables,
+    keyFindings: extractKeyFindings(allText),
+    dates: Array.from(new Set(dates)).slice(0, 50),
+    amounts: amounts.slice(0, 100),
+    issues: Array.from(new Set(issues)).slice(0, 50),
+  };
+}
+
+export async function parsePdfFile(filePath: string): Promise<ExtractedDocumentData> {
+  const pdfParse = (await import('pdf-parse')).default;
+  const buffer = fs.readFileSync(filePath);
+  
+  console.log(`PDF PARSER: Reading ${filePath}, buffer size = ${buffer.length} bytes`);
+  
+  const data = await pdfParse(buffer);
+  const text = data.text || '';
+  
+  console.log(`PDF PARSER: Extracted text length = ${text.length}`);
+  console.log(`PDF PARSER: Pages = ${data.numpages}`);
+  console.log(`PDF PARSER: first 500 chars: ${text.slice(0, 500)}`);
+
+  if (text.trim().length < 50) {
+    console.log(`PDF PARSER: WARNING — very little text extracted (${text.trim().length} chars). Possible scanned/image PDF.`);
+  }
+
+  const amounts: ExtractedDocumentData['amounts'] = [];
+  const dates: string[] = [];
+  const issues: string[] = [];
+
+  const currencyMatches = Array.from(text.matchAll(/RM\s?[\d,]+\.?\d*|\$\s?[\d,]+\.?\d*|USD\s?[\d,]+\.?\d*|MYR\s?[\d,]+\.?\d*|[\d,]+\.?\d*\s?(?:ringgit|dollars?)/gi));
+  for (const match of currencyMatches) {
+    const numStr = match[0].replace(/[^0-9.]/g, '');
+    const value = parseFloat(numStr);
+    if (!isNaN(value) && value > 0) {
+      amounts.push({ value, context: match[0] });
+    }
+  }
+
+  const dateMatches = Array.from(text.matchAll(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4}/gi));
+  for (const match of dateMatches) {
+    dates.push(match[0]);
+  }
+
+  const issueKeywords = ['error', 'problem', 'issue', 'delay', 'late', 'missing', 'failed', 'reject', 'complaint', 'defect', 'loss', 'damage', 'concern', 'risk', 'overdue', 'backlog', 'downtime', 'shortage'];
+  const sentences = text.split(/[.!?\n]+/);
+  for (const sentence of sentences) {
+    const trimmed = sentence.trim();
+    if (trimmed.length > 10 && issueKeywords.some(kw => trimmed.toLowerCase().includes(kw))) {
+      issues.push(trimmed);
+    }
   }
 
   return {
-    rawText: allText.join(' ').slice(0, 50000),
-    tables,
-    keyFindings: extractKeyFindings(allText),
+    rawText: text.slice(0, 100000),
+    keyFindings: extractKeyFindings([text]),
     dates: Array.from(new Set(dates)).slice(0, 50),
     amounts: amounts.slice(0, 100),
     issues: Array.from(new Set(issues)).slice(0, 50),
@@ -88,6 +179,10 @@ export async function parseWordFile(filePath: string): Promise<ExtractedDocument
   const buffer = fs.readFileSync(filePath);
   const result = await mammoth.extractRawText({ buffer });
   const text = result.value;
+
+  console.log(`WORD PARSER: ${filePath}`);
+  console.log(`WORD PARSER: rawText.length = ${text.length}`);
+  console.log(`WORD PARSER: first 500 chars: ${text.slice(0, 500)}`);
 
   const amounts: ExtractedDocumentData['amounts'] = [];
   const dates: string[] = [];
@@ -116,7 +211,7 @@ export async function parseWordFile(filePath: string): Promise<ExtractedDocument
   }
 
   return {
-    rawText: text.slice(0, 50000),
+    rawText: text.slice(0, 100000),
     keyFindings: extractKeyFindings([text]),
     dates: Array.from(new Set(dates)).slice(0, 50),
     amounts: amounts.slice(0, 100),
@@ -154,22 +249,52 @@ function extractKeyFindings(textParts: string[]): string[] {
 }
 
 export async function parseDocument(filePath: string, fileType: DocumentType): Promise<ExtractedDocumentData> {
+  console.log(`DOCUMENT PARSER: Parsing ${filePath} as ${fileType}`);
+  
+  if (!fs.existsSync(filePath)) {
+    console.error(`DOCUMENT PARSER: File not found: ${filePath}`);
+    throw new Error(`File not found: ${filePath}`);
+  }
+
+  const stats = fs.statSync(filePath);
+  console.log(`DOCUMENT PARSER: File size = ${stats.size} bytes`);
+
   try {
+    let result: ExtractedDocumentData;
+    
     switch (fileType) {
       case 'excel':
-        return await parseExcelFile(filePath);
+        result = await parseExcelFile(filePath);
+        break;
       case 'word':
-        return await parseWordFile(filePath);
+        result = await parseWordFile(filePath);
+        break;
+      case 'pdf':
+        result = await parsePdfFile(filePath);
+        break;
       case 'powerpoint':
-        return await parsePowerPointFile(filePath);
+        result = await parsePowerPointFile(filePath);
+        break;
       default:
-        return {
+        result = {
           rawText: 'File type not supported for automatic parsing.',
           keyFindings: ['Manual review required for this file type'],
         };
     }
+
+    const textLen = result.rawText?.length || 0;
+    console.log(`DOCUMENT PARSER: Final rawText length = ${textLen} chars`);
+    
+    if (textLen < 100) {
+      console.warn(`DOCUMENT PARSER: WARNING — extracted text too short (${textLen} chars). Signal extraction will likely fail.`);
+      if (fileType === 'pdf') {
+        console.warn(`DOCUMENT PARSER: This may be a scanned/image PDF. Text-based PDFs or Excel exports are recommended.`);
+      }
+    }
+    
+    return result;
   } catch (error) {
-    console.error('Error parsing document:', error);
+    console.error('DOCUMENT PARSER: Error parsing document:', error);
     throw new Error(`Failed to parse document: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
