@@ -63,7 +63,31 @@ const SIGNAL_RULES: SignalRule[] = [
       "collection issue",
       "bad debt",
       "payment delay",
-      "cash flow problem"
+      "cash flow problem",
+      "cost overrun",
+      "over budget",
+      "budget overrun",
+      "budget variance",
+      "gross margin",
+      "profit erosion",
+      "margin erosion",
+      "profit decline",
+      "revenue drop",
+      "revenue decline",
+      "write-off",
+      "write off",
+      "penalty",
+      "financial loss",
+      "operating loss",
+      "cost increase",
+      "expense increase",
+      "interest expense",
+      "debt service",
+      "working capital",
+      "liquidity",
+      "cash position",
+      "accounts payable",
+      "accounts receivable",
     ],
     descriptionTemplate: (matched) => 
       `Repeated mentions of ${matched.slice(0, 3).join(", ")}${matched.length > 3 ? " and related terms" : ""}`
@@ -80,7 +104,41 @@ const SIGNAL_RULES: SignalRule[] = [
       "skill gap",
       "absenteeism",
       "overtime",
-      "understaffed"
+      "understaffed",
+      "extra hours",
+      "extended shift",
+      "double shift",
+      "mandatory overtime",
+      "compulsory overtime",
+      "weekend work",
+      "night shift",
+      "burnout",
+      "fatigue",
+      "morale",
+      "low morale",
+      "disengagement",
+      "exit interview",
+      "vacancy",
+      "open position",
+      "unfilled role",
+      "talent gap",
+      "knowledge loss",
+      "key person risk",
+      "succession",
+      "onboarding",
+      "retention",
+      "attrition",
+      "sick leave",
+      "medical leave",
+      "absent",
+      "no show",
+      "firefighting",
+      "fire fighting",
+      "constantly reacting",
+      "overwhelmed",
+      "stretched thin",
+      "overworked",
+      "undermanned",
     ],
     descriptionTemplate: (matched) =>
       `Evidence of workforce issues: ${matched.slice(0, 3).join(", ")}${matched.length > 3 ? " and related terms" : ""}`
@@ -97,7 +155,37 @@ const SIGNAL_RULES: SignalRule[] = [
       "technical issue",
       "repair needed",
       "malfunction",
-      "equipment aging"
+      "equipment aging",
+      "line stoppage",
+      "line stop",
+      "unplanned stop",
+      "machine idle",
+      "idle hours",
+      "idle time",
+      "service backlog",
+      "pending pm",
+      "pm overdue",
+      "pm backlog",
+      "preventive maintenance",
+      "corrective maintenance",
+      "mttr",
+      "mtbf",
+      "mean time",
+      "uptime",
+      "availability",
+      "oee",
+      "machine utilisation",
+      "machine utilization",
+      "equipment downtime",
+      "production halt",
+      "production stop",
+      "system down",
+      "system outage",
+      "software crash",
+      "calibration",
+      "wear and tear",
+      "spare part",
+      "spare parts",
     ],
     descriptionTemplate: (matched) =>
       `Equipment and system issues detected: ${matched.slice(0, 3).join(", ")}${matched.length > 3 ? " and related terms" : ""}`
@@ -114,7 +202,43 @@ const SIGNAL_RULES: SignalRule[] = [
       "stock discrepancy",
       "damaged goods",
       "expired stock",
-      "procurement issue"
+      "procurement issue",
+      "reject rate",
+      "rejection rate",
+      "scrap",
+      "scrap rate",
+      "wastage",
+      "waste rate",
+      "quality rework",
+      "reprocessing",
+      "rework",
+      "re-work",
+      "non-conformance",
+      "ncr",
+      "defect",
+      "defective",
+      "defect rate",
+      "late shipment",
+      "late delivery",
+      "on-time delivery",
+      "otd",
+      "delivery performance",
+      "fill rate",
+      "backorder",
+      "back order",
+      "lead time",
+      "lead-time",
+      "supplier performance",
+      "vendor rating",
+      "incoming inspection",
+      "goods return",
+      "material variance",
+      "yield loss",
+      "yield",
+      "first pass yield",
+      "fpq",
+      "customer complaint",
+      "product return",
     ],
     descriptionTemplate: (matched) =>
       `Supply and inventory issues found: ${matched.slice(0, 3).join(", ")}${matched.length > 3 ? " and related terms" : ""}`
@@ -149,8 +273,23 @@ const METRIC_PATTERNS: MetricPattern[] = [
     category: "Manpower",
   },
   {
+    regex: /(?:overtime|OT)\s+(?:increase|increased|up|rose|grew)\s*(?:by\s+)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `Overtime increase ${m[1]}%`,
+    category: "Manpower",
+  },
+  {
+    regex: /(?:extra\s+hours?|extended\s+shift)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|%)/gi,
+    formatter: (m) => `Extra hours ${m[1]}`,
+    category: "Manpower",
+  },
+  {
     regex: /(?:absenteeism|absence(?:\s+rate)?)\s*[+↑]?\s*(\d+(?:\.\d+)?)\s*%/gi,
     formatter: (m) => `Absenteeism ${m[1]}%`,
+    category: "Manpower",
+  },
+  {
+    regex: /(?:sick\s+leave|medical\s+leave)\s*(?:[:=]\s*)?(\d+)\s*(?:days?|instances?|cases?)?/gi,
+    formatter: (m) => `${m[1]} sick leave days`,
     category: "Manpower",
   },
   {
@@ -169,6 +308,16 @@ const METRIC_PATTERNS: MetricPattern[] = [
     category: "Machinery",
   },
   {
+    regex: /(?:machine\s+idle|idle\s+time|idle\s+hours?)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|%)?/gi,
+    formatter: (m) => `Machine idle ${m[1]} hours`,
+    category: "Machinery",
+  },
+  {
+    regex: /(?:line\s+stoppage|unplanned\s+stop)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|times?|incidents?)?/gi,
+    formatter: (m) => `Line stoppage ${m[1]}`,
+    category: "Machinery",
+  },
+  {
     regex: /(\d+)\s+(?:breakdown|failure|malfunction)s?\b/gi,
     formatter: (m) => `${m[1]} breakdowns reported`,
     category: "Machinery",
@@ -179,13 +328,78 @@ const METRIC_PATTERNS: MetricPattern[] = [
     category: "Machinery",
   },
   {
+    regex: /(?:OEE|overall\s+equipment\s+effectiveness)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `OEE ${m[1]}%`,
+    category: "Machinery",
+  },
+  {
+    regex: /(?:availability|uptime)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `Availability ${m[1]}%`,
+    category: "Machinery",
+  },
+  {
+    regex: /(?:MTTR|mean\s+time\s+to\s+repair)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|min)/gi,
+    formatter: (m) => `MTTR ${m[1]} hours`,
+    category: "Machinery",
+  },
+  {
+    regex: /(?:MTBF|mean\s+time\s+between\s+failure)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|days?)/gi,
+    formatter: (m) => `MTBF ${m[1]}`,
+    category: "Machinery",
+  },
+  {
     regex: /(?:defect|reject(?:ion)?|rework)\s*(?:rate\s*)?[+↑]?\s*(\d+(?:\.\d+)?)\s*%/gi,
     formatter: (m) => `Defect/rework rate ${m[1]}%`,
     category: "Materials",
   },
   {
+    regex: /(?:reject\s+rate|rejection\s+rate)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `Reject rate ${m[1]}%`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:scrap|scrap\s+rate)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `Scrap rate ${m[1]}%`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:quality\s+rework|reprocessing)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*(?:%|units?|pcs|pieces?)?/gi,
+    formatter: (m) => `Quality rework ${m[1]}`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:first\s+pass\s+yield|FPY|FPQ)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `First pass yield ${m[1]}%`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:yield|yield\s+loss)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `Yield ${m[1]}%`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:on-?time\s+delivery|OTD|delivery\s+performance)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `On-time delivery ${m[1]}%`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:late\s+shipment|late\s+delivery|delayed\s+shipment)s?\s*(?:[:=]\s*)?(\d+)/gi,
+    formatter: (m) => `${m[1]} late shipments`,
+    category: "Materials",
+  },
+  {
     regex: /(\d+)\s+(?:stockout|stock-out)s?\b/gi,
     formatter: (m) => `${m[1]} stockouts`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:NCR|non-conformance|non-conformity)\s*(?:[:=]\s*)?(\d+)/gi,
+    formatter: (m) => `${m[1]} non-conformances`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:customer\s+complaint|complaint)s?\s*(?:[:=]\s*)?(\d+)/gi,
+    formatter: (m) => `${m[1]} customer complaints`,
     category: "Materials",
   },
   {
@@ -204,8 +418,18 @@ const METRIC_PATTERNS: MetricPattern[] = [
     category: "Money",
   },
   {
-    regex: /(?:cost|expense|spend)\s+(?:increase|up|rose|grew)\s*(?:by\s+)?(\d+(?:\.\d+)?)\s*%/gi,
+    regex: /(?:gross\s+margin|profit\s+margin|margin)\s+(?:decline|drop|decrease|erosion|fell|down)\s*(?:by\s+)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `Margin decline ${m[1]}%`,
+    category: "Money",
+  },
+  {
+    regex: /(?:cost|expense|spend)\s+(?:increase|up|rose|grew|overrun)\s*(?:by\s+)?(\d+(?:\.\d+)?)\s*%/gi,
     formatter: (m) => `Cost increase ${m[1]}%`,
+    category: "Money",
+  },
+  {
+    regex: /(?:cost\s+overrun|budget\s+overrun|over\s+budget)\s*(?:[:=]\s*)?(?:\$|RM|USD|MYR)?\s*(\d[\d,]*(?:\.\d{2})?)/gi,
+    formatter: (m) => `Cost overrun ${m[1]}`,
     category: "Money",
   },
   {
@@ -224,8 +448,18 @@ const METRIC_PATTERNS: MetricPattern[] = [
     category: "Materials",
   },
   {
+    regex: /(?:lead\s*time|lead-time)\s*(?:[:=]\s*)?(\d+)\s*(?:days?|weeks?)/gi,
+    formatter: (m) => `Lead time ${m[1]} days`,
+    category: "Materials",
+  },
+  {
     regex: /(?:inventory|stock)\s+(?:variance|discrepancy|mismatch)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*%?/gi,
     formatter: (m) => `Inventory variance ${m[1]}%`,
+    category: "Materials",
+  },
+  {
+    regex: /(?:fill\s+rate)\s*(?:[:=]\s*)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `Fill rate ${m[1]}%`,
     category: "Materials",
   },
   {
@@ -254,6 +488,11 @@ const METRIC_PATTERNS: MetricPattern[] = [
     category: "Machinery",
   },
   {
+    regex: /(?:pending\s+PM|PM\s+pending|maintenance\s+overdue|service\s+backlog)\s*(?:[:=]\s*)?(\d+)/gi,
+    formatter: (m) => `${m[1]} maintenance items pending`,
+    category: "Machinery",
+  },
+  {
     regex: /(?:open|outstanding|pending)\s+(?:maintenance\s+)?(?:ticket|work\s+order)s?\s*(?:[:=]\s*)?(\d+)/gi,
     formatter: (m) => `${m[1]} open maintenance tickets`,
     category: "Machinery",
@@ -279,6 +518,11 @@ const METRIC_PATTERNS: MetricPattern[] = [
     category: "Materials",
   },
   {
+    regex: /(?:product\s+return|goods\s+return)s?\s*(?:[:=]\s*)?(\d+)/gi,
+    formatter: (m) => `${m[1]} product returns`,
+    category: "Materials",
+  },
+  {
     regex: /(?:overtime|OT)\s+(?:cost|expense|spend)\s*(?:[:=]\s*)?(?:\$|RM|USD|MYR)?\s*(\d[\d,]*(?:\.\d{2})?)/gi,
     formatter: (m) => `Overtime cost ${m[1]}`,
     category: "Money",
@@ -297,6 +541,21 @@ const METRIC_PATTERNS: MetricPattern[] = [
     regex: /(?:resignation|quit|left)s?\s*(?:[:=]\s*)?(\d+)\s*(?:staff|employee|worker|people)?/gi,
     formatter: (m) => `${m[1]} resignations`,
     category: "Manpower",
+  },
+  {
+    regex: /(?:training|competency)\s+(?:gap|deficit|shortfall|backlog)\s*(?:[:=]\s*)?(\d+)?/gi,
+    formatter: (m) => m[1] ? `${m[1]} training gaps` : `Training gap identified`,
+    category: "Manpower",
+  },
+  {
+    regex: /(\d+(?:\.\d+)?)\s*%\s+(?:overtime|OT)\s+(?:increase|growth|rise)/gi,
+    formatter: (m) => `Overtime increase ${m[1]}%`,
+    category: "Manpower",
+  },
+  {
+    regex: /(?:downtime|stoppage)\s+(?:increase|increased|up|rose)\s*(?:by\s+)?(\d+(?:\.\d+)?)\s*%/gi,
+    formatter: (m) => `Downtime increase ${m[1]}%`,
+    category: "Machinery",
   },
 ];
 
@@ -373,13 +632,48 @@ const EVENT_PATTERNS: EventPattern[] = [
     category: "Machinery",
   },
   {
-    regex: /(?:rework|re-work|redo|repeat\s+work)/gi,
+    regex: /(?:machine|equipment)\s+(?:idle|idling|not\s+running|not\s+operational)/gi,
+    formatter: () => "Machine idle event",
+    category: "Machinery",
+  },
+  {
+    regex: /(?:calibration|alignment)\s+(?:issue|problem|failure|needed|required)/gi,
+    formatter: () => "Calibration issue",
+    category: "Machinery",
+  },
+  {
+    regex: /(?:spare\s+part|spare\s+parts)\s+(?:shortage|unavailable|out\s+of\s+stock|delay)/gi,
+    formatter: () => "Spare parts shortage",
+    category: "Machinery",
+  },
+  {
+    regex: /(?:wear\s+and\s+tear|aging\s+equipment|old\s+machinery|obsolete\s+equipment)/gi,
+    formatter: () => "Equipment aging detected",
+    category: "Machinery",
+  },
+  {
+    regex: /(?:rework|re-work|redo|repeat\s+work|reprocessing)/gi,
     formatter: () => "Rework activity detected",
     category: "Materials",
   },
   {
-    regex: /(?:quality|QC|QA)\s+(?:reject(?:ion)?|failure|non-conformance)/gi,
+    regex: /(?:quality|QC|QA)\s+(?:reject(?:ion)?|failure|non-conformance|issue|problem)/gi,
     formatter: () => "Quality rejection events",
+    category: "Materials",
+  },
+  {
+    regex: /(?:non-conformance|NCR|non-conformity)\s+(?:report|raised|issued|logged)/gi,
+    formatter: () => "Non-conformance reported",
+    category: "Materials",
+  },
+  {
+    regex: /(?:incoming|receiving)\s+(?:inspection|check)\s+(?:fail|reject|issue)/gi,
+    formatter: () => "Incoming inspection failure",
+    category: "Materials",
+  },
+  {
+    regex: /(?:yield|yield\s+loss|low\s+yield)/gi,
+    formatter: () => "Yield loss detected",
     category: "Materials",
   },
   {
@@ -398,17 +692,67 @@ const EVENT_PATTERNS: EventPattern[] = [
     category: "Manpower",
   },
   {
+    regex: /(?:burnout|burn\s+out|burned\s+out|burnt\s+out)/gi,
+    formatter: () => "Burnout indicators",
+    category: "Manpower",
+  },
+  {
+    regex: /(?:low\s+morale|poor\s+morale|morale\s+(?:issue|problem|decline|drop))/gi,
+    formatter: () => "Low morale detected",
+    category: "Manpower",
+  },
+  {
+    regex: /(?:firefighting|fire\s+fighting|fire-fighting)/gi,
+    formatter: () => "Fire-fighting culture",
+    category: "Manpower",
+  },
+  {
+    regex: /(?:constantly\s+reacting|reactive\s+mode|reactive\s+management|always\s+reacting)/gi,
+    formatter: () => "Reactive management culture",
+    category: "Manpower",
+  },
+  {
+    regex: /(?:overwhelmed|stretched\s+thin|overworked|overloaded|under\s+pressure)/gi,
+    formatter: () => "Workforce overwhelmed",
+    category: "Manpower",
+  },
+  {
+    regex: /(?:knowledge\s+loss|expertise\s+loss|institutional\s+knowledge|brain\s+drain)/gi,
+    formatter: () => "Knowledge loss risk",
+    category: "Manpower",
+  },
+  {
+    regex: /(?:key\s+person\s+risk|single\s+point\s+of\s+failure|dependency\s+on\s+individual)/gi,
+    formatter: () => "Key person dependency",
+    category: "Manpower",
+  },
+  {
+    regex: /(?:training\s+gap|skill\s+gap|competency\s+gap|capability\s+gap)/gi,
+    formatter: () => "Training/skill gap",
+    category: "Manpower",
+  },
+  {
     regex: /(?:late|delayed|overdue)\s+(?:payment|invoice|billing|collection)/gi,
     formatter: () => "Late payment events",
     category: "Money",
   },
   {
-    regex: /(?:cash\s*flow|cashflow|liquidity)\s+(?:issue|problem|pressure|strain|crunch)/gi,
+    regex: /(?:cash\s*flow|cashflow|liquidity)\s+(?:issue|problem|pressure|strain|crunch|tight|constrained)/gi,
     formatter: () => "Cash flow pressure",
     category: "Money",
   },
   {
-    regex: /(?:supplier|vendor)\s+(?:delay|disruption|failure|issue)/gi,
+    regex: /(?:cost\s+overrun|over\s+budget|budget\s+exceeded|budget\s+overrun)/gi,
+    formatter: () => "Cost overrun",
+    category: "Money",
+  },
+  {
+    regex: /(?:profit|margin)\s+(?:erosion|pressure|decline|compression|squeeze|shrink)/gi,
+    formatter: () => "Margin pressure",
+    category: "Money",
+  },
+  {
+    regex: /(?:supplier|vendor)\s+(?:delay|disruption|failure|issue|problem)/gi,
     formatter: () => "Supplier disruption",
     category: "Materials",
   },
@@ -418,8 +762,13 @@ const EVENT_PATTERNS: EventPattern[] = [
     category: "Materials",
   },
   {
-    regex: /(?:delivery|shipment)\s+(?:delay|failure|miss)/gi,
+    regex: /(?:delivery|shipment)\s+(?:delay|failure|miss|late)/gi,
     formatter: () => "Delivery delay",
+    category: "Materials",
+  },
+  {
+    regex: /(?:late\s+shipment|delayed\s+delivery|missed\s+delivery|delivery\s+not\s+on\s+time)/gi,
+    formatter: () => "Late shipment event",
     category: "Materials",
   },
   {
@@ -430,6 +779,11 @@ const EVENT_PATTERNS: EventPattern[] = [
   {
     regex: /(?:staff|employee)\s+(?:resignation|turnover|attrition)/gi,
     formatter: () => "Staff turnover event",
+    category: "Manpower",
+  },
+  {
+    regex: /(?:exit\s+interview|leaving\s+the\s+company|tender\s+resignation)/gi,
+    formatter: () => "Staff exit event",
     category: "Manpower",
   },
   {
@@ -458,14 +812,19 @@ const EVENT_PATTERNS: EventPattern[] = [
     category: "Materials",
   },
   {
-    regex: /(?:margin|profit)\s+(?:pressure|erosion|decline|compression)/gi,
-    formatter: () => "Margin pressure",
-    category: "Money",
-  },
-  {
     regex: /(?:overtime|OT)\s+(?:cost|expense)\s+(?:increase|rising|high|excessive)/gi,
     formatter: () => "Overtime cost escalation",
     category: "Money",
+  },
+  {
+    regex: /(?:no\s+(?:standard|SOP|procedure)|lack\s+of\s+(?:SOP|procedure|standard))/gi,
+    formatter: () => "Missing SOP/procedures",
+    category: "Materials",
+  },
+  {
+    regex: /(?:ad\s*hoc|manual\s+process|manual\s+workaround|no\s+system)/gi,
+    formatter: () => "Ad-hoc/manual processes",
+    category: "Machinery",
   },
 ];
 
@@ -513,16 +872,29 @@ export function extractConcreteSignals(
 
   const allSignals: CategorisedExtractedSignal[] = [];
   for (const doc of documents) {
-    allSignals.push(...extractMetricsFromDocument(doc));
-    allSignals.push(...extractEventsFromDocument(doc));
+    const metrics = extractMetricsFromDocument(doc);
+    const events = extractEventsFromDocument(doc);
+    if (metrics.length > 0 || events.length > 0) {
+      console.log(`SIGNAL EXTRACTOR [${doc.name}]: ${metrics.length} metric(s), ${events.length} event(s)`);
+      for (const s of metrics) console.log(`  METRIC: ${s.signal} [${s.category}]`);
+      for (const s of events) console.log(`  EVENT:  ${s.signal} [${s.category}]`);
+    } else {
+      console.log(`SIGNAL EXTRACTOR [${doc.name}]: 0 signals (${doc.content?.length || 0} chars of content)`);
+    }
+    allSignals.push(...metrics);
+    allSignals.push(...events);
   }
+
+  const byCategory = { Money: 0, Manpower: 0, Machinery: 0, Materials: 0, general: 0 };
+  for (const s of allSignals) byCategory[s.category as keyof typeof byCategory] = (byCategory[s.category as keyof typeof byCategory] || 0) + 1;
+  console.log(`SIGNAL EXTRACTOR TOTAL: ${allSignals.length} signals — Money:${byCategory.Money} Manpower:${byCategory.Manpower} Machinery:${byCategory.Machinery} Materials:${byCategory.Materials}`);
 
   return allSignals;
 }
 
 function determineStrength(matchCount: number): EvidenceSignal["strength"] {
-  if (matchCount >= 5) return "strong";
-  if (matchCount >= 3) return "medium";
+  if (matchCount >= 4) return "strong";
+  if (matchCount >= 2) return "medium";
   return "weak";
 }
 
@@ -597,17 +969,21 @@ export function extractEvidenceSignalsFromDocuments(
     if (count > 0 && matchedTerms.length > 0) {
       const sortedTerms = [...matchedTerms].sort();
       const termsKey = sortedTerms.slice(0, 3).join("-").replace(/\s+/g, "_");
+      const strength = determineStrength(count);
       const signal: EvidenceSignal = {
         signalId: `sig-${rule.category.toLowerCase()}-${count}-${termsKey}`,
         category: rule.category,
         description: rule.descriptionTemplate(matchedTerms),
         matchedTerms: sortedTerms,
-        strength: determineStrength(count),
+        strength,
         sourceDocuments: categoryDocNames[rule.category] || [],
       };
       signals.push(signal);
+      console.log(`EVIDENCE SIGNAL: [${rule.category}] strength=${strength} matches=${count} terms=${sortedTerms.slice(0, 3).join(", ")}`);
     }
   }
+
+  console.log(`EVIDENCE SIGNALS TOTAL: ${signals.length} signals across ${new Set(signals.map(s => s.category)).size} categories`);
 
   return signals;
 }

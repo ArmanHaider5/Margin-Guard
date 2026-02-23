@@ -213,11 +213,14 @@ export default function AnalysisResults() {
             <>
               <AlertCircle className="w-12 h-12 mx-auto text-amber-500 mb-4" />
               <h2 className="text-xl font-semibold mb-2">No Signals Detected</h2>
-              <p className="text-muted-foreground mb-4">
-                No operational or financial signals detected. Please upload Ops, Maintenance, QC, or Finance documents.
-              </p>
+              <div className="grid grid-cols-2 gap-2 max-w-xs mx-auto mb-4 text-sm">
+                <div className="text-left text-muted-foreground">Ops signals:</div><div className="text-right font-mono">0</div>
+                <div className="text-left text-muted-foreground">Maintenance signals:</div><div className="text-right font-mono">0</div>
+                <div className="text-left text-muted-foreground">QC signals:</div><div className="text-right font-mono">0</div>
+                <div className="text-left text-muted-foreground">Finance signals:</div><div className="text-right font-mono">0</div>
+              </div>
               <p className="text-sm text-muted-foreground mb-4">
-                The signal extractor could not find actionable data in the uploaded documents. Try uploading different document types.
+                Try uploading reports with metrics, trends, or performance summaries.
               </p>
             </>
           ) : (
