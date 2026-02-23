@@ -48,6 +48,7 @@ Preferred communication style: Simple, everyday language.
   - `shared/industry-problems.ts` — Industry-specific problem definitions
 - **Analysis Pipeline**: `bulk-analyzer.ts` orchestrates knowledge-governed analysis; `diagnostic-composer.ts` produces rule-based narrative synthesis (no AI-generated prose in reports)
 - **Findings Polish Pipeline**: Generic evidence anchors are filtered out; findings get evidence-led titles (`[Signal] → [Consequence]`), severity calibrated to evidence strength (WEAK→medium cap, MODERATE→high cap, STRONG→critical), and concise insight notes replacing templated "What This Indicates"
+- **Manufacturing Causality Reweighting**: In Manufacturing V2 path, operational root causes (Machinery/Materials +20%, Manpower +10%) are prioritized over financial outcomes (Money -15% unless financially documented). Causal ordering ensures at least 1 operational cause surfaces before Money when operational evidence exists. Executive summary warns if Money is the only surfaced category.
 - **Retry Logic**: `p-retry` with rate limit detection for API resilience
 
 ### Data Layer

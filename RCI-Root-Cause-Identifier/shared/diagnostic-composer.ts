@@ -290,6 +290,12 @@ function composeExecutiveSummary(
       }
     }
     
+    const isManufacturing = (industry || "").toLowerCase().includes("manufacturing");
+    const allCategories = new Set(allCauses.map(c => c.category));
+    if (isManufacturing && allCategories.size === 1 && allCategories.has("Money")) {
+      summary += `Operational root causes may be under-detected. Consider validating Ops/Maintenance signals. `;
+    }
+
     summary += `The findings support targeted intervention to address these root causes.`;
   } else {
     // Quick mode uses tentative, pattern-based language
@@ -304,6 +310,12 @@ function composeExecutiveSummary(
       summary += `Although the focus was on ${selectedContext}, initial patterns point to ${dominantCategory}-related factors. Further validation is recommended. `;
     }
     
+    const isManufacturingQuick = (industry || "").toLowerCase().includes("manufacturing");
+    const allCategoriesQuick = new Set(allCauses.map(c => c.category));
+    if (isManufacturingQuick && allCategoriesQuick.size === 1 && allCategoriesQuick.has("Money")) {
+      summary += `Operational root causes may be under-detected. Consider validating Ops/Maintenance signals. `;
+    }
+
     summary += `These findings should be validated with frontline staff before finalising intervention plans.`;
   }
   

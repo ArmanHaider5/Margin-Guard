@@ -1591,6 +1591,24 @@ function calculateConfidenceV2(
     }
   }
 
+  // Manufacturing causality reweighting (safe: this function is only called
+  // from selectFromManufacturingV2 which is gated to Manufacturing industry):
+  // Operational root causes (Machinery, Manpower) are weighted higher because
+  // they are upstream causes; Money findings are downstream financial outcomes.
+  const normalizedCat = normalizeV2Category(cause.category);
+  if (normalizedCat === "Machinery" || normalizedCat === "Materials") {
+    confidence = Math.round(confidence * 1.20);
+  } else if (normalizedCat === "Manpower") {
+    confidence = Math.round(confidence * 1.10);
+  } else if (normalizedCat === "Money") {
+    const hasFinancialEvidence = context.evidenceSignals?.some(
+      s => s.category === "Money" && (s.strength === "medium" || s.strength === "strong")
+    );
+    if (!hasFinancialEvidence) {
+      confidence = Math.round(confidence * 0.85);
+    }
+  }
+
   // Apply intervention type cap
   const interventionCap = CONFIDENCE_CAPS[cause.interventionType as InterventionType] || 99;
   confidence = Math.min(confidence, interventionCap);

@@ -716,6 +716,40 @@ function collapseDuplicateFindings(findings: AnalysisFinding[]): AnalysisFinding
   return result;
 }
 
+const OPERATIONAL_CATEGORIES: Set<FourMCategory> = new Set(["Machinery", "Materials", "Manpower"]);
+
+function hasOperationalEvidence(concreteSignals: CategorisedExtractedSignal[]): boolean {
+  return concreteSignals.some(s => OPERATIONAL_CATEGORIES.has(s.category));
+}
+
+function enforceCausalOrdering(findings: AnalysisFinding[], industry: string, concreteSignals: CategorisedExtractedSignal[]): AnalysisFinding[] {
+  if (industry.toLowerCase() !== "manufacturing") return findings;
+  if (!hasOperationalEvidence(concreteSignals)) return findings;
+
+  const operational = findings.filter(f => OPERATIONAL_CATEGORIES.has(f.fourMCategory));
+  const money = findings.filter(f => f.fourMCategory === "Money");
+
+  if (operational.length === 0 || money.length === 0) return findings;
+
+  const firstMoneyIdx = findings.findIndex(f => f.fourMCategory === "Money");
+  const firstOpsIdx = findings.findIndex(f => OPERATIONAL_CATEGORIES.has(f.fourMCategory));
+
+  if (firstOpsIdx < firstMoneyIdx) return findings;
+
+  const reordered: AnalysisFinding[] = [];
+  let opsInserted = false;
+  for (const f of findings) {
+    if (f.fourMCategory === "Money" && !opsInserted) {
+      const topOp = operational[0];
+      reordered.push(topOp);
+      opsInserted = true;
+    }
+    if (opsInserted && f === operational[0]) continue;
+    reordered.push(f);
+  }
+  return reordered;
+}
+
 // Full evidence-driven enrichment pipeline for a set of findings
 function applyEvidenceDrivenEnrichment(
   findings: AnalysisFinding[],
@@ -724,7 +758,8 @@ function applyEvidenceDrivenEnrichment(
   concreteSignals: CategorisedExtractedSignal[] = []
 ): AnalysisFinding[] {
   const enriched = findings.map(f => enrichFindingWithEvidence(f, evidenceSignals, concreteSignals, industry));
-  return collapseDuplicateFindings(enriched);
+  const collapsed = collapseDuplicateFindings(enriched);
+  return enforceCausalOrdering(collapsed, industry, concreteSignals);
 }
 
 // Generate synthetic evidence signals for fallback analysis paths (V2/mock mode).
