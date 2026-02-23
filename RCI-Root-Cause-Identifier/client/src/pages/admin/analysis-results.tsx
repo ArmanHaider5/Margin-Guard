@@ -191,14 +191,30 @@ export default function AnalysisResults() {
     );
   }
 
-  // Guard for null diagnosticReport (no findings available)
+  const isPipelineBlocked = findings.length === 0 && analysis.summary?.includes("Evidence pipeline not active");
+
   if (!diagnosticReport && findings.length === 0) {
     return (
       <div className="p-6">
         <Card className="p-8 text-center">
-          <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">No diagnostic findings</h2>
-          <p className="text-muted-foreground mb-4">This analysis has not produced any findings yet.</p>
+          {isPipelineBlocked ? (
+            <>
+              <AlertCircle className="w-12 h-12 mx-auto text-amber-500 mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Deep Diagnostic Blocked</h2>
+              <p className="text-muted-foreground mb-4">
+                Evidence pipeline not active. Connect signal extractor to enable Deep Diagnostic.
+              </p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Upload processed documents and re-run this analysis to activate signal-driven diagnostics.
+              </p>
+            </>
+          ) : (
+            <>
+              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <h2 className="text-xl font-semibold mb-2">No diagnostic findings</h2>
+              <p className="text-muted-foreground mb-4">This analysis has not produced any findings yet.</p>
+            </>
+          )}
           <Link href={`/admin/clients/${analysis.clientId}`}>
             <Button variant="outline">Back to Client</Button>
           </Link>

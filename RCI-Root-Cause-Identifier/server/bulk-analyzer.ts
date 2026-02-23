@@ -2434,6 +2434,17 @@ export async function runBulkAnalysis(input: AnalysisInput): Promise<AnalysisRes
   if (input.mode === "deep" && hasUploadedDocs) {
     console.log(`SIGNAL-DRIVEN DEEP: Bypassing mock mode — ${processedDocs.length} document(s) uploaded`);
     result = runSignalDrivenDeepAnalysis(input);
+  } else if (input.mode === "deep" && MOCK_MODE) {
+    console.log(`DEEP DIAGNOSTIC BLOCKED: No processed documents and mock mode active`);
+    result = {
+      findings: [],
+      summary: "Evidence pipeline not active. Connect signal extractor to enable Deep Diagnostic.",
+      costSavingOpportunities: [],
+      predictions: [],
+      analysisMode: "evidence-enriched",
+      confidence: "low",
+      isMockMode: true,
+    };
   } else if (MOCK_MODE) {
     console.log(`MOCK MODE: Skipping AI API calls, returning mock results. Mode: ${input.mode}`);
     result = generateMockAnalysisResult(input, isBaseline);
