@@ -15,6 +15,15 @@
 
 import type { FourMCategory } from "./schema";
 
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/[^\w\s%./$@#&+\-:=<>]/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 export type EvidenceSignal = {
   signalId: string;
   category: FourMCategory;
@@ -631,8 +640,9 @@ const METRIC_PATTERNS: MetricPattern[] = [
 ];
 
 function extractMetricsFromDocument(doc: ProcessedDocument): CategorisedExtractedSignal[] {
-  const content = doc.content || "";
-  if (!content.trim()) return [];
+  const rawContent = doc.content || "";
+  if (!rawContent.trim()) return [];
+  const content = normalizeText(rawContent);
 
   const results: CategorisedExtractedSignal[] = [];
   const seen = new Set<string>();
@@ -980,8 +990,9 @@ const EVENT_PATTERNS: EventPattern[] = [
 ];
 
 function extractEventsFromDocument(doc: ProcessedDocument): CategorisedExtractedSignal[] {
-  const content = doc.content || "";
-  if (!content.trim()) return [];
+  const rawContent = doc.content || "";
+  if (!rawContent.trim()) return [];
+  const content = normalizeText(rawContent);
 
   const results: CategorisedExtractedSignal[] = [];
   const seen = new Set<string>();
@@ -1023,14 +1034,17 @@ export function extractConcreteSignals(
 
   const allSignals: CategorisedExtractedSignal[] = [];
   for (const doc of documents) {
+    const normalized = normalizeText(doc.content || "");
+    console.log(`SIGNAL EXTRACTOR [${doc.name}]: normalizedText length=${normalized.length}`);
+    console.log(`SIGNAL EXTRACTOR [${doc.name}]: first 500 chars: ${normalized.slice(0, 500)}`);
     const metrics = extractMetricsFromDocument(doc);
     const events = extractEventsFromDocument(doc);
     if (metrics.length > 0 || events.length > 0) {
       console.log(`SIGNAL EXTRACTOR [${doc.name}]: ${metrics.length} metric(s), ${events.length} event(s)`);
-      for (const s of metrics) console.log(`  METRIC: ${s.signal} [${s.category}]`);
-      for (const s of events) console.log(`  EVENT:  ${s.signal} [${s.category}]`);
+      for (const s of metrics) console.log(`  METRIC: "${s.signal}" [${s.category}] raw: "${s.rawText}"`);
+      for (const s of events) console.log(`  EVENT:  "${s.signal}" [${s.category}] raw: "${s.rawText}"`);
     } else {
-      console.log(`SIGNAL EXTRACTOR [${doc.name}]: 0 signals (${doc.content?.length || 0} chars of content)`);
+      console.log(`SIGNAL EXTRACTOR [${doc.name}]: 0 signals after normalization`);
     }
     allSignals.push(...metrics);
     allSignals.push(...events);
@@ -1053,7 +1067,7 @@ function countTermOccurrences(
   content: string,
   terms: string[]
 ): { count: number; matchedTerms: string[] } {
-  const lowerContent = content.toLowerCase();
+  const lowerContent = normalizeText(content);
   let totalCount = 0;
   const matchedTerms: string[] = [];
 
@@ -1089,9 +1103,12 @@ export function extractEvidenceSignalsFromDocuments(
     return [];
   }
 
-  const combinedContent = documents
-    .map(doc => doc.content || "")
-    .join(" ");
+  const combinedContent = normalizeText(
+    documents.map(doc => doc.content || "").join(" ")
+  );
+
+  console.log(`EVIDENCE SIGNAL EXTRACTOR: combinedContent length=${combinedContent.length}`);
+  console.log(`EVIDENCE SIGNAL EXTRACTOR: first 500 chars: ${combinedContent.slice(0, 500)}`);
 
   if (!combinedContent.trim()) {
     return [];
@@ -1101,7 +1118,7 @@ export function extractEvidenceSignalsFromDocuments(
 
   const categoryDocNames: Record<string, string[]> = {};
   for (const doc of documents) {
-    const docContent = (doc.content || "").toLowerCase();
+    const docContent = normalizeText(doc.content || "");
     if (!docContent.trim()) continue;
     for (const rule of SIGNAL_RULES) {
       const hasMatch = rule.terms.some(term => docContent.includes(term.toLowerCase()));
