@@ -2065,6 +2065,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   }
 
   const signalCategories = new Set(concreteSignals.map(s => s.category));
+  const observedSymptoms = new Set(input.selectedSymptoms || []);
 
   const industryRootCauses = getRelevantRootCauses(industry);
 
@@ -2073,10 +2074,20 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     let isContextMatched = false;
     let problemMatches = 0;
     let documentMatches = 0;
+    let symptomMatches = 0;
 
     if (contextMatchedCategories.size > 0 && contextMatchedCategories.has(rc.category)) {
       score += 5;
       isContextMatched = true;
+    }
+
+    if (observedSymptoms.size > 0 && rc.symptomTags) {
+      for (const tag of rc.symptomTags) {
+        if (observedSymptoms.has(tag)) {
+          symptomMatches++;
+          score += 12;
+        }
+      }
     }
 
     for (const symptom of rc.symptoms || []) {
@@ -2098,7 +2109,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
       score += 10;
     }
 
-    return { cause: rc, score, isContextMatched, problemMatches, documentMatches };
+    return { cause: rc, score, isContextMatched, problemMatches, documentMatches, symptomMatches };
   });
 
   scoredCauses.sort((a, b) => b.score - a.score);
@@ -2119,9 +2130,14 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     selectedWithMeta = thresholdPassed.slice(0, 6);
   }
 
+  if (observedSymptoms.size > 0) {
+    console.log(`SIGNAL-DRIVEN DEEP: Observed symptoms: ${[...observedSymptoms].join(", ")}`);
+  }
   console.log(`SIGNAL-DRIVEN DEEP: Selected ${selectedWithMeta.length} root causes`);
   selectedWithMeta.forEach((item, idx) => {
-    console.log(`  ${idx + 1}. [${item.cause.id}] ${item.cause.title} (score: ${item.score}, problem:${item.problemMatches}, docs:${item.documentMatches})`);
+    const parts = [`score:${item.score}`, `problem:${item.problemMatches}`, `docs:${item.documentMatches}`];
+    if (item.symptomMatches > 0) parts.push(`symptoms:${item.symptomMatches}`);
+    console.log(`  ${idx + 1}. [${item.cause.id}] ${item.cause.title} (${parts.join(", ")})`);
   });
 
   const findings: AnalysisFinding[] = selectedWithMeta.map((item, idx) => {
