@@ -123,18 +123,24 @@ export async function parseExcelFile(filePath: string): Promise<ExtractedDocumen
 }
 
 export async function parsePdfFile(filePath: string): Promise<ExtractedDocumentData> {
-  const pdfModule = await import('pdf-parse');
-  const pdfParse = pdfModule.default || pdfModule;
+  const { PDFParse } = await import('pdf-parse');
   const buffer = fs.readFileSync(filePath);
+  const uint8 = new Uint8Array(buffer);
   
   console.log(`PDF PARSER: Reading ${filePath}, buffer size = ${buffer.length} bytes`);
   
-  const data = await pdfParse(buffer);
-  const text = data.text || '';
+  const parser = new PDFParse(uint8);
+  await parser.load();
+  const result = await parser.getText();
+  const numPages = parser.doc?.numPages || 0;
+  
+  const text = (result?.pages || []).map((p: any) => p.text || '').join('\n\n');
   
   console.log(`PDF PARSER: Extracted text length = ${text.length}`);
-  console.log(`PDF PARSER: Pages = ${data.numpages}`);
+  console.log(`PDF PARSER: Pages = ${numPages}`);
   console.log(`PDF PARSER: first 500 chars: ${text.slice(0, 500)}`);
+
+  parser.destroy();
 
   if (text.trim().length < 50) {
     console.log(`PDF PARSER: WARNING — very little text extracted (${text.trim().length} chars). Possible scanned/image PDF.`);

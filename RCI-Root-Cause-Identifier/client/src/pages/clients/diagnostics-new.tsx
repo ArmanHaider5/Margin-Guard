@@ -369,9 +369,11 @@ export default function ClientDiagnosticsNew() {
                         <Checkbox checked={isSelected} />
                         <Icon className="w-5 h-5 text-muted-foreground" />
                         <span className="flex-1 truncate">{doc.fileName}</span>
-                        <Badge variant={doc.status === "processed" ? "secondary" : doc.status === "error" ? "destructive" : "outline"}>
+                        <Badge variant={doc.status === "processed" && doc.processingError ? "outline" : doc.status === "processed" ? "secondary" : doc.status === "error" ? "destructive" : "outline"}>
                           {doc.status === "processing" ? (
                             <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Processing&hellip;</>
+                          ) : doc.status === "processed" && doc.processingError ? (
+                            <><AlertTriangle className="w-3 h-3 mr-1 text-amber-500" /> Processed (limited)</>
                           ) : doc.status === "processed" ? (
                             <><CheckCircle2 className="w-3 h-3 mr-1" /> Processed</>
                           ) : doc.status === "error" ? (
@@ -381,8 +383,12 @@ export default function ClientDiagnosticsNew() {
                           )}
                         </Badge>
                       </div>
-                      {doc.status === "error" && doc.processingError && (
-                        <div className="ml-8 mt-1 mb-1 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 rounded px-2 py-1">
+                      {doc.processingError && (
+                        <div className={`ml-8 mt-1 mb-1 text-xs rounded px-2 py-1 ${
+                          doc.status === "error" 
+                            ? "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400" 
+                            : "text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400"
+                        }`}>
                           {doc.processingError}
                         </div>
                       )}

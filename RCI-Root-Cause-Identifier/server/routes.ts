@@ -562,21 +562,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`AUTO-PROCESS: Starting ${doc.fileName} (type=${doc.fileType}, path=${doc.filePath})`);
       await storage.updateClientDocument(doc.id, { status: "processing" });
       
-      const extractedData = await parseDocument(doc.filePath, doc.fileType);
-      const textLen = extractedData.rawText?.length || 0;
+      let extractedData;
+      try {
+        extractedData = await parseDocument(doc.filePath, doc.fileType);
+      } catch (parseErr) {
+        const errMsg = parseErr instanceof Error ? parseErr.message : "Unknown parser error";
+        console.error(`AUTO-PROCESS: ${doc.fileName} — parser threw exception: ${errMsg}`);
+        await storage.updateClientDocument(doc.id, {
+          status: "error",
+          processingError: `Parser error: ${errMsg}`,
+          processedAt: new Date(),
+        });
+        return;
+      }
       
+      const textLen = extractedData.rawText?.length || 0;
       console.log(`AUTO-PROCESS: ${doc.fileName} — extracted ${textLen} chars of text`);
       
       if (textLen < 100) {
-        const failMsg = doc.fileType === 'pdf' 
-          ? "Could not extract readable text from this PDF. If this is a scanned document, please upload a text-based report or export as Excel."
-          : "Could not extract enough readable text from this document. Try uploading a different format (Excel or text-based PDF).";
+        const warnMsg = doc.fileType === 'pdf' 
+          ? "No readable text detected (likely scanned PDF). Signal extraction will be limited."
+          : "Very little text extracted. Signal extraction will be limited.";
         
-        console.warn(`AUTO-PROCESS: ${doc.fileName} — text extraction too short (${textLen} chars), marking as extraction failure`);
+        console.warn(`AUTO-PROCESS: ${doc.fileName} — text extraction short (${textLen} chars), marking processed with warning`);
         await storage.updateClientDocument(doc.id, {
-          status: "error",
+          status: "processed",
           extractedData,
-          processingError: failMsg,
+          processingError: warnMsg,
           processedAt: new Date(),
         });
         return;
@@ -587,6 +599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateClientDocument(doc.id, {
         status: "processed",
         extractedData,
+        processingError: null,
         processedAt: new Date(),
       });
       console.log(`AUTO-PROCESS: Document ${doc.fileName} processed successfully (${textLen} chars)`);
@@ -594,7 +607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error(`AUTO-PROCESS: Document ${docId} failed:`, err);
       await storage.updateClientDocument(docId, {
         status: "error",
-        processingError: err instanceof Error ? err.message : "Failed to parse document",
+        processingError: err instanceof Error ? err.message : "Failed to process document",
       }).catch(() => {});
     }
   }
