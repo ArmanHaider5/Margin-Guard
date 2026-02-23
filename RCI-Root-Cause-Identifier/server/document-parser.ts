@@ -123,7 +123,8 @@ export async function parseExcelFile(filePath: string): Promise<ExtractedDocumen
 }
 
 export async function parsePdfFile(filePath: string): Promise<ExtractedDocumentData> {
-  const pdfParse = (await import('pdf-parse')).default;
+  const pdfModule = await import('pdf-parse');
+  const pdfParse = pdfModule.default || pdfModule;
   const buffer = fs.readFileSync(filePath);
   
   console.log(`PDF PARSER: Reading ${filePath}, buffer size = ${buffer.length} bytes`);
