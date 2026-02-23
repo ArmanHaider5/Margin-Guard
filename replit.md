@@ -73,7 +73,7 @@ The `shared/` directory contains code used by both frontend and backend:
 - `industry-problems.ts` — Industry-specific problem definitions
 - `diagnostic-composer.ts` — Rule-based narrative composition
 - `analysis-builder.ts` — Knowledge-governed output assembly
-- `evidence-signals.ts` — Document-based evidence extraction (term matching)
+- `evidence-signals.ts` — Document-based evidence extraction (semantic phrase matching, 200+ terms, 80+ regex patterns across 4M categories)
 - `export-types.ts` — TypeScript types for PDF export configurations
 
 ### Key Routing Structure

@@ -213,14 +213,31 @@ export default function AnalysisResults() {
             <>
               <AlertCircle className="w-12 h-12 mx-auto text-amber-500 mb-4" />
               <h2 className="text-xl font-semibold mb-2">No Signals Detected</h2>
-              <div className="grid grid-cols-2 gap-2 max-w-xs mx-auto mb-4 text-sm">
-                <div className="text-left text-muted-foreground">Ops signals:</div><div className="text-right font-mono">0</div>
-                <div className="text-left text-muted-foreground">Maintenance signals:</div><div className="text-right font-mono">0</div>
-                <div className="text-left text-muted-foreground">QC signals:</div><div className="text-right font-mono">0</div>
-                <div className="text-left text-muted-foreground">Finance signals:</div><div className="text-right font-mono">0</div>
+              <p className="text-muted-foreground mb-4">
+                The signal extractor scanned your documents but found no actionable operational or financial signals.
+              </p>
+              <div className="text-left max-w-md mx-auto mb-4">
+                <p className="text-sm font-medium mb-2">Categories scanned:</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground mb-4">
+                  <div>Ops — OTD, overtime, backlog</div>
+                  <div>Maintenance — downtime, PM overdue</div>
+                  <div>QC — rework, scrap, rejects</div>
+                  <div>Finance — margin, cost overrun, cash flow</div>
+                </div>
+                <p className="text-sm font-medium mb-2">Example phrases that trigger detection:</p>
+                <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 rounded p-3 font-mono">
+                  <div>"On-time delivery dropped to 72%"</div>
+                  <div>"Overtime increased by 35%"</div>
+                  <div>"Unplanned downtime — 14 hours last week"</div>
+                  <div>"Reject rate at 8.2%"</div>
+                  <div>"Margins shrinking due to raw material costs"</div>
+                  <div>"Cash flow tight, short-term funding needed"</div>
+                  <div>"PM overdue on 12 machines"</div>
+                  <div>"Staff leaving — 5 resignations this quarter"</div>
+                </div>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Try uploading reports with metrics, trends, or performance summaries.
+                Upload documents containing metrics, trends, or performance summaries to activate signal-driven diagnostics.
               </p>
             </>
           ) : (
