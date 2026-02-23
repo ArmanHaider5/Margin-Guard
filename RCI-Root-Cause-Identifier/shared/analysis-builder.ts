@@ -36,13 +36,80 @@
  */
 
 import type { RootCauseSelection, SelectedRootCause, FourMCategory, SelectionContext, PrimaryContext } from "./root-cause-library";
+import type { SymptomTag } from "./root-cause-library";
 import { selectRootCausesFromLibrary } from "./root-cause-library";
 import { getArchetypeById } from "./recommendation-archetypes";
 import { composeDiagnosticReport, type DiagnosticReport } from "./diagnostic-composer";
 import { extractEvidenceSignalsFromDocuments, extractConcreteSignals, type ProcessedDocument } from "./evidence-signals";
+import type { AnalysisFinding } from "./schema";
 
 // Re-export DiagnosticReport types for consumers
 export type { DiagnosticReport, DiagnosticFinding, DiagnosticEvidenceAnchor, InterventionTheme } from "./diagnostic-composer";
+
+const SYMPTOM_REQUIRED_CATEGORIES: Record<string, FourMCategory[]> = {
+  HIGH_TURNOVER: ["Manpower"],
+  KNOWLEDGE_LOSS: ["Manpower"],
+  MISSED_DEADLINES: ["Materials", "Machinery"],
+  FIRE_FIGHTING_CULTURE: ["Materials", "Machinery"],
+};
+
+const SYMPTOM_TEXT_PATTERNS: Record<string, RegExp[]> = {
+  HIGH_TURNOVER: [/high\s+turnover/i, /staff\s+turnover/i, /employee\s+turnover/i, /attrition/i, /resignat/i],
+  KNOWLEDGE_LOSS: [/knowledge\s+loss/i, /brain\s+drain/i, /expertise\s+gap/i, /institutional\s+knowledge/i, /know-?how\s+loss/i],
+  MISSED_DEADLINES: [/missed?\s+deadline/i, /deadline\s+miss/i, /late\s+delivery/i, /delivery\s+delay/i, /overdue\s+project/i],
+  FIRE_FIGHTING_CULTURE: [/fire[- ]?fight/i, /reactive\s+culture/i, /constant\s+crisis/i, /crisis\s+mode/i, /always\s+putting\s+out\s+fires/i],
+};
+
+function detectSymptomsFromText(problemStatement: string): SymptomTag[] {
+  const detected: SymptomTag[] = [];
+  for (const [tag, patterns] of Object.entries(SYMPTOM_TEXT_PATTERNS)) {
+    if (patterns.some(p => p.test(problemStatement))) {
+      detected.push(tag as SymptomTag);
+    }
+  }
+  return detected;
+}
+
+export function applySymptomAlignmentGuardrail(
+  findings: AnalysisFinding[],
+  problemStatement: string,
+): AnalysisFinding[] {
+  if (!problemStatement || findings.length === 0) return findings;
+
+  const detectedSymptoms = detectSymptomsFromText(problemStatement);
+  if (detectedSymptoms.length === 0) return findings;
+
+  const requiredCategories = new Set<FourMCategory>();
+  for (const symptom of detectedSymptoms) {
+    const cats = SYMPTOM_REQUIRED_CATEGORIES[symptom];
+    if (cats) {
+      for (const c of cats) requiredCategories.add(c);
+    }
+  }
+  if (requiredCategories.size === 0) return findings;
+
+  const aligned: AnalysisFinding[] = [];
+  const demoted: AnalysisFinding[] = [];
+
+  for (const finding of findings) {
+    if (requiredCategories.has(finding.fourMCategory)) {
+      aligned.push(finding);
+    } else {
+      demoted.push({
+        ...finding,
+        description: finding.description + "\n\n📌 This is a downstream impact, not a primary root cause.",
+      });
+    }
+  }
+
+  const hasAlignedFinding = aligned.length > 0;
+
+  if (!hasAlignedFinding) {
+    return findings;
+  }
+
+  return [...aligned, ...demoted];
+}
 
 /**
  * ============================================================================

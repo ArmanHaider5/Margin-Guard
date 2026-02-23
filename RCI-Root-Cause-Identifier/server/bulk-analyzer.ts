@@ -53,7 +53,7 @@ import { rootCauseLibrary, manufacturingRootCausesV2, type RootCauseEntry } from
 import { recommendationArchetypes, type RecommendationArchetype, type SeverityLevel } from "@shared/recommendation-archetypes";
 import { allIndustryProblems, type IndustryProblem } from "@shared/industry-problems";
 import { type EvidenceSignal, type CategorisedExtractedSignal } from "@shared/evidence-signals";
-import { getIndustryMoneyInterpretation } from "@shared/analysis-builder";
+import { getIndustryMoneyInterpretation, applySymptomAlignmentGuardrail } from "@shared/analysis-builder";
 
 /**
  * ============================================================================
@@ -2225,30 +2225,32 @@ function generateMockAnalysisResult(input: AnalysisInput, isBaseline: boolean): 
  * without fabricating evidence.
  */
 export async function runBulkAnalysis(input: AnalysisInput): Promise<AnalysisResult> {
-  // Diagnostic mode is finalised once and treated as the single source of truth.
-  // Mode is passed by caller (routes.ts) - not re-derived here.
   const isBaseline = input.mode === "baseline";
   
   const processedDocs = input.documents.filter(d => d.status === "processed" && d.extractedData);
   
-  // MOCK MODE: Skip AI calls, return deterministic mock results
+  let result: AnalysisResult;
+
   if (MOCK_MODE) {
     console.log(`MOCK MODE: Skipping AI API calls, returning mock results. Mode: ${input.mode}`);
-    return generateMockAnalysisResult(input, isBaseline);
-  }
-  
-  // DUAL MODE: Route to appropriate analysis mode based on finalised mode
-  if (isBaseline) {
-    // Baseline mode: No documents selected
+    result = generateMockAnalysisResult(input, isBaseline);
+  } else if (isBaseline) {
     console.log("MODE: Baseline (Preliminary). Running Baseline analysis.");
-    return runBaselineAnalysis(input);
+    result = await runBaselineAnalysis(input);
+  } else if (input.analysisType === "quick") {
+    result = await runQuickAnalysis({ ...input, documents: processedDocs });
+  } else {
+    result = await runDeepAnalysis({ ...input, documents: processedDocs });
   }
 
-  // Evidence-Enriched mode: Documents selected
-  // GOVERNANCE: Both analysis types use the same knowledge-governed approach
-  if (input.analysisType === "quick") {
-    return runQuickAnalysis({ ...input, documents: processedDocs });
-  } else {
-    return runDeepAnalysis({ ...input, documents: processedDocs });
+  if (input.problemStatement) {
+    const before = result.findings.map(f => f.fourMCategory).join(", ");
+    result.findings = applySymptomAlignmentGuardrail(result.findings, input.problemStatement);
+    const after = result.findings.map(f => f.fourMCategory).join(", ");
+    if (before !== after) {
+      console.log(`SYMPTOM ALIGNMENT GUARDRAIL: Reordered findings [${before}] → [${after}]`);
+    }
   }
+
+  return result;
 }

@@ -49,6 +49,7 @@ Preferred communication style: Simple, everyday language.
 - **Analysis Pipeline**: `bulk-analyzer.ts` orchestrates knowledge-governed analysis; `diagnostic-composer.ts` produces rule-based narrative synthesis (no AI-generated prose in reports)
 - **Findings Polish Pipeline**: Generic evidence anchors are filtered out; findings get evidence-led titles (`[Signal] → [Consequence]`), severity calibrated to evidence strength (WEAK→medium cap, MODERATE→high cap, STRONG→critical), and concise insight notes replacing templated "What This Indicates"
 - **Manufacturing Causality Reweighting**: In Manufacturing V2 path, operational root causes (Machinery/Materials +20%, Manpower +10%) are prioritized over financial outcomes (Money -15% unless financially documented). Causal ordering ensures at least 1 operational cause surfaces before Money when operational evidence exists. Executive summary warns if Money is the only surfaced category.
+- **Symptom-Root Cause Alignment Guardrail**: Post-analysis validation in `analysis-builder.ts`, applied centrally in `runBulkAnalysis`. Detects symptom tags from problem statement text (HIGH_TURNOVER/KNOWLEDGE_LOSS → Manpower, MISSED_DEADLINES/FIRE_FIGHTING_CULTURE → Materials/Machinery). Misaligned findings are demoted to secondary with "downstream impact" note; aligned findings are promoted to top. No findings are removed. Only activates when symptoms are detected AND at least one aligned finding exists.
 - **Retry Logic**: `p-retry` with rate limit detection for API resilience
 
 ### Data Layer
