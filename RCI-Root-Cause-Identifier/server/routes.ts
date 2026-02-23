@@ -554,6 +554,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  async function processDocumentInBackground(docId: string) {
+    try {
+      const doc = await storage.getClientDocument(docId);
+      if (!doc) return;
+      await storage.updateClientDocument(doc.id, { status: "processing" });
+      const extractedData = await parseDocument(doc.filePath, doc.fileType);
+      await storage.updateClientDocument(doc.id, {
+        status: "processed",
+        extractedData,
+        processedAt: new Date(),
+      });
+      console.log(`AUTO-PROCESS: Document ${doc.fileName} processed successfully`);
+    } catch (err) {
+      console.error(`AUTO-PROCESS: Document ${docId} failed:`, err);
+      await storage.updateClientDocument(docId, {
+        status: "error",
+        processingError: err instanceof Error ? err.message : "Failed to parse document",
+      }).catch(() => {});
+    }
+  }
+
   // Upload documents for a client
   app.post("/api/admin/clients/:clientId/documents", isAuthenticated, isAdmin, upload.array('files', 10), async (req: any, res) => {
     try {
@@ -583,6 +604,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.status(201).json(uploadedDocs);
+
+      for (const doc of uploadedDocs) {
+        processDocumentInBackground(doc.id);
+      }
     } catch (error) {
       console.error("Upload documents error:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : "Failed to upload documents" });
@@ -617,6 +642,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Process document error:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : "Failed to process document" });
+    }
+  });
+
+  // Batch reprocess all documents for a client
+  app.post("/api/admin/clients/:clientId/documents/reprocess", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const clientId = req.params.clientId;
+      const docs = await storage.getClientDocuments(clientId);
+      if (!docs || docs.length === 0) {
+        return res.status(404).json({ error: "No documents found" });
+      }
+      const toProcess = docs.filter(d => d.status !== "processing");
+      for (const doc of toProcess) {
+        processDocumentInBackground(doc.id);
+      }
+      res.json({ message: `Reprocessing ${toProcess.length} document(s)`, count: toProcess.length });
+    } catch (error) {
+      console.error("Reprocess documents error:", error);
+      res.status(500).json({ error: "Failed to reprocess documents" });
     }
   });
 

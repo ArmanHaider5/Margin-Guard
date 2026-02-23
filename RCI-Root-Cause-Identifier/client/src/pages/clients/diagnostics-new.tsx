@@ -63,15 +63,19 @@ export default function ClientDiagnosticsNew() {
   const { data: documents } = useQuery<ClientDocument[]>({
     queryKey: ["/api/admin/clients", clientId, "documents"],
     enabled: !!clientId,
+    refetchInterval: (query) => {
+      const docs = query.state.data;
+      if (docs?.some(d => d.status === "uploaded" || d.status === "processing")) return 2000;
+      return false;
+    },
   });
 
   // Show ALL uploaded documents (not just processed) for selection
   const uploadedDocs = documents || [];
   
-  // Document-based mode enforcement:
-  // - If documents selected → automatically switch to Deep Analysis
-  // - Quick Analysis is disabled when documents are selected
   const hasDocumentsSelected = selectedDocs.length > 0;
+  const hasProcessedDocs = uploadedDocs.some(d => selectedDocs.includes(d.id) && d.status === "processed");
+  const hasDocsStillProcessing = uploadedDocs.some(d => selectedDocs.includes(d.id) && (d.status === "uploaded" || d.status === "processing"));
   const effectiveMode = hasDocumentsSelected ? "deep" : selectedMode;
   
   // Diagnostic mode for display (baseline/deep terminology)
@@ -365,9 +369,13 @@ export default function ClientDiagnosticsNew() {
                       <Checkbox checked={isSelected} />
                       <Icon className="w-5 h-5 text-muted-foreground" />
                       <span className="flex-1 truncate">{doc.fileName}</span>
-                      <Badge variant={doc.status === "processed" ? "secondary" : "outline"}>
-                        {doc.status === "processed" ? (
+                      <Badge variant={doc.status === "processed" ? "secondary" : doc.status === "error" ? "destructive" : "outline"}>
+                        {doc.status === "processing" ? (
+                          <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Processing&hellip;</>
+                        ) : doc.status === "processed" ? (
                           <><CheckCircle2 className="w-3 h-3 mr-1" /> Processed</>
+                        ) : doc.status === "error" ? (
+                          <><AlertTriangle className="w-3 h-3 mr-1" /> Failed</>
                         ) : (
                           "Uploaded"
                         )}
@@ -426,10 +434,16 @@ export default function ClientDiagnosticsNew() {
                 </p>
               </button>
             </div>
-            {hasDocumentsSelected && (
+            {hasDocumentsSelected && hasDocsStillProcessing && (
+              <p className="text-sm text-amber-600 mt-2 flex items-center gap-1">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Documents are still being processed. Please wait before running analysis.
+              </p>
+            )}
+            {hasDocumentsSelected && !hasDocsStillProcessing && (
               <p className="text-sm text-primary mt-2 flex items-center gap-1" data-testid="text-documents-mode-notice">
                 <CheckCircle2 className="w-4 h-4" />
-                Documents uploaded — Deep Analysis will be used.
+                Documents processed — Deep Analysis will be used.
               </p>
             )}
           </div>
@@ -453,7 +467,7 @@ export default function ClientDiagnosticsNew() {
             size="lg" 
             className="w-full"
             onClick={handleRunAnalysis}
-            disabled={createAndRunMutation.isPending || !isProblemStatementValid}
+            disabled={createAndRunMutation.isPending || !isProblemStatementValid || (hasDocumentsSelected && hasDocsStillProcessing)}
             data-testid="button-run-analysis"
           >
             {createAndRunMutation.isPending ? (

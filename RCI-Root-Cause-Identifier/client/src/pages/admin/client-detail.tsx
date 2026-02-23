@@ -78,7 +78,16 @@ const fileTypeIcons: Record<string, typeof FileSpreadsheet> = {
 
 const docStatusColors: Record<string, string> = {
   uploaded: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  processing: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
   processed: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  error: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+};
+
+const docStatusLabels: Record<string, string> = {
+  uploaded: "Uploaded",
+  processing: "Processing\u2026",
+  processed: "Processed",
+  error: "Failed",
 };
 
 export default function ClientDetail() {
@@ -126,7 +135,32 @@ export default function ClientDetail() {
 
   const { data: documents, isLoading: documentsLoading } = useQuery<ClientDocument[]>({
     queryKey: ["/api/admin/clients", id, "documents"],
+    refetchInterval: (query) => {
+      const docs = query.state.data;
+      if (docs?.some(d => d.status === "uploaded" || d.status === "processing")) return 2000;
+      return false;
+    },
   });
+
+  const [isReprocessing, setIsReprocessing] = useState(false);
+  const handleReprocess = async () => {
+    if (!id) return;
+    setIsReprocessing(true);
+    try {
+      const res = await fetch(`/api/admin/clients/${id}/documents/reprocess`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Reprocess failed");
+      const data = await res.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/clients", id, "documents"] });
+      toast({ title: "Reprocessing", description: data.message });
+    } catch (error) {
+      toast({ title: "Reprocess failed", description: error instanceof Error ? error.message : "Error", variant: "destructive" });
+    } finally {
+      setIsReprocessing(false);
+    }
+  };
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0 || !id) return;
@@ -382,6 +416,21 @@ export default function ClientDetail() {
               onChange={(e) => handleFileUpload(e.target.files)}
               data-testid="input-file-upload"
             />
+            {documents && documents.length > 0 && documents.some(d => d.status === "error" || d.status === "uploaded") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReprocess}
+                disabled={isReprocessing}
+              >
+                {isReprocessing ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <FileSearch className="w-4 h-4 mr-2" />
+                )}
+                Reprocess Documents
+              </Button>
+            )}
             <Button 
               variant="outline" 
               size="sm"
@@ -429,7 +478,8 @@ export default function ClientDetail() {
                     </TableCell>
                     <TableCell data-testid={`badge-document-status-${doc.id}`}>
                       <Badge className={docStatusColors[doc.status || "uploaded"]}>
-                        {doc.status === "processed" ? "Processed" : "Uploaded"}
+                        {doc.status === "processing" && <Loader2 className="w-3 h-3 mr-1 animate-spin inline" />}
+                        {docStatusLabels[doc.status || "uploaded"]}
                       </Badge>
                     </TableCell>
                   </TableRow>
