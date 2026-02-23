@@ -146,6 +146,7 @@ export const clientAnalyses = pgTable("client_analyses", {
   title: varchar("title", { length: 255 }).notNull(),
   problemStatement: text("problem_statement"), // Anchors the diagnostic (nullable for legacy records)
   diagnosticContexts: text("diagnostic_contexts").array().$type<DiagnosticContext[]>(), // Context selection narrows diagnostic scope
+  selectedSymptoms: text("selected_symptoms").array(), // User-selected symptom tags for alignment guardrail
   analysisType: varchar("analysis_type").$type<AnalysisType>().notNull(),
   status: varchar("status").$type<AnalysisStatus>().default("pending"),
   documentIds: text("document_ids").array(), // Documents included in this analysis

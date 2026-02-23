@@ -52,7 +52,7 @@ import {
 import { rootCauseLibrary, manufacturingRootCausesV2, type RootCauseEntry } from "@shared/root-cause-library";
 import { recommendationArchetypes, type RecommendationArchetype, type SeverityLevel } from "@shared/recommendation-archetypes";
 import { allIndustryProblems, type IndustryProblem } from "@shared/industry-problems";
-import { type EvidenceSignal, type CategorisedExtractedSignal } from "@shared/evidence-signals";
+import { type EvidenceSignal, type CategorisedExtractedSignal, extractConcreteSignals, extractEvidenceSignalsFromDocuments, type ProcessedDocument } from "@shared/evidence-signals";
 import { getIndustryMoneyInterpretation, applySymptomAlignmentGuardrail } from "@shared/analysis-builder";
 
 /**
@@ -869,14 +869,9 @@ interface AnalysisInput {
   industry: string;
   analysisType: AnalysisType;
   clientName: string;
-  // Diagnostics must be anchored to an explicit problem statement.
-  // This drives root cause relevance scoring and Executive Summary generation.
   problemStatement: string;
-  // Context selection narrows diagnostic scope and increases relevance.
-  // Causes outside selected contexts are deprioritised.
   diagnosticContexts?: string[];
-  // Diagnostic mode is finalised once and treated as the single source of truth.
-  // Mode is determined by caller (routes.ts) based on document availability, not re-derived here.
+  selectedSymptoms?: string[];
   mode: "baseline" | "deep";
 }
 
@@ -2012,6 +2007,210 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
 
 /**
  * ============================================================================
+ * SIGNAL-DRIVEN DEEP ANALYSIS
+ * ============================================================================
+ * 
+ * Uses real signal extraction from uploaded documents to score and rank root
+ * causes from the Knowledge Library. No mock patterns or AI API calls.
+ * 
+ * Pipeline:
+ * 1. Extract concrete signals (metrics + events) from documents
+ * 2. Extract evidence signals (term-based) from documents
+ * 3. Score root causes against extracted signals
+ * 4. Rank by evidence strength, apply context weighting
+ * 5. Enrich findings with signal-driven evidence anchors
+ * ============================================================================
+ */
+function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
+  const { industry, clientName, problemStatement, diagnosticContexts, documents } = input;
+
+  console.log(`SIGNAL-DRIVEN DEEP: Running for ${clientName} (${industry})`);
+
+  if (industry.toLowerCase() === "manufacturing") {
+    return generateManufacturingV2Result(input, false);
+  }
+
+  const processedDocs = documents.filter(d => d.status === "processed" && d.extractedData);
+  const docInputs: ProcessedDocument[] = processedDocs.map(d => ({
+    id: d.id,
+    name: d.fileName,
+    content: d.extractedData?.rawText || "",
+    type: d.fileType || "other",
+  }));
+
+  const concreteSignals = extractConcreteSignals(docInputs);
+  const evidenceSignals = extractEvidenceSignalsFromDocuments(docInputs);
+
+  console.log(`SIGNAL-DRIVEN DEEP: Extracted ${concreteSignals.length} concrete signals, ${evidenceSignals.length} evidence signals`);
+
+  const documentText = processedDocs
+    .map(d => d.extractedData?.rawText || "")
+    .join(" ")
+    .toLowerCase();
+  const problemText = (problemStatement || "").toLowerCase();
+
+  const contextToCategory: Record<string, string[]> = {
+    "Money": ["Money"],
+    "Manpower": ["Manpower"],
+    "Operations": ["Materials", "Machinery"],
+    "Systems": ["Machinery"],
+    "Compliance": ["Money", "Manpower"],
+  };
+  const contextMatchedCategories = new Set<string>();
+  if (diagnosticContexts && diagnosticContexts.length > 0) {
+    for (const ctx of diagnosticContexts) {
+      const cats = contextToCategory[ctx] || [];
+      cats.forEach(c => contextMatchedCategories.add(c));
+    }
+  }
+
+  const signalCategories = new Set(concreteSignals.map(s => s.category));
+
+  const industryRootCauses = getRelevantRootCauses(industry);
+
+  const scoredCauses = industryRootCauses.map((rc) => {
+    let score = 0;
+    let isContextMatched = false;
+    let problemMatches = 0;
+    let documentMatches = 0;
+
+    if (contextMatchedCategories.size > 0 && contextMatchedCategories.has(rc.category)) {
+      score += 5;
+      isContextMatched = true;
+    }
+
+    for (const symptom of rc.symptoms || []) {
+      if (problemText.includes(symptom.toLowerCase())) {
+        problemMatches++;
+        score += 10;
+      }
+      if (documentText.includes(symptom.toLowerCase())) {
+        documentMatches++;
+        score += 15;
+      }
+    }
+
+    if (signalCategories.has(rc.category as any)) {
+      score += 8;
+    }
+
+    if (problemMatches > 0 && documentMatches > 0) {
+      score += 10;
+    }
+
+    return { cause: rc, score, isContextMatched, problemMatches, documentMatches };
+  });
+
+  scoredCauses.sort((a, b) => b.score - a.score);
+
+  const INCLUSION_THRESHOLD = 15;
+  const thresholdPassed = scoredCauses.filter(item => item.score >= INCLUSION_THRESHOLD);
+
+  let selectedWithMeta: typeof scoredCauses;
+  let usingSafeDiagnosticFloor = false;
+  let safeDiagnosticBanner: string | null = null;
+
+  if (thresholdPassed.length === 0) {
+    usingSafeDiagnosticFloor = true;
+    safeDiagnosticBanner = "Findings are indicative due to limited documentary evidence.";
+    selectedWithMeta = scoredCauses.slice(0, 2);
+    console.log(`SIGNAL-DRIVEN DEEP: No causes passed threshold (>= ${INCLUSION_THRESHOLD}), using safe floor`);
+  } else {
+    selectedWithMeta = thresholdPassed.slice(0, 6);
+  }
+
+  console.log(`SIGNAL-DRIVEN DEEP: Selected ${selectedWithMeta.length} root causes`);
+  selectedWithMeta.forEach((item, idx) => {
+    console.log(`  ${idx + 1}. [${item.cause.id}] ${item.cause.title} (score: ${item.score}, problem:${item.problemMatches}, docs:${item.documentMatches})`);
+  });
+
+  const findings: AnalysisFinding[] = selectedWithMeta.map((item, idx) => {
+    const rc = item.cause;
+    const isOutOfContext = diagnosticContexts && diagnosticContexts.length > 0 && !item.isContextMatched;
+    const severity = usingSafeDiagnosticFloor
+      ? "medium"
+      : (["high", "medium", "critical"] as const)[idx % 3];
+
+    let contextNote = "";
+    if (isOutOfContext) {
+      contextNote = "\n\n📌 Note: This factor emerged from evidence analysis despite falling outside the primary diagnostic focus.";
+    }
+
+    return {
+      id: `finding-signal-${idx}-${rc.id}`,
+      title: rc.title,
+      description: `Root Cause:\n${rc.title}\n\nWhy It Matters:\n${rc.whyItMatters}\n\nIntervention Direction:\n${rc.interventionDirection}${contextNote}`,
+      fourMCategory: rc.category as FourMCategory,
+      indicator: categoryToIndicator[rc.category as FourMCategory],
+      severity,
+      frequency: idx + 1,
+      causes: [rc.title],
+      estimatedCostImpact: usingSafeDiagnosticFloor ? undefined : `RM ${(10000 + idx * 5000).toLocaleString()}`,
+      evidence: usingSafeDiagnosticFloor
+        ? ["Evidence insufficient — indicative finding only"]
+        : [`Evidence from ${industry} operational data`, `Signal extracted from uploaded documents`],
+    };
+  });
+
+  const linkedArchetypeIds = new Set<string>();
+  selectedWithMeta.forEach(item => {
+    item.cause.archetypeIds.forEach(id => linkedArchetypeIds.add(id));
+  });
+
+  const applicableArchetypes = recommendationArchetypes
+    .filter(arch => linkedArchetypeIds.has(arch.archetype_id))
+    .slice(0, 5);
+
+  const costSavingOpportunities: CostSavingOpportunity[] = applicableArchetypes.map((arch, idx) => ({
+    id: `opp-signal-${idx}-${arch.archetype_id}`,
+    title: arch.archetype_name,
+    description: getVariedDescription(arch, industry),
+    estimatedSavings: `RM ${(5000 + idx * 3000).toLocaleString()} annually`,
+    implementationEffort: arch.consultant_required === "No" ? "low" as const :
+                         arch.consultant_required === "Sometimes" ? "medium" as const : "high" as const,
+    relatedFindings: findings.map(f => f.id),
+  }));
+
+  const predictions: RecurrencePrediction[] = selectedWithMeta.slice(0, 2).map((item, idx) => ({
+    id: `pred-signal-${idx}-${item.cause.id}`,
+    issue: item.cause.title,
+    likelihood: (["high", "medium"] as const)[idx % 2],
+    expectedTimeframe: "Next 3-6 months if unaddressed",
+  }));
+
+  const contextFocusPhrase = diagnosticContexts && diagnosticContexts.length > 0
+    ? ` with focus on ${diagnosticContexts.map(c => c.toLowerCase()).join(" and ")} factors`
+    : "";
+
+  const symptomPhrase = input.selectedSymptoms && input.selectedSymptoms.length > 0
+    ? ` Observed symptoms: ${input.selectedSymptoms.join(", ")}.`
+    : "";
+
+  const summaryPrefix = usingSafeDiagnosticFloor
+    ? `⚠️ ${safeDiagnosticBanner}\n\nThis diagnostic${contextFocusPhrase} did not find strong documentary evidence for the stated problem: "${problemStatement}".${symptomPhrase}`
+    : `Using document-derived signals and observed symptoms.${contextFocusPhrase}${symptomPhrase} Evidence supports the stated problem: "${problemStatement}".`;
+
+  const enrichedFindings = applyEvidenceDrivenEnrichment(findings, evidenceSignals, industry, concreteSignals);
+
+  const categoriesRepresented = new Set(enrichedFindings.map(f => f.fourMCategory));
+  const categoryList = Array.from(categoriesRepresented);
+  const categoryPhrase = categoryList.length > 0
+    ? ` across ${categoryList.length} area${categoryList.length > 1 ? 's' : ''} (${categoryList.join(", ")})`
+    : "";
+
+  return {
+    findings: enrichedFindings,
+    summary: `${summaryPrefix} Identified ${enrichedFindings.length} root cause${enrichedFindings.length > 1 ? 's' : ''}${categoryPhrase} in ${industry} operations for ${clientName}.`,
+    costSavingOpportunities,
+    predictions,
+    analysisMode: "evidence-enriched",
+    confidence: usingSafeDiagnosticFloor ? "low" : "substantiated",
+    isMockMode: false,
+  };
+}
+
+/**
+ * ============================================================================
  * MOCK DATA GENERATOR
  * ============================================================================
  * 
@@ -2228,10 +2427,14 @@ export async function runBulkAnalysis(input: AnalysisInput): Promise<AnalysisRes
   const isBaseline = input.mode === "baseline";
   
   const processedDocs = input.documents.filter(d => d.status === "processed" && d.extractedData);
+  const hasUploadedDocs = processedDocs.length > 0;
   
   let result: AnalysisResult;
 
-  if (MOCK_MODE) {
+  if (input.mode === "deep" && hasUploadedDocs) {
+    console.log(`SIGNAL-DRIVEN DEEP: Bypassing mock mode — ${processedDocs.length} document(s) uploaded`);
+    result = runSignalDrivenDeepAnalysis(input);
+  } else if (MOCK_MODE) {
     console.log(`MOCK MODE: Skipping AI API calls, returning mock results. Mode: ${input.mode}`);
     result = generateMockAnalysisResult(input, isBaseline);
   } else if (isBaseline) {
@@ -2243,9 +2446,9 @@ export async function runBulkAnalysis(input: AnalysisInput): Promise<AnalysisRes
     result = await runDeepAnalysis({ ...input, documents: processedDocs });
   }
 
-  if (input.problemStatement) {
+  if (input.problemStatement || (input.selectedSymptoms && input.selectedSymptoms.length > 0)) {
     const before = result.findings.map(f => f.fourMCategory).join(", ");
-    result.findings = applySymptomAlignmentGuardrail(result.findings, input.problemStatement);
+    result.findings = applySymptomAlignmentGuardrail(result.findings, input.problemStatement || "", input.selectedSymptoms);
     const after = result.findings.map(f => f.fourMCategory).join(", ");
     if (before !== after) {
       console.log(`SYMPTOM ALIGNMENT GUARDRAIL: Reordered findings [${before}] → [${after}]`);

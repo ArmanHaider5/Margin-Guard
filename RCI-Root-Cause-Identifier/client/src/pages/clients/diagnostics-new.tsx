@@ -13,6 +13,25 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Client, ClientDocument, DiagnosticContext } from "@shared/schema";
 import { DIAGNOSTIC_CONTEXTS } from "@shared/schema";
+import { SYMPTOM_TAGS, type SymptomTag } from "@shared/root-cause-library";
+
+const SYMPTOM_LABELS: Record<SymptomTag, string> = {
+  MISSED_DEADLINES: "Missed Deadlines",
+  COST_OVERRUNS: "Cost Overruns",
+  HIGH_REWORK: "High Rework",
+  LOW_ACCOUNTABILITY: "Low Accountability",
+  FREQUENT_ESCALATIONS: "Frequent Escalations",
+  QUALITY_ESCAPES: "Quality Escapes",
+  FIRE_FIGHTING_CULTURE: "Fire-Fighting Culture",
+  LOW_SYSTEM_ADOPTION: "Low System Adoption",
+  CASH_FLOW_PRESSURE: "Cash Flow Pressure",
+  HIGH_TURNOVER: "High Turnover",
+  KNOWLEDGE_LOSS: "Knowledge Loss",
+  SUPPLY_DISRUPTION: "Supply Disruption",
+  CAPACITY_BOTTLENECK: "Capacity Bottleneck",
+  CUSTOMER_COMPLAINTS: "Customer Complaints",
+  MARGIN_EROSION: "Margin Erosion",
+};
 
 const fileTypeIcons: Record<string, typeof FileSpreadsheet> = {
   excel: FileSpreadsheet,
@@ -33,7 +52,7 @@ export default function ClientDiagnosticsNew() {
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
   // Context selection narrows diagnostic scope and increases relevance.
   const [selectedContexts, setSelectedContexts] = useState<DiagnosticContext[]>([]);
-  // User-selected analysis mode (overridden when documents are selected)
+  const [selectedSymptoms, setSelectedSymptoms] = useState<SymptomTag[]>([]);
   const [selectedMode, setSelectedMode] = useState<"quick" | "deep">("quick");
 
   const { data: client, isLoading: clientLoading, error: clientError } = useQuery<Client>({
@@ -74,6 +93,7 @@ export default function ClientDiagnosticsNew() {
         title: title || `${analysisType === "quick" ? "Quick" : "Deep"} Analysis - ${new Date().toLocaleDateString()}`,
         problemStatement: problemStatement.trim(),
         diagnosticContexts: selectedContexts.length > 0 ? selectedContexts : undefined,
+        selectedSymptoms: selectedSymptoms.length > 0 ? selectedSymptoms : undefined,
         analysisType,
         documentIds: selectedDocs.length > 0 ? selectedDocs : undefined,
       });
@@ -267,6 +287,53 @@ export default function ClientDiagnosticsNew() {
           </div>
 
           <div>
+            <Label className="text-base font-medium">Observed Symptoms (Optional)</Label>
+            <p className="text-sm text-muted-foreground mb-3">
+              Select symptoms you have observed. This guides root cause alignment and prioritisation.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {SYMPTOM_TAGS.map((tag) => {
+                const isSelected = selectedSymptoms.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedSymptoms(selectedSymptoms.filter(s => s !== tag));
+                      } else {
+                        setSelectedSymptoms([...selectedSymptoms, tag]);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background hover:bg-muted border-border"
+                    }`}
+                    data-testid={`symptom-${tag.toLowerCase()}`}
+                  >
+                    {SYMPTOM_LABELS[tag]}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedSymptoms.length > 0 && (
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-sm text-muted-foreground">
+                  {selectedSymptoms.length} symptom{selectedSymptoms.length > 1 ? "s" : ""} selected
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSymptoms([])}
+                  className="text-xs text-muted-foreground underline hover:text-foreground"
+                >
+                  Clear all
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div>
             <div className="flex items-center justify-between mb-3">
               <Label className="text-base font-medium">Select Documents (Optional)</Label>
               {uploadedDocs.length > 0 && (
@@ -377,7 +444,7 @@ export default function ClientDiagnosticsNew() {
             <p className="text-sm text-muted-foreground">
               {diagnosticMode === "baseline" 
                 ? "Running without documents. Results based on industry patterns."
-                : `Running with ${selectedDocs.length} document(s). Results substantiated with evidence.`
+                : `Using document-derived signals and observed symptoms. ${selectedDocs.length} document(s) selected.`
               }
             </p>
           </div>

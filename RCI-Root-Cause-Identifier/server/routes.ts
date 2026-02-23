@@ -686,9 +686,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const analysisSchema = z.object({
         title: z.string().min(1),
-        problemStatement: z.string().min(1), // Diagnostics must be anchored to an explicit problem statement
+        problemStatement: z.string().min(1),
         analysisType: z.enum(["quick", "deep"]),
         documentIds: z.array(z.string()).optional(),
+        diagnosticContexts: z.array(z.string()).optional(),
+        selectedSymptoms: z.array(z.string()).optional(),
       });
       const data = analysisSchema.parse(req.body);
       
@@ -698,6 +700,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         problemStatement: data.problemStatement,
         analysisType: data.analysisType,
         documentIds: data.documentIds,
+        diagnosticContexts: data.diagnosticContexts as any,
+        selectedSymptoms: data.selectedSymptoms,
         status: "pending",
       });
       res.status(201).json(analysis);
@@ -918,9 +922,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           industry: client.industry,
           analysisType: analysis.analysisType,
           clientName: client.name,
-          mode: diagnosticMode, // Pass finalised mode to analyzer
-          problemStatement: analysis.problemStatement || "General operational assessment", // Pass problem statement for relevance scoring
-          diagnosticContexts: analysis.diagnosticContexts || undefined, // Pass contexts for relevance weighting
+          mode: diagnosticMode,
+          problemStatement: analysis.problemStatement || "General operational assessment",
+          diagnosticContexts: analysis.diagnosticContexts || undefined,
+          selectedSymptoms: analysis.selectedSymptoms || undefined,
         });
 
         const updatedAnalysis = await storage.updateClientAnalysis(analysis.id, {

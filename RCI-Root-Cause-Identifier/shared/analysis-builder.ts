@@ -73,14 +73,17 @@ function detectSymptomsFromText(problemStatement: string): SymptomTag[] {
 export function applySymptomAlignmentGuardrail(
   findings: AnalysisFinding[],
   problemStatement: string,
+  selectedSymptoms?: string[],
 ): AnalysisFinding[] {
-  if (!problemStatement || findings.length === 0) return findings;
+  if (findings.length === 0) return findings;
 
-  const detectedSymptoms = detectSymptomsFromText(problemStatement);
-  if (detectedSymptoms.length === 0) return findings;
+  const detectedSymptoms = problemStatement ? detectSymptomsFromText(problemStatement) : [];
+  const explicitSymptoms = (selectedSymptoms || []) as SymptomTag[];
+  const allSymptoms = [...new Set([...detectedSymptoms, ...explicitSymptoms])];
+  if (allSymptoms.length === 0) return findings;
 
   const requiredCategories = new Set<FourMCategory>();
-  for (const symptom of detectedSymptoms) {
+  for (const symptom of allSymptoms) {
     const cats = SYMPTOM_REQUIRED_CATEGORIES[symptom];
     if (cats) {
       for (const c of cats) requiredCategories.add(c);

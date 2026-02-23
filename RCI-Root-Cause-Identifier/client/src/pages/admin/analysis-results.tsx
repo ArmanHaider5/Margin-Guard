@@ -20,7 +20,8 @@ import {
   FolderOpen,
   Loader2,
   Download,
-  ClipboardCheck
+  ClipboardCheck,
+  CheckCircle2
 } from "lucide-react";
 import type { ClientAnalysis, Client, FourMCategory } from "@shared/schema";
 import { DiagnosticReportView } from "@/components/diagnostic-report-view";
@@ -269,12 +270,17 @@ export default function AnalysisResults() {
               </Badge>
             )}
           </div>
-          {analysis.isMockMode && (
-            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400" data-testid="text-mock-mode">
+          {analysis.isMockMode ? (
+            <div className="flex items-center gap-2 text-muted-foreground" data-testid="text-mock-mode">
               <AlertCircle className="w-4 h-4" />
-              <span className="text-sm">This diagnostic is operating in mock mode.</span>
+              <span className="text-sm">Running in baseline pattern mode. Upload documents for signal-driven analysis.</span>
             </div>
-          )}
+          ) : analysis.analysisMode === "evidence-enriched" ? (
+            <div className="flex items-center gap-2 text-green-600 dark:text-green-400" data-testid="text-signal-mode">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-sm">Using document-derived signals and observed symptoms.</span>
+            </div>
+          ) : null}
         </div>
       </Card>
 
