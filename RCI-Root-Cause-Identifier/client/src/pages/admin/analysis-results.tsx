@@ -341,7 +341,7 @@ export default function AnalysisResults() {
               <Card key={finding.id || idx} className="p-4 border-l-4" style={{ borderLeftColor: 'currentColor' }}>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap mb-4">
-                    <h3 className="font-semibold">{finding.title}</h3>
+                    <h3 className="font-semibold">{finding.evidenceLedTitle || finding.title}</h3>
                     <Badge className={`${colors.bg} ${colors.text}`}>{finding.fourMCategory}</Badge>
                     <Badge className={`${severity.bg} ${severity.text}`}>{finding.severity}</Badge>
                     {esStyle && (
@@ -355,7 +355,7 @@ export default function AnalysisResults() {
                     {hasSignals && (
                       <div>
                         <p className="font-medium mb-1 flex items-center gap-1">
-                          <FileText className="w-3.5 h-3.5 text-muted-foreground" /> What We Observed
+                          <FileText className="w-3.5 h-3.5 text-muted-foreground" /> Supporting Evidence
                         </p>
                         <ul className="space-y-1 ml-5">
                           {finding.evidenceAnchors!.map((anchor: any, i: number) => (
@@ -368,10 +368,19 @@ export default function AnalysisResults() {
                       </div>
                     )}
 
-                    {finding.causes && finding.causes.length > 0 && (
+                    {finding.insightNote && (
                       <div>
                         <p className="font-medium mb-1 flex items-center gap-1">
-                          <Target className="w-3.5 h-3.5 text-muted-foreground" /> What This Indicates
+                          <Target className="w-3.5 h-3.5 text-muted-foreground" /> Insight
+                        </p>
+                        <p className="text-muted-foreground ml-5">{finding.insightNote}</p>
+                      </div>
+                    )}
+
+                    {!finding.insightNote && finding.causes && finding.causes.length > 0 && (
+                      <div>
+                        <p className="font-medium mb-1 flex items-center gap-1">
+                          <Target className="w-3.5 h-3.5 text-muted-foreground" /> Insight
                         </p>
                         <ul className="ml-5">
                           {finding.causes.map((cause: string, i: number) => (
@@ -384,33 +393,11 @@ export default function AnalysisResults() {
                     {finding.impactObserved && finding.impactObserved.length > 0 && (
                       <div>
                         <p className="font-medium mb-1 flex items-center gap-1">
-                          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Impact Observed (Industry Context)
+                          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Estimated Impact
                         </p>
                         <ul className="space-y-1 ml-5">
                           {finding.impactObserved.map((bullet: string, i: number) => (
                             <li key={i} className="list-disc text-muted-foreground">{bullet}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {!finding.impactObserved && finding.description && (
-                      <div>
-                        <p className="font-medium mb-1 flex items-center gap-1">
-                          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> What This Indicates
-                        </p>
-                        <p className="text-muted-foreground ml-5">{finding.description}</p>
-                      </div>
-                    )}
-
-                    {finding.evidence && finding.evidence.length > 0 && (
-                      <div>
-                        <p className="font-medium mb-1 flex items-center gap-1">
-                          <Lightbulb className="w-3.5 h-3.5 text-muted-foreground" /> Supporting Evidence
-                        </p>
-                        <ul className="ml-5">
-                          {finding.evidence.map((ev: string, i: number) => (
-                            <li key={i} className="list-disc text-muted-foreground">{ev}</li>
                           ))}
                         </ul>
                       </div>

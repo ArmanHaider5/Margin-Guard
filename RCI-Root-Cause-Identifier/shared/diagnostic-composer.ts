@@ -43,6 +43,8 @@ export interface DiagnosticFinding {
   // Signal-driven impact and validation (vNext)
   impactObserved?: string[];
   whatToValidateNext?: string[];
+  evidenceLedTitle?: string;
+  insightNote?: string;
 }
 
 export interface InterventionTheme {
@@ -392,12 +394,27 @@ export function composeDiagnosticReport(input: ComposeDiagnosticInput): Diagnost
     return "EXPLORATORY";
   };
 
+  const GENERIC_TERMS = new Set([
+    "operational data", "pattern match", "pattern matched", "uploaded operational documents",
+    "uploaded document", "money category detected", "document analysis",
+    "category detected", "data detected",
+  ]);
+
+  const isGenericSignal = (signal: string): boolean => {
+    const s = (signal || "").toLowerCase().trim();
+    if (GENERIC_TERMS.has(s)) return true;
+    if (s.length < 4) return true;
+    if (/^pattern match/i.test(s) || /^operational data/i.test(s) || /^document analysis/i.test(s) || /^uploaded/i.test(s)) return true;
+    return false;
+  };
+
   const buildAnchors = (category: FourMCategory): DiagnosticEvidenceAnchor[] => {
     const anchors: DiagnosticEvidenceAnchor[] = [];
     const seen = new Set<string>();
 
     const matching = getMatchingConcreteSignals(category);
     for (const sig of matching) {
+      if (isGenericSignal(sig.signal)) continue;
       const key = `${sig.documentName}:${sig.signal}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -416,9 +433,11 @@ export function composeDiagnosticReport(input: ComposeDiagnosticInput): Diagnost
           ? signal.sourceDocuments.join(", ")
           : null;
         if (!docName) continue;
+        const concreteTerms = signal.matchedTerms.filter(t => !isGenericSignal(t));
+        if (concreteTerms.length === 0) continue;
         anchors.push({
           documentName: docName,
-          signal: signal.matchedTerms.slice(0, 3).join(", "),
+          signal: concreteTerms.slice(0, 3).join(", "),
           interpretation: signal.description,
         });
         if (anchors.length >= 5) break;
@@ -426,6 +445,36 @@ export function composeDiagnosticReport(input: ComposeDiagnosticInput): Diagnost
     }
 
     return anchors;
+  };
+
+  const CATEGORY_CONSEQUENCE: Record<FourMCategory, string> = {
+    Money: "increased financial exposure",
+    Manpower: "workforce capacity constraints",
+    Machinery: "operational reliability risk",
+    Materials: "supply chain disruption",
+  };
+
+  const composerBuildEvidenceLedTitle = (
+    originalTitle: string,
+    anchors: DiagnosticEvidenceAnchor[],
+    category: FourMCategory
+  ): string | undefined => {
+    if (anchors.length === 0) return undefined;
+    const topSignals = anchors.slice(0, 2).map(a => a.signal).join(" and ");
+    const consequence = CATEGORY_CONSEQUENCE[category] || "operational impact";
+    const ledTitle = `${topSignals} → ${consequence}`;
+    return ledTitle !== originalTitle ? ledTitle : undefined;
+  };
+
+  const composerBuildInsightNote = (
+    cause: SelectedRootCause,
+    anchors: DiagnosticEvidenceAnchor[]
+  ): string => {
+    if (anchors.length > 0) {
+      const signalSummary = anchors.slice(0, 2).map(a => a.signal).join(", ");
+      return `Observed signals (${signalSummary}) point to ${cause.title.toLowerCase()} as a contributing factor in the ${cause.category} domain.`;
+    }
+    return `Preliminary pattern analysis suggests ${cause.title.toLowerCase()} may be a factor, but concrete document evidence is needed to confirm.`;
   };
 
   const INDUSTRY_IMPACT_CHAINS: Record<string, Record<FourMCategory, string[]>> = {
@@ -511,6 +560,9 @@ export function composeDiagnosticReport(input: ComposeDiagnosticInput): Diagnost
       ? (VALIDATION_DOCS[cause.category] || []).slice(0, 2)
       : (VALIDATION_DOCS[cause.category] || []).slice(0, 3);
 
+    const evidenceLedTitle = composerBuildEvidenceLedTitle(cause.title, anchors, cause.category);
+    const insightNote = composerBuildInsightNote(cause, anchors);
+
     const finding: DiagnosticFinding = {
       id: cause.id,
       title: cause.title,
@@ -523,6 +575,8 @@ export function composeDiagnosticReport(input: ComposeDiagnosticInput): Diagnost
       narrativeTone,
       impactObserved: impactBullets.length > 0 ? impactBullets : undefined,
       whatToValidateNext: whatToValidateNext.length > 0 ? whatToValidateNext : undefined,
+      evidenceLedTitle,
+      insightNote,
     };
 
     if (isDominant && !hasAnySignals && analysisMode === "deep") {

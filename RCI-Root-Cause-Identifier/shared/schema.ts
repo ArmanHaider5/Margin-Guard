@@ -194,6 +194,8 @@ export interface AnalysisFinding {
   // Signal-driven impact and validation (vNext)
   impactObserved?: string[];
   whatToValidateNext?: string[];
+  evidenceLedTitle?: string;
+  insightNote?: string;
 }
 
 // Cost Saving Opportunity

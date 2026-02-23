@@ -55,7 +55,7 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
       data-testid={`finding-${finding.id}`}
     >
       <div className="flex items-center gap-2 flex-wrap mb-4">
-        <h3 className="font-semibold text-base">{finding.title}</h3>
+        <h3 className="font-semibold text-base">{finding.evidenceLedTitle || finding.title}</h3>
         <Badge className={`${colors.bg} ${colors.text}`}>{finding.category}</Badge>
         {isPrimary && (
           <Badge variant="default" data-testid={`badge-primary-${finding.id}`}>
@@ -76,7 +76,7 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
         {hasSignals && (
           <div data-testid={`finding-evidence-anchors-${finding.id}`}>
             <p className="font-medium mb-1 flex items-center gap-1">
-              <FileText className="w-3.5 h-3.5 text-muted-foreground" /> What We Observed
+              <FileText className="w-3.5 h-3.5 text-muted-foreground" /> Supporting Evidence
             </p>
             <ul className="space-y-1 ml-5">
               {finding.evidenceAnchors!.map((anchor, idx) => (
@@ -91,30 +91,21 @@ function FindingCard({ finding, isPrimary }: { finding: DiagnosticFinding; isPri
 
         <div data-testid={`finding-rootcause-${finding.id}`}>
           <p className="font-medium mb-1 flex items-center gap-1">
-            <Target className="w-3.5 h-3.5 text-muted-foreground" /> What This Indicates
+            <Target className="w-3.5 h-3.5 text-muted-foreground" /> Insight
           </p>
-          <p className="text-muted-foreground ml-5">{finding.title}</p>
+          <p className="text-muted-foreground ml-5">{finding.insightNote || finding.whyItMatters}</p>
         </div>
 
         {finding.impactObserved && finding.impactObserved.length > 0 && (
           <div data-testid={`finding-impact-${finding.id}`}>
             <p className="font-medium mb-1 flex items-center gap-1">
-              <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Impact Observed (Industry Context)
+              <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Estimated Impact
             </p>
             <ul className="space-y-1 ml-5">
               {finding.impactObserved.map((bullet, idx) => (
                 <li key={idx} className="list-disc text-muted-foreground">{bullet}</li>
               ))}
             </ul>
-          </div>
-        )}
-
-        {!finding.impactObserved && finding.whyItMatters && (
-          <div data-testid={`finding-whyitmatters-${finding.id}`}>
-            <p className="font-medium mb-1 flex items-center gap-1">
-              <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> What This Indicates
-            </p>
-            <p className="text-muted-foreground ml-5">{finding.whyItMatters}</p>
           </div>
         )}
 

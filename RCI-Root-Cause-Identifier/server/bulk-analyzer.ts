@@ -349,7 +349,92 @@ function buildEvidenceAnchorsFromSignals(
 const GENERIC_ANCHOR_TERMS = new Set([
   "operational data", "pattern match", "uploaded operational documents",
   "uploaded document", "money category detected", "document analysis",
+  "pattern matched", "category detected", "data detected",
 ]);
+
+const GENERIC_SIGNAL_PATTERNS = [
+  /^pattern match/i,
+  /^operational data/i,
+  /^document analysis/i,
+  /^uploaded/i,
+  /^category detected/i,
+  /^data detected/i,
+];
+
+function isGenericAnchor(anchor: EvidenceAnchor): boolean {
+  const sig = (anchor.signal || "").toLowerCase().trim();
+  if (GENERIC_ANCHOR_TERMS.has(sig)) return true;
+  for (const pat of GENERIC_SIGNAL_PATTERNS) {
+    if (pat.test(sig)) return true;
+  }
+  if (sig.length < 4 || sig === anchor.documentName?.toLowerCase()) return true;
+  return false;
+}
+
+function filterGenericAnchors(anchors: EvidenceAnchor[]): EvidenceAnchor[] {
+  return anchors.filter(a => !isGenericAnchor(a));
+}
+
+const CATEGORY_CONSEQUENCE: Record<FourMCategory, string> = {
+  Money: "increased financial exposure",
+  Manpower: "workforce capacity constraints",
+  Machinery: "operational reliability risk",
+  Materials: "supply chain disruption",
+};
+
+function buildEvidenceLedTitle(
+  originalTitle: string,
+  anchors: EvidenceAnchor[],
+  category: FourMCategory
+): string {
+  const concreteAnchors = filterGenericAnchors(anchors);
+  if (concreteAnchors.length === 0) return originalTitle;
+
+  const topSignals = concreteAnchors
+    .slice(0, 2)
+    .map(a => a.signal)
+    .join(" and ");
+
+  const consequence = CATEGORY_CONSEQUENCE[category] || "operational impact";
+  return `${topSignals} → ${consequence}`;
+}
+
+function buildInsightNote(
+  originalTitle: string,
+  description: string,
+  causes: string[],
+  category: FourMCategory,
+  anchors: EvidenceAnchor[]
+): string {
+  const concreteAnchors = filterGenericAnchors(anchors);
+  const hasSignals = concreteAnchors.length > 0;
+
+  if (hasSignals) {
+    const signalSummary = concreteAnchors.slice(0, 2).map(a => a.signal).join(", ");
+    const rootCause = causes.length > 0 ? causes[0] : originalTitle;
+    return `Observed signals (${signalSummary}) point to ${rootCause.toLowerCase()} as a contributing factor in the ${category} domain.`;
+  }
+
+  const rootCause = causes.length > 0 ? causes[0] : originalTitle;
+  return `Preliminary pattern analysis suggests ${rootCause.toLowerCase()} may be a factor, but concrete document evidence is needed to confirm.`;
+}
+
+function calibrateSeverity(
+  originalSeverity: "low" | "medium" | "high" | "critical",
+  evidenceStrength: EvidenceStrength
+): "low" | "medium" | "high" | "critical" {
+  const severityRank: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
+  const maxAllowed: Record<EvidenceStrength, string> = {
+    WEAK: "medium",
+    MODERATE: "high",
+    STRONG: "critical",
+  };
+  const cap = maxAllowed[evidenceStrength];
+  if (severityRank[originalSeverity] > severityRank[cap]) {
+    return cap as "low" | "medium" | "high" | "critical";
+  }
+  return originalSeverity;
+}
 
 // Determine evidence strength based on concrete signal count + term signals
 function determineEvidenceStrength(
@@ -524,24 +609,33 @@ function enrichFindingWithEvidence(
   const hasAnySignals = matchingTermSignals.length > 0 || matchingConcreteSignals.length > 0;
 
   if (!hasAnySignals) {
+    const insightNote = buildInsightNote(finding.title, finding.description, finding.causes, finding.fourMCategory, []);
     return {
       ...finding,
+      severity: calibrateSeverity(finding.severity, "WEAK"),
       evidenceStrength: "WEAK",
       narrativeTone: "EXPLORATORY",
       impactObserved: [],
       whatToValidateNext: buildWhatToValidateNext(finding.fourMCategory, false),
+      insightNote,
     };
   }
 
-  const anchors = buildEvidenceAnchorsFromSignals(finding.fourMCategory, concreteSignals, evidenceSignals);
+  const rawAnchors = buildEvidenceAnchorsFromSignals(finding.fourMCategory, concreteSignals, evidenceSignals);
+  const anchors = filterGenericAnchors(rawAnchors);
   const strength = determineEvidenceStrength(anchors, matchingConcreteSignals, matchingTermSignals);
   const tone = determineNarrativeTone(strength);
 
   const impactObserved = buildImpactObserved(finding.fourMCategory, concreteSignals, industry);
   const whatToValidateNext = buildWhatToValidateNext(finding.fourMCategory, matchingConcreteSignals.length > 0);
 
+  const evidenceLedTitle = buildEvidenceLedTitle(finding.title, anchors, finding.fourMCategory);
+  const insightNote = buildInsightNote(finding.title, finding.description, finding.causes, finding.fourMCategory, anchors);
+  const calibratedSeverity = calibrateSeverity(finding.severity, strength);
+
   return {
     ...finding,
+    severity: calibratedSeverity,
     evidence: strength === "WEAK"
       ? ["Insufficient document evidence — further review recommended"]
       : finding.evidence,
@@ -550,6 +644,8 @@ function enrichFindingWithEvidence(
     narrativeTone: tone,
     impactObserved: impactObserved.length > 0 ? impactObserved : undefined,
     whatToValidateNext: whatToValidateNext.length > 0 ? whatToValidateNext : undefined,
+    evidenceLedTitle: evidenceLedTitle !== finding.title ? evidenceLedTitle : undefined,
+    insightNote,
   };
 }
 
