@@ -1034,7 +1034,10 @@ export function extractConcreteSignals(
 
   const allSignals: CategorisedExtractedSignal[] = [];
   for (const doc of documents) {
-    const normalized = normalizeText(doc.content || "");
+    const extractedText = doc.content;
+    console.log("🔎 EXTRACTED TEXT LENGTH:", extractedText?.length || 0);
+    console.log("🔎 EXTRACTED TEXT (first 500 chars):", extractedText?.slice(0, 500));
+    const normalized = normalizeText(extractedText || "");
     console.log(`SIGNAL EXTRACTOR [${doc.name}]: normalizedText length=${normalized.length}`);
     console.log(`SIGNAL EXTRACTOR [${doc.name}]: first 500 chars: ${normalized.slice(0, 500)}`);
     const metrics = extractMetricsFromDocument(doc);
