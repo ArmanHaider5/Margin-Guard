@@ -1768,6 +1768,12 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
     type: d.fileType || "other",
   }));
 
+  console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
+  for (const di of docInputs) {
+    console.log("🔎 EXTRACTED TEXT LENGTH:", di.content?.length || 0);
+    console.log("🔎 EXTRACTED TEXT (first 500 chars):", di.content?.slice(0, 500));
+  }
+
   const concreteSignals = extractConcreteSignals(docInputs);
   const evidenceSignals = extractEvidenceSignalsFromDocuments(docInputs);
 
@@ -2047,6 +2053,12 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     content: d.extractedData?.rawText || "",
     type: d.fileType || "other",
   }));
+
+  console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)");
+  for (const di of docInputs) {
+    console.log("🔎 EXTRACTED TEXT LENGTH:", di.content?.length || 0);
+    console.log("🔎 EXTRACTED TEXT (first 500 chars):", di.content?.slice(0, 500));
+  }
 
   const concreteSignals = extractConcreteSignals(docInputs);
   const evidenceSignals = extractEvidenceSignalsFromDocuments(docInputs);
