@@ -382,21 +382,29 @@ const CATEGORY_CONSEQUENCE: Record<FourMCategory, string> = {
   Materials: "supply chain disruption",
 };
 
+const CATEGORY_CAUSAL_FRAME: Record<FourMCategory, string> = {
+  Money: "driving financial exposure",
+  Manpower: "undermining workforce capacity",
+  Machinery: "driving operational reliability risk",
+  Materials: "disrupting supply chain performance",
+};
+
 function buildEvidenceLedTitle(
   originalTitle: string,
   anchors: EvidenceAnchor[],
   category: FourMCategory
 ): string {
-  const concreteAnchors = filterGenericAnchors(anchors);
-  if (concreteAnchors.length === 0) return originalTitle;
+  const rootCauseCore = originalTitle
+    .replace(/^\[NEEDS VALIDATION\]\s*/i, "")
+    .replace(/^\[PRELIMINARY\]\s*/i, "");
 
-  const topSignals = concreteAnchors
-    .slice(0, 2)
-    .map(a => a.signal)
-    .join(" and ");
+  const causalFrame = CATEGORY_CAUSAL_FRAME[category] || "contributing to operational impact";
 
-  const consequence = CATEGORY_CONSEQUENCE[category] || "operational impact";
-  return `${topSignals} → ${consequence}`;
+  const shortCause = rootCauseCore.length > 60
+    ? rootCauseCore.split(/[—–,]/)[0].trim()
+    : rootCauseCore;
+
+  return `${shortCause} ${causalFrame}`;
 }
 
 function buildInsightNote(
@@ -408,15 +416,20 @@ function buildInsightNote(
 ): string {
   const concreteAnchors = filterGenericAnchors(anchors);
   const hasSignals = concreteAnchors.length > 0;
+  const rootCause = causes.length > 0 ? causes[0] : originalTitle;
 
   if (hasSignals) {
-    const signalSummary = concreteAnchors.slice(0, 2).map(a => a.signal).join(", ");
-    const rootCause = causes.length > 0 ? causes[0] : originalTitle;
-    return `Observed signals (${signalSummary}) point to ${rootCause.toLowerCase()} as a contributing factor in the ${category} domain.`;
+    const signalSummary = concreteAnchors.slice(0, 2).map(a => a.signal).join(" and ");
+    const causalPhrases: Record<FourMCategory, string> = {
+      Money: "strongly indicates cost structures are misaligned with operational reality, eroding margins and tightening cash position",
+      Manpower: "strongly indicates workforce allocation and retention practices are insufficient, increasing overtime dependency and institutional knowledge loss",
+      Machinery: "strongly indicates maintenance is primarily reactive rather than preventive, increasing failure frequency and schedule volatility",
+      Materials: "strongly indicates supply chain controls are insufficient, creating quality and delivery risks that cascade into production commitments",
+    };
+    return `The pattern of ${signalSummary} ${causalPhrases[category] || "points to a systemic root cause requiring intervention"}.`;
   }
 
-  const rootCause = causes.length > 0 ? causes[0] : originalTitle;
-  return `Preliminary pattern analysis suggests ${rootCause.toLowerCase()} may be a factor, but concrete document evidence is needed to confirm.`;
+  return `Preliminary analysis suggests ${rootCause.toLowerCase()} may be a contributing factor in the ${category} domain, but additional document evidence is needed to confirm the causal pathway.`;
 }
 
 function calibrateSeverity(
@@ -649,10 +662,6 @@ function enrichFindingWithEvidence(
   };
 }
 
-// Duplicate root cause collapsing:
-// General rule: max 2 findings per 4M category (primary + secondary).
-// Money-specific rule: if multiple Money findings are WEAK or MODERATE,
-// keep only the strongest 1 and add a collapsed note.
 function collapseDuplicateFindings(findings: AnalysisFinding[]): AnalysisFinding[] {
   const grouped: Record<string, AnalysisFinding[]> = {};
   for (const f of findings) {
@@ -676,41 +685,73 @@ function collapseDuplicateFindings(findings: AnalysisFinding[]): AnalysisFinding
 
   for (const category of Object.keys(grouped)) {
     const group = grouped[category];
-
-    // Deduplicate by root cause title — keep strongest variant
-    const byRootCause: Record<string, AnalysisFinding[]> = {};
-    for (const f of group) {
-      const rcKey = f.causes[0] || f.title;
-      if (!byRootCause[rcKey]) byRootCause[rcKey] = [];
-      byRootCause[rcKey].push(f);
-    }
-    const deduped: AnalysisFinding[] = [];
-    for (const variants of Object.values(byRootCause)) {
-      sortByStrength(variants);
-      deduped.push(variants[0]);
+    if (group.length <= 1) {
+      result.push(...group);
+      continue;
     }
 
-    // Money-specific collapsing: if multiple Money findings with WEAK/MODERATE,
-    // keep only the primary and annotate with collapsed note
-    if (category === "Money" && deduped.length > 1) {
-      sortByStrength(deduped);
-      const nonStrong = deduped.filter(f => (f.evidenceStrength || "WEAK") !== "STRONG");
-      if (nonStrong.length > 1) {
-        const suppressedCount = nonStrong.length - 1;
-        const primary = { ...deduped[0], collapsedNote: `${suppressedCount} related financial impact${suppressedCount > 1 ? "s" : ""} observed (collapsed)` };
-        const strongOnes = deduped.filter(f => (f.evidenceStrength || "WEAK") === "STRONG" && f !== deduped[0]);
-        result.push(primary, ...strongOnes);
-        continue;
-      }
-    }
+    sortByStrength(group);
+    const primary = group[0];
+    const alternates = group.slice(1);
 
-    // General cap: max 2 per category
-    if (deduped.length <= 2) {
-      result.push(...deduped);
-    } else {
-      sortByStrength(deduped);
-      result.push(deduped[0], deduped[1]);
-    }
+    const allCauses = [
+      ...primary.causes,
+      ...alternates.flatMap(f => f.causes),
+    ].filter((v, i, arr) => arr.indexOf(v) === i);
+
+    const allEvidence = [
+      ...(primary.evidence || []),
+      ...alternates.flatMap(f => f.evidence || []),
+    ].filter((v, i, arr) => arr.indexOf(v) === i);
+
+    const allAnchors = [
+      ...(primary.evidenceAnchors || []),
+      ...alternates.flatMap(f => f.evidenceAnchors || []),
+    ];
+    const uniqueAnchors = allAnchors.filter((a, i, arr) =>
+      arr.findIndex(x => x.signal === a.signal) === i
+    );
+
+    const allImpacts = [
+      ...(primary.impactObserved || []),
+      ...alternates.flatMap(f => f.impactObserved || []),
+    ].filter((v, i, arr) => arr.indexOf(v) === i);
+
+    const allValidation = [
+      ...(primary.whatToValidateNext || []),
+      ...alternates.flatMap(f => f.whatToValidateNext || []),
+    ].filter((v, i, arr) => arr.indexOf(v) === i);
+
+    const strengthLabels: Record<string, string> = { STRONG: "Strong", MODERATE: "Medium", WEAK: "Weak" };
+    const hypothesisLines = allCauses.slice(0, 3).map((c, idx) => {
+      const matchingFinding = group.find(f => f.causes.includes(c));
+      const confidence = matchingFinding?.evidenceStrength || "WEAK";
+      const role = idx === 0 ? "Primary Hypothesis" : `Alternative Hypothesis ${idx}`;
+      return `${role}: ${c} (Confidence: ${strengthLabels[confidence] || "Weak"})`;
+    });
+
+    const hypothesisBlock = `\n\nRoot Cause Hypotheses:\n${hypothesisLines.join("\n")}`;
+
+    const costParts = group
+      .map(f => f.estimatedCostImpact)
+      .filter(Boolean);
+    const combinedCost = costParts.length > 0 ? costParts[0] : undefined;
+
+    const merged: AnalysisFinding = {
+      ...primary,
+      causes: allCauses.slice(0, 3),
+      evidence: allEvidence,
+      evidenceAnchors: uniqueAnchors.length > 0 ? uniqueAnchors : undefined,
+      impactObserved: allImpacts.length > 0 ? allImpacts : undefined,
+      whatToValidateNext: allValidation.length > 0 ? allValidation : undefined,
+      description: primary.description + hypothesisBlock,
+      estimatedCostImpact: combinedCost,
+      collapsedNote: alternates.length > 0
+        ? `${alternates.length} additional root cause hypothesis${alternates.length > 1 ? "es" : ""} merged into this finding`
+        : primary.collapsedNote,
+    };
+
+    result.push(merged);
   }
 
   return result;
@@ -757,7 +798,14 @@ function applyEvidenceDrivenEnrichment(
   concreteSignals: CategorisedExtractedSignal[] = []
 ): AnalysisFinding[] {
   const enriched = findings.map(f => enrichFindingWithEvidence(f, evidenceSignals, concreteSignals, industry));
-  const collapsed = collapseDuplicateFindings(enriched);
+  const withHypotheses = enriched.map(f => {
+    if (f.description.includes("Root Cause Hypotheses:")) return f;
+    const strengthLabels: Record<string, string> = { STRONG: "Strong", MODERATE: "Medium", WEAK: "Weak" };
+    const confidence = strengthLabels[f.evidenceStrength || "WEAK"] || "Weak";
+    const hypothesisBlock = `\n\nRoot Cause Hypotheses:\nPrimary Hypothesis: ${f.causes[0] || f.title} (Confidence: ${confidence})`;
+    return { ...f, description: f.description + hypothesisBlock };
+  });
+  const collapsed = collapseDuplicateFindings(withHypotheses);
   return enforceCausalOrdering(collapsed, industry, concreteSignals);
 }
 

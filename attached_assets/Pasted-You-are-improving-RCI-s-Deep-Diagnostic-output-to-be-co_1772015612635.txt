@@ -1,0 +1,67 @@
+You are improving RCI’s Deep Diagnostic output to be consultant-grade and sale-ready.
+
+Implement the following changes in the Deep Diagnostic result builder (Manufacturing V2 and general signal-driven deep analysis):
+
+1️⃣ Make finding headlines ROOT-CAUSE–LED, not signal-led
+
+Current behavior: headlines are built from raw signals (e.g., “14 hours downtime → operational reliability risk”)
+
+Change: headlines must be generated from the matched root cause hypothesis (RCI Brain pattern title or derived root cause summary)
+
+Example:
+
+Before: “14 hours downtime and unplanned downtime → operational reliability risk”
+
+After: “Reactive maintenance culture driving operational reliability risk”
+
+2️⃣ Merge duplicate findings per 4M category
+
+If multiple findings exist in the same 4M category (e.g., Machinery), merge them into a single finding.
+
+The merged finding should:
+
+Aggregate all supporting signals
+
+Contain 2–3 ranked root cause hypotheses under one category
+
+Show combined estimated impact
+
+3️⃣ Reframe Insight copy to causal, consultant-style language
+
+Replace “Observed signals point to…” phrasing with causal interpretation:
+
+Example:
+
+Before: “Observed signals point to unplanned downtime as a contributing factor…”
+
+After: “The pattern of downtime and PM backlog strongly indicates maintenance is primarily reactive, increasing failure frequency and schedule volatility.”
+
+4️⃣ Add explicit Root Cause Hypothesis block
+
+Each finding must include:
+
+Root Cause Hypothesis (primary)
+
+Alternative Hypotheses (if applicable)
+
+Hypothesis confidence (Strong / Medium / Weak)
+
+5️⃣ Ensure headlines differ when insights differ
+
+Two findings with different root cause hypotheses must never have identical headlines, even if signals overlap.
+
+Constraints:
+
+Do not change any scoring logic.
+
+Do not change signal extraction.
+
+Only change result composition and presentation logic.
+
+Preserve existing types.
+
+After implementing:
+
+Run one Deep Diagnostic and ensure Machinery + Manpower findings no longer share signal-led headlines.
+
+Confirm merged findings appear as one per 4M category.
