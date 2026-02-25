@@ -1761,18 +1761,35 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
   // ============================================================================
   
   const processedDocs = documents.filter(d => d.status === "processed" && d.extractedData);
+
+  const aggregatedText = processedDocs
+    .map(doc => doc.extractedData?.rawText)
+    .filter(Boolean)
+    .join("\n\n");
+
+  console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
+  console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
+  console.log("🔎 AGGREGATED TEXT (first 300 chars):", aggregatedText.slice(0, 300));
+
+  if (!isBaseline && aggregatedText.length < 100) {
+    console.log(`MANUFACTURING V2: INSUFFICIENT TEXT — aggregatedText only ${aggregatedText.length} chars`);
+    return {
+      findings: [],
+      summary: "No readable text from uploaded documents. Please upload documents with selectable text (not scanned images).",
+      costSavingOpportunities: [],
+      predictions: [],
+      analysisMode: "evidence-enriched",
+      confidence: "low",
+      isMockMode: false,
+    };
+  }
+
   const docInputs: ProcessedDocument[] = processedDocs.map(d => ({
     id: d.id,
     name: d.fileName,
     content: d.extractedData?.rawText || "",
     type: d.fileType || "other",
   }));
-
-  console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
-  for (const di of docInputs) {
-    console.log("🔎 EXTRACTED TEXT LENGTH:", di.content?.length || 0);
-    console.log("🔎 EXTRACTED TEXT (first 500 chars):", di.content?.slice(0, 500));
-  }
 
   const concreteSignals = extractConcreteSignals(docInputs);
   const evidenceSignals = extractEvidenceSignalsFromDocuments(docInputs);
@@ -2047,18 +2064,35 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   }
 
   const processedDocs = documents.filter(d => d.status === "processed" && d.extractedData);
+
+  const aggregatedText = processedDocs
+    .map(doc => doc.extractedData?.rawText)
+    .filter(Boolean)
+    .join("\n\n");
+
+  console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)");
+  console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
+  console.log("🔎 AGGREGATED TEXT (first 300 chars):", aggregatedText.slice(0, 300));
+
+  if (aggregatedText.length < 100) {
+    console.log(`SIGNAL-DRIVEN DEEP: INSUFFICIENT TEXT — aggregatedText only ${aggregatedText.length} chars`);
+    return {
+      findings: [],
+      summary: "No readable text from uploaded documents. Please upload documents with selectable text (not scanned images).",
+      costSavingOpportunities: [],
+      predictions: [],
+      analysisMode: "evidence-enriched",
+      confidence: "low",
+      isMockMode: false,
+    };
+  }
+
   const docInputs: ProcessedDocument[] = processedDocs.map(d => ({
     id: d.id,
     name: d.fileName,
     content: d.extractedData?.rawText || "",
     type: d.fileType || "other",
   }));
-
-  console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)");
-  for (const di of docInputs) {
-    console.log("🔎 EXTRACTED TEXT LENGTH:", di.content?.length || 0);
-    console.log("🔎 EXTRACTED TEXT (first 500 chars):", di.content?.slice(0, 500));
-  }
 
   const concreteSignals = extractConcreteSignals(docInputs);
   const evidenceSignals = extractEvidenceSignalsFromDocuments(docInputs);
