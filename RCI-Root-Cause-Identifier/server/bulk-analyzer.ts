@@ -790,6 +790,73 @@ function enforceCausalOrdering(findings: AnalysisFinding[], industry: string, co
   return reordered;
 }
 
+const CATEGORY_PREDICTION_TEMPLATES: Record<FourMCategory, string[]> = {
+  Machinery: [
+    "Recurring unplanned downtime and equipment failures likely to escalate without structured preventive maintenance program",
+    "Equipment reliability degradation expected to worsen, increasing emergency repair costs and production schedule disruption",
+  ],
+  Manpower: [
+    "Workforce capacity gaps and overtime dependency likely to drive further attrition and institutional knowledge loss",
+    "Staff burnout and skill gaps expected to increase quality variation and reduce operational throughput",
+  ],
+  Materials: [
+    "Supply chain disruptions and quality control gaps likely to cascade into delivery commitments and customer satisfaction",
+    "Inventory management issues expected to increase carrying costs and stockout risk across production lines",
+  ],
+  Money: [
+    "Financial exposure from cost structure misalignment likely to tighten cash position and constrain operational flexibility",
+    "Margin erosion expected to accelerate without intervention on cost drivers and billing cycle alignment",
+  ],
+};
+
+function buildPredictionsFromFindings(
+  enrichedFindings: AnalysisFinding[],
+  prefix: string
+): RecurrencePrediction[] {
+  const severityRank: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+  const strengthRank: Record<string, number> = { STRONG: 3, MODERATE: 2, WEAK: 1 };
+
+  const ranked = [...enrichedFindings].sort((a, b) => {
+    const sevDiff = (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
+    if (sevDiff !== 0) return sevDiff;
+    return (strengthRank[b.evidenceStrength || "WEAK"] || 0) - (strengthRank[a.evidenceStrength || "WEAK"] || 0);
+  });
+
+  const topFindings = ranked.slice(0, 2);
+
+  return topFindings.map((finding, idx) => {
+    const category = finding.fourMCategory && CATEGORY_PREDICTION_TEMPLATES[finding.fourMCategory] ? finding.fourMCategory : "Money";
+    const templates = CATEGORY_PREDICTION_TEMPLATES[category];
+    const issue = templates[idx % templates.length];
+
+    const sev = finding.severity;
+    const strength = finding.evidenceStrength || "WEAK";
+    let timeframe: string;
+    let likelihood: "low" | "medium" | "high";
+
+    if ((sev === "critical" && strength === "STRONG") || (sev === "high" && strength === "STRONG")) {
+      timeframe = "Within 1–3 months if unaddressed";
+      likelihood = "high";
+    } else if (sev === "high" || (sev === "critical" && strength !== "STRONG")) {
+      timeframe = "Within 3–6 months if unaddressed";
+      likelihood = "high";
+    } else {
+      timeframe = "Within 6–12 months if unaddressed";
+      likelihood = "medium";
+    }
+
+    const anchors = (finding.evidenceAnchors || []).slice(0, 3).map(a => a.signal);
+    const basedOn = anchors.length > 0 ? ` (Based on: ${anchors.join(", ")})` : "";
+
+    return {
+      id: `pred-${prefix}-${idx}-${finding.id}`,
+      issue: `${issue}${basedOn}`,
+      likelihood,
+      expectedTimeframe: timeframe,
+    };
+  });
+}
+
 // Full evidence-driven enrichment pipeline for a set of findings
 function applyEvidenceDrivenEnrichment(
   findings: AnalysisFinding[],
@@ -1734,19 +1801,7 @@ Return JSON:
   // Log recommendation set fingerprint for audit
   console.log(`VARIATION: Deep analysis recommendation set [${fingerprint}]`);
 
-  // KNOWLEDGE-GOVERNED: Predictions based on matched patterns
-  const predictions: RecurrencePrediction[] = (parsed.recurrencePatterns || [])
-    .filter((p: any) => approvedRootCauses.some(rc => rc.id === p.rootCauseId))
-    .slice(0, 5)
-    .map((p: any, idx: number) => {
-      const libraryEntry = approvedRootCauses.find(rc => rc.id === p.rootCauseId);
-      return {
-        id: `pred-${idx}-${p.rootCauseId}`,
-        issue: libraryEntry?.title || p.rootCauseId,
-        likelihood: p.likelihood || "medium",
-        expectedTimeframe: "Next 3-6 months if unaddressed",
-      };
-    });
+  const predictions: RecurrencePrediction[] = buildPredictionsFromFindings(findings, "deep");
 
   // Executive Summary language must match diagnostic confidence level.
   // Evidence-driven enrichment: deep analysis applies evidence-driven pipeline
@@ -2055,13 +2110,7 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
     },
   ];
   
-  // Predictions only for evidence-enriched mode
-  const predictions: RecurrencePrediction[] = isBaseline ? [] : selectedWithMeta.slice(0, 2).map((item, idx) => ({
-    id: `pred-mfgv2-${idx}-${item.cause.id}`,
-    issue: item.cause.title,
-    likelihood: (["high", "medium"] as const)[idx % 2],
-    expectedTimeframe: "Next 3-6 months if unaddressed",
-  }));
+  const predictions: RecurrencePrediction[] = isBaseline ? [] : buildPredictionsFromFindings(enrichedFindings, "mfgv2");
   
   // Executive Summary
   const contextFocusPhrase = diagnosticContexts && diagnosticContexts.length > 0
@@ -2341,12 +2390,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     relatedFindings: findings.map(f => f.id),
   }));
 
-  const predictions: RecurrencePrediction[] = selectedWithMeta.slice(0, 2).map((item, idx) => ({
-    id: `pred-signal-${idx}-${item.cause.id}`,
-    issue: item.cause.title,
-    likelihood: (["high", "medium"] as const)[idx % 2],
-    expectedTimeframe: "Next 3-6 months if unaddressed",
-  }));
+  const predictions: RecurrencePrediction[] = buildPredictionsFromFindings(enrichedFindings, "signal");
 
   const contextFocusPhrase = diagnosticContexts && diagnosticContexts.length > 0
     ? ` with focus on ${diagnosticContexts.map(c => c.toLowerCase()).join(" and ")} factors`
@@ -2529,14 +2573,6 @@ function generateMockAnalysisResult(input: AnalysisInput, isBaseline: boolean): 
     relatedFindings: findings.map(f => f.id),
   }));
   
-  // Predictions only for evidence-enriched mode
-  const predictions: RecurrencePrediction[] = isBaseline ? [] : selectedCauses.slice(0, 2).map((rc, idx) => ({
-    id: `pred-mock-${idx}-${rc.id}`,
-    issue: rc.title,
-    likelihood: (["high", "medium"] as const)[idx % 2],
-    expectedTimeframe: "Next 3-6 months if unaddressed",
-  }));
-  
   // Executive Summary language must match diagnostic confidence level.
   // Summary explicitly references: stated problem(s), whether evidence supports or contradicts them.
   // Context reflects user focus, evidence determines truth.
@@ -2556,6 +2592,8 @@ function generateMockAnalysisResult(input: AnalysisInput, isBaseline: boolean): 
   // Evidence-driven enrichment: always run pipeline — empty signals → EXPLORATORY tone
   const fallbackSignals = generateFallbackEvidenceSignals(findings, isBaseline);
   const enrichedFindings = applyEvidenceDrivenEnrichment(findings, fallbackSignals, industry);
+
+  const predictions: RecurrencePrediction[] = isBaseline ? [] : buildPredictionsFromFindings(enrichedFindings, "mock");
 
   return {
     findings: enrichedFindings,
