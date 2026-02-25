@@ -56,6 +56,7 @@ export interface CategorisedExtractedSignal extends ExtractedSignal {
 type SignalRule = {
   category: EvidenceSignal["category"];
   terms: string[];
+  regexPatterns?: { pattern: RegExp; label: string }[];
   descriptionTemplate: (matchedTerms: string[]) => string;
 };
 
@@ -115,6 +116,18 @@ const SIGNAL_RULES: SignalRule[] = [
       "cogs",
       "operating cost",
       "overhead",
+    ],
+    regexPatterns: [
+      { pattern: /margin\s*(?:fell|dropped|declined|shrunk|shrinking|eroded|erosion|compress)/gi, label: "margin decline" },
+      { pattern: /(?:revenue|sales|income)\s*(?:fell|dropped|declined|down|decrease)/gi, label: "revenue decline" },
+      { pattern: /(?:cost|expense|opex|cogs)\s*(?:increased|rose|up|higher|exceeded|overrun)/gi, label: "cost increase" },
+      { pattern: /(?:budget|forecast)\s*(?:exceeded|overrun|blown|missed|variance)/gi, label: "budget overrun" },
+      { pattern: /(?:cash\s*flow|liquidity|working\s*capital)\s*(?:tight|negative|pressure|shortfall|issue|problem|concern)/gi, label: "cash flow issue" },
+      { pattern: /(?:profit|ebitda|ebit|net\s*income)\s*(?:fell|dropped|declined|loss|negative|down)/gi, label: "profit decline" },
+      { pattern: /(?:overdue|outstanding|aged)\s*(?:invoice|payment|receivable|debt|balance)/gi, label: "overdue receivables" },
+      { pattern: /(?:loss|write.?off|impairment)\s*(?:of|on|from)\s*(?:rm|usd|\$|myr)?\s*[\d,.]+/gi, label: "financial loss" },
+      { pattern: /\d+(?:\.\d+)?%?\s*(?:over\s*budget|above\s*budget|budget\s*variance)/gi, label: "budget variance" },
+      { pattern: /(?:gp|gross\s*profit|net\s*margin)\s*(?:[:=]\s*)?\d+(?:\.\d+)?%/gi, label: "margin metric" },
     ],
     descriptionTemplate: (matched) => 
       `Repeated mentions of ${matched.slice(0, 3).join(", ")}${matched.length > 3 ? " and related terms" : ""}`
@@ -179,6 +192,19 @@ const SIGNAL_RULES: SignalRule[] = [
       "no backup",
       "single operator",
     ],
+    regexPatterns: [
+      { pattern: /(?:turnover|attrition)\s*(?:rate\s*)?(?:of\s*|at\s*|[:=]\s*)?\d+(?:\.\d+)?%/gi, label: "turnover rate" },
+      { pattern: /(?:ot|overtime)\s*(?:hours?|cost|expense|increased|excessive|mandatory|compulsory)/gi, label: "overtime issue" },
+      { pattern: /(?:staff|employee|worker|headcount)\s*(?:shortage|shortfall|deficit|gap|turnover|leaving|resigned|quit)/gi, label: "staff shortage" },
+      { pattern: /(?:absenteeism|absence)\s*(?:rate\s*)?(?:of\s*|at\s*|[:=]\s*)?\d+(?:\.\d+)?%/gi, label: "absenteeism rate" },
+      { pattern: /(?:skill|competency|training)\s*(?:gap|deficit|shortage|lacking|inadequate|insufficient)/gi, label: "skill gap" },
+      { pattern: /(?:morale|engagement|satisfaction)\s*(?:low|poor|declining|dropped|fell|issue|concern)/gi, label: "low morale" },
+      { pattern: /(?:burnout|burn.?out|fatigue|exhaustion|overwork)/gi, label: "burnout" },
+      { pattern: /\d+\s*(?:vacant|unfilled|open)\s*(?:position|role|post|vacancy|vacancies)/gi, label: "vacancies" },
+      { pattern: /(?:vacant|unfilled|open)\s*(?:position|role|post|vacancy|vacancies)\s*[:=]?\s*\d+/gi, label: "vacancies" },
+      { pattern: /(?:no\s+backup|single\s+point\s+of\s+failure|key\s*(?:man|person)\s*(?:risk|dependency))/gi, label: "key person risk" },
+      { pattern: /(?:sick\s+leave|mc|medical\s+leave)\s*(?:[:=]\s*)?\d+\s*(?:days?|instances?|cases?)/gi, label: "sick leave" },
+    ],
     descriptionTemplate: (matched) =>
       `Evidence of workforce issues: ${matched.slice(0, 3).join(", ")}${matched.length > 3 ? " and related terms" : ""}`
   },
@@ -241,6 +267,19 @@ const SIGNAL_RULES: SignalRule[] = [
       "cycle time",
       "changeover",
       "setup time",
+    ],
+    regexPatterns: [
+      { pattern: /(?:breakdown|failure|malfunction)s?\s*(?:[:=]\s*)?\d+\s*(?:times?|incidents?|occurrences?|events?)?/gi, label: "breakdown count" },
+      { pattern: /\d+(?:\.\d+)?\s*(?:hours?|hrs?)\s*(?:of\s+)?(?:unplanned\s+)?(?:downtime|stoppage|idle)/gi, label: "downtime hours" },
+      { pattern: /(?:downtime|stoppage|idle)\s*(?:[:=]\s*)?\d+(?:\.\d+)?\s*(?:hours?|hrs?|%)/gi, label: "downtime metric" },
+      { pattern: /(?:oee|overall\s+equipment\s+effectiveness)\s*(?:[:=]\s*)?\d+(?:\.\d+)?%/gi, label: "OEE" },
+      { pattern: /(?:pm|preventive\s+maintenance|preventative\s+maintenance)\s*(?:overdue|backlog|pending|missed|skipped|delayed)/gi, label: "PM overdue" },
+      { pattern: /(?:mttr|mtbf|mean\s+time)\s*(?:[:=]\s*)?\d+/gi, label: "MTTR/MTBF" },
+      { pattern: /(?:machine|equipment|line|plant)\s*(?:stopped|halted|shut\s*down|idle|failed)/gi, label: "equipment stoppage" },
+      { pattern: /(?:spare\s+part|spares?)\s*(?:shortage|unavailable|out\s+of\s+stock|stockout|lead\s+time)/gi, label: "spare parts issue" },
+      { pattern: /(?:availability|uptime)\s*(?:[:=]\s*)?\d+(?:\.\d+)?%/gi, label: "availability" },
+      { pattern: /(?:emergency|unplanned|reactive|corrective)\s*(?:repair|maintenance|fix)/gi, label: "reactive maintenance" },
+      { pattern: /(?:calibration|inspection)\s*(?:overdue|expired|failed|missed|pending)/gi, label: "calibration overdue" },
     ],
     descriptionTemplate: (matched) =>
       `Equipment and system issues detected: ${matched.slice(0, 3).join(", ")}${matched.length > 3 ? " and related terms" : ""}`
@@ -319,6 +358,20 @@ const SIGNAL_RULES: SignalRule[] = [
       "obsolete stock",
       "slow moving",
       "dead stock",
+    ],
+    regexPatterns: [
+      { pattern: /(?:reject|rejection|scrap|waste|wastage)\s*(?:rate\s*)?(?:[:=]\s*)?\d+(?:\.\d+)?%/gi, label: "reject/scrap rate" },
+      { pattern: /(?:otd|on.?time\s*delivery|delivery\s*performance)\s*(?:[:=]\s*)?\d+(?:\.\d+)?%/gi, label: "OTD metric" },
+      { pattern: /(?:otd|on.?time\s*delivery|delivery\s*performance)\s*(?:fell|dropped|declined|down|poor|low|below)/gi, label: "OTD decline" },
+      { pattern: /(?:yield|first\s*pass|fpq|fpy)\s*(?:[:=]\s*)?\d+(?:\.\d+)?%/gi, label: "yield metric" },
+      { pattern: /(?:supplier|vendor)\s*(?:delay|late|issue|problem|failure|non.?conformance|quality)/gi, label: "supplier issue" },
+      { pattern: /(?:stockout|stock.?out|out\s+of\s+stock|material\s+shortage)/gi, label: "stockout" },
+      { pattern: /(?:rework|re.?work|reprocessing)\s*(?:[:=]\s*)?\d+(?:\.\d+)?%?/gi, label: "rework" },
+      { pattern: /(?:ncr|non.?conformance|non.?compliance)\s*(?:[:=]\s*)?\d+/gi, label: "NCR count" },
+      { pattern: /(?:customer\s+complaint|quality\s+escape|escaped\s+defect|product\s+return)/gi, label: "quality escape" },
+      { pattern: /(?:lead\s*time|delivery\s*time)\s*(?:increased|long|extended|grew|[:=]\s*\d+)/gi, label: "lead time issue" },
+      { pattern: /(?:inventory|stock)\s*(?:buildup|excess|obsolete|aged|slow.?moving|dead)/gi, label: "inventory issue" },
+      { pattern: /(?:batch|lot)\s*(?:reject|rejection|failure|fail)/gi, label: "batch rejection" },
     ],
     descriptionTemplate: (matched) =>
       `Supply and inventory issues found: ${matched.slice(0, 3).join(", ")}${matched.length > 3 ? " and related terms" : ""}`
@@ -1068,7 +1121,8 @@ function determineStrength(matchCount: number): EvidenceSignal["strength"] {
 
 function countTermOccurrences(
   content: string,
-  terms: string[]
+  terms: string[],
+  regexPatterns?: { pattern: RegExp; label: string }[]
 ): { count: number; matchedTerms: string[] } {
   const lowerContent = normalizeText(content);
   let totalCount = 0;
@@ -1082,6 +1136,19 @@ function countTermOccurrences(
       totalCount += matches.length;
       if (!matchedTerms.includes(term)) {
         matchedTerms.push(term);
+      }
+    }
+  }
+
+  if (regexPatterns) {
+    for (const rp of regexPatterns) {
+      const regex = new RegExp(rp.pattern.source, rp.pattern.flags);
+      const matches = lowerContent.match(regex);
+      if (matches && matches.length > 0) {
+        totalCount += matches.length;
+        if (!matchedTerms.includes(rp.label)) {
+          matchedTerms.push(rp.label);
+        }
       }
     }
   }
@@ -1124,7 +1191,13 @@ export function extractEvidenceSignalsFromDocuments(
     const docContent = normalizeText(doc.content || "");
     if (!docContent.trim()) continue;
     for (const rule of SIGNAL_RULES) {
-      const hasMatch = rule.terms.some(term => docContent.includes(term.toLowerCase()));
+      let hasMatch = rule.terms.some(term => docContent.includes(term.toLowerCase()));
+      if (!hasMatch && rule.regexPatterns) {
+        hasMatch = rule.regexPatterns.some(rp => {
+          const regex = new RegExp(rp.pattern.source, rp.pattern.flags);
+          return regex.test(docContent);
+        });
+      }
       if (hasMatch) {
         if (!categoryDocNames[rule.category]) categoryDocNames[rule.category] = [];
         if (!categoryDocNames[rule.category].includes(doc.name)) {
@@ -1135,7 +1208,7 @@ export function extractEvidenceSignalsFromDocuments(
   }
 
   for (const rule of SIGNAL_RULES) {
-    const { count, matchedTerms } = countTermOccurrences(combinedContent, rule.terms);
+    const { count, matchedTerms } = countTermOccurrences(combinedContent, rule.terms, rule.regexPatterns);
 
     if (count > 0 && matchedTerms.length > 0) {
       const sortedTerms = [...matchedTerms].sort();
@@ -1154,6 +1227,7 @@ export function extractEvidenceSignalsFromDocuments(
     }
   }
 
+  console.log("🧠 SIGNALS DETECTED:", signals.map(s => `[${s.category}] ${s.strength}: ${s.matchedTerms.slice(0, 4).join(", ")}`));
   console.log(`EVIDENCE SIGNALS TOTAL: ${signals.length} signals across ${new Set(signals.map(s => s.category)).size} categories`);
 
   return signals;
