@@ -2110,8 +2110,6 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
     },
   ];
   
-  const predictions: RecurrencePrediction[] = isBaseline ? [] : buildPredictionsFromFindings(enrichedFindings, "mfgv2");
-  
   // Executive Summary
   const contextFocusPhrase = diagnosticContexts && diagnosticContexts.length > 0
     ? ` with focus on ${diagnosticContexts.map(c => c.toLowerCase()).join(" and ")} factors`
@@ -2141,6 +2139,8 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
   
   const enrichmentSignals = isBaseline ? generateFallbackEvidenceSignals(findings, true) : evidenceSignals;
   const enrichedFindings = applyEvidenceDrivenEnrichment(findings, enrichmentSignals, "Manufacturing", concreteSignals);
+
+  const predictions: RecurrencePrediction[] = isBaseline ? [] : buildPredictionsFromFindings(enrichedFindings, "mfgv2");
 
   return {
     findings: enrichedFindings,
@@ -2390,8 +2390,6 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     relatedFindings: findings.map(f => f.id),
   }));
 
-  const predictions: RecurrencePrediction[] = buildPredictionsFromFindings(enrichedFindings, "signal");
-
   const contextFocusPhrase = diagnosticContexts && diagnosticContexts.length > 0
     ? ` with focus on ${diagnosticContexts.map(c => c.toLowerCase()).join(" and ")} factors`
     : "";
@@ -2403,6 +2401,8 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   const summaryPrefix = `Using document-derived signals and observed symptoms.${contextFocusPhrase}${symptomPhrase} Evidence supports the stated problem: "${problemStatement}".`;
 
   const enrichedFindings = applyEvidenceDrivenEnrichment(findings, evidenceSignals, industry, concreteSignals);
+
+  const predictions: RecurrencePrediction[] = buildPredictionsFromFindings(enrichedFindings, "signal");
 
   const categoriesRepresented = new Set(enrichedFindings.map(f => f.fourMCategory));
   const categoryList = Array.from(categoriesRepresented);
