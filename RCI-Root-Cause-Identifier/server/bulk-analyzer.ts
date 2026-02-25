@@ -1885,28 +1885,37 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
   
   // ============================================================================
   // EVIDENCE-BASED THRESHOLDING
-  // - Only include root causes where score >= 20
+  // - Only include root causes where score >= 8
   // - Allow multiple root causes per category if they meet threshold
   // - Exclude categories entirely if no root cause passes threshold
   // - DO NOT force inclusion per 4M category
+  // - FALLBACK: If signals exist but no root cause passes, surface top 2 as indicative
   // ============================================================================
-  const INCLUSION_THRESHOLD = 20;
+  const INCLUSION_THRESHOLD = 8;
   const thresholdPassed = scoredCauses.filter(item => item.score >= INCLUSION_THRESHOLD);
   const thresholdFailed = scoredCauses.filter(item => item.score < INCLUSION_THRESHOLD);
   
   let selectedWithMeta: typeof scoredCauses;
+  let isFallbackMode = false;
 
   if (thresholdPassed.length === 0) {
-    console.log(`MANUFACTURING V2: HARD FAIL — no root causes passed evidence threshold (>= ${INCLUSION_THRESHOLD})`);
-    return {
-      findings: [],
-      summary: "No operational or financial signals detected. Please upload Ops, Maintenance, QC, or Finance documents.",
-      costSavingOpportunities: [],
-      predictions: [],
-      analysisMode: "evidence-enriched",
-      confidence: "low",
-      isMockMode: false,
-    };
+    const hasSignals = concreteSignals.length > 0 || evidenceSignals.length > 0;
+    if (hasSignals && scoredCauses.length > 0) {
+      console.log(`MANUFACTURING V2: FALLBACK — no root causes passed threshold (>= ${INCLUSION_THRESHOLD}) but ${concreteSignals.length + evidenceSignals.length} signals exist. Surfacing top 2 as indicative.`);
+      selectedWithMeta = scoredCauses.slice(0, 2);
+      isFallbackMode = true;
+    } else {
+      console.log(`MANUFACTURING V2: HARD FAIL — no root causes passed evidence threshold (>= ${INCLUSION_THRESHOLD}) and no signals`);
+      return {
+        findings: [],
+        summary: "No operational or financial signals detected. Please upload Ops, Maintenance, QC, or Finance documents.",
+        costSavingOpportunities: [],
+        predictions: [],
+        analysisMode: "evidence-enriched",
+        confidence: "low",
+        isMockMode: false,
+      };
+    }
   } else {
     const maxFindings = 6;
     selectedWithMeta = thresholdPassed.slice(0, maxFindings);
@@ -1941,14 +1950,18 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
   const findings: AnalysisFinding[] = selectedWithMeta.map((item, idx) => {
     const rc = item.cause;
     const isOutOfContext = diagnosticContexts && diagnosticContexts.length > 0 && !item.isContextMatched;
+    const isIndicative = isFallbackMode;
     const severity = isBaseline
       ? "medium" 
-      : (["high", "medium", "critical"] as const)[idx % 3];
-    const prefix = isBaseline ? "[PRELIMINARY] " : "";
+      : isIndicative ? "medium" : (["high", "medium", "critical"] as const)[idx % 3];
+    const prefix = isBaseline ? "[PRELIMINARY] " : isIndicative ? "[NEEDS VALIDATION] " : "";
     
     let contextNote = "";
     if (isOutOfContext) {
       contextNote = "\n\n📌 Note: This factor emerged from evidence analysis despite falling outside the primary diagnostic focus.";
+    }
+    if (isIndicative) {
+      contextNote += "\n\n⚠️ Below evidence threshold — surfaced for guided validation. Upload additional documents to strengthen this finding.";
     }
     
     const normalizedCategory = normalizeCategory(rc.category);
@@ -1962,10 +1975,15 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
       severity,
       frequency: idx + 1,
       causes: [rc.title],
-      estimatedCostImpact: isBaseline ? undefined : `RM ${(10000 + idx * 5000).toLocaleString()}`,
+      estimatedCostImpact: isBaseline ? undefined : isIndicative ? undefined : `RM ${(10000 + idx * 5000).toLocaleString()}`,
       evidence: isBaseline 
         ? ["Derived from stated problem — upload documents to strengthen evidence"]
+        : isIndicative
+        ? ["Below evidence threshold — surfaced for guided validation"]
         : [`Evidence from Manufacturing operational data`, `Signal extracted from uploaded documents`],
+      evidenceStrength: isIndicative ? "WEAK" as EvidenceStrength : undefined,
+      collapsedNote: isIndicative ? "Below evidence threshold – surfaced for guided validation" : undefined,
+      insightNote: isIndicative ? "Indicative finding — needs additional document evidence to confirm" : undefined,
     };
   });
   
@@ -2022,7 +2040,7 @@ function generateManufacturingV2Result(input: AnalysisInput, isBaseline: boolean
   
   const confidenceLevel = isBaseline 
     ? "preliminary" 
-    : "substantiated";
+    : isFallbackMode ? "indicative" : "substantiated";
   
   const enrichmentSignals = isBaseline ? generateFallbackEvidenceSignals(findings, true) : evidenceSignals;
   const enrichedFindings = applyEvidenceDrivenEnrichment(findings, enrichmentSignals, "Manufacturing", concreteSignals);
@@ -2183,22 +2201,30 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
   scoredCauses.sort((a, b) => b.score - a.score);
 
-  const INCLUSION_THRESHOLD = 15;
+  const INCLUSION_THRESHOLD = 8;
   const thresholdPassed = scoredCauses.filter(item => item.score >= INCLUSION_THRESHOLD);
 
   let selectedWithMeta: typeof scoredCauses;
+  let isFallbackMode = false;
 
   if (thresholdPassed.length === 0) {
-    console.log(`SIGNAL-DRIVEN DEEP: HARD FAIL — no root causes passed evidence threshold (>= ${INCLUSION_THRESHOLD})`);
-    return {
-      findings: [],
-      summary: "No operational or financial signals detected. Please upload Ops, Maintenance, QC, or Finance documents.",
-      costSavingOpportunities: [],
-      predictions: [],
-      analysisMode: "evidence-enriched",
-      confidence: "low",
-      isMockMode: false,
-    };
+    const hasSignals = concreteSignals.length > 0 || evidenceSignals.length > 0;
+    if (hasSignals && scoredCauses.length > 0) {
+      console.log(`SIGNAL-DRIVEN DEEP: FALLBACK — no root causes passed threshold (>= ${INCLUSION_THRESHOLD}) but ${concreteSignals.length + evidenceSignals.length} signals exist. Surfacing top 2 as indicative.`);
+      selectedWithMeta = scoredCauses.slice(0, 2);
+      isFallbackMode = true;
+    } else {
+      console.log(`SIGNAL-DRIVEN DEEP: HARD FAIL — no root causes passed evidence threshold (>= ${INCLUSION_THRESHOLD}) and no signals`);
+      return {
+        findings: [],
+        summary: "No operational or financial signals detected. Please upload Ops, Maintenance, QC, or Finance documents.",
+        costSavingOpportunities: [],
+        predictions: [],
+        analysisMode: "evidence-enriched",
+        confidence: "low",
+        isMockMode: false,
+      };
+    }
   } else {
     selectedWithMeta = thresholdPassed.slice(0, 6);
   }
@@ -2216,24 +2242,35 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   const findings: AnalysisFinding[] = selectedWithMeta.map((item, idx) => {
     const rc = item.cause;
     const isOutOfContext = diagnosticContexts && diagnosticContexts.length > 0 && !item.isContextMatched;
-    const severity = (["high", "medium", "critical"] as const)[idx % 3];
+    const isIndicative = isFallbackMode;
+    const severity = isIndicative ? "medium" as const : (["high", "medium", "critical"] as const)[idx % 3];
 
     let contextNote = "";
     if (isOutOfContext) {
       contextNote = "\n\n📌 Note: This factor emerged from evidence analysis despite falling outside the primary diagnostic focus.";
     }
+    if (isIndicative) {
+      contextNote += "\n\n⚠️ Below evidence threshold — surfaced for guided validation. Upload additional documents to strengthen this finding.";
+    }
+
+    const prefix = isIndicative ? "[NEEDS VALIDATION] " : "";
 
     return {
       id: `finding-signal-${idx}-${rc.id}`,
-      title: rc.title,
+      title: `${prefix}${rc.title}`,
       description: `Root Cause:\n${rc.title}\n\nWhy It Matters:\n${rc.whyItMatters}\n\nIntervention Direction:\n${rc.interventionDirection}${contextNote}`,
       fourMCategory: rc.category as FourMCategory,
       indicator: categoryToIndicator[rc.category as FourMCategory],
       severity,
       frequency: idx + 1,
       causes: [rc.title],
-      estimatedCostImpact: `RM ${(10000 + idx * 5000).toLocaleString()}`,
-      evidence: [`Evidence from ${industry} operational data`, `Signal extracted from uploaded documents`],
+      estimatedCostImpact: isIndicative ? undefined : `RM ${(10000 + idx * 5000).toLocaleString()}`,
+      evidence: isIndicative
+        ? ["Below evidence threshold — surfaced for guided validation"]
+        : [`Evidence from ${industry} operational data`, `Signal extracted from uploaded documents`],
+      evidenceStrength: isIndicative ? "WEAK" as EvidenceStrength : undefined,
+      collapsedNote: isIndicative ? "Below evidence threshold – surfaced for guided validation" : undefined,
+      insightNote: isIndicative ? "Indicative finding — needs additional document evidence to confirm" : undefined,
     };
   });
 

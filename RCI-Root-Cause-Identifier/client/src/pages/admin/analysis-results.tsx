@@ -383,10 +383,11 @@ export default function AnalysisResults() {
           {findings.map((finding, idx) => {
             const colors = fourMColors[finding.fourMCategory] || fourMColors.Money;
             const severity = severityColors[finding.severity] || severityColors.medium;
+            const isIndicative = finding.collapsedNote?.includes("guided validation") || finding.title?.startsWith("[NEEDS VALIDATION]");
             const evidenceStrengthColors: Record<string, { bg: string; text: string; label: string }> = {
               STRONG: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", label: "Strong" },
               MODERATE: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", label: "Moderate" },
-              WEAK: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", label: "Weak" },
+              WEAK: { bg: isIndicative ? "bg-orange-100 dark:bg-orange-900/30" : "bg-gray-100 dark:bg-gray-800", text: isIndicative ? "text-orange-700 dark:text-orange-300" : "text-gray-600 dark:text-gray-400", label: isIndicative ? "Needs Validation" : "Weak" },
             };
             const esStyle = finding.evidenceStrength ? evidenceStrengthColors[finding.evidenceStrength] : null;
             const hasSignals = finding.evidenceAnchors && finding.evidenceAnchors.length > 0;
