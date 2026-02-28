@@ -2419,23 +2419,30 @@ function generateManufacturingV2Result(
       score += problemIntent[category] * 10;
     }
 
-    const signalCategoryMatch = signalCategories.has(rc.category as any) ? 1 : 0;
+    const signalCategoryMatch = signalCategories.has(rc.category as any);
     const findingConfidenceScore =
-      (documentMatches * 3) +
+      (documentMatches * 4) +
+      (problemMatches * 2) +
       (symptomMatches * 1) +
-      (signalCategoryMatch * 4) +
-      (problemMatches > 0 ? 1 : 0);
+      (signalCategoryMatch ? 4 : 0);
 
     let findingConfidenceLevel = "Low";
-    if (findingConfidenceScore >= 18) {
+    if (findingConfidenceScore >= 16) {
       findingConfidenceLevel = "Critical";
-    } else if (findingConfidenceScore >= 12) {
+    } else if (findingConfidenceScore >= 10) {
       findingConfidenceLevel = "High";
-    } else if (findingConfidenceScore >= 6) {
+    } else if (findingConfidenceScore >= 5) {
       findingConfidenceLevel = "Moderate";
     }
 
-    console.log("🔎 FINDING CONFIDENCE:", rc.id, findingConfidenceLevel, findingConfidenceScore);
+    console.log("🔎 FINDING CONFIDENCE:", rc.id, {
+      problemMatches,
+      documentMatches,
+      symptomMatches,
+      signalCategoryMatch,
+      findingConfidenceScore,
+      findingConfidenceLevel
+    });
 
     return {
       cause: rc,
@@ -2878,23 +2885,30 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
       score += problemIntent[category] * 10;
     }
 
-    const signalCategoryMatch = signalCategories.has(rc.category as any) ? 1 : 0;
+    const signalCategoryMatch = signalCategories.has(rc.category as any);
     const findingConfidenceScore =
-      (documentMatches * 3) +
+      (documentMatches * 4) +
+      (problemMatches * 2) +
       (symptomMatches * 1) +
-      (signalCategoryMatch * 4) +
-      (problemMatches > 0 ? 1 : 0);
+      (signalCategoryMatch ? 4 : 0);
 
     let findingConfidenceLevel = "Low";
-    if (findingConfidenceScore >= 18) {
+    if (findingConfidenceScore >= 16) {
       findingConfidenceLevel = "Critical";
-    } else if (findingConfidenceScore >= 12) {
+    } else if (findingConfidenceScore >= 10) {
       findingConfidenceLevel = "High";
-    } else if (findingConfidenceScore >= 6) {
+    } else if (findingConfidenceScore >= 5) {
       findingConfidenceLevel = "Moderate";
     }
 
-    console.log("🔎 FINDING CONFIDENCE:", rc.id, findingConfidenceLevel, findingConfidenceScore);
+    console.log("🔎 FINDING CONFIDENCE:", rc.id, {
+      problemMatches,
+      documentMatches,
+      symptomMatches,
+      signalCategoryMatch,
+      findingConfidenceScore,
+      findingConfidenceLevel
+    });
 
     return {
       cause: rc,
