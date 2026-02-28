@@ -197,6 +197,11 @@ export interface AnalysisFinding {
   whatToValidateNext?: string[];
   evidenceLedTitle?: string;
   insightNote?: string;
+  evidenceTrail?: {
+    matchedConcreteSignals: string[];
+    matchedEvidenceSignals: string[];
+    supportingDocuments: string[];
+  };
 }
 
 // Cost Saving Opportunity

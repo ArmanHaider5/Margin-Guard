@@ -2619,6 +2619,25 @@ function generateManufacturingV2Result(
     item.findingConfidenceScore = finalScore;
     item.findingConfidenceLevel = level;
 
+    const matchedConcreteSignals =
+      relevantConcreteSignals.map(sig => sig.rawText);
+    const matchedEvidenceSignals =
+      relevantEvidenceSignals.map(sig =>
+        sig.matchedTerms ? sig.matchedTerms.join(", ") : ""
+      );
+    const supportingDocuments =
+      Array.from(
+        new Set(
+          relevantConcreteSignals.map(sig => sig.documentName)
+        )
+      );
+
+    (item as any).evidenceTrail = {
+      matchedConcreteSignals,
+      matchedEvidenceSignals,
+      supportingDocuments
+    };
+
     console.log("🔎 FINDING CONFIDENCE:", item.cause.id, {
       triggerCount: triggers.length,
       relevantConcreteSignals: relevantConcreteSignals.length,
@@ -2731,6 +2750,7 @@ function generateManufacturingV2Result(
       insightNote: isIndicative
         ? "Indicative finding — needs additional document evidence to confirm"
         : undefined,
+      evidenceTrail: (item as any).evidenceTrail || undefined,
     };
   });
 
@@ -3125,6 +3145,25 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     item.findingConfidenceScore = finalScore;
     item.findingConfidenceLevel = level;
 
+    const matchedConcreteSignals =
+      relevantConcreteSignals.map(sig => sig.rawText);
+    const matchedEvidenceSignals =
+      relevantEvidenceSignals.map(sig =>
+        sig.matchedTerms ? sig.matchedTerms.join(", ") : ""
+      );
+    const supportingDocuments =
+      Array.from(
+        new Set(
+          relevantConcreteSignals.map(sig => sig.documentName)
+        )
+      );
+
+    (item as any).evidenceTrail = {
+      matchedConcreteSignals,
+      matchedEvidenceSignals,
+      supportingDocuments
+    };
+
     console.log("🔎 FINDING CONFIDENCE:", item.cause.id, {
       triggerCount: triggers.length,
       relevantConcreteSignals: relevantConcreteSignals.length,
@@ -3202,6 +3241,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
       insightNote: isIndicative
         ? "Indicative finding — needs additional document evidence to confirm"
         : undefined,
+      evidenceTrail: (item as any).evidenceTrail || undefined,
     };
   });
 
