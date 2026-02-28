@@ -2414,7 +2414,7 @@ function generateManufacturingV2Result(
 
     const category = (rc.category || "").toLowerCase();
     if (problemIntent[category]) {
-      score += score * problemIntent[category];
+      score *= (1 + problemIntent[category] * 1.5);
     }
 
     return {
@@ -2851,7 +2851,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
     const category = (rc.category || "").toLowerCase();
     if (problemIntent[category]) {
-      score += score * problemIntent[category];
+      score *= (1 + problemIntent[category] * 1.5);
     }
 
     return {
