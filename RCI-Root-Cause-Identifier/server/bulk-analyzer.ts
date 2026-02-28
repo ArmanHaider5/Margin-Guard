@@ -973,6 +973,42 @@ function enforceCausalOrdering(
   return reordered;
 }
 
+function classifyProblemIntent(problemText: string) {
+  const text = (problemText || "").toLowerCase();
+
+  const intentMap = {
+    money: ["margin", "profit", "cash", "cost", "budget", "funding", "working capital", "revenue", "financial", "liquidity"],
+    manpower: ["overtime", "staff", "turnover", "resignation", "attrition", "burnout", "morale", "accountability", "supervisor", "headcount"],
+    machinery: ["downtime", "breakdown", "maintenance", "pm", "equipment", "machine", "reliability", "firefighting", "failure"],
+    materials: ["supplier", "inventory", "stock", "raw material", "delivery", "quality issue", "rework", "defect"],
+  };
+
+  const weights: Record<string, number> = {
+    money: 0,
+    manpower: 0,
+    machinery: 0,
+    materials: 0,
+  };
+
+  for (const category in intentMap) {
+    for (const keyword of intentMap[category]) {
+      if (text.includes(keyword)) {
+        weights[category] += 1;
+      }
+    }
+  }
+
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+
+  if (total === 0) return weights;
+
+  for (const key in weights) {
+    weights[key] = weights[key] / total;
+  }
+
+  return weights;
+}
+
 const CATEGORY_PREDICTION_TEMPLATES: Record<FourMCategory, string[]> = {
   Machinery: [
     "Recurring unplanned downtime and equipment failures likely to escalate without structured preventive maintenance program",
@@ -2314,6 +2350,8 @@ function generateManufacturingV2Result(
   const hasDocumentEvidence = documentText.length > 0 && !isBaseline;
 
   const problemText = (problemStatement || "").toLowerCase();
+  const problemIntent = classifyProblemIntent(problemText);
+  console.log("🧠 Problem Intent Weights:", problemIntent);
   const hasProblemStatement = problemText.length > 0;
   const observedSymptoms = new Set(input.selectedSymptoms || []);
 
@@ -2372,6 +2410,11 @@ function generateManufacturingV2Result(
 
     if (problemMatches > 0 && documentMatches > 0) {
       score += 10;
+    }
+
+    const category = (rc.category || "").toLowerCase();
+    if (problemIntent[category]) {
+      score += score * problemIntent[category];
     }
 
     return {
@@ -2722,6 +2765,8 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     .join(" ")
     .toLowerCase();
   const problemText = (problemStatement || "").toLowerCase();
+  const problemIntent = classifyProblemIntent(problemText);
+  console.log("🧠 Problem Intent Weights:", problemIntent);
 
   const contextToCategory: Record<string, string[]> = {
     Money: ["Money"],
@@ -2803,6 +2848,12 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
         score += 8;
       }
     }
+
+    const category = (rc.category || "").toLowerCase();
+    if (problemIntent[category]) {
+      score += score * problemIntent[category];
+    }
+
     return {
       cause: rc,
       score,

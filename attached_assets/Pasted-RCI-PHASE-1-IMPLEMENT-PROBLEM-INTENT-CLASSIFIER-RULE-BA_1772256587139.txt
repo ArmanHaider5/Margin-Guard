@@ -1,0 +1,78 @@
+RCI PHASE 1 – IMPLEMENT PROBLEM INTENT CLASSIFIER (RULE-BASED)
+
+Objective:
+Create a deterministic problem intent classifier that converts the problem statement into weighted 4M category signals. This will influence root cause scoring in a structured way.
+
+File:
+server/bulk-analyzer.ts
+
+Steps:
+
+1. At the top of the file (above scoring functions), add a new helper:
+
+function classifyProblemIntent(problemText: string) {
+  const text = (problemText || "").toLowerCase();
+
+  const intentMap = {
+    money: ["margin", "profit", "cash", "cost", "budget", "funding", "working capital", "revenue", "financial", "liquidity"],
+    manpower: ["overtime", "staff", "turnover", "resignation", "attrition", "burnout", "morale", "accountability", "supervisor", "headcount"],
+    machinery: ["downtime", "breakdown", "maintenance", "pm", "equipment", "machine", "reliability", "firefighting", "failure"],
+    materials: ["supplier", "inventory", "stock", "raw material", "delivery", "quality issue", "rework", "defect"],
+  };
+
+  const weights: Record<string, number> = {
+    money: 0,
+    manpower: 0,
+    machinery: 0,
+    materials: 0,
+  };
+
+  for (const category in intentMap) {
+    for (const keyword of intentMap[category]) {
+      if (text.includes(keyword)) {
+        weights[category] += 1;
+      }
+    }
+  }
+
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+
+  if (total === 0) return weights;
+
+  for (const key in weights) {
+    weights[key] = weights[key] / total;
+  }
+
+  return weights;
+}
+
+2. Inside BOTH scoring functions:
+   - generateManufacturingV2Result
+   - runSignalDrivenDeepAnalysis
+
+   Immediately after problemText is defined, insert:
+
+   const problemIntent = classifyProblemIntent(problemText);
+
+3. Inside the root cause scoring loop, BEFORE threshold filtering,
+   apply intent weighting:
+
+   const category = (rc.category || "").toLowerCase();
+
+   if (problemIntent[category]) {
+     score += score * problemIntent[category];
+   }
+
+4. Add debug logging once per analysis:
+
+   console.log("🧠 Problem Intent Weights:", problemIntent);
+
+5. Do NOT modify:
+   - Threshold logic
+   - Prediction logic
+   - Document signal logic
+   - Symptom logic
+
+6. Confirm:
+   - Which line numbers were modified
+   - That problemIntent logs appear during Deep Diagnostic
