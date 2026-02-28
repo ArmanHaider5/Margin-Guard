@@ -2419,36 +2419,11 @@ function generateManufacturingV2Result(
       score += problemIntent[category] * 10;
     }
 
-    const signalCategoryMatch = signalCategories.has(rc.category as any);
-    const findingConfidenceScore =
-      (documentMatches * 4) +
-      (problemMatches * 2) +
-      (symptomMatches * 1) +
-      (signalCategoryMatch ? 4 : 0);
-
-    let findingConfidenceLevel = "Low";
-    if (findingConfidenceScore >= 16) {
-      findingConfidenceLevel = "Critical";
-    } else if (findingConfidenceScore >= 10) {
-      findingConfidenceLevel = "High";
-    } else if (findingConfidenceScore >= 5) {
-      findingConfidenceLevel = "Moderate";
-    }
-
-    console.log("🔎 FINDING CONFIDENCE:", rc.id, {
-      problemMatches,
-      documentMatches,
-      symptomMatches,
-      signalCategoryMatch,
-      findingConfidenceScore,
-      findingConfidenceLevel
-    });
-
     return {
       cause: rc,
       score,
-      findingConfidenceScore,
-      findingConfidenceLevel,
+      findingConfidenceScore: 0,
+      findingConfidenceLevel: "Low",
       isContextMatched,
       problemMatches,
       documentMatches,
@@ -2504,6 +2479,39 @@ function generateManufacturingV2Result(
   } else {
     const maxFindings = 6;
     selectedWithMeta = thresholdPassed.slice(0, maxFindings);
+  }
+
+  const crossCategoryCount = new Set(concreteSignals.map(s => s.category)).size;
+
+  for (const item of selectedWithMeta) {
+    const rc = item.cause;
+    const categorySignalCount =
+      concreteSignals.filter(s => s.category === rc.category).length +
+      evidenceSignals.filter(s => s.category === rc.category).length;
+
+    const findingConfidenceScore =
+      (categorySignalCount * 4) +
+      (item.score >= INCLUSION_THRESHOLD ? 3 : 0) +
+      (crossCategoryCount > 1 ? 2 : 0);
+
+    let findingConfidenceLevel = "Low";
+    if (findingConfidenceScore >= 18) {
+      findingConfidenceLevel = "Critical";
+    } else if (findingConfidenceScore >= 12) {
+      findingConfidenceLevel = "High";
+    } else if (findingConfidenceScore >= 6) {
+      findingConfidenceLevel = "Moderate";
+    }
+
+    item.findingConfidenceScore = findingConfidenceScore;
+    item.findingConfidenceLevel = findingConfidenceLevel;
+
+    console.log("🔎 FINDING CONFIDENCE:", rc.id, {
+      categorySignalCount,
+      crossCategoryCount,
+      findingConfidenceScore,
+      findingConfidenceLevel
+    });
   }
 
   // Log threshold results
@@ -2885,36 +2893,11 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
       score += problemIntent[category] * 10;
     }
 
-    const signalCategoryMatch = signalCategories.has(rc.category as any);
-    const findingConfidenceScore =
-      (documentMatches * 4) +
-      (problemMatches * 2) +
-      (symptomMatches * 1) +
-      (signalCategoryMatch ? 4 : 0);
-
-    let findingConfidenceLevel = "Low";
-    if (findingConfidenceScore >= 16) {
-      findingConfidenceLevel = "Critical";
-    } else if (findingConfidenceScore >= 10) {
-      findingConfidenceLevel = "High";
-    } else if (findingConfidenceScore >= 5) {
-      findingConfidenceLevel = "Moderate";
-    }
-
-    console.log("🔎 FINDING CONFIDENCE:", rc.id, {
-      problemMatches,
-      documentMatches,
-      symptomMatches,
-      signalCategoryMatch,
-      findingConfidenceScore,
-      findingConfidenceLevel
-    });
-
     return {
       cause: rc,
       score,
-      findingConfidenceScore,
-      findingConfidenceLevel,
+      findingConfidenceScore: 0,
+      findingConfidenceLevel: "Low",
       isContextMatched,
       problemMatches,
       documentMatches,
@@ -2957,6 +2940,39 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     }
   } else {
     selectedWithMeta = thresholdPassed.slice(0, 6);
+  }
+
+  const crossCategoryCount = new Set(concreteSignals.map(s => s.category)).size;
+
+  for (const item of selectedWithMeta) {
+    const rc = item.cause;
+    const categorySignalCount =
+      concreteSignals.filter(s => s.category === rc.category).length +
+      evidenceSignals.filter(s => s.category === rc.category).length;
+
+    const findingConfidenceScore =
+      (categorySignalCount * 4) +
+      (item.score >= INCLUSION_THRESHOLD ? 3 : 0) +
+      (crossCategoryCount > 1 ? 2 : 0);
+
+    let findingConfidenceLevel = "Low";
+    if (findingConfidenceScore >= 18) {
+      findingConfidenceLevel = "Critical";
+    } else if (findingConfidenceScore >= 12) {
+      findingConfidenceLevel = "High";
+    } else if (findingConfidenceScore >= 6) {
+      findingConfidenceLevel = "Moderate";
+    }
+
+    item.findingConfidenceScore = findingConfidenceScore;
+    item.findingConfidenceLevel = findingConfidenceLevel;
+
+    console.log("🔎 FINDING CONFIDENCE:", rc.id, {
+      categorySignalCount,
+      crossCategoryCount,
+      findingConfidenceScore,
+      findingConfidenceLevel
+    });
   }
 
   if (observedSymptoms.size > 0) {
