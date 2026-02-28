@@ -1255,6 +1255,13 @@ interface AnalysisResult {
   confidence?: "preliminary" | "low" | "substantiated"; // Confidence level ("low" = safe diagnostic floor)
   isMockMode?: boolean; // Flag to indicate mock mode results
   categoryConfidenceMap?: Record<string, any>;
+  caseConfidence?: {
+    caseConfidenceScore: number;
+    caseConfidenceLevel: string;
+    totalConcreteSignals: number;
+    totalEvidenceSignals: number;
+    activeCategories: number;
+  };
 }
 
 /**
@@ -2367,6 +2374,32 @@ function generateManufacturingV2Result(
     console.log("📊 CATEGORY CONFIDENCE:", cat, categoryConfidenceMap[cat]);
   });
 
+  const totalConcreteSignals = concreteSignals.length;
+  const totalEvidenceSignals = evidenceSignals.length;
+  const activeCategories =
+    Object.values(categoryConfidenceMap)
+      .filter((c: any) => c.confidenceScore > 0).length;
+
+  const caseConfidenceScore =
+    (totalConcreteSignals * 3) +
+    (totalEvidenceSignals * 4) +
+    (activeCategories * 2);
+
+  let caseConfidenceLevel = "Moderate";
+  if (caseConfidenceScore >= 35) {
+    caseConfidenceLevel = "Very High";
+  } else if (caseConfidenceScore >= 20) {
+    caseConfidenceLevel = "High";
+  }
+
+  console.log("🏛 CASE CONFIDENCE:", {
+    totalConcreteSignals,
+    totalEvidenceSignals,
+    activeCategories,
+    caseConfidenceScore,
+    caseConfidenceLevel
+  });
+
   if (
     !isBaseline &&
     concreteSignals.length === 0 &&
@@ -2749,6 +2782,13 @@ function generateManufacturingV2Result(
     confidence: confidenceLevel,
     isMockMode: isBaseline,
     categoryConfidenceMap,
+    caseConfidence: {
+      caseConfidenceScore,
+      caseConfidenceLevel,
+      totalConcreteSignals,
+      totalEvidenceSignals,
+      activeCategories
+    },
   };
 }
 
