@@ -2569,30 +2569,51 @@ function generateManufacturingV2Result(
     const eventSignals =
       categoryConcreteSignals.filter(s => s.signalType === "event");
 
-    const findingConfidenceScore =
+    const baseScore =
       (metricSignals.length * 5) +
       (eventSignals.length * 3) +
-      (categoryEvidenceSignals.length * 4) +
-      (item.score >= INCLUSION_THRESHOLD ? 3 : 0);
+      (categoryEvidenceSignals.length * 4);
 
-    let findingConfidenceLevel = "Low";
-    if (findingConfidenceScore >= 20) {
-      findingConfidenceLevel = "Critical";
-    } else if (findingConfidenceScore >= 12) {
-      findingConfidenceLevel = "High";
-    } else if (findingConfidenceScore >= 6) {
-      findingConfidenceLevel = "Moderate";
+    let relevanceBonus = 0;
+    if (metricSignals.length + eventSignals.length >= 2) {
+      relevanceBonus = 4;
+    } else if (metricSignals.length + eventSignals.length === 1) {
+      relevanceBonus = 2;
     }
 
-    item.findingConfidenceScore = findingConfidenceScore;
-    item.findingConfidenceLevel = findingConfidenceLevel;
+    const findingCategories =
+      new Set([
+        ...metricSignals.map(s => s.category),
+        ...eventSignals.map(s => s.category)
+      ]);
+    const crossCategoryBonus = findingCategories.size >= 2 ? 3 : 0;
+
+    const metricBonus = metricSignals.length > 0 ? 2 : 0;
+
+    const finalScore =
+      baseScore + relevanceBonus + crossCategoryBonus + metricBonus;
+
+    let level = "Low";
+    if (finalScore >= 28) {
+      level = "Critical";
+    } else if (finalScore >= 18) {
+      level = "High";
+    } else if (finalScore >= 10) {
+      level = "Moderate";
+    }
+
+    item.findingConfidenceScore = finalScore;
+    item.findingConfidenceLevel = level;
 
     console.log("🔎 FINDING CONFIDENCE:", item.cause.id, {
       metricSignals: metricSignals.length,
       eventSignals: eventSignals.length,
       evidenceSignals: categoryEvidenceSignals.length,
-      finalScore: findingConfidenceScore,
-      level: findingConfidenceLevel
+      relevanceBonus,
+      crossCategoryBonus,
+      metricBonus,
+      finalScore,
+      level
     });
   }
 
@@ -3043,30 +3064,51 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     const eventSignals =
       categoryConcreteSignals.filter(s => s.signalType === "event");
 
-    const findingConfidenceScore =
+    const baseScore =
       (metricSignals.length * 5) +
       (eventSignals.length * 3) +
-      (categoryEvidenceSignals.length * 4) +
-      (item.score >= INCLUSION_THRESHOLD ? 3 : 0);
+      (categoryEvidenceSignals.length * 4);
 
-    let findingConfidenceLevel = "Low";
-    if (findingConfidenceScore >= 20) {
-      findingConfidenceLevel = "Critical";
-    } else if (findingConfidenceScore >= 12) {
-      findingConfidenceLevel = "High";
-    } else if (findingConfidenceScore >= 6) {
-      findingConfidenceLevel = "Moderate";
+    let relevanceBonus = 0;
+    if (metricSignals.length + eventSignals.length >= 2) {
+      relevanceBonus = 4;
+    } else if (metricSignals.length + eventSignals.length === 1) {
+      relevanceBonus = 2;
     }
 
-    item.findingConfidenceScore = findingConfidenceScore;
-    item.findingConfidenceLevel = findingConfidenceLevel;
+    const findingCategories =
+      new Set([
+        ...metricSignals.map(s => s.category),
+        ...eventSignals.map(s => s.category)
+      ]);
+    const crossCategoryBonus = findingCategories.size >= 2 ? 3 : 0;
+
+    const metricBonus = metricSignals.length > 0 ? 2 : 0;
+
+    const finalScore =
+      baseScore + relevanceBonus + crossCategoryBonus + metricBonus;
+
+    let level = "Low";
+    if (finalScore >= 28) {
+      level = "Critical";
+    } else if (finalScore >= 18) {
+      level = "High";
+    } else if (finalScore >= 10) {
+      level = "Moderate";
+    }
+
+    item.findingConfidenceScore = finalScore;
+    item.findingConfidenceLevel = level;
 
     console.log("🔎 FINDING CONFIDENCE:", item.cause.id, {
       metricSignals: metricSignals.length,
       eventSignals: eventSignals.length,
       evidenceSignals: categoryEvidenceSignals.length,
-      finalScore: findingConfidenceScore,
-      level: findingConfidenceLevel
+      relevanceBonus,
+      crossCategoryBonus,
+      metricBonus,
+      finalScore,
+      level
     });
   }
 
