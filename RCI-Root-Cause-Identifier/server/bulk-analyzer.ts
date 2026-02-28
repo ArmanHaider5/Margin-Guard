@@ -2619,37 +2619,12 @@ function generateManufacturingV2Result(
     item.findingConfidenceScore = finalScore;
     item.findingConfidenceLevel = level;
 
-    const matchedConcreteSignals =
-      relevantConcreteSignals.map(sig => sig.rawText);
-    const matchedEvidenceSignals =
-      relevantEvidenceSignals.map(sig =>
-        sig.matchedTerms ? sig.matchedTerms.join(", ") : ""
-      );
-    const supportingDocuments =
-      Array.from(
-        new Set(
-          relevantConcreteSignals.map(sig => sig.documentName)
-        )
-      );
-
-    (item as any).evidenceTrail = {
-      matchedConcreteSignals,
-      matchedEvidenceSignals,
-      supportingDocuments
-    };
-
     console.log("🔎 FINDING CONFIDENCE:", item.cause.id, {
       triggerCount: triggers.length,
       relevantConcreteSignals: relevantConcreteSignals.length,
       relevantEvidenceSignals: relevantEvidenceSignals.length,
       finalScore,
       level
-    });
-
-    console.log("📎 EVIDENCE TRAIL:", item.cause.id, {
-      matchedConcreteSignals,
-      matchedEvidenceSignals,
-      supportingDocuments
     });
   }
 
@@ -2725,6 +2700,48 @@ function generateManufacturingV2Result(
 
     const normalizedCategory = normalizeCategory(rc.category);
 
+    const triggers =
+      ((rc as any).signalTriggers || []).map((t: string) => t.toLowerCase());
+
+    const relevantConcreteSignals =
+      concreteSignals.filter(sig =>
+        triggers.some((trigger: string) =>
+          sig.rawText.toLowerCase().includes(trigger)
+        )
+      );
+
+    const relevantEvidenceSignals =
+      evidenceSignals.filter(sig =>
+        triggers.some((trigger: string) =>
+          sig.matchedTerms?.some((term: string) =>
+            term.toLowerCase().includes(trigger)
+          )
+        )
+      );
+
+    const matchedConcreteSignals =
+      relevantConcreteSignals.map(sig => sig.rawText);
+
+    const matchedEvidenceSignals =
+      relevantEvidenceSignals.map(sig =>
+        sig.matchedTerms ? sig.matchedTerms.join(", ") : ""
+      );
+
+    const supportingDocuments =
+      Array.from(
+        new Set(
+          relevantConcreteSignals
+            .map(sig => sig.documentName)
+            .filter(Boolean)
+        )
+      );
+
+    console.log("📎 EVIDENCE TRAIL:", rc.id, {
+      matchedConcreteSignals,
+      matchedEvidenceSignals,
+      supportingDocuments
+    });
+
     return {
       id: `finding-mfgv2-${idx}-${rc.id}`,
       title: `${prefix}${rc.title}`,
@@ -2756,7 +2773,11 @@ function generateManufacturingV2Result(
       insightNote: isIndicative
         ? "Indicative finding — needs additional document evidence to confirm"
         : undefined,
-      evidenceTrail: (item as any).evidenceTrail || undefined,
+      evidenceTrail: {
+        matchedConcreteSignals,
+        matchedEvidenceSignals,
+        supportingDocuments
+      },
     };
   });
 
@@ -3151,37 +3172,12 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     item.findingConfidenceScore = finalScore;
     item.findingConfidenceLevel = level;
 
-    const matchedConcreteSignals =
-      relevantConcreteSignals.map(sig => sig.rawText);
-    const matchedEvidenceSignals =
-      relevantEvidenceSignals.map(sig =>
-        sig.matchedTerms ? sig.matchedTerms.join(", ") : ""
-      );
-    const supportingDocuments =
-      Array.from(
-        new Set(
-          relevantConcreteSignals.map(sig => sig.documentName)
-        )
-      );
-
-    (item as any).evidenceTrail = {
-      matchedConcreteSignals,
-      matchedEvidenceSignals,
-      supportingDocuments
-    };
-
     console.log("🔎 FINDING CONFIDENCE:", item.cause.id, {
       triggerCount: triggers.length,
       relevantConcreteSignals: relevantConcreteSignals.length,
       relevantEvidenceSignals: relevantEvidenceSignals.length,
       finalScore,
       level
-    });
-
-    console.log("📎 EVIDENCE TRAIL:", item.cause.id, {
-      matchedConcreteSignals,
-      matchedEvidenceSignals,
-      supportingDocuments
     });
   }
 
@@ -3228,6 +3224,48 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
     const prefix = isIndicative ? "[NEEDS VALIDATION] " : "";
 
+    const triggers =
+      (rc.signalTriggers || []).map((t: string) => t.toLowerCase());
+
+    const relevantConcreteSignals =
+      concreteSignals.filter(sig =>
+        triggers.some((trigger: string) =>
+          sig.rawText.toLowerCase().includes(trigger)
+        )
+      );
+
+    const relevantEvidenceSignals =
+      evidenceSignals.filter(sig =>
+        triggers.some((trigger: string) =>
+          sig.matchedTerms?.some((term: string) =>
+            term.toLowerCase().includes(trigger)
+          )
+        )
+      );
+
+    const matchedConcreteSignals =
+      relevantConcreteSignals.map(sig => sig.rawText);
+
+    const matchedEvidenceSignals =
+      relevantEvidenceSignals.map(sig =>
+        sig.matchedTerms ? sig.matchedTerms.join(", ") : ""
+      );
+
+    const supportingDocuments =
+      Array.from(
+        new Set(
+          relevantConcreteSignals
+            .map(sig => sig.documentName)
+            .filter(Boolean)
+        )
+      );
+
+    console.log("📎 EVIDENCE TRAIL:", rc.id, {
+      matchedConcreteSignals,
+      matchedEvidenceSignals,
+      supportingDocuments
+    });
+
     return {
       id: `finding-signal-${idx}-${rc.id}`,
       title: `${prefix}${rc.title}`,
@@ -3253,7 +3291,11 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
       insightNote: isIndicative
         ? "Indicative finding — needs additional document evidence to confirm"
         : undefined,
-      evidenceTrail: (item as any).evidenceTrail || undefined,
+      evidenceTrail: {
+        matchedConcreteSignals,
+        matchedEvidenceSignals,
+        supportingDocuments
+      },
     };
   });
 
