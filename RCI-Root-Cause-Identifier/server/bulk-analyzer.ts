@@ -2482,25 +2482,24 @@ function generateManufacturingV2Result(
   }
 
   for (const item of selectedWithMeta) {
-    const rcKeywords = (item.cause.symptoms || []).map(s => s.toLowerCase());
+    const categoryConcreteSignals =
+      concreteSignals.filter(s => s.category === item.cause.category);
+    const categoryEvidenceSignals =
+      evidenceSignals.filter(s => s.category === item.cause.category);
 
-    const relevantConcreteSignals = concreteSignals.filter(sig =>
-      rcKeywords.some(keyword => sig.rawText.toLowerCase().includes(keyword))
-    );
-
-    const relevantEvidenceSignals = evidenceSignals.filter(sig =>
-      rcKeywords.some(keyword =>
-        sig.matchedTerms?.some(term => term.toLowerCase().includes(keyword))
-      )
-    );
+    const metricSignals =
+      categoryConcreteSignals.filter(s => s.signalType === "metric");
+    const eventSignals =
+      categoryConcreteSignals.filter(s => s.signalType === "event");
 
     const findingConfidenceScore =
-      (relevantConcreteSignals.length * 5) +
-      (relevantEvidenceSignals.length * 4) +
+      (metricSignals.length * 5) +
+      (eventSignals.length * 3) +
+      (categoryEvidenceSignals.length * 4) +
       (item.score >= INCLUSION_THRESHOLD ? 3 : 0);
 
     let findingConfidenceLevel = "Low";
-    if (findingConfidenceScore >= 18) {
+    if (findingConfidenceScore >= 20) {
       findingConfidenceLevel = "Critical";
     } else if (findingConfidenceScore >= 12) {
       findingConfidenceLevel = "High";
@@ -2512,10 +2511,11 @@ function generateManufacturingV2Result(
     item.findingConfidenceLevel = findingConfidenceLevel;
 
     console.log("🔎 FINDING CONFIDENCE:", item.cause.id, {
-      relevantConcreteSignals: relevantConcreteSignals.length,
-      relevantEvidenceSignals: relevantEvidenceSignals.length,
-      findingConfidenceScore,
-      findingConfidenceLevel
+      metricSignals: metricSignals.length,
+      eventSignals: eventSignals.length,
+      evidenceSignals: categoryEvidenceSignals.length,
+      finalScore: findingConfidenceScore,
+      level: findingConfidenceLevel
     });
   }
 
@@ -2948,25 +2948,24 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   }
 
   for (const item of selectedWithMeta) {
-    const rcKeywords = (item.cause.symptoms || []).map(s => s.toLowerCase());
+    const categoryConcreteSignals =
+      concreteSignals.filter(s => s.category === item.cause.category);
+    const categoryEvidenceSignals =
+      evidenceSignals.filter(s => s.category === item.cause.category);
 
-    const relevantConcreteSignals = concreteSignals.filter(sig =>
-      rcKeywords.some(keyword => sig.rawText.toLowerCase().includes(keyword))
-    );
-
-    const relevantEvidenceSignals = evidenceSignals.filter(sig =>
-      rcKeywords.some(keyword =>
-        sig.matchedTerms?.some(term => term.toLowerCase().includes(keyword))
-      )
-    );
+    const metricSignals =
+      categoryConcreteSignals.filter(s => s.signalType === "metric");
+    const eventSignals =
+      categoryConcreteSignals.filter(s => s.signalType === "event");
 
     const findingConfidenceScore =
-      (relevantConcreteSignals.length * 5) +
-      (relevantEvidenceSignals.length * 4) +
+      (metricSignals.length * 5) +
+      (eventSignals.length * 3) +
+      (categoryEvidenceSignals.length * 4) +
       (item.score >= INCLUSION_THRESHOLD ? 3 : 0);
 
     let findingConfidenceLevel = "Low";
-    if (findingConfidenceScore >= 18) {
+    if (findingConfidenceScore >= 20) {
       findingConfidenceLevel = "Critical";
     } else if (findingConfidenceScore >= 12) {
       findingConfidenceLevel = "High";
@@ -2978,10 +2977,11 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     item.findingConfidenceLevel = findingConfidenceLevel;
 
     console.log("🔎 FINDING CONFIDENCE:", item.cause.id, {
-      relevantConcreteSignals: relevantConcreteSignals.length,
-      relevantEvidenceSignals: relevantEvidenceSignals.length,
-      findingConfidenceScore,
-      findingConfidenceLevel
+      metricSignals: metricSignals.length,
+      eventSignals: eventSignals.length,
+      evidenceSignals: categoryEvidenceSignals.length,
+      finalScore: findingConfidenceScore,
+      level: findingConfidenceLevel
     });
   }
 
