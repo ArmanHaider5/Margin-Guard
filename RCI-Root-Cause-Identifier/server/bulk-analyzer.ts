@@ -1254,6 +1254,7 @@ interface AnalysisResult {
   analysisMode?: "baseline" | "evidence-enriched"; // Indicates which mode was used
   confidence?: "preliminary" | "low" | "substantiated"; // Confidence level ("low" = safe diagnostic floor)
   isMockMode?: boolean; // Flag to indicate mock mode results
+  categoryConfidenceMap?: Record<string, any>;
 }
 
 /**
@@ -2323,6 +2324,49 @@ function generateManufacturingV2Result(
     `MANUFACTURING V2: Extracted ${concreteSignals.length} concrete signals, ${evidenceSignals.length} evidence signals`,
   );
 
+  const categoryConfidenceMap: Record<string, any> = {};
+  const allCategories = ["Money", "Manpower", "Machinery", "Materials"];
+
+  allCategories.forEach(cat => {
+    const categoryConcreteSignals =
+      concreteSignals.filter(s => s.category === cat);
+    const categoryEvidenceSignals =
+      evidenceSignals.filter(s => s.category === cat);
+
+    const metricSignals =
+      categoryConcreteSignals.filter(s => s.signalType === "metric");
+    const eventSignals =
+      categoryConcreteSignals.filter(s => s.signalType === "event");
+
+    const crossCategoryCount =
+      new Set(concreteSignals.map(s => s.category)).size;
+
+    const confidenceScore =
+      (metricSignals.length * 5) +
+      (eventSignals.length * 3) +
+      (categoryEvidenceSignals.length * 4) +
+      (crossCategoryCount > 1 ? 2 : 0);
+
+    let confidenceLevel = "Low";
+    if (confidenceScore >= 23) {
+      confidenceLevel = "Critical";
+    } else if (confidenceScore >= 15) {
+      confidenceLevel = "High";
+    } else if (confidenceScore >= 8) {
+      confidenceLevel = "Moderate";
+    }
+
+    categoryConfidenceMap[cat] = {
+      confidenceScore,
+      confidenceLevel,
+      metricSignals: metricSignals.length,
+      eventSignals: eventSignals.length,
+      evidenceSignals: categoryEvidenceSignals.length
+    };
+
+    console.log("📊 CATEGORY CONFIDENCE:", cat, categoryConfidenceMap[cat]);
+  });
+
   if (
     !isBaseline &&
     concreteSignals.length === 0 &&
@@ -2704,6 +2748,7 @@ function generateManufacturingV2Result(
     analysisMode: isBaseline ? "baseline" : "evidence-enriched",
     confidence: confidenceLevel,
     isMockMode: isBaseline,
+    categoryConfidenceMap,
   };
 }
 
