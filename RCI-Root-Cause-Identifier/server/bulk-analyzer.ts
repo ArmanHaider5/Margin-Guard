@@ -2645,6 +2645,12 @@ function generateManufacturingV2Result(
       finalScore,
       level
     });
+
+    console.log("📎 EVIDENCE TRAIL:", item.cause.id, {
+      matchedConcreteSignals,
+      matchedEvidenceSignals,
+      supportingDocuments
+    });
   }
 
   // Log threshold results
@@ -3170,6 +3176,12 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
       relevantEvidenceSignals: relevantEvidenceSignals.length,
       finalScore,
       level
+    });
+
+    console.log("📎 EVIDENCE TRAIL:", item.cause.id, {
+      matchedConcreteSignals,
+      matchedEvidenceSignals,
+      supportingDocuments
     });
   }
 
