@@ -1987,6 +1987,13 @@ export const manufacturingRootCausesV2 = [
     primaryContext: "Money",
     title:
       "Cash flow pressure caused by production costs incurred before billing milestones",
+    signalTriggers: [
+      "cash flow",
+      "cash flow tight",
+      "short-term funding",
+      "liquidity",
+      "working capital"
+    ],
     evidenceSignals: [
       "production costs incurred before invoicing",
       "billing milestones delayed",
@@ -2003,6 +2010,13 @@ export const manufacturingRootCausesV2 = [
     category: "Money",
     primaryContext: "Money",
     title: "Margin erosion from untracked material cost increases",
+    signalTriggers: [
+      "margin",
+      "cost increase",
+      "material cost",
+      "shrinking margins",
+      "raw material cost"
+    ],
     evidenceSignals: [
       "supplier price increases not reflected in costing",
       "material cost variance against estimates",
@@ -2021,6 +2035,13 @@ export const manufacturingRootCausesV2 = [
     primaryContext: "People",
     title:
       "Supervisory oversight gaps allowing quality defects to pass downstream",
+    signalTriggers: [
+      "quality escape",
+      "reject rate",
+      "rework",
+      "defect",
+      "inspection failure"
+    ],
     evidenceSignals: [
       "late-stage defect detection",
       "rework after final inspection",
@@ -2038,6 +2059,13 @@ export const manufacturingRootCausesV2 = [
     category: "Manpower",
     primaryContext: "People",
     title: "Operational dependency on a small number of experienced operators",
+    signalTriggers: [
+      "staff leaving",
+      "resignation",
+      "attrition",
+      "skill shortage",
+      "experienced operator"
+    ],
     evidenceSignals: [
       "overtime concentrated on specific individuals",
       "production delays during key staff absence",
@@ -2055,6 +2083,13 @@ export const manufacturingRootCausesV2 = [
     primaryContext: "Supply",
     title:
       "Stockouts caused by fixed inventory thresholds despite demand variability",
+    signalTriggers: [
+      "stockout",
+      "inventory shortage",
+      "material unavailable",
+      "urgent purchase",
+      "supply disruption"
+    ],
     evidenceSignals: [
       "urgent material purchases",
       "repeated stockout incidents",
@@ -2072,6 +2107,13 @@ export const manufacturingRootCausesV2 = [
     primaryContext: "Supply",
     title:
       "Excess inventory accumulation due to forecast and production mismatch",
+    signalTriggers: [
+      "excess inventory",
+      "slow moving stock",
+      "ageing inventory",
+      "forecast variance",
+      "overstock"
+    ],
     evidenceSignals: [
       "slow-moving or ageing inventory",
       "forecast variance against actual output",
@@ -2089,6 +2131,13 @@ export const manufacturingRootCausesV2 = [
     primaryContext: "Systems",
     title:
       "Unplanned downtime from maintenance performed only after breakdowns",
+    signalTriggers: [
+      "downtime",
+      "pm overdue",
+      "maintenance",
+      "breakdown",
+      "machine failure"
+    ],
     evidenceSignals: [
       "frequent emergency repairs",
       "absence of preventive maintenance records",
@@ -2104,6 +2153,13 @@ export const manufacturingRootCausesV2 = [
     category: "Machinery",
     primaryContext: "Systems",
     title: "Production bottlenecks limiting overall output capacity",
+    signalTriggers: [
+      "capacity",
+      "bottleneck",
+      "throughput",
+      "overtime",
+      "output constraint"
+    ],
     evidenceSignals: [
       "queue build-up at specific workstations",
       "uneven utilisation across equipment",
@@ -2120,6 +2176,13 @@ export const manufacturingRootCausesV2 = [
     primaryContext: "Process",
     title:
       "Delayed management response due to lack of real-time production visibility",
+    signalTriggers: [
+      "reporting delay",
+      "manual tracking",
+      "no real-time data",
+      "end of day report",
+      "late visibility"
+    ],
     evidenceSignals: [
       "end-of-day production reporting only",
       "manual tracking of output",
@@ -2136,6 +2199,13 @@ export const manufacturingRootCausesV2 = [
     category: "Machinery",
     primaryContext: "Process",
     title: "Specification changes not fully reflected on the production floor",
+    signalTriggers: [
+      "engineering change",
+      "outdated drawing",
+      "spec mismatch",
+      "revision control",
+      "design change scrap"
+    ],
     evidenceSignals: [
       "scrap increase after design changes",
       "outdated drawings in circulation",
@@ -2151,6 +2221,13 @@ export const manufacturingRootCausesV2 = [
     category: "Machinery",
     primaryContext: "Process",
     title: "Recurring defects without a structured resolution mechanism",
+    signalTriggers: [
+      "repeat defect",
+      "non-conformance",
+      "corrective action",
+      "recurring issue",
+      "ncr reopened"
+    ],
     evidenceSignals: [
       "repeat non-conformance reports",
       "lack of permanent corrective actions",
@@ -2166,6 +2243,13 @@ export const manufacturingRootCausesV2 = [
     category: "Machinery",
     primaryContext: "Process",
     title: "Production planning misaligned with sales order volatility",
+    signalTriggers: [
+      "rescheduling",
+      "rush order",
+      "planning mismatch",
+      "idle capacity",
+      "order volatility"
+    ],
     evidenceSignals: [
       "frequent production rescheduling",
       "rush orders disrupting plans",
