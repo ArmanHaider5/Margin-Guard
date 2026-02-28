@@ -136,6 +136,7 @@ export interface RootCauseEntry {
 
   // RCI Brain v2 — Pattern Card extensions (optional for backward compatibility)
   // Used in future diagnostic workflow for validation and prevention guidance
+  signalTriggers?: string[];
   validationChecklist?: string[];
   antiPatterns?: string[];
   highLeverageFix?: string;
