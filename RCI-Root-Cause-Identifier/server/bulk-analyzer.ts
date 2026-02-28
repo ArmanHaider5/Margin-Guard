@@ -2559,20 +2559,34 @@ function generateManufacturingV2Result(
   }
 
   for (const item of selectedWithMeta) {
-    const categoryConcreteSignals =
-      concreteSignals.filter(s => s.category === item.cause.category);
-    const categoryEvidenceSignals =
-      evidenceSignals.filter(s => s.category === item.cause.category);
+    const triggers =
+      ((item.cause as any).signalTriggers || []).map((t: string) => t.toLowerCase());
+
+    const relevantConcreteSignals =
+      concreteSignals.filter(sig =>
+        triggers.some((trigger: string) =>
+          sig.rawText.toLowerCase().includes(trigger)
+        )
+      );
+
+    const relevantEvidenceSignals =
+      evidenceSignals.filter(sig =>
+        triggers.some((trigger: string) =>
+          sig.matchedTerms?.some((term: string) =>
+            term.toLowerCase().includes(trigger)
+          )
+        )
+      );
 
     const metricSignals =
-      categoryConcreteSignals.filter(s => s.signalType === "metric");
+      relevantConcreteSignals.filter(s => s.signalType === "metric");
     const eventSignals =
-      categoryConcreteSignals.filter(s => s.signalType === "event");
+      relevantConcreteSignals.filter(s => s.signalType === "event");
 
     const baseScore =
       (metricSignals.length * 5) +
       (eventSignals.length * 3) +
-      (categoryEvidenceSignals.length * 4);
+      (relevantEvidenceSignals.length * 4);
 
     let relevanceBonus = 0;
     if (metricSignals.length + eventSignals.length >= 2) {
@@ -2606,12 +2620,9 @@ function generateManufacturingV2Result(
     item.findingConfidenceLevel = level;
 
     console.log("🔎 FINDING CONFIDENCE:", item.cause.id, {
-      metricSignals: metricSignals.length,
-      eventSignals: eventSignals.length,
-      evidenceSignals: categoryEvidenceSignals.length,
-      relevanceBonus,
-      crossCategoryBonus,
-      metricBonus,
+      triggerCount: triggers.length,
+      relevantConcreteSignals: relevantConcreteSignals.length,
+      relevantEvidenceSignals: relevantEvidenceSignals.length,
       finalScore,
       level
     });
@@ -3054,20 +3065,34 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   }
 
   for (const item of selectedWithMeta) {
-    const categoryConcreteSignals =
-      concreteSignals.filter(s => s.category === item.cause.category);
-    const categoryEvidenceSignals =
-      evidenceSignals.filter(s => s.category === item.cause.category);
+    const triggers =
+      ((item.cause as any).signalTriggers || []).map((t: string) => t.toLowerCase());
+
+    const relevantConcreteSignals =
+      concreteSignals.filter(sig =>
+        triggers.some((trigger: string) =>
+          sig.rawText.toLowerCase().includes(trigger)
+        )
+      );
+
+    const relevantEvidenceSignals =
+      evidenceSignals.filter(sig =>
+        triggers.some((trigger: string) =>
+          sig.matchedTerms?.some((term: string) =>
+            term.toLowerCase().includes(trigger)
+          )
+        )
+      );
 
     const metricSignals =
-      categoryConcreteSignals.filter(s => s.signalType === "metric");
+      relevantConcreteSignals.filter(s => s.signalType === "metric");
     const eventSignals =
-      categoryConcreteSignals.filter(s => s.signalType === "event");
+      relevantConcreteSignals.filter(s => s.signalType === "event");
 
     const baseScore =
       (metricSignals.length * 5) +
       (eventSignals.length * 3) +
-      (categoryEvidenceSignals.length * 4);
+      (relevantEvidenceSignals.length * 4);
 
     let relevanceBonus = 0;
     if (metricSignals.length + eventSignals.length >= 2) {
@@ -3101,12 +3126,9 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     item.findingConfidenceLevel = level;
 
     console.log("🔎 FINDING CONFIDENCE:", item.cause.id, {
-      metricSignals: metricSignals.length,
-      eventSignals: eventSignals.length,
-      evidenceSignals: categoryEvidenceSignals.length,
-      relevanceBonus,
-      crossCategoryBonus,
-      metricBonus,
+      triggerCount: triggers.length,
+      relevantConcreteSignals: relevantConcreteSignals.length,
+      relevantEvidenceSignals: relevantEvidenceSignals.length,
       finalScore,
       level
     });
