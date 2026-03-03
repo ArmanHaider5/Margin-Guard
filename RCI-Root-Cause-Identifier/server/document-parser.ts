@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx';
 import mammoth from 'mammoth';
 import { ExtractedDocumentData, DocumentType } from '@shared/schema';
 import fs from 'fs';
