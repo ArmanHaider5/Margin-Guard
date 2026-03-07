@@ -2338,6 +2338,42 @@ function generateManufacturingV2Result(
           tableData.slice(0, 5)
         );
 
+        const kpiColumns = [
+          "downtime",
+          "overtime",
+          "otd",
+          "on-time delivery",
+          "rework",
+          "scrap",
+          "inventory",
+          "lead time",
+          "utilization"
+        ];
+
+        const detectedKpis: string[] = [];
+
+        for (const column of Object.keys((tableData as any[])[0] || {})) {
+
+          const columnLower =
+            column.toLowerCase();
+
+          for (const kpi of kpiColumns) {
+
+            if (columnLower.includes(kpi)) {
+
+              detectedKpis.push(column);
+
+            }
+
+          }
+
+        }
+
+        console.log(
+          "📈 KPI COLUMNS DETECTED:",
+          detectedKpis
+        );
+
       } catch (err) {
 
         console.error(
@@ -3249,6 +3285,42 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
         console.log(
           "📊 EXCEL TABLE EXTRACTED:",
           tableData.slice(0, 5)
+        );
+
+        const kpiColumns = [
+          "downtime",
+          "overtime",
+          "otd",
+          "on-time delivery",
+          "rework",
+          "scrap",
+          "inventory",
+          "lead time",
+          "utilization"
+        ];
+
+        const detectedKpis: string[] = [];
+
+        for (const column of Object.keys((tableData as any[])[0] || {})) {
+
+          const columnLower =
+            column.toLowerCase();
+
+          for (const kpi of kpiColumns) {
+
+            if (columnLower.includes(kpi)) {
+
+              detectedKpis.push(column);
+
+            }
+
+          }
+
+        }
+
+        console.log(
+          "📈 KPI COLUMNS DETECTED:",
+          detectedKpis
         );
 
       } catch (err) {
