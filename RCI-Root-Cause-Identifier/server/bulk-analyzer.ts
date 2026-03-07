@@ -2949,8 +2949,89 @@ function generateManufacturingV2Result(
     ? []
     : buildPredictionsFromFindings(enrichedFindings, "mfgv2");
 
+  // --------------------------------------------------
+  // EXPERT ENGINE OVERRIDE
+  // --------------------------------------------------
+
+  let finalFindings: any[] = enrichedFindings;
+
+  try {
+
+    console.log("🚀 ACTIVATING EXPERT DIAGNOSIS ENGINE");
+
+    const expertSignalMapResults =
+      evaluateSignalMaps(signalIds);
+
+    const expertRuleResults =
+      evaluateExpertRootCauses(signalIds);
+
+    console.log("🧠 EXPERT RULE RESULTS:", expertRuleResults);
+    console.log("🔗 SIGNAL MAP RESULTS:", expertSignalMapResults);
+
+    const expertDiagnosis =
+      expertRuleResults.map(rule => {
+
+        const map =
+          expertSignalMapResults.find(
+            m => m.rootCauseId === rule.id
+          );
+
+        const mapScore =
+          map ? map.score : 0;
+
+        return {
+
+          id: rule.id,
+          name: rule.name,
+          description: rule.description,
+          category: rule.category,
+
+          triggerMatches: rule.triggerMatches,
+          supportMatches: rule.supportMatches,
+
+          expertScore: rule.score,
+          signalMapScore: mapScore,
+
+          finalScore:
+            rule.score + mapScore
+
+        };
+
+      })
+      .sort((a, b) =>
+        b.finalScore - a.finalScore
+      );
+
+    const expertTopFindings =
+      expertDiagnosis.slice(0, 3);
+
+    console.log(
+      "🏆 FINAL EXPERT DIAGNOSIS:",
+      expertTopFindings
+    );
+
+    finalFindings =
+      expertTopFindings.map(f => ({
+
+        id: f.id,
+        title: f.name,
+        description: f.description,
+        category: f.category,
+        score: f.finalScore
+
+      }));
+
+  } catch (err) {
+
+    console.error(
+      "⚠️ Expert diagnosis engine failed:",
+      err
+    );
+
+  }
+
   return {
-    findings: enrichedFindings,
+    findings: finalFindings,
     summary: `${summaryPrefix} ${findingsPhrase}`,
     costSavingOpportunities,
     predictions,
