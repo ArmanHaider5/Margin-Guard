@@ -78,6 +78,8 @@ import { normalizeSignals } from "./signal-normalizer";
 import { buildSignalGraph } from "./signal-graph";
 import { evaluateExpertRootCauses } from "./root-cause-expert-engine";
 import { evaluateSignalMaps } from "./signal-map-engine";
+import { aggregateSignals } from "./signal-aggregator";
+import { detectCategoryDominance } from "./category-dominance";
 
 /**
  * ============================================================================
@@ -2305,6 +2307,13 @@ function generateManufacturingV2Result(
   console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
 
   const signalIds = normalizedSignals.map(s => s.signalId);
+
+  const aggregatedSignals = aggregateSignals(signalIds);
+  console.log("📊 AGGREGATED SIGNALS:", aggregatedSignals);
+
+  const categoryDominance = detectCategoryDominance(signalIds);
+  console.log("🏭 CATEGORY DOMINANCE:", categoryDominance);
+
   const expertResults = evaluateExpertRootCauses(signalIds);
   console.log("🧠 EXPERT ROOT CAUSES:", expertResults);
   console.log("🧠 VALIDATED EXPERT ROOT CAUSES:", expertResults);
@@ -2936,6 +2945,13 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
 
   const signalIds = normalizedSignals.map(s => s.signalId);
+
+  const aggregatedSignals = aggregateSignals(signalIds);
+  console.log("📊 AGGREGATED SIGNALS:", aggregatedSignals);
+
+  const categoryDominance = detectCategoryDominance(signalIds);
+  console.log("🏭 CATEGORY DOMINANCE:", categoryDominance);
+
   const expertResults = evaluateExpertRootCauses(signalIds);
   console.log("🧠 EXPERT ROOT CAUSES:", expertResults);
   console.log("🧠 VALIDATED EXPERT ROOT CAUSES:", expertResults);
