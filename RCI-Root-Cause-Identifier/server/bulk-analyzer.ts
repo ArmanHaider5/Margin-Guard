@@ -2308,6 +2308,24 @@ function generateManufacturingV2Result(
 
   const signalIds = normalizedSignals.map(s => s.signalId);
 
+  // --------------------------------------------------
+  // DOCUMENT SIGNAL STORAGE
+  // --------------------------------------------------
+
+  if (!(globalThis as any).mgdDocumentSignals) {
+    (globalThis as any).mgdDocumentSignals = [];
+  }
+
+  (globalThis as any).mgdDocumentSignals.push({
+    documentName: clientName || "unknown",
+    signals: signalIds
+  });
+
+  console.log(
+    "📄 DOCUMENT SIGNALS STORED:",
+    (globalThis as any).mgdDocumentSignals
+  );
+
   const aggregatedSignals = aggregateSignals(signalIds);
   console.log("📊 AGGREGATED SIGNALS:", aggregatedSignals);
 
@@ -3096,6 +3114,24 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
 
   const signalIds = normalizedSignals.map(s => s.signalId);
+
+  // --------------------------------------------------
+  // DOCUMENT SIGNAL STORAGE
+  // --------------------------------------------------
+
+  if (!(globalThis as any).mgdDocumentSignals) {
+    (globalThis as any).mgdDocumentSignals = [];
+  }
+
+  (globalThis as any).mgdDocumentSignals.push({
+    documentName: clientName || "unknown",
+    signals: signalIds
+  });
+
+  console.log(
+    "📄 DOCUMENT SIGNALS STORED:",
+    (globalThis as any).mgdDocumentSignals
+  );
 
   const aggregatedSignals = aggregateSignals(signalIds);
   console.log("📊 AGGREGATED SIGNALS:", aggregatedSignals);
