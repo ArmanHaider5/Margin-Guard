@@ -77,6 +77,7 @@ import {
 import { normalizeSignals } from "./signal-normalizer";
 import { buildSignalGraph } from "./signal-graph";
 import { evaluateExpertRootCauses } from "./root-cause-expert-engine";
+import { evaluateSignalMaps } from "./signal-map-engine";
 
 /**
  * ============================================================================
@@ -2308,6 +2309,9 @@ function generateManufacturingV2Result(
   console.log("🧠 EXPERT ROOT CAUSES:", expertResults);
   console.log("🧠 VALIDATED EXPERT ROOT CAUSES:", expertResults);
 
+  const signalMapResults = evaluateSignalMaps(signalIds);
+  console.log("🔗 ROOT CAUSE SIGNAL MAP RESULTS:", signalMapResults);
+
   console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
   console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
   console.log(
@@ -2935,6 +2939,9 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   const expertResults = evaluateExpertRootCauses(signalIds);
   console.log("🧠 EXPERT ROOT CAUSES:", expertResults);
   console.log("🧠 VALIDATED EXPERT ROOT CAUSES:", expertResults);
+
+  const signalMapResults = evaluateSignalMaps(signalIds);
+  console.log("🔗 ROOT CAUSE SIGNAL MAP RESULTS:", signalMapResults);
 
   console.log(
     "🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)",
