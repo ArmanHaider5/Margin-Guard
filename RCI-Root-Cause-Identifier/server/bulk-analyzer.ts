@@ -80,6 +80,8 @@ import { evaluateExpertRootCauses } from "./root-cause-expert-engine";
 import { evaluateSignalMaps } from "./signal-map-engine";
 import { aggregateSignals } from "./signal-aggregator";
 import { detectCategoryDominance } from "./category-dominance";
+import XLSX from "xlsx";
+import fs from "fs";
 
 /**
  * ============================================================================
@@ -2315,6 +2317,36 @@ function generateManufacturingV2Result(
         fileName
       );
 
+      try {
+
+        const workbook =
+          XLSX.read(fs.readFileSync(doc.filePath), {
+            type: "buffer"
+          });
+
+        const sheetName =
+          workbook.SheetNames[0];
+
+        const sheet =
+          workbook.Sheets[sheetName];
+
+        const tableData =
+          XLSX.utils.sheet_to_json(sheet);
+
+        console.log(
+          "📊 EXCEL TABLE EXTRACTED:",
+          tableData.slice(0, 5)
+        );
+
+      } catch (err) {
+
+        console.error(
+          "Excel extraction failed:",
+          err
+        );
+
+      }
+
     }
 
   }
@@ -3197,6 +3229,36 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
         "📊 EXCEL DOCUMENT DETECTED:",
         fileName
       );
+
+      try {
+
+        const workbook =
+          XLSX.read(fs.readFileSync(doc.filePath), {
+            type: "buffer"
+          });
+
+        const sheetName =
+          workbook.SheetNames[0];
+
+        const sheet =
+          workbook.Sheets[sheetName];
+
+        const tableData =
+          XLSX.utils.sheet_to_json(sheet);
+
+        console.log(
+          "📊 EXCEL TABLE EXTRACTED:",
+          tableData.slice(0, 5)
+        );
+
+      } catch (err) {
+
+        console.error(
+          "Excel extraction failed:",
+          err
+        );
+
+      }
 
     }
 
