@@ -75,6 +75,7 @@ import {
   applySymptomAlignmentGuardrail,
 } from "@shared/analysis-builder";
 import { normalizeSignals } from "./signal-normalizer";
+import { buildSignalGraph } from "./signal-graph";
 
 /**
  * ============================================================================
@@ -2298,6 +2299,9 @@ function generateManufacturingV2Result(
   const normalizedSignals = normalizeSignals(aggregatedText);
   console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
 
+  const signalClusters = buildSignalGraph(normalizedSignals);
+  console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
+
   console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
   console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
   console.log(
@@ -2917,6 +2921,9 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
   const normalizedSignals = normalizeSignals(aggregatedText);
   console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
+
+  const signalClusters = buildSignalGraph(normalizedSignals);
+  console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
 
   console.log(
     "🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)",
