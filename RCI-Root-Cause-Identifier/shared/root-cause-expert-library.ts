@@ -22,83 +22,92 @@ export const EXPERT_ROOT_CAUSES: ExpertRootCause[] = [
 
   {
     id: "mfg-maintenance-reactive",
-
     category: "Machinery",
-
     name: "Reactive maintenance causing unplanned downtime",
-
-    description:
-      "Maintenance is performed only after breakdowns occur, leading to repeated equipment stoppages and productivity loss.",
-
-    triggerSignals: [
-      "downtime",
-      "maintenance_backlog"
-    ],
-
-    supportingSignals: [
-      "capacity_constraint",
-      "overtime_spike"
-    ]
+    description: "Maintenance occurs only after breakdowns instead of scheduled preventive servicing.",
+    triggerSignals: ["downtime", "maintenance_backlog"],
+    supportingSignals: ["capacity_constraint", "overtime_spike"]
   },
 
   {
     id: "mfg-capacity-bottleneck",
-
     category: "Machinery",
-
     name: "Production bottleneck limiting throughput",
-
-    description:
-      "Production capacity is constrained by equipment or process bottlenecks, reducing output and increasing overtime.",
-
-    triggerSignals: [
-      "capacity_constraint"
-    ],
-
-    supportingSignals: [
-      "downtime",
-      "overtime_spike"
-    ]
+    description: "Production capacity constrained by equipment limitations or process bottlenecks.",
+    triggerSignals: ["capacity_constraint"],
+    supportingSignals: ["downtime", "overtime_spike"]
   },
 
   {
-    id: "mfg-margin-erosion",
-
-    category: "Money",
-
-    name: "Margin erosion due to cost escalation",
-
-    description:
-      "Production or procurement costs are increasing faster than selling prices, compressing margins.",
-
-    triggerSignals: [
-      "margin_erosion"
-    ],
-
-    supportingSignals: [
-      "inventory_buildup",
-      "material_shortage"
-    ]
+    id: "mfg-equipment-aging",
+    category: "Machinery",
+    name: "Aging equipment reducing reliability",
+    description: "Old equipment results in frequent failures and lower efficiency.",
+    triggerSignals: ["downtime"],
+    supportingSignals: ["maintenance_backlog"]
   },
 
   {
     id: "mfg-workforce-overload",
-
     category: "Manpower",
+    name: "Workforce overload causing instability",
+    description: "Excess overtime indicates insufficient staffing or poor workload distribution.",
+    triggerSignals: ["overtime_spike"],
+    supportingSignals: ["staff_turnover"]
+  },
 
-    name: "Workforce overload causing operational instability",
+  {
+    id: "mfg-skill-gap",
+    category: "Manpower",
+    name: "Operational skill gap affecting productivity",
+    description: "Lack of experienced operators reduces efficiency and increases defects.",
+    triggerSignals: ["staff_turnover"],
+    supportingSignals: ["downtime"]
+  },
 
-    description:
-      "High overtime and staff turnover indicate workforce stress and unstable operations.",
+  {
+    id: "mfg-quality-loop",
+    category: "Materials",
+    name: "Recurring defects causing rework cycles",
+    description: "Defects repeatedly appear because root causes are not permanently resolved.",
+    triggerSignals: ["inventory_buildup"],
+    supportingSignals: ["material_shortage"]
+  },
 
-    triggerSignals: [
-      "overtime_spike",
-      "staff_turnover"
-    ],
+  {
+    id: "mfg-supply-disruption",
+    category: "Materials",
+    name: "Supply chain disruption impacting production",
+    description: "Supplier delays or shortages interrupt production flow.",
+    triggerSignals: ["material_shortage"],
+    supportingSignals: ["inventory_buildup"]
+  },
 
-    supportingSignals: [
-      "downtime"
-    ]
+  {
+    id: "mfg-margin-erosion",
+    category: "Money",
+    name: "Margin erosion from cost escalation",
+    description: "Production costs increase faster than revenue growth.",
+    triggerSignals: ["margin_erosion"],
+    supportingSignals: ["inventory_buildup"]
+  },
+
+  {
+    id: "mfg-cashflow-pressure",
+    category: "Money",
+    name: "Operational cash flow pressure",
+    description: "Working capital stress from delayed payments or high operating costs.",
+    triggerSignals: ["cash_flow_pressure"],
+    supportingSignals: ["margin_erosion"]
+  },
+
+  {
+    id: "mfg-planning-instability",
+    category: "Machinery",
+    name: "Production planning instability",
+    description: "Frequent schedule changes disrupt production flow and efficiency.",
+    triggerSignals: ["capacity_constraint"],
+    supportingSignals: ["overtime_spike"]
   }
 
 ];
