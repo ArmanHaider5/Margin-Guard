@@ -2374,6 +2374,23 @@ function generateManufacturingV2Result(
     finalExpertFindings
   );
 
+  const expertFindings =
+    finalExpertFindings.map(f => ({
+
+      id: f.id,
+
+      title: f.name,
+
+      description: f.description,
+
+      category: f.category,
+
+      score: f.finalScore
+
+    }));
+
+  console.log("📋 EXPERT FINDINGS FOR RESPONSE:", expertFindings);
+
   console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
   console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
   console.log(
@@ -3064,6 +3081,23 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     "🏆 FINAL EXPERT DIAGNOSIS:",
     finalExpertFindings
   );
+
+  const expertFindings =
+    finalExpertFindings.map(f => ({
+
+      id: f.id,
+
+      title: f.name,
+
+      description: f.description,
+
+      category: f.category,
+
+      score: f.finalScore
+
+    }));
+
+  console.log("📋 EXPERT FINDINGS FOR RESPONSE:", expertFindings);
 
   console.log(
     "🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)",
