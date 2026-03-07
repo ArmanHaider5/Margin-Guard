@@ -74,6 +74,7 @@ import {
   getIndustryMoneyInterpretation,
   applySymptomAlignmentGuardrail,
 } from "@shared/analysis-builder";
+import { normalizeSignals } from "./signal-normalizer";
 
 /**
  * ============================================================================
@@ -2294,6 +2295,9 @@ function generateManufacturingV2Result(
     .filter(Boolean)
     .join("\n\n");
 
+  const normalizedSignals = normalizeSignals(aggregatedText);
+  console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
+
   console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
   console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
   console.log(
@@ -2910,6 +2914,9 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     .map((doc) => doc.extractedData?.rawText)
     .filter(Boolean)
     .join("\n\n");
+
+  const normalizedSignals = normalizeSignals(aggregatedText);
+  console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
 
   console.log(
     "🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)",
