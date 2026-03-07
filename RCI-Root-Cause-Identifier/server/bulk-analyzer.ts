@@ -2306,6 +2306,7 @@ function generateManufacturingV2Result(
   const signalIds = normalizedSignals.map(s => s.signalId);
   const expertResults = evaluateExpertRootCauses(signalIds);
   console.log("🧠 EXPERT ROOT CAUSES:", expertResults);
+  console.log("🧠 VALIDATED EXPERT ROOT CAUSES:", expertResults);
 
   console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
   console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
@@ -2933,6 +2934,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   const signalIds = normalizedSignals.map(s => s.signalId);
   const expertResults = evaluateExpertRootCauses(signalIds);
   console.log("🧠 EXPERT ROOT CAUSES:", expertResults);
+  console.log("🧠 VALIDATED EXPERT ROOT CAUSES:", expertResults);
 
   console.log(
     "🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)",
