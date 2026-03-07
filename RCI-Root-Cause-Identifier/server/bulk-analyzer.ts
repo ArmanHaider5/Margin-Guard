@@ -2447,6 +2447,20 @@ function generateManufacturingV2Result(
 
   console.log("📋 EXPERT FINDINGS FOR RESPONSE:", expertFindings);
 
+  // --------------------------------------------------
+  // RESET DOCUMENT SIGNAL STORAGE
+  // --------------------------------------------------
+
+  if ((globalThis as any).mgdDocumentSignals) {
+
+    console.log(
+      "🧹 RESETTING DOCUMENT SIGNAL MEMORY"
+    );
+
+    (globalThis as any).mgdDocumentSignals = [];
+
+  }
+
   console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
   console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
   console.log(
@@ -3291,6 +3305,20 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     }));
 
   console.log("📋 EXPERT FINDINGS FOR RESPONSE:", expertFindings);
+
+  // --------------------------------------------------
+  // RESET DOCUMENT SIGNAL STORAGE
+  // --------------------------------------------------
+
+  if ((globalThis as any).mgdDocumentSignals) {
+
+    console.log(
+      "🧹 RESETTING DOCUMENT SIGNAL MEMORY"
+    );
+
+    (globalThis as any).mgdDocumentSignals = [];
+
+  }
 
   console.log(
     "🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)",
