@@ -2321,6 +2321,59 @@ function generateManufacturingV2Result(
   const signalMapResults = evaluateSignalMaps(signalIds);
   console.log("🔗 ROOT CAUSE SIGNAL MAP RESULTS:", signalMapResults);
 
+  // --------------------------------------------------
+  // EXPERT ROOT CAUSE DIAGNOSIS
+  // --------------------------------------------------
+
+  const expertSignalMapResults =
+    evaluateSignalMaps(signalIds);
+
+  const expertRuleResults =
+    evaluateExpertRootCauses(signalIds);
+
+  console.log("🧠 EXPERT RULE RESULTS:", expertRuleResults);
+  console.log("🔗 SIGNAL MAP RESULTS:", expertSignalMapResults);
+
+  const expertDiagnosis =
+    expertRuleResults.map(rule => {
+
+      const signalMap =
+        expertSignalMapResults.find(
+          m => m.rootCauseId === rule.id
+        );
+
+      return {
+
+        id: rule.id,
+
+        name: rule.name,
+
+        description: rule.description,
+
+        category: rule.category,
+
+        triggerMatches: rule.triggerMatches,
+
+        supportMatches: rule.supportMatches,
+
+        signalMapScore: signalMap?.score || 0,
+
+        finalScore:
+          rule.score + (signalMap?.score || 0)
+
+      };
+
+    })
+    .sort((a, b) => b.finalScore - a.finalScore);
+
+  const finalExpertFindings =
+    expertDiagnosis.slice(0, 3);
+
+  console.log(
+    "🏆 FINAL EXPERT DIAGNOSIS:",
+    finalExpertFindings
+  );
+
   console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
   console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
   console.log(
@@ -2958,6 +3011,59 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
   const signalMapResults = evaluateSignalMaps(signalIds);
   console.log("🔗 ROOT CAUSE SIGNAL MAP RESULTS:", signalMapResults);
+
+  // --------------------------------------------------
+  // EXPERT ROOT CAUSE DIAGNOSIS
+  // --------------------------------------------------
+
+  const expertSignalMapResults =
+    evaluateSignalMaps(signalIds);
+
+  const expertRuleResults =
+    evaluateExpertRootCauses(signalIds);
+
+  console.log("🧠 EXPERT RULE RESULTS:", expertRuleResults);
+  console.log("🔗 SIGNAL MAP RESULTS:", expertSignalMapResults);
+
+  const expertDiagnosis =
+    expertRuleResults.map(rule => {
+
+      const signalMap =
+        expertSignalMapResults.find(
+          m => m.rootCauseId === rule.id
+        );
+
+      return {
+
+        id: rule.id,
+
+        name: rule.name,
+
+        description: rule.description,
+
+        category: rule.category,
+
+        triggerMatches: rule.triggerMatches,
+
+        supportMatches: rule.supportMatches,
+
+        signalMapScore: signalMap?.score || 0,
+
+        finalScore:
+          rule.score + (signalMap?.score || 0)
+
+      };
+
+    })
+    .sort((a, b) => b.finalScore - a.finalScore);
+
+  const finalExpertFindings =
+    expertDiagnosis.slice(0, 3);
+
+  console.log(
+    "🏆 FINAL EXPERT DIAGNOSIS:",
+    finalExpertFindings
+  );
 
   console.log(
     "🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)",
