@@ -15,7 +15,10 @@ export function evaluateExpertRootCauses(signals: string[]) {
     const score =
       triggerMatches * 5 + supportMatches * 2;
 
-    if (triggerMatches > 0) {
+    const evidenceStrength =
+      triggerMatches + supportMatches;
+
+    if (triggerMatches >= 1 && evidenceStrength >= 2) {
 
       results.push({
 
@@ -30,6 +33,8 @@ export function evaluateExpertRootCauses(signals: string[]) {
         triggerMatches,
 
         supportMatches,
+
+        evidenceStrength,
 
         score
 
