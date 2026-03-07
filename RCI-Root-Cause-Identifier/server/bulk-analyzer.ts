@@ -2340,14 +2340,52 @@ function generateManufacturingV2Result(
   console.log("🔗 ROOT CAUSE SIGNAL MAP RESULTS:", signalMapResults);
 
   // --------------------------------------------------
+  // CROSS DOCUMENT SIGNAL FUSION
+  // --------------------------------------------------
+
+  let fusedSignals: string[] = [];
+
+  if ((globalThis as any).mgdDocumentSignals) {
+
+    const signalFrequency: Record<string, number> = {};
+
+    for (const doc of (globalThis as any).mgdDocumentSignals) {
+
+      for (const signal of doc.signals) {
+
+        if (!signalFrequency[signal]) {
+          signalFrequency[signal] = 0;
+        }
+
+        signalFrequency[signal]++;
+
+      }
+
+    }
+
+    fusedSignals = Object.keys(signalFrequency);
+
+    console.log(
+      "🧠 FUSED SIGNAL MODEL:",
+      signalFrequency
+    );
+
+  }
+
+  const diagnosticSignals =
+    fusedSignals.length > 0
+      ? fusedSignals
+      : signalIds;
+
+  // --------------------------------------------------
   // EXPERT ROOT CAUSE DIAGNOSIS
   // --------------------------------------------------
 
   const expertSignalMapResults =
-    evaluateSignalMaps(signalIds);
+    evaluateSignalMaps(diagnosticSignals);
 
   const expertRuleResults =
-    evaluateExpertRootCauses(signalIds);
+    evaluateExpertRootCauses(diagnosticSignals);
 
   console.log("🧠 EXPERT RULE RESULTS:", expertRuleResults);
   console.log("🔗 SIGNAL MAP RESULTS:", expertSignalMapResults);
@@ -2978,10 +3016,10 @@ function generateManufacturingV2Result(
     console.log("🚀 ACTIVATING EXPERT DIAGNOSIS ENGINE");
 
     const expertSignalMapResults =
-      evaluateSignalMaps(signalIds);
+      evaluateSignalMaps(diagnosticSignals);
 
     const expertRuleResults =
-      evaluateExpertRootCauses(signalIds);
+      evaluateExpertRootCauses(diagnosticSignals);
 
     console.log("🧠 EXPERT RULE RESULTS:", expertRuleResults);
     console.log("🔗 SIGNAL MAP RESULTS:", expertSignalMapResults);
@@ -3147,14 +3185,52 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   console.log("🔗 ROOT CAUSE SIGNAL MAP RESULTS:", signalMapResults);
 
   // --------------------------------------------------
+  // CROSS DOCUMENT SIGNAL FUSION
+  // --------------------------------------------------
+
+  let fusedSignals: string[] = [];
+
+  if ((globalThis as any).mgdDocumentSignals) {
+
+    const signalFrequency: Record<string, number> = {};
+
+    for (const doc of (globalThis as any).mgdDocumentSignals) {
+
+      for (const signal of doc.signals) {
+
+        if (!signalFrequency[signal]) {
+          signalFrequency[signal] = 0;
+        }
+
+        signalFrequency[signal]++;
+
+      }
+
+    }
+
+    fusedSignals = Object.keys(signalFrequency);
+
+    console.log(
+      "🧠 FUSED SIGNAL MODEL:",
+      signalFrequency
+    );
+
+  }
+
+  const diagnosticSignals =
+    fusedSignals.length > 0
+      ? fusedSignals
+      : signalIds;
+
+  // --------------------------------------------------
   // EXPERT ROOT CAUSE DIAGNOSIS
   // --------------------------------------------------
 
   const expertSignalMapResults =
-    evaluateSignalMaps(signalIds);
+    evaluateSignalMaps(diagnosticSignals);
 
   const expertRuleResults =
-    evaluateExpertRootCauses(signalIds);
+    evaluateExpertRootCauses(diagnosticSignals);
 
   console.log("🧠 EXPERT RULE RESULTS:", expertRuleResults);
   console.log("🔗 SIGNAL MAP RESULTS:", expertSignalMapResults);
