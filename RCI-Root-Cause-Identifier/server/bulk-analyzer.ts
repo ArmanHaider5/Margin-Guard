@@ -2295,6 +2295,30 @@ function generateManufacturingV2Result(
     (d) => d.status === "processed" && d.extractedData,
   );
 
+  // --------------------------------------------------
+  // EXCEL FILE DETECTION
+  // --------------------------------------------------
+
+  for (const doc of processedDocs) {
+
+    const fileName =
+      doc.fileName || "";
+
+    const isExcelFile =
+      fileName.endsWith(".xlsx") ||
+      fileName.endsWith(".xls");
+
+    if (isExcelFile) {
+
+      console.log(
+        "📊 EXCEL DOCUMENT DETECTED:",
+        fileName
+      );
+
+    }
+
+  }
+
   const aggregatedText = processedDocs
     .map((doc) => doc.extractedData?.rawText)
     .filter(Boolean)
@@ -3153,6 +3177,30 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   const processedDocs = documents.filter(
     (d) => d.status === "processed" && d.extractedData,
   );
+
+  // --------------------------------------------------
+  // EXCEL FILE DETECTION
+  // --------------------------------------------------
+
+  for (const doc of processedDocs) {
+
+    const fileName =
+      doc.fileName || "";
+
+    const isExcelFile =
+      fileName.endsWith(".xlsx") ||
+      fileName.endsWith(".xls");
+
+    if (isExcelFile) {
+
+      console.log(
+        "📊 EXCEL DOCUMENT DETECTED:",
+        fileName
+      );
+
+    }
+
+  }
 
   const aggregatedText = processedDocs
     .map((doc) => doc.extractedData?.rawText)
