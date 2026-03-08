@@ -80,6 +80,7 @@ import { evaluateExpertRootCauses } from "./root-cause-expert-engine";
 import { evaluateSignalMaps } from "./signal-map-engine";
 import { aggregateSignals } from "./signal-aggregator";
 import { detectCategoryDominance } from "./category-dominance";
+import { industryProfiles } from "./industry-profiles";
 import XLSX from "xlsx";
 import fs from "fs";
 
@@ -2297,6 +2298,25 @@ function generateManufacturingV2Result(
     (d) => d.status === "processed" && d.extractedData,
   );
 
+  const industry =
+    analysis.industry || "manufacturing";
+
+  const industryProfile =
+    industryProfiles[industry];
+
+  const industryKpis =
+    industryProfile?.kpis || [];
+
+  console.log(
+    "🏭 INDUSTRY PROFILE LOADED:",
+    industry
+  );
+
+  console.log(
+    "📊 INDUSTRY KPIS:",
+    industryKpis
+  );
+
   // --------------------------------------------------
   // EXCEL FILE DETECTION
   // --------------------------------------------------
@@ -3320,6 +3340,25 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
   const processedDocs = documents.filter(
     (d) => d.status === "processed" && d.extractedData,
+  );
+
+  const industry =
+    analysis.industry || "manufacturing";
+
+  const industryProfile =
+    industryProfiles[industry];
+
+  const industryKpis =
+    industryProfile?.kpis || [];
+
+  console.log(
+    "🏭 INDUSTRY PROFILE LOADED:",
+    industry
+  );
+
+  console.log(
+    "📊 INDUSTRY KPIS:",
+    industryKpis
   );
 
   // --------------------------------------------------
