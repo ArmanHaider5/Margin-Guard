@@ -2374,6 +2374,44 @@ function generateManufacturingV2Result(
           detectedKpis
         );
 
+        const trendSignals: { signalId: string; category: string }[] = [];
+
+        for (const column of detectedKpis) {
+
+          const values = (tableData as any[])
+            .map((row: any) => row[column])
+            .filter((v: any) => typeof v === "number");
+
+          if (values.length < 3) continue;
+
+          const first = values[0];
+          const last = values[values.length - 1];
+
+          if (last > first * 1.3) {
+
+            trendSignals.push({
+              signalId: column.toLowerCase() + "_trend_up",
+              category: "Operations"
+            });
+
+          }
+
+          if (last < first * 0.7) {
+
+            trendSignals.push({
+              signalId: column.toLowerCase() + "_trend_down",
+              category: "Operations"
+            });
+
+          }
+
+        }
+
+        console.log(
+          "📉 KPI TREND SIGNALS:",
+          trendSignals
+        );
+
       } catch (err) {
 
         console.error(
@@ -3321,6 +3359,44 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
         console.log(
           "📈 KPI COLUMNS DETECTED:",
           detectedKpis
+        );
+
+        const trendSignals: { signalId: string; category: string }[] = [];
+
+        for (const column of detectedKpis) {
+
+          const values = (tableData as any[])
+            .map((row: any) => row[column])
+            .filter((v: any) => typeof v === "number");
+
+          if (values.length < 3) continue;
+
+          const first = values[0];
+          const last = values[values.length - 1];
+
+          if (last > first * 1.3) {
+
+            trendSignals.push({
+              signalId: column.toLowerCase() + "_trend_up",
+              category: "Operations"
+            });
+
+          }
+
+          if (last < first * 0.7) {
+
+            trendSignals.push({
+              signalId: column.toLowerCase() + "_trend_down",
+              category: "Operations"
+            });
+
+          }
+
+        }
+
+        console.log(
+          "📉 KPI TREND SIGNALS:",
+          trendSignals
         );
 
       } catch (err) {
