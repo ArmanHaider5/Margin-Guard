@@ -2438,6 +2438,44 @@ function generateManufacturingV2Result(
 
   const signalIds = normalizedSignals.map(s => s.signalId);
 
+  const causalChains: string[] = [];
+
+  function hasSignal(id: string) {
+    return signalIds.includes(id);
+  }
+
+  if (
+    hasSignal("maintenance_backlog") &&
+    hasSignal("downtime")
+  ) {
+    causalChains.push(
+      "maintenance_failure_chain"
+    );
+  }
+
+  if (
+    hasSignal("downtime") &&
+    hasSignal("overtime_spike")
+  ) {
+    causalChains.push(
+      "capacity_stress_chain"
+    );
+  }
+
+  if (
+    hasSignal("rework") &&
+    hasSignal("scrap")
+  ) {
+    causalChains.push(
+      "quality_breakdown_chain"
+    );
+  }
+
+  console.log(
+    "🔗 CAUSAL SIGNAL CHAINS:",
+    causalChains
+  );
+
   // --------------------------------------------------
   // DOCUMENT SIGNAL STORAGE
   // --------------------------------------------------
@@ -3424,6 +3462,42 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
 
   const signalIds = normalizedSignals.map(s => s.signalId);
+
+  const causalChains: string[] = [];
+
+  const hasSignalSD = (id: string) => signalIds.includes(id);
+
+  if (
+    hasSignalSD("maintenance_backlog") &&
+    hasSignalSD("downtime")
+  ) {
+    causalChains.push(
+      "maintenance_failure_chain"
+    );
+  }
+
+  if (
+    hasSignalSD("downtime") &&
+    hasSignalSD("overtime_spike")
+  ) {
+    causalChains.push(
+      "capacity_stress_chain"
+    );
+  }
+
+  if (
+    hasSignalSD("rework") &&
+    hasSignalSD("scrap")
+  ) {
+    causalChains.push(
+      "quality_breakdown_chain"
+    );
+  }
+
+  console.log(
+    "🔗 CAUSAL SIGNAL CHAINS:",
+    causalChains
+  );
 
   // --------------------------------------------------
   // DOCUMENT SIGNAL STORAGE
