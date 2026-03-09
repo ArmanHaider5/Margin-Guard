@@ -85,6 +85,7 @@ import { manufacturingVocabulary } from "./manufacturing-vocabulary";
 import { manufacturingKpis } from "./manufacturing-kpis";
 import { scoreRootCauses } from "./root-cause-scorer";
 import { detectIndustryFromDocuments } from "./services/industryDetection";
+import { detectDiagnosticChains } from "./services/diagnosticChains";
 import XLSX from "xlsx";
 import fs from "fs";
 
@@ -2618,6 +2619,14 @@ function generateManufacturingV2Result(
   const aggregatedSignals = aggregateSignals(signalIds);
   console.log("📊 AGGREGATED SIGNALS:", aggregatedSignals);
 
+  const chains =
+    detectDiagnosticChains(signalIds);
+
+  console.log(
+    "🔗 DIAGNOSTIC CHAINS DETECTED:",
+    chains
+  );
+
   const categoryDominance = detectCategoryDominance(signalIds);
   console.log("🏭 CATEGORY DOMINANCE:", categoryDominance);
 
@@ -3698,6 +3707,14 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
   const aggregatedSignals = aggregateSignals(signalIds);
   console.log("📊 AGGREGATED SIGNALS:", aggregatedSignals);
+
+  const chains =
+    detectDiagnosticChains(signalIds);
+
+  console.log(
+    "🔗 DIAGNOSTIC CHAINS DETECTED:",
+    chains
+  );
 
   const categoryDominance = detectCategoryDominance(signalIds);
   console.log("🏭 CATEGORY DOMINANCE:", categoryDominance);
