@@ -2480,6 +2480,14 @@ function generateManufacturingV2Result(
     .filter(Boolean)
     .join("\n\n");
 
+  const vocabularySignals =
+    normalizeManufacturingSignals(aggregatedText);
+
+  console.log(
+    "🧠 VOCABULARY SIGNALS DETECTED:",
+    vocabularySignals
+  );
+
   const normalizedSignals = normalizeSignals(aggregatedText);
   console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
 
@@ -3523,6 +3531,14 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     .map((doc) => doc.extractedData?.rawText)
     .filter(Boolean)
     .join("\n\n");
+
+  const vocabularySignals =
+    normalizeManufacturingSignals(aggregatedText);
+
+  console.log(
+    "🧠 VOCABULARY SIGNALS DETECTED:",
+    vocabularySignals
+  );
 
   const normalizedSignals = normalizeSignals(aggregatedText);
   console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
