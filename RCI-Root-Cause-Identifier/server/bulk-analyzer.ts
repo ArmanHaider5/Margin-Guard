@@ -81,6 +81,7 @@ import { evaluateSignalMaps } from "./signal-map-engine";
 import { aggregateSignals } from "./signal-aggregator";
 import { detectCategoryDominance } from "./category-dominance";
 import { industryProfiles } from "./industry-profiles";
+import { manufacturingVocabulary } from "./manufacturing-vocabulary";
 import XLSX from "xlsx";
 import fs from "fs";
 
@@ -103,6 +104,35 @@ import fs from "fs";
  * ============================================================================
  */
 export const MOCK_MODE = true;
+
+function normalizeManufacturingSignals(text: string) {
+
+  const normalizedSignals: { signalId: string; matchedPhrase: string }[] = [];
+
+  const lowerText = text.toLowerCase();
+
+  for (const signal in manufacturingVocabulary) {
+
+    const phrases = manufacturingVocabulary[signal];
+
+    for (const phrase of phrases) {
+
+      if (lowerText.includes(phrase)) {
+
+        normalizedSignals.push({
+          signalId: signal,
+          matchedPhrase: phrase
+        });
+
+      }
+
+    }
+
+  }
+
+  return normalizedSignals;
+
+}
 
 /**
  * ============================================================================
