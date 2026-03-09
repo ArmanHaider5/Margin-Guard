@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { analyzeSymptom } from "./ai-analyzer";
+import { analyzeSymptom } from "../core/ai-analyzer";
 import { z } from "zod";
 import { problemLibrary } from "@shared/problem-library";
 import { getCauseById } from "@shared/root-cause-library";
@@ -10,12 +10,12 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { parseDocument, detectFileType } from "./document-parser";
-import { runBulkAnalysis } from "./bulk-analyzer";
-import { generateAnalysisReport } from "./report-generator";
-import { generateExportPDF } from "./export-pdf-generator";
-import { generateDiagnosticExport } from "./diagnostic-export";
-import executionRoutes from "../src/modules/execution/routes/execution.routes";
+import { parseDocument, detectFileType } from "../documents/document-parser";
+import { runBulkAnalysis } from "../core/bulk-analyzer";
+import { generateAnalysisReport } from "../reports/report-generator";
+import { generateExportPDF } from "../reports/export-pdf-generator";
+import { generateDiagnosticExport } from "../diagnostics/diagnostic-export";
+import executionRoutes from "../../src/modules/execution/routes/execution.routes";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) {

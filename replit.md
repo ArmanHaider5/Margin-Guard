@@ -37,6 +37,15 @@ Preferred communication style: Simple, everyday language.
 - **File Uploads**: Multer with disk storage in `uploads/` directory (50MB limit)
 - **Authentication**: Replit OpenID Connect (OIDC) via Passport.js with PostgreSQL session store (`connect-pg-simple`)
 - **PDF Generation**: PDFKit for multiple report types (diagnostic exports, analysis reports, consulting proposals)
+- **Server Directory Structure**:
+  - `server/core/` — AI analyzer, bulk analyzer (main analysis pipeline)
+  - `server/diagnostics/` — Expert root cause engine, scorer, diagnostic matrix, diagnostic export
+  - `server/signals/` — Signal normalizer, aggregator, graph, map engine, category dominance, diagnostic chains, signal normalization library
+  - `server/industries/` — Industry profiles, industry detection, manufacturing root causes/KPIs/vocabulary
+  - `server/documents/` — Document parser
+  - `server/reports/` — Report generator, export PDF generator
+  - `server/system/` — Routes, database, storage, authentication
+  - `server/` (root) — app.ts, index-dev.ts, index-prod.ts
 
 ### AI Integration
 - **Provider**: OpenAI API (via Replit AI Integrations proxy — uses `AI_INTEGRATIONS_OPENAI_BASE_URL` and `AI_INTEGRATIONS_OPENAI_API_KEY`)

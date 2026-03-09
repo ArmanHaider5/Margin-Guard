@@ -74,18 +74,18 @@ import {
   getIndustryMoneyInterpretation,
   applySymptomAlignmentGuardrail,
 } from "@shared/analysis-builder";
-import { normalizeSignals } from "./signal-normalizer";
-import { buildSignalGraph } from "./signal-graph";
-import { evaluateExpertRootCauses } from "./root-cause-expert-engine";
-import { evaluateSignalMaps } from "./signal-map-engine";
-import { aggregateSignals } from "./signal-aggregator";
-import { detectCategoryDominance } from "./category-dominance";
-import { industryProfiles } from "./industry-profiles";
-import { manufacturingVocabulary } from "./manufacturing-vocabulary";
-import { manufacturingKpis } from "./manufacturing-kpis";
-import { scoreRootCauses } from "./root-cause-scorer";
-import { detectIndustryFromDocuments } from "./services/industryDetection";
-import { detectDiagnosticChains } from "./services/diagnosticChains";
+import { normalizeSignals } from "../signals/signal-normalizer";
+import { buildSignalGraph } from "../signals/signal-graph";
+import { evaluateExpertRootCauses } from "../diagnostics/root-cause-expert-engine";
+import { evaluateSignalMaps } from "../signals/signal-map-engine";
+import { aggregateSignals } from "../signals/signal-aggregator";
+import { detectCategoryDominance } from "../signals/category-dominance";
+import { industryProfiles } from "../industries/industry-profiles";
+import { manufacturingVocabulary } from "../industries/manufacturing-vocabulary";
+import { manufacturingKpis } from "../industries/manufacturing-kpis";
+import { scoreRootCauses } from "../diagnostics/root-cause-scorer";
+import { detectIndustryFromDocuments } from "../industries/industryDetection";
+import { detectDiagnosticChains } from "../signals/diagnosticChains";
 import XLSX from "xlsx";
 import fs from "fs";
 

@@ -1,5 +1,5 @@
 import { manufacturingRootCauses }
-  from "./manufacturing-root-causes";
+  from "../industries/manufacturing-root-causes";
 
 export function scoreRootCauses(detectedSignals: { signalId: string }[]) {
 

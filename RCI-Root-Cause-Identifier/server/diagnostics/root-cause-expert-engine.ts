@@ -1,4 +1,4 @@
-import { EXPERT_ROOT_CAUSES } from "../shared/root-cause-expert-library";
+import { EXPERT_ROOT_CAUSES } from "../../shared/root-cause-expert-library";
 
 export function evaluateExpertRootCauses(signals: string[]) {
 

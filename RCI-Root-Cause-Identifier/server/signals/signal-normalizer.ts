@@ -1,4 +1,4 @@
-import { SIGNAL_LIBRARY } from "../shared/signal-library";
+import { SIGNAL_LIBRARY } from "../../shared/signal-library";
 
 export interface NormalizedSignal {
   signalId: string;
