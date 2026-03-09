@@ -76,14 +76,12 @@ import {
 } from "@shared/analysis-builder";
 import { normalizeSignals } from "../signals/signal-normalizer";
 import { buildSignalGraph } from "../signals/signal-graph";
-import { evaluateExpertRootCauses } from "../diagnostics/root-cause-expert-engine";
-import { evaluateSignalMaps } from "../signals/signal-map-engine";
+import { runExpertDiagnosis } from "../diagnostics/root-cause-expert-engine";
 import { aggregateSignals } from "../signals/signal-aggregator";
 import { detectCategoryDominance } from "../signals/category-dominance";
 import { industryProfiles } from "../industries/industry-profiles";
 import { manufacturingVocabulary } from "../industries/manufacturing-vocabulary";
 import { manufacturingKpis } from "../industries/manufacturing-kpis";
-import { scoreRootCauses } from "../diagnostics/root-cause-scorer";
 import { detectIndustryFromDocuments } from "../industries/industryDetection";
 import { detectDiagnosticChains } from "../signals/diagnosticChains";
 import XLSX from "xlsx";
@@ -2547,56 +2545,10 @@ function generateManufacturingV2Result(
   const normalizedSignals = normalizeSignals(aggregatedText);
   console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
 
-  const rootCauseResults =
-    scoreRootCauses(normalizedSignals);
-
-  console.log(
-    "🧠 ROOT CAUSE ANALYSIS:",
-    rootCauseResults
-  );
-
   const signalClusters = buildSignalGraph(normalizedSignals);
   console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
 
   const signalIds = normalizedSignals.map(s => s.signalId);
-
-  const causalChains: string[] = [];
-
-  function hasSignal(id: string) {
-    return signalIds.includes(id);
-  }
-
-  if (
-    hasSignal("maintenance_backlog") &&
-    hasSignal("downtime")
-  ) {
-    causalChains.push(
-      "maintenance_failure_chain"
-    );
-  }
-
-  if (
-    hasSignal("downtime") &&
-    hasSignal("overtime_spike")
-  ) {
-    causalChains.push(
-      "capacity_stress_chain"
-    );
-  }
-
-  if (
-    hasSignal("rework") &&
-    hasSignal("scrap")
-  ) {
-    causalChains.push(
-      "quality_breakdown_chain"
-    );
-  }
-
-  console.log(
-    "🔗 CAUSAL SIGNAL CHAINS:",
-    causalChains
-  );
 
   // --------------------------------------------------
   // DOCUMENT SIGNAL STORAGE
@@ -2629,13 +2581,6 @@ function generateManufacturingV2Result(
 
   const categoryDominance = detectCategoryDominance(signalIds);
   console.log("🏭 CATEGORY DOMINANCE:", categoryDominance);
-
-  const expertResults = evaluateExpertRootCauses(signalIds);
-  console.log("🧠 EXPERT ROOT CAUSES:", expertResults);
-  console.log("🧠 VALIDATED EXPERT ROOT CAUSES:", expertResults);
-
-  const signalMapResults = evaluateSignalMaps(signalIds);
-  console.log("🔗 ROOT CAUSE SIGNAL MAP RESULTS:", signalMapResults);
 
   // --------------------------------------------------
   // CROSS DOCUMENT SIGNAL FUSION
@@ -2676,57 +2621,10 @@ function generateManufacturingV2Result(
       : signalIds;
 
   // --------------------------------------------------
-  // EXPERT ROOT CAUSE DIAGNOSIS
+  // EXPERT ROOT CAUSE DIAGNOSIS (single authority)
   // --------------------------------------------------
 
-  const expertSignalMapResults =
-    evaluateSignalMaps(diagnosticSignals);
-
-  const expertRuleResults =
-    evaluateExpertRootCauses(diagnosticSignals);
-
-  console.log("🧠 EXPERT RULE RESULTS:", expertRuleResults);
-  console.log("🔗 SIGNAL MAP RESULTS:", expertSignalMapResults);
-
-  const expertDiagnosis =
-    expertRuleResults.map(rule => {
-
-      const signalMap =
-        expertSignalMapResults.find(
-          m => m.rootCauseId === rule.id
-        );
-
-      return {
-
-        id: rule.id,
-
-        name: rule.name,
-
-        description: rule.description,
-
-        category: rule.category,
-
-        triggerMatches: rule.triggerMatches,
-
-        supportMatches: rule.supportMatches,
-
-        signalMapScore: signalMap?.score || 0,
-
-        finalScore:
-          rule.score + (signalMap?.score || 0)
-
-      };
-
-    })
-    .sort((a, b) => b.finalScore - a.finalScore);
-
-  const finalExpertFindings =
-    expertDiagnosis.slice(0, 3);
-
-  console.log(
-    "🏆 FINAL EXPERT DIAGNOSIS:",
-    finalExpertFindings
-  );
+  const finalExpertFindings = runExpertDiagnosis(diagnosticSignals, 3);
 
   const expertFindings =
     finalExpertFindings.map(f => ({
@@ -3318,85 +3216,21 @@ function generateManufacturingV2Result(
     : buildPredictionsFromFindings(enrichedFindings, "mfgv2");
 
   // --------------------------------------------------
-  // EXPERT ENGINE OVERRIDE
+  // EXPERT ENGINE OVERRIDE (single authority)
   // --------------------------------------------------
 
-  let finalFindings: any[] = enrichedFindings;
+  const expertTopFindings = runExpertDiagnosis(diagnosticSignals, 3);
 
-  try {
+  const finalFindings: any[] =
+    expertTopFindings.map(f => ({
 
-    console.log("🚀 ACTIVATING EXPERT DIAGNOSIS ENGINE");
+      id: f.id,
+      title: f.name,
+      description: f.description,
+      category: f.category,
+      score: f.finalScore
 
-    const expertSignalMapResults =
-      evaluateSignalMaps(diagnosticSignals);
-
-    const expertRuleResults =
-      evaluateExpertRootCauses(diagnosticSignals);
-
-    console.log("🧠 EXPERT RULE RESULTS:", expertRuleResults);
-    console.log("🔗 SIGNAL MAP RESULTS:", expertSignalMapResults);
-
-    const expertDiagnosis =
-      expertRuleResults.map(rule => {
-
-        const map =
-          expertSignalMapResults.find(
-            m => m.rootCauseId === rule.id
-          );
-
-        const mapScore =
-          map ? map.score : 0;
-
-        return {
-
-          id: rule.id,
-          name: rule.name,
-          description: rule.description,
-          category: rule.category,
-
-          triggerMatches: rule.triggerMatches,
-          supportMatches: rule.supportMatches,
-
-          expertScore: rule.score,
-          signalMapScore: mapScore,
-
-          finalScore:
-            rule.score + mapScore
-
-        };
-
-      })
-      .sort((a, b) =>
-        b.finalScore - a.finalScore
-      );
-
-    const expertTopFindings =
-      expertDiagnosis.slice(0, 3);
-
-    console.log(
-      "🏆 FINAL EXPERT DIAGNOSIS:",
-      expertTopFindings
-    );
-
-    finalFindings =
-      expertTopFindings.map(f => ({
-
-        id: f.id,
-        title: f.name,
-        description: f.description,
-        category: f.category,
-        score: f.finalScore
-
-      }));
-
-  } catch (err) {
-
-    console.error(
-      "⚠️ Expert diagnosis engine failed:",
-      err
-    );
-
-  }
+    }));
 
   return {
     findings: finalFindings,
@@ -3638,54 +3472,10 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   const normalizedSignals = normalizeSignals(aggregatedText);
   console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
 
-  const rootCauseResults =
-    scoreRootCauses(normalizedSignals);
-
-  console.log(
-    "🧠 ROOT CAUSE ANALYSIS:",
-    rootCauseResults
-  );
-
   const signalClusters = buildSignalGraph(normalizedSignals);
   console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
 
   const signalIds = normalizedSignals.map(s => s.signalId);
-
-  const causalChains: string[] = [];
-
-  const hasSignalSD = (id: string) => signalIds.includes(id);
-
-  if (
-    hasSignalSD("maintenance_backlog") &&
-    hasSignalSD("downtime")
-  ) {
-    causalChains.push(
-      "maintenance_failure_chain"
-    );
-  }
-
-  if (
-    hasSignalSD("downtime") &&
-    hasSignalSD("overtime_spike")
-  ) {
-    causalChains.push(
-      "capacity_stress_chain"
-    );
-  }
-
-  if (
-    hasSignalSD("rework") &&
-    hasSignalSD("scrap")
-  ) {
-    causalChains.push(
-      "quality_breakdown_chain"
-    );
-  }
-
-  console.log(
-    "🔗 CAUSAL SIGNAL CHAINS:",
-    causalChains
-  );
 
   // --------------------------------------------------
   // DOCUMENT SIGNAL STORAGE
@@ -3718,13 +3508,6 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
   const categoryDominance = detectCategoryDominance(signalIds);
   console.log("🏭 CATEGORY DOMINANCE:", categoryDominance);
-
-  const expertResults = evaluateExpertRootCauses(signalIds);
-  console.log("🧠 EXPERT ROOT CAUSES:", expertResults);
-  console.log("🧠 VALIDATED EXPERT ROOT CAUSES:", expertResults);
-
-  const signalMapResults = evaluateSignalMaps(signalIds);
-  console.log("🔗 ROOT CAUSE SIGNAL MAP RESULTS:", signalMapResults);
 
   // --------------------------------------------------
   // CROSS DOCUMENT SIGNAL FUSION
@@ -3765,57 +3548,10 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
       : signalIds;
 
   // --------------------------------------------------
-  // EXPERT ROOT CAUSE DIAGNOSIS
+  // EXPERT ROOT CAUSE DIAGNOSIS (single authority)
   // --------------------------------------------------
 
-  const expertSignalMapResults =
-    evaluateSignalMaps(diagnosticSignals);
-
-  const expertRuleResults =
-    evaluateExpertRootCauses(diagnosticSignals);
-
-  console.log("🧠 EXPERT RULE RESULTS:", expertRuleResults);
-  console.log("🔗 SIGNAL MAP RESULTS:", expertSignalMapResults);
-
-  const expertDiagnosis =
-    expertRuleResults.map(rule => {
-
-      const signalMap =
-        expertSignalMapResults.find(
-          m => m.rootCauseId === rule.id
-        );
-
-      return {
-
-        id: rule.id,
-
-        name: rule.name,
-
-        description: rule.description,
-
-        category: rule.category,
-
-        triggerMatches: rule.triggerMatches,
-
-        supportMatches: rule.supportMatches,
-
-        signalMapScore: signalMap?.score || 0,
-
-        finalScore:
-          rule.score + (signalMap?.score || 0)
-
-      };
-
-    })
-    .sort((a, b) => b.finalScore - a.finalScore);
-
-  const finalExpertFindings =
-    expertDiagnosis.slice(0, 3);
-
-  console.log(
-    "🏆 FINAL EXPERT DIAGNOSIS:",
-    finalExpertFindings
-  );
+  const finalExpertFindings = runExpertDiagnosis(diagnosticSignals, 3);
 
   const expertFindings =
     finalExpertFindings.map(f => ({
