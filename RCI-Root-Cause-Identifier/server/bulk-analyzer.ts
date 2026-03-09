@@ -3342,18 +3342,18 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     (d) => d.status === "processed" && d.extractedData,
   );
 
-  const industry =
-    analysis.industry || "manufacturing";
+  const sdIndustry =
+    industry || "manufacturing";
 
   const industryProfile =
-    industryProfiles[industry];
+    industryProfiles[sdIndustry];
 
   const industryKpis =
     industryProfile?.kpis || [];
 
   console.log(
     "🏭 INDUSTRY PROFILE LOADED:",
-    industry
+    sdIndustry
   );
 
   console.log(
