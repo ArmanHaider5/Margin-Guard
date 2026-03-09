@@ -84,6 +84,7 @@ import { industryProfiles } from "./industry-profiles";
 import { manufacturingVocabulary } from "./manufacturing-vocabulary";
 import { manufacturingKpis } from "./manufacturing-kpis";
 import { scoreRootCauses } from "./root-cause-scorer";
+import { detectIndustryFromDocuments } from "./services/industryDetection";
 import XLSX from "xlsx";
 import fs from "fs";
 
@@ -2359,8 +2360,23 @@ function generateManufacturingV2Result(
     (d) => d.status === "processed" && d.extractedData,
   );
 
+  const earlyAggregatedText = processedDocs
+    .map((doc) => doc.extractedData?.rawText)
+    .filter(Boolean)
+    .join("\n\n");
+
+  const detectedIndustry =
+    detectIndustryFromDocuments(earlyAggregatedText);
+
+  console.log(
+    "🏭 AUTO DETECTED INDUSTRY:",
+    detectedIndustry
+  );
+
   const industry =
-    analysis.industry || "manufacturing";
+    detectedIndustry !== "other"
+      ? detectedIndustry
+      : (analysis.industry || "manufacturing");
 
   const industryProfile =
     industryProfiles[industry];
@@ -3427,8 +3443,23 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     (d) => d.status === "processed" && d.extractedData,
   );
 
+  const sdEarlyText = processedDocs
+    .map((doc) => doc.extractedData?.rawText)
+    .filter(Boolean)
+    .join("\n\n");
+
+  const sdDetectedIndustry =
+    detectIndustryFromDocuments(sdEarlyText);
+
+  console.log(
+    "🏭 AUTO DETECTED INDUSTRY:",
+    sdDetectedIndustry
+  );
+
   const sdIndustry =
-    industry || "manufacturing";
+    sdDetectedIndustry !== "other"
+      ? sdDetectedIndustry
+      : (industry || "manufacturing");
 
   const industryProfile =
     industryProfiles[sdIndustry];
