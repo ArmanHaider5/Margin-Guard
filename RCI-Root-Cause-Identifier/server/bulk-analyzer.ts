@@ -83,6 +83,7 @@ import { detectCategoryDominance } from "./category-dominance";
 import { industryProfiles } from "./industry-profiles";
 import { manufacturingVocabulary } from "./manufacturing-vocabulary";
 import { manufacturingKpis } from "./manufacturing-kpis";
+import { scoreRootCauses } from "./root-cause-scorer";
 import XLSX from "xlsx";
 import fs from "fs";
 
@@ -2529,6 +2530,14 @@ function generateManufacturingV2Result(
   const normalizedSignals = normalizeSignals(aggregatedText);
   console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
 
+  const rootCauseResults =
+    scoreRootCauses(normalizedSignals);
+
+  console.log(
+    "🧠 ROOT CAUSE ANALYSIS:",
+    rootCauseResults
+  );
+
   const signalClusters = buildSignalGraph(normalizedSignals);
   console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
 
@@ -3588,6 +3597,14 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
   const normalizedSignals = normalizeSignals(aggregatedText);
   console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
+
+  const rootCauseResults =
+    scoreRootCauses(normalizedSignals);
+
+  console.log(
+    "🧠 ROOT CAUSE ANALYSIS:",
+    rootCauseResults
+  );
 
   const signalClusters = buildSignalGraph(normalizedSignals);
   console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
