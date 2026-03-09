@@ -2518,6 +2518,14 @@ function generateManufacturingV2Result(
     vocabularySignals
   );
 
+  const detectedMfgKpis =
+    detectManufacturingKpis(aggregatedText);
+
+  console.log(
+    "📊 MANUFACTURING KPIS DETECTED:",
+    detectedMfgKpis
+  );
+
   const normalizedSignals = normalizeSignals(aggregatedText);
   console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
 
@@ -3568,6 +3576,14 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   console.log(
     "🧠 VOCABULARY SIGNALS DETECTED:",
     vocabularySignals
+  );
+
+  const detectedMfgKpis =
+    detectManufacturingKpis(aggregatedText);
+
+  console.log(
+    "📊 MANUFACTURING KPIS DETECTED:",
+    detectedMfgKpis
   );
 
   const normalizedSignals = normalizeSignals(aggregatedText);
