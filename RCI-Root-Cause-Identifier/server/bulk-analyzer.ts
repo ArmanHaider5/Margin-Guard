@@ -82,6 +82,7 @@ import { aggregateSignals } from "./signal-aggregator";
 import { detectCategoryDominance } from "./category-dominance";
 import { industryProfiles } from "./industry-profiles";
 import { manufacturingVocabulary } from "./manufacturing-vocabulary";
+import { manufacturingKpis } from "./manufacturing-kpis";
 import XLSX from "xlsx";
 import fs from "fs";
 
@@ -131,6 +132,35 @@ function normalizeManufacturingSignals(text: string) {
   }
 
   return normalizedSignals;
+
+}
+
+function detectManufacturingKpis(text: string) {
+
+  const detectedKpis: { kpiId: string; phrase: string }[] = [];
+
+  const lowerText = text.toLowerCase();
+
+  for (const kpi in manufacturingKpis) {
+
+    const phrases = manufacturingKpis[kpi];
+
+    for (const phrase of phrases) {
+
+      if (lowerText.includes(phrase)) {
+
+        detectedKpis.push({
+          kpiId: kpi,
+          phrase: phrase
+        });
+
+      }
+
+    }
+
+  }
+
+  return detectedKpis;
 
 }
 
