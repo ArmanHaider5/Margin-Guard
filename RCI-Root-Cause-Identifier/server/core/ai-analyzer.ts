@@ -23,10 +23,16 @@ const categoryToIndicatorMap: Record<string, ManagementIndicator> = {
 };
 
 export async function analyzeSymptom(input: AnalysisInput): Promise<{ rootCauses: RootCause[]; primaryIndicator: ManagementIndicator }> {
+  console.log("📄 PIPELINE: DOCUMENT PARSING STARTED");
   const inputText = buildAnalysisText(input);
 
+  console.log("📊 PIPELINE: SIGNAL NORMALIZATION COMPLETE");
   const normalizedSignals = normalizeSignals(inputText);
   const signalIds = normalizedSignals.map(s => s.signalId);
+
+  console.log("📊 PIPELINE: SIGNAL AGGREGATION COMPLETE");
+
+  console.log("🔗 PIPELINE: SIGNAL MAP GENERATED");
 
   if (signalIds.length >= 2) {
     const expertResults = runExpertDiagnosis(signalIds, 4);

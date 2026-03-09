@@ -73,10 +73,7 @@ export function runExpertDiagnosis(
   const normalizedForScorer = signals.map(s => ({ signalId: s }));
   const scorerResults = scoreRootCauses(normalizedForScorer);
 
-  console.log("🚀 EXPERT DIAGNOSIS ENGINE ACTIVATED");
-  console.log("🧠 EXPERT RULE RESULTS:", expertRuleResults);
-  console.log("🔗 SIGNAL MAP RESULTS:", signalMapResults);
-  console.log("🧠 SCORER RESULTS:", scorerResults);
+  console.log("🧠 PIPELINE: ROOT CAUSE EXPERT ENGINE STARTED — rules:", expertRuleResults.length, "maps:", signalMapResults.length, "scorer:", scorerResults.length);
 
   const scorerLookup: Record<string, number> = {};
   for (const sr of scorerResults) {
@@ -112,10 +109,7 @@ export function runExpertDiagnosis(
 
   const finalFindings = expertDiagnosis.slice(0, topN);
 
-  console.log(
-    "🏆 FINAL EXPERT DIAGNOSIS:",
-    finalFindings
-  );
+  console.log("🏆 PIPELINE: FINAL DIAGNOSIS GENERATED —", finalFindings.length, "findings");
 
   return finalFindings;
 }

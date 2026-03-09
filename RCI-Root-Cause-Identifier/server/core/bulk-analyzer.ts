@@ -2320,10 +2320,10 @@ function generateManufacturingV2Result(
   } = input;
 
   console.log(
-    "MANUFACTURING V2: Generating results from manufacturingRootCausesV2",
+    "PIPELINE: Generating results from manufacturingRootCausesV2",
   );
   console.log(
-    `MANUFACTURING V2: ${manufacturingRootCausesV2.length} root causes available`,
+    `PIPELINE: ${manufacturingRootCausesV2.length} root causes available`,
   );
 
   // Normalize category from V2 format
@@ -2542,17 +2542,12 @@ function generateManufacturingV2Result(
     detectedMfgKpis
   );
 
+  console.log("📊 PIPELINE: SIGNAL NORMALIZATION COMPLETE");
   const normalizedSignals = normalizeSignals(aggregatedText);
-  console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
 
   const signalClusters = buildSignalGraph(normalizedSignals);
-  console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
 
   const signalIds = normalizedSignals.map(s => s.signalId);
-
-  // --------------------------------------------------
-  // DOCUMENT SIGNAL STORAGE
-  // --------------------------------------------------
 
   if (!(globalThis as any).mgdDocumentSignals) {
     (globalThis as any).mgdDocumentSignals = [];
@@ -2563,28 +2558,12 @@ function generateManufacturingV2Result(
     signals: signalIds
   });
 
-  console.log(
-    "📄 DOCUMENT SIGNALS STORED:",
-    (globalThis as any).mgdDocumentSignals
-  );
-
+  console.log("📊 PIPELINE: SIGNAL AGGREGATION COMPLETE");
   const aggregatedSignals = aggregateSignals(signalIds);
-  console.log("📊 AGGREGATED SIGNALS:", aggregatedSignals);
 
-  const chains =
-    detectDiagnosticChains(signalIds);
-
-  console.log(
-    "🔗 DIAGNOSTIC CHAINS DETECTED:",
-    chains
-  );
+  const chains = detectDiagnosticChains(signalIds);
 
   const categoryDominance = detectCategoryDominance(signalIds);
-  console.log("🏭 CATEGORY DOMINANCE:", categoryDominance);
-
-  // --------------------------------------------------
-  // CROSS DOCUMENT SIGNAL FUSION
-  // --------------------------------------------------
 
   let fusedSignals: string[] = [];
 
@@ -2608,11 +2587,6 @@ function generateManufacturingV2Result(
 
     fusedSignals = Object.keys(signalFrequency);
 
-    console.log(
-      "🧠 FUSED SIGNAL MODEL:",
-      signalFrequency
-    );
-
   }
 
   const diagnosticSignals =
@@ -2620,45 +2594,15 @@ function generateManufacturingV2Result(
       ? fusedSignals
       : signalIds;
 
-  // --------------------------------------------------
-  // EXPERT ROOT CAUSE DIAGNOSIS (single authority)
-  // --------------------------------------------------
-
-  const finalExpertFindings = runExpertDiagnosis(diagnosticSignals, 3);
-
-  const expertFindings =
-    finalExpertFindings.map(f => ({
-
-      id: f.id,
-
-      title: f.name,
-
-      description: f.description,
-
-      category: f.category,
-
-      score: f.finalScore
-
-    }));
-
-  console.log("📋 EXPERT FINDINGS FOR RESPONSE:", expertFindings);
+  console.log("🔗 PIPELINE: SIGNAL MAP GENERATED");
 
   // --------------------------------------------------
   // RESET DOCUMENT SIGNAL STORAGE
   // --------------------------------------------------
 
   if ((globalThis as any).mgdDocumentSignals) {
-
-    console.log(
-      "🧹 RESETTING DOCUMENT SIGNAL MEMORY"
-    );
-
     (globalThis as any).mgdDocumentSignals = [];
-
   }
-
-  console.log("🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Manufacturing V2)");
-  console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
   console.log(
     "🔎 AGGREGATED TEXT (first 300 chars):",
     aggregatedText.slice(0, 300),
@@ -2666,7 +2610,7 @@ function generateManufacturingV2Result(
 
   if (!isBaseline && aggregatedText.length < 100) {
     console.log(
-      `MANUFACTURING V2: INSUFFICIENT TEXT — aggregatedText only ${aggregatedText.length} chars`,
+      `PIPELINE: INSUFFICIENT TEXT — aggregatedText only ${aggregatedText.length} chars`,
     );
     return {
       findings: [],
@@ -2691,7 +2635,7 @@ function generateManufacturingV2Result(
   const evidenceSignals = extractEvidenceSignalsFromDocuments(docInputs);
 
   console.log(
-    `MANUFACTURING V2: Extracted ${concreteSignals.length} concrete signals, ${evidenceSignals.length} evidence signals`,
+    `PIPELINE: Extracted ${concreteSignals.length} concrete signals, ${evidenceSignals.length} evidence signals`,
   );
 
   const categoryConfidenceMap: Record<string, any> = {};
@@ -2769,7 +2713,7 @@ function generateManufacturingV2Result(
     evidenceSignals.length === 0
   ) {
     console.log(
-      `MANUFACTURING V2: HARD FAIL — no signals extracted from ${docInputs.length} document(s)`,
+      `PIPELINE: HARD FAIL — no signals extracted from ${docInputs.length} document(s)`,
     );
     return {
       findings: [],
@@ -2796,7 +2740,7 @@ function generateManufacturingV2Result(
   const observedSymptoms = new Set(input.selectedSymptoms || []);
 
   console.log(
-    `MANUFACTURING V2 SCORING: Problem statement: ${hasProblemStatement ? "YES" : "NO"}, Document evidence: ${hasDocumentEvidence ? "YES" : "NO"}, Symptoms: ${observedSymptoms.size}`,
+    `PIPELINE: Scoring — Problem: ${hasProblemStatement ? "YES" : "NO"}, Documents: ${hasDocumentEvidence ? "YES" : "NO"}, Symptoms: ${observedSymptoms.size}`,
   );
 
   const signalCategories = new Set(concreteSignals.map((s) => s.category));
@@ -2897,13 +2841,13 @@ function generateManufacturingV2Result(
     const hasSignals = concreteSignals.length > 0 || evidenceSignals.length > 0;
     if (hasSignals && scoredCauses.length > 0) {
       console.log(
-        `MANUFACTURING V2: FALLBACK — no root causes passed threshold (>= ${INCLUSION_THRESHOLD}) but ${concreteSignals.length + evidenceSignals.length} signals exist. Surfacing top 2 as indicative.`,
+        `PIPELINE: FALLBACK — no root causes passed threshold (>= ${INCLUSION_THRESHOLD}) but ${concreteSignals.length + evidenceSignals.length} signals exist. Surfacing top 2 as indicative.`,
       );
       selectedWithMeta = scoredCauses.slice(0, 2);
       isFallbackMode = true;
     } else {
       console.log(
-        `MANUFACTURING V2: HARD FAIL — no root causes passed evidence threshold (>= ${INCLUSION_THRESHOLD}) and no signals`,
+        `PIPELINE: HARD FAIL — no root causes passed evidence threshold (>= ${INCLUSION_THRESHOLD}) and no signals`,
       );
       return {
         findings: [],
@@ -2993,10 +2937,10 @@ function generateManufacturingV2Result(
 
   // Log threshold results
   console.log(
-    `MANUFACTURING V2 THRESHOLD: ${thresholdPassed.length} passed (>= ${INCLUSION_THRESHOLD}), ${thresholdFailed.length} excluded`,
+    `PIPELINE: Threshold — ${thresholdPassed.length} passed (>= ${INCLUSION_THRESHOLD}), ${thresholdFailed.length} excluded`,
   );
   console.log(
-    `MANUFACTURING V2: Selected ${selectedWithMeta.length} root causes (evidence-based)`,
+    `PIPELINE: Selected ${selectedWithMeta.length} root causes (evidence-based)`,
   );
 
   // Count categories represented
@@ -3004,7 +2948,7 @@ function generateManufacturingV2Result(
     selectedWithMeta.map((item) => item.cause.category),
   );
   console.log(
-    `MANUFACTURING V2: Categories with findings: ${Array.from(categoriesRepresented).join(", ") || "NONE"}`,
+    `PIPELINE: Categories with findings: ${Array.from(categoriesRepresented).join(", ") || "NONE"}`,
   );
 
   selectedWithMeta.forEach((item, idx) => {
@@ -3025,7 +2969,7 @@ function generateManufacturingV2Result(
   });
 
   if (thresholdFailed.length > 0) {
-    console.log(`MANUFACTURING V2: Top 3 excluded (below threshold):`);
+    console.log(`PIPELINE: Top 3 excluded (below threshold):`);
     thresholdFailed.slice(0, 3).forEach((item, idx) => {
       console.log(
         `  - [${item.cause.id}] ${item.cause.title} (score: ${item.score})`,
@@ -3276,7 +3220,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     documents,
   } = input;
 
-  console.log(`SIGNAL-DRIVEN DEEP: Running for ${clientName} (${industry})`);
+  console.log("📄 PIPELINE: DOCUMENT PARSING STARTED");
 
   if (industry.toLowerCase() === "manufacturing") {
     return generateManufacturingV2Result(input, false);
@@ -3469,17 +3413,12 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     detectedMfgKpis
   );
 
+  console.log("📊 PIPELINE: SIGNAL NORMALIZATION COMPLETE");
   const normalizedSignals = normalizeSignals(aggregatedText);
-  console.log("🧠 NORMALIZED SIGNALS DETECTED:", normalizedSignals);
 
   const signalClusters = buildSignalGraph(normalizedSignals);
-  console.log("🔗 SIGNAL CLUSTERS:", signalClusters);
 
   const signalIds = normalizedSignals.map(s => s.signalId);
-
-  // --------------------------------------------------
-  // DOCUMENT SIGNAL STORAGE
-  // --------------------------------------------------
 
   if (!(globalThis as any).mgdDocumentSignals) {
     (globalThis as any).mgdDocumentSignals = [];
@@ -3490,28 +3429,12 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
     signals: signalIds
   });
 
-  console.log(
-    "📄 DOCUMENT SIGNALS STORED:",
-    (globalThis as any).mgdDocumentSignals
-  );
-
+  console.log("📊 PIPELINE: SIGNAL AGGREGATION COMPLETE");
   const aggregatedSignals = aggregateSignals(signalIds);
-  console.log("📊 AGGREGATED SIGNALS:", aggregatedSignals);
 
-  const chains =
-    detectDiagnosticChains(signalIds);
-
-  console.log(
-    "🔗 DIAGNOSTIC CHAINS DETECTED:",
-    chains
-  );
+  const chains = detectDiagnosticChains(signalIds);
 
   const categoryDominance = detectCategoryDominance(signalIds);
-  console.log("🏭 CATEGORY DOMINANCE:", categoryDominance);
-
-  // --------------------------------------------------
-  // CROSS DOCUMENT SIGNAL FUSION
-  // --------------------------------------------------
 
   let fusedSignals: string[] = [];
 
@@ -3535,11 +3458,6 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
     fusedSignals = Object.keys(signalFrequency);
 
-    console.log(
-      "🧠 FUSED SIGNAL MODEL:",
-      signalFrequency
-    );
-
   }
 
   const diagnosticSignals =
@@ -3547,9 +3465,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
       ? fusedSignals
       : signalIds;
 
-  // --------------------------------------------------
-  // EXPERT ROOT CAUSE DIAGNOSIS (single authority)
-  // --------------------------------------------------
+  console.log("🔗 PIPELINE: SIGNAL MAP GENERATED");
 
   const finalExpertFindings = runExpertDiagnosis(diagnosticSignals, 3);
 
@@ -3568,8 +3484,6 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
     }));
 
-  console.log("📋 EXPERT FINDINGS FOR RESPONSE:", expertFindings);
-
   // --------------------------------------------------
   // RESET DOCUMENT SIGNAL STORAGE
   // --------------------------------------------------
@@ -3584,18 +3498,9 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
 
   }
 
-  console.log(
-    "🚨 SIGNAL EXTRACTOR INVOKED – DEBUG MARKER (Signal-Driven Deep)",
-  );
-  console.log("🔎 AGGREGATED TEXT LENGTH:", aggregatedText.length);
-  console.log(
-    "🔎 AGGREGATED TEXT (first 300 chars):",
-    aggregatedText.slice(0, 300),
-  );
-
   if (aggregatedText.length < 100) {
     console.log(
-      `SIGNAL-DRIVEN DEEP: INSUFFICIENT TEXT — aggregatedText only ${aggregatedText.length} chars`,
+      `PIPELINE: INSUFFICIENT TEXT — aggregatedText only ${aggregatedText.length} chars`,
     );
     return {
       findings: [],
@@ -3620,12 +3525,12 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   const evidenceSignals = extractEvidenceSignalsFromDocuments(docInputs);
 
   console.log(
-    `SIGNAL-DRIVEN DEEP: Extracted ${concreteSignals.length} concrete signals, ${evidenceSignals.length} evidence signals`,
+    `PIPELINE: Extracted ${concreteSignals.length} concrete signals, ${evidenceSignals.length} evidence signals`,
   );
 
   if (concreteSignals.length === 0 && evidenceSignals.length === 0) {
     console.log(
-      `SIGNAL-DRIVEN DEEP: HARD FAIL — no signals extracted from ${docInputs.length} document(s)`,
+      `PIPELINE: HARD FAIL — no signals extracted from ${docInputs.length} document(s)`,
     );
     return {
       findings: [],
@@ -3638,8 +3543,6 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
       isMockMode: false,
     };
   }
-
-  console.log("🚀 EXPERT DIAGNOSIS ENGINE ACTIVATED");
 
   const findings: AnalysisFinding[] = expertFindings.slice(0, 6).map((item, idx) => {
     const severity = (["high", "medium", "critical"] as const)[idx % 3];
@@ -3763,7 +3666,7 @@ function generateMockAnalysisResult(
   // ============================================================================
   if (industry.toLowerCase() === "manufacturing") {
     console.log(
-      "MANUFACTURING V2: Using manufacturingRootCausesV2 exclusively",
+      "PIPELINE: Using manufacturingRootCausesV2 exclusively",
     );
     return generateManufacturingV2Result(input, isBaseline);
   }
@@ -4002,7 +3905,7 @@ export async function runBulkAnalysis(
 
   if (input.mode === "deep" && hasUploadedDocs) {
     console.log(
-      `SIGNAL-DRIVEN DEEP: Bypassing mock mode — ${processedDocs.length} document(s) uploaded`,
+      `PIPELINE: Bypassing mock mode — ${processedDocs.length} document(s) uploaded`,
     );
     result = runSignalDrivenDeepAnalysis(input);
   } else if (input.mode === "deep" && MOCK_MODE) {
