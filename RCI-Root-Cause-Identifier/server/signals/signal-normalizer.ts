@@ -1,4 +1,4 @@
-import { manufacturingSignals } from "../industries/manufacturing-vocabulary";
+import { manufacturingSignals } from "../industry-models/manufacturing/manufacturing-signals";
 
 export interface NormalizedSignal {
   signalId: string;

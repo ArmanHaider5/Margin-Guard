@@ -88,7 +88,7 @@ import { evaluateIndustryBenchmarks, type BenchmarkEvaluation } from "../diagnos
 import { aggregateSignals } from "../signals/signal-aggregator";
 import { detectCategoryDominance } from "../signals/category-dominance";
 import { industryProfiles } from "../industries/industry-profiles";
-import { manufacturingVocabulary } from "../industries/manufacturing-vocabulary";
+import { manufacturingVocabulary } from "../industry-models/manufacturing/manufacturing-signals";
 import { manufacturingKpis } from "../industries/manufacturing-kpis";
 import { detectIndustryFromDocuments } from "../industries/industryDetection";
 import { detectDiagnosticChains } from "../signals/diagnosticChains";
