@@ -1,6 +1,12 @@
-import { EXPERT_ROOT_CAUSES } from "../../shared/root-cause-expert-library";
+import { manufacturingRootCauseLibrary } from "../industries/manufacturing-root-cause-library";
 import { evaluateSignalMaps } from "../signals/signal-map-engine";
 import { scoreRootCauses } from "./root-cause-scorer";
+
+console.log(
+  "🧠 ROOT CAUSE LIBRARY LOADED:",
+  manufacturingRootCauseLibrary.length,
+  "manufacturing root causes"
+);
 
 export interface ExpertDiagnosisResult {
   id: string;
@@ -19,10 +25,10 @@ export function evaluateExpertRootCauses(signals: string[]) {
 
   const results = [];
 
-  for (const rootCause of EXPERT_ROOT_CAUSES) {
+  for (const rootCause of manufacturingRootCauseLibrary) {
 
     const triggerMatches =
-      rootCause.triggerSignals.filter(s => signals.includes(s)).length;
+      rootCause.triggers.filter(s => signals.includes(s)).length;
 
     const supportMatches =
       rootCause.supportingSignals.filter(s => signals.includes(s)).length;

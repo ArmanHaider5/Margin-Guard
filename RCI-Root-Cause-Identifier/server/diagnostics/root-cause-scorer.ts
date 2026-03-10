@@ -1,5 +1,5 @@
-import { manufacturingRootCauses }
-  from "../industries/manufacturing-root-causes";
+import { manufacturingRootCauseLibrary }
+  from "../industries/manufacturing-root-cause-library";
 
 export function scoreRootCauses(detectedSignals: { signalId: string }[]) {
 
@@ -16,7 +16,7 @@ export function scoreRootCauses(detectedSignals: { signalId: string }[]) {
     score: number;
   }[] = [];
 
-  for (const cause of manufacturingRootCauses) {
+  for (const cause of manufacturingRootCauseLibrary) {
 
     let triggerMatches = 0;
     let supportMatches = 0;
@@ -29,7 +29,7 @@ export function scoreRootCauses(detectedSignals: { signalId: string }[]) {
 
     }
 
-    for (const signal of cause.supportSignals) {
+    for (const signal of cause.supportingSignals) {
 
       if (signalIds.includes(signal)) {
         supportMatches++;
