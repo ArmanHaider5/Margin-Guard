@@ -3,9 +3,6 @@ export interface RootCauseTreeNode {
   title: string;
   category: string;
   score: number;
-  description?: string;
-  severity?: string;
-  evidence?: string[];
 }
 
 export interface RootCauseTree {
@@ -31,17 +28,15 @@ export function buildRootCauseTree(findings: any[]): RootCauseTree {
 
   const sorted = [...findings].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 
-  const primaryCause: RootCauseTreeNode = {
-    id: sorted[0].id,
-    title: sorted[0].title,
-    category: sorted[0].fourMCategory || sorted[0].category || "",
-    score: sorted[0].score ?? 0,
-    description: sorted[0].description,
-    severity: sorted[0].severity,
-    evidence: sorted[0].evidence,
-  };
+  const primary = sorted[0];
+  const primaryCategory = primary.fourMCategory || primary.category || "";
 
-  const primaryCategory = primaryCause.category;
+  const primaryCause: RootCauseTreeNode = {
+    id: primary.id,
+    title: primary.name || primary.title || "",
+    category: primaryCategory,
+    score: primary.score ?? 0,
+  };
 
   const secondaryCauses: RootCauseTreeNode[] = sorted
     .slice(1)
@@ -51,14 +46,11 @@ export function buildRootCauseTree(findings: any[]): RootCauseTree {
         (f.score ?? 0) > 30,
     )
     .slice(0, 3)
-    .map((f) => ({
-      id: f.id,
-      title: f.title,
-      category: f.fourMCategory || f.category || "",
-      score: f.score ?? 0,
-      description: f.description,
-      severity: f.severity,
-      evidence: f.evidence,
+    .map((c) => ({
+      id: c.id,
+      title: c.name || c.title || "",
+      category: c.fourMCategory || c.category || "",
+      score: c.score ?? 0,
     }));
 
   const secondaryIds = new Set(secondaryCauses.map((s) => s.id));
@@ -71,14 +63,11 @@ export function buildRootCauseTree(findings: any[]): RootCauseTree {
         f.id !== primaryCause.id &&
         (f.score ?? 0) > 10,
     )
-    .map((f) => ({
-      id: f.id,
-      title: f.title,
-      category: f.fourMCategory || f.category || "",
-      score: f.score ?? 0,
-      description: f.description,
-      severity: f.severity,
-      evidence: f.evidence,
+    .map((c) => ({
+      id: c.id,
+      title: c.name || c.title || "",
+      category: c.fourMCategory || c.category || "",
+      score: c.score ?? 0,
     }));
 
   console.log("🌳 ROOT CAUSE TREE BUILT");
