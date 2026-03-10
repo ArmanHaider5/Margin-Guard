@@ -28,6 +28,7 @@ import ClientDiagnosticsNew from "@/pages/clients/diagnostics-new";
 import ClientDashboard from "@/pages/client/dashboard";
 import ClientIssues from "@/pages/client/issues";
 import ClientAnalysisDetail from "@/pages/client/analysis-detail";
+import MGDDashboard from "../../server/frontend/mgd/mgd-dashboard";
 import { Loader2 } from "lucide-react";
 
 function Router() {
@@ -76,6 +77,7 @@ function Router() {
         <Route path="/admin/knowledge" component={AdminKnowledge} />
         <Route path="/admin/cases" component={CasesPage} />
         <Route path="/admin/cases/:id" component={CaseDetailPage} />
+        <Route path="/mgd" component={MGDDashboard} />
         
         {/* Management View (read-only summary) */}
         <Route path="/management" component={ManagementDashboard} />

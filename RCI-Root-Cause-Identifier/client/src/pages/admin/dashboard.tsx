@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   Building2, 
   Brain,
-  FolderOpen
+  FolderOpen,
+  BarChart3
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Client } from "@shared/schema";
@@ -197,6 +198,12 @@ export default function AdminDashboard() {
                       <Button variant="outline" className="w-full justify-start" data-testid="button-case-memory">
                         <FolderOpen className="w-4 h-4 mr-2" />
                         Case Memory
+                      </Button>
+                    </Link>
+                    <Link href="/mgd">
+                      <Button variant="outline" className="w-full justify-start" data-testid="button-mgd-diagnostics">
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        MGD Diagnostics
                       </Button>
                     </Link>
                   </>
