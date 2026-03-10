@@ -15,6 +15,10 @@ import { retailRootCauses } from "./retail/retail-root-causes";
 import { retailSignals } from "./retail/retail-signals";
 import { retailBenchmarks } from "./retail/retail-benchmarks";
 import { retailMappings } from "./retail/retail-mappings";
+import { professionalServicesRootCauses } from "./professional-services/professional-services-root-causes";
+import { professionalServicesSignals } from "./professional-services/professional-services-signals";
+import { professionalServicesBenchmarks } from "./professional-services/professional-services-benchmarks";
+import { professionalServicesMappings } from "./professional-services/professional-services-mappings";
 
 export const industryRegistry = {
 
@@ -45,6 +49,13 @@ export const industryRegistry = {
     signals: retailSignals,
     benchmarks: retailBenchmarks,
     mappings: retailMappings
+  },
+
+  professionalServices: {
+    rootCauses: professionalServicesRootCauses,
+    signals: professionalServicesSignals,
+    benchmarks: professionalServicesBenchmarks,
+    mappings: professionalServicesMappings
   }
 
 };
