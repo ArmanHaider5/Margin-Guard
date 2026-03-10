@@ -39,13 +39,12 @@ export function buildRootCauseTree(findings: any[]): RootCauseTree {
   };
 
   const secondaryCauses: RootCauseTreeNode[] = sorted
-    .slice(1)
     .filter(
       (f) =>
         (f.fourMCategory || f.category || "") === primaryCategory &&
-        (f.score ?? 0) > 30,
+        f.id !== primary.id &&
+        (f.score ?? 0) >= 40,
     )
-    .slice(0, 3)
     .map((c) => ({
       id: c.id,
       title: c.name || c.title || "",
@@ -53,15 +52,12 @@ export function buildRootCauseTree(findings: any[]): RootCauseTree {
       score: c.score ?? 0,
     }));
 
-  const secondaryIds = new Set(secondaryCauses.map((s) => s.id));
-
   const contributingFactors: RootCauseTreeNode[] = sorted
-    .slice(1)
     .filter(
       (f) =>
-        !secondaryIds.has(f.id) &&
-        f.id !== primaryCause.id &&
-        (f.score ?? 0) > 10,
+        (f.score ?? 0) >= 20 &&
+        f.id !== primary.id &&
+        !secondaryCauses.find((s) => s.id === f.id),
     )
     .map((c) => ({
       id: c.id,
@@ -71,7 +67,7 @@ export function buildRootCauseTree(findings: any[]): RootCauseTree {
     }));
 
   console.log("🌳 ROOT CAUSE TREE BUILT");
-  console.log("Primary:", primaryCause?.id);
+  console.log("Primary:", primary?.id);
   console.log("Secondary:", secondaryCauses.length);
   console.log("Contributing:", contributingFactors.length);
 
