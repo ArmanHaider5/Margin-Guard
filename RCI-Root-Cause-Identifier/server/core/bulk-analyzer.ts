@@ -84,6 +84,7 @@ import { buildRootCauseTree, type RootCauseTree } from "../diagnostics/root-caus
 import { buildCausalChains, type CausalChain } from "../diagnostics/causal-chain-engine";
 import { generateConsultingNarrative, type ConsultingNarrative } from "../diagnostics/consulting-narrative-engine";
 import { estimateCostSavings, type CostSavingEstimate } from "../diagnostics/cost-saving-engine";
+import { evaluateIndustryBenchmarks, type BenchmarkEvaluation } from "../diagnostics/industry-benchmark-engine";
 import { aggregateSignals } from "../signals/signal-aggregator";
 import { detectCategoryDominance } from "../signals/category-dominance";
 import { industryProfiles } from "../industries/industry-profiles";
@@ -1367,6 +1368,7 @@ interface AnalysisResult {
   causalChains?: CausalChain[];
   consultingNarrative?: ConsultingNarrative;
   costSavingEstimate?: CostSavingEstimate;
+  industryBenchmarks?: BenchmarkEvaluation;
 }
 
 /**
@@ -2430,8 +2432,10 @@ function generateManufacturingV2Result(
   );
 
   // --------------------------------------------------
-  // EXCEL FILE DETECTION
+  // EXCEL FILE DETECTION (Manufacturing V2)
   // --------------------------------------------------
+
+  const collectedKpiValues: { kpiId: string; value: number; phrase: string }[] = [];
 
   for (const doc of processedDocs) {
 
@@ -2518,6 +2522,9 @@ function generateManufacturingV2Result(
 
           const first = values[0];
           const last = values[values.length - 1];
+
+          const kpiId = column.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+          collectedKpiValues.push({ kpiId, value: last, phrase: column });
 
           if (last > first * 1.3) {
 
@@ -3224,6 +3231,9 @@ function generateManufacturingV2Result(
   const costSavingEstimate = estimateCostSavings(rootCauseTree, causalChains);
   console.log("💰 COST SAVINGS:", costSavingEstimate.opportunities.length);
 
+  const industryBenchmarks = evaluateIndustryBenchmarks(collectedKpiValues);
+  console.log("📊 BENCHMARK RESULTS:", industryBenchmarks.benchmarkResults.length);
+
   return {
     findings: finalFindings,
     summary: `${summaryPrefix} ${findingsPhrase}`,
@@ -3244,6 +3254,7 @@ function generateManufacturingV2Result(
     causalChains,
     consultingNarrative,
     costSavingEstimate,
+    industryBenchmarks,
   };
 }
 
