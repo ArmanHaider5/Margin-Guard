@@ -475,51 +475,29 @@ export const manufacturingRootCauses: ManufacturingRootCause[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════
-  // TIER 2 — PROCESS LEVEL
+  // TIER 2 — MACHINERY (process / coordination)
   // ═══════════════════════════════════════════════════════════════
 
   {
-    id: "mfg-skill-gap",
-    name: "Operator skill gaps affecting production stability",
-    tier: 2,
-    category: "Manpower",
-    triggers: [],
-    supportSignals: ["rework"],
-    relatedKPIs: ["first_pass_yield"],
-    description: "Production errors occur due to insufficient training or operator experience."
-  },
-
-  {
-    id: "mfg-supplier-instability",
-    name: "Supplier reliability issues affecting production flow",
-    tier: 2,
-    category: "Materials",
-    triggers: ["inventory_shortage"],
-    supportSignals: [],
-    relatedKPIs: ["supplier_otd"],
-    description: "Supplier delays or inconsistent deliveries disrupt production scheduling."
-  },
-
-  {
-    id: "mfg-inventory-misalignment",
-    name: "Inventory imbalance causing production inefficiencies",
-    tier: 2,
-    category: "Materials",
-    triggers: ["inventory_buildup"],
-    supportSignals: [],
-    relatedKPIs: ["inventory_turnover"],
-    description: "Excess or insufficient inventory levels disrupt production flow."
-  },
-
-  {
     id: "mfg-production-planning",
-    name: "Production planning misaligned with demand volatility",
+    name: "Production planning misaligned with sales demand volatility",
     tier: 2,
     category: "Machinery",
     triggers: ["otd_decline"],
-    supportSignals: ["inventory_buildup"],
+    supportSignals: ["inventory_buildup", "overtime_spike"],
     relatedKPIs: ["otd", "schedule_adherence"],
-    description: "Production schedules fail to adjust to changes in demand."
+    description: "Production schedules fail to adjust to changes in demand, causing frequent rescheduling."
+  },
+
+  {
+    id: "mfg-production-scheduling",
+    name: "Poor production scheduling causing frequent rescheduling",
+    tier: 2,
+    category: "Machinery",
+    triggers: ["otd_decline", "overtime_spike"],
+    supportSignals: ["downtime"],
+    relatedKPIs: ["schedule_adherence", "throughput"],
+    description: "Scheduling process lacks stability, causing constant plan changes and shop floor disruption."
   },
 
   {
@@ -534,14 +512,110 @@ export const manufacturingRootCauses: ManufacturingRootCause[] = [
   },
 
   {
+    id: "mfg-machine-utilization-imbalance",
+    name: "Uneven machine utilization across production lines",
+    tier: 2,
+    category: "Machinery",
+    triggers: ["downtime"],
+    supportSignals: [],
+    relatedKPIs: ["utilization_rate", "oee"],
+    description: "Some machines become bottlenecks while others remain idle."
+  },
+
+  {
+    id: "mfg-maintenance-procedure-gap",
+    name: "Lack of standardized maintenance procedures",
+    tier: 2,
+    category: "Machinery",
+    triggers: ["maintenance_backlog"],
+    supportSignals: ["machine_breakdown", "downtime"],
+    diagnosticChains: ["maintenance_failure_chain"],
+    relatedKPIs: ["mtbf", "mttr", "pm_compliance"],
+    description: "Maintenance tasks are performed inconsistently due to missing or outdated procedures."
+  },
+
+  {
+    id: "mfg-pm-planning-ineffective",
+    name: "Ineffective preventive maintenance planning",
+    tier: 2,
+    category: "Machinery",
+    triggers: ["maintenance_backlog", "downtime"],
+    supportSignals: ["machine_breakdown"],
+    diagnosticChains: ["maintenance_failure_chain"],
+    relatedKPIs: ["pm_compliance", "mtbf", "oee"],
+    description: "Preventive maintenance schedules are poorly designed or not followed, increasing breakdown risk."
+  },
+
+  {
+    id: "mfg-process-instability",
+    name: "Unstable production processes causing defect variation",
+    tier: 2,
+    category: "Machinery",
+    triggers: ["rework", "scrap"],
+    supportSignals: [],
+    diagnosticChains: ["quality_breakdown_chain"],
+    relatedKPIs: ["cpk", "first_pass_yield", "scrap_rate"],
+    description: "Process parameters drift without detection, causing inconsistent output quality."
+  },
+
+  {
+    id: "mfg-engineering-change-control",
+    name: "Poor engineering change control causing specification confusion",
+    tier: 2,
+    category: "Machinery",
+    triggers: ["rework"],
+    supportSignals: ["scrap"],
+    relatedKPIs: ["first_pass_yield", "rework_rate"],
+    description: "Engineering changes are not communicated or implemented consistently on the shop floor."
+  },
+
+  {
+    id: "mfg-equipment-condition-monitoring",
+    name: "Lack of equipment condition monitoring delaying fault detection",
+    tier: 2,
+    category: "Machinery",
+    triggers: ["downtime", "machine_breakdown"],
+    supportSignals: ["maintenance_backlog"],
+    diagnosticChains: ["maintenance_failure_chain"],
+    relatedKPIs: ["mtbf", "mttr", "availability"],
+    description: "Equipment degradation goes undetected until failure occurs due to missing condition monitoring."
+  },
+
+  {
+    id: "mfg-spc-absence",
+    name: "Absence of statistical process control in critical operations",
+    tier: 2,
+    category: "Machinery",
+    triggers: ["rework", "scrap"],
+    supportSignals: [],
+    relatedKPIs: ["cpk", "first_pass_yield", "scrap_rate"],
+    description: "Process drift is not detected in real time, allowing defects to accumulate before correction."
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // TIER 2 — MANPOWER (process / coordination)
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    id: "mfg-skill-gap",
+    name: "Operator skill gaps affecting production stability",
+    tier: 2,
+    category: "Manpower",
+    triggers: [],
+    supportSignals: ["rework"],
+    relatedKPIs: ["first_pass_yield"],
+    description: "Production errors occur due to insufficient training or operator experience."
+  },
+
+  {
     id: "mfg-quality-inspection-bottleneck",
-    name: "Quality inspection bottleneck slowing production flow",
+    name: "Insufficient quality control checkpoints in production flow",
     tier: 2,
     category: "Manpower",
     triggers: ["rework"],
-    supportSignals: [],
+    supportSignals: ["scrap"],
     relatedKPIs: ["first_pass_yield", "throughput"],
-    description: "Inspection processes create delays in production throughput."
+    description: "Defects propagate through multiple operations before detection due to missing inspection gates."
   },
 
   {
@@ -556,23 +630,13 @@ export const manufacturingRootCauses: ManufacturingRootCause[] = [
   },
 
   {
-    id: "mfg-machine-utilization-imbalance",
-    name: "Uneven machine utilization across production lines",
-    tier: 2,
-    category: "Machinery",
-    triggers: ["downtime"],
-    supportSignals: [],
-    relatedKPIs: ["utilization_rate", "oee"],
-    description: "Some machines become bottlenecks while others remain idle."
-  },
-
-  {
     id: "mfg-shift-handover",
     name: "Poor shift handover causing production errors",
     tier: 2,
     category: "Manpower",
     triggers: [],
     supportSignals: ["rework"],
+    relatedKPIs: ["first_pass_yield", "rework_rate"],
     description: "Information loss during shift transitions causes mistakes."
   },
 
@@ -605,7 +669,78 @@ export const manufacturingRootCauses: ManufacturingRootCause[] = [
     category: "Manpower",
     triggers: [],
     supportSignals: ["rework"],
+    relatedKPIs: ["first_pass_yield", "rework_rate"],
     description: "Limited supervision allows small issues to escalate."
+  },
+
+  {
+    id: "mfg-workforce-planning",
+    name: "Insufficient workforce planning for demand variability",
+    tier: 2,
+    category: "Manpower",
+    triggers: ["overtime_spike"],
+    supportSignals: ["downtime"],
+    relatedKPIs: ["overtime_ratio", "labor_utilization", "throughput"],
+    description: "Manning plans do not flex with demand changes, causing chronic over- or understaffing."
+  },
+
+  {
+    id: "mfg-training-program-ineffective",
+    name: "Poor training programs for machine operators",
+    tier: 2,
+    category: "Manpower",
+    triggers: ["rework"],
+    supportSignals: ["scrap", "machine_breakdown"],
+    relatedKPIs: ["first_pass_yield", "rework_rate", "mtbf"],
+    description: "Training programs lack structure or relevance, leaving operators unprepared for production demands."
+  },
+
+  {
+    id: "mfg-skill-concentration",
+    name: "High dependency on a small number of skilled operators",
+    tier: 2,
+    category: "Manpower",
+    triggers: ["overtime_spike"],
+    supportSignals: ["downtime", "rework"],
+    relatedKPIs: ["labor_utilization", "overtime_ratio"],
+    description: "Critical production knowledge is concentrated in few individuals, creating single points of failure."
+  },
+
+  {
+    id: "mfg-work-instruction-gap",
+    name: "Lack of standardized work instructions for operators",
+    tier: 2,
+    category: "Manpower",
+    triggers: ["rework"],
+    supportSignals: ["scrap"],
+    relatedKPIs: ["first_pass_yield", "rework_rate"],
+    description: "Operators perform tasks differently due to missing or outdated standard work instructions."
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // TIER 2 — MATERIALS (process / coordination)
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    id: "mfg-supplier-instability",
+    name: "Supplier reliability issues affecting production flow",
+    tier: 2,
+    category: "Materials",
+    triggers: ["inventory_shortage"],
+    supportSignals: [],
+    relatedKPIs: ["supplier_otd"],
+    description: "Supplier delays or inconsistent deliveries disrupt production scheduling."
+  },
+
+  {
+    id: "mfg-inventory-misalignment",
+    name: "Weak inventory planning causing stock imbalances",
+    tier: 2,
+    category: "Materials",
+    triggers: ["inventory_buildup"],
+    supportSignals: ["inventory_shortage"],
+    relatedKPIs: ["inventory_turnover", "inventory_accuracy"],
+    description: "Inventory planning does not balance supply with consumption, causing surpluses and shortages."
   },
 
   {
@@ -639,6 +774,76 @@ export const manufacturingRootCauses: ManufacturingRootCause[] = [
     supportSignals: ["inventory_shortage"],
     relatedKPIs: ["inventory_accuracy", "inventory_turnover"],
     description: "Inventory tracking systems fail to reflect real stock levels."
+  },
+
+  {
+    id: "mfg-supplier-performance-monitoring",
+    name: "Lack of supplier performance monitoring",
+    tier: 2,
+    category: "Materials",
+    triggers: ["inventory_shortage"],
+    supportSignals: ["scrap"],
+    relatedKPIs: ["supplier_otd", "incoming_quality"],
+    description: "Supplier delivery and quality performance are not systematically tracked or managed."
+  },
+
+  {
+    id: "mfg-supplier-quality-control",
+    name: "Ineffective supplier quality control",
+    tier: 2,
+    category: "Materials",
+    triggers: ["scrap"],
+    supportSignals: ["rework"],
+    relatedKPIs: ["incoming_quality", "scrap_rate"],
+    description: "Incoming material inspection processes fail to catch supplier quality issues before production."
+  },
+
+  {
+    id: "mfg-material-specification-drift",
+    name: "Material specification drift across supplier batches",
+    tier: 2,
+    category: "Materials",
+    triggers: ["rework", "scrap"],
+    supportSignals: [],
+    relatedKPIs: ["incoming_quality", "first_pass_yield"],
+    description: "Suppliers gradually deviate from agreed specifications without formal notification."
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // TIER 2 — MONEY (process / coordination)
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    id: "mfg-cost-tracking-weak",
+    name: "Weak cost tracking across production processes",
+    tier: 2,
+    category: "Money",
+    triggers: [],
+    supportSignals: ["overtime_spike", "scrap"],
+    relatedKPIs: ["cost_per_unit", "gross_margin"],
+    description: "Production costs are not tracked at process level, hiding waste and inefficiency sources."
+  },
+
+  {
+    id: "mfg-cost-allocation-unclear",
+    name: "Unclear cost allocation for manufacturing operations",
+    tier: 2,
+    category: "Money",
+    triggers: [],
+    supportSignals: ["overtime_spike"],
+    relatedKPIs: ["cost_per_unit", "gross_margin", "labor_cost_ratio"],
+    description: "Overhead and indirect costs are not accurately allocated to products or processes."
+  },
+
+  {
+    id: "mfg-budget-variance-unmanaged",
+    name: "Unmanaged budget variances in production operations",
+    tier: 2,
+    category: "Money",
+    triggers: ["overtime_spike"],
+    supportSignals: ["scrap", "maintenance_backlog"],
+    relatedKPIs: ["cost_per_unit", "gross_margin"],
+    description: "Actual production costs consistently exceed budgets without corrective action."
   },
 
   // ═══════════════════════════════════════════════════════════════
