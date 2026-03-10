@@ -1,0 +1,127 @@
+Create a new file:
+
+/industry-models/professional-services/professional-services-root-causes.ts
+
+
+Export:
+
+export const professionalServicesRootCauses
+
+
+Structure for each root cause:
+
+id
+category
+rootCause
+description
+signals
+kpis
+impactWeight
+
+
+Add the following root causes:
+
+
+export const professionalServicesRootCauses = [
+
+{
+id: "PS001",
+category: "Utilization",
+rootCause: "Low billable utilization",
+description: "Professionals spending excessive time on non-billable activities",
+signals: ["low_billable_hours","excess_admin_work"],
+kpis: ["billable_utilization"],
+impactWeight: 0.9
+},
+
+{
+id: "PS002",
+category: "Workload",
+rootCause: "Staff workload imbalance",
+description: "Uneven distribution of projects across staff members",
+signals: ["staff_overload","staff_idle_time"],
+kpis: ["staff_utilization"],
+impactWeight: 0.85
+},
+
+{
+id: "PS003",
+category: "Project Management",
+rootCause: "Project timeline delays",
+description: "Projects exceeding planned completion schedules",
+signals: ["project_delay","missed_deadline"],
+kpis: ["project_delivery_time"],
+impactWeight: 0.88
+},
+
+{
+id: "PS004",
+category: "Client Management",
+rootCause: "Client onboarding inefficiencies",
+description: "Slow client onboarding processes delaying project start",
+signals: ["onboarding_delay","documentation_delay"],
+kpis: ["project_start_time"],
+impactWeight: 0.75
+},
+
+{
+id: "PS005",
+category: "Pricing",
+rootCause: "Underpricing of services",
+description: "Services priced below market value reducing profitability",
+signals: ["low_project_margin","pricing_discrepancy"],
+kpis: ["profit_margin"],
+impactWeight: 0.8
+},
+
+{
+id: "PS006",
+category: "Sales",
+rootCause: "Weak sales pipeline",
+description: "Insufficient client acquisition leading to revenue instability",
+signals: ["low_client_inquiries","revenue_decline"],
+kpis: ["revenue_growth"],
+impactWeight: 0.83
+},
+
+{
+id: "PS007",
+category: "Resource Allocation",
+rootCause: "Poor project resource planning",
+description: "Inadequate planning of staff assignments across projects",
+signals: ["resource_conflict","project_delay"],
+kpis: ["staff_utilization"],
+impactWeight: 0.8
+},
+
+{
+id: "PS008",
+category: "Knowledge Management",
+rootCause: "Lack of knowledge sharing",
+description: "Teams repeatedly solving the same problems due to poor documentation",
+signals: ["duplicate_work","knowledge_gap"],
+kpis: ["project_efficiency"],
+impactWeight: 0.72
+},
+
+{
+id: "PS009",
+category: "Client Demand",
+rootCause: "Client request backlog",
+description: "Accumulation of unaddressed client requests",
+signals: ["client_backlog","service_delay"],
+kpis: ["client_response_time"],
+impactWeight: 0.82
+},
+
+{
+id: "PS010",
+category: "Staff Retention",
+rootCause: "High staff turnover",
+description: "Frequent employee departures disrupting project continuity",
+signals: ["staff_turnover","project_disruption"],
+kpis: ["employee_retention"],
+impactWeight: 0.86
+}
+
+]
