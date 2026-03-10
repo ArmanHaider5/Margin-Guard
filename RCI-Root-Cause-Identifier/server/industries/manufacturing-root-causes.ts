@@ -847,7 +847,341 @@ export const manufacturingRootCauses: ManufacturingRootCause[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════
-  // TIER 3 — MANAGEMENT / FINANCIAL
+  // TIER 3 — MACHINERY (systemic / management)
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    id: "mfg-production-visibility-gap",
+    name: "Lack of real-time production visibility for managers",
+    tier: 3,
+    category: "Machinery",
+    triggers: ["downtime", "otd_decline"],
+    supportSignals: ["overtime_spike"],
+    relatedKPIs: ["oee", "throughput", "schedule_adherence"],
+    description: "Management lacks real-time data on production status, delaying decisions on disruptions."
+  },
+
+  {
+    id: "mfg-reactive-management-culture",
+    name: "Reactive management culture focused on firefighting",
+    tier: 3,
+    category: "Machinery",
+    triggers: ["downtime", "maintenance_backlog"],
+    supportSignals: ["overtime_spike", "rework"],
+    relatedKPIs: ["oee", "mtbf", "schedule_adherence"],
+    description: "Management intervenes only after failures occur instead of preventing them systematically."
+  },
+
+  {
+    id: "mfg-kpi-governance-weak",
+    name: "Weak operational KPI governance across production lines",
+    tier: 3,
+    category: "Machinery",
+    triggers: [],
+    supportSignals: ["downtime", "rework", "scrap"],
+    relatedKPIs: ["oee", "first_pass_yield", "throughput"],
+    description: "KPIs are not consistently defined, measured, or acted upon across production areas."
+  },
+
+  {
+    id: "mfg-cross-department-coordination",
+    name: "Poor cross-department coordination between production and planning",
+    tier: 3,
+    category: "Machinery",
+    triggers: ["otd_decline", "inventory_buildup"],
+    supportSignals: ["overtime_spike"],
+    relatedKPIs: ["schedule_adherence", "otd", "inventory_turnover"],
+    description: "Production, planning, and sales operate in silos, causing misaligned priorities and schedules."
+  },
+
+  {
+    id: "mfg-continuous-improvement-absent",
+    name: "Lack of continuous improvement culture in operations",
+    tier: 3,
+    category: "Machinery",
+    triggers: [],
+    supportSignals: ["rework", "scrap", "downtime"],
+    relatedKPIs: ["oee", "first_pass_yield", "cost_per_unit"],
+    description: "No structured approach to identifying and eliminating recurring operational waste."
+  },
+
+  {
+    id: "mfg-rca-absent",
+    name: "No structured root cause analysis for recurring defects",
+    tier: 3,
+    category: "Machinery",
+    triggers: ["rework", "scrap"],
+    supportSignals: [],
+    diagnosticChains: ["quality_breakdown_chain"],
+    relatedKPIs: ["first_pass_yield", "scrap_rate", "rework_rate"],
+    description: "Recurring quality problems are addressed symptomatically without identifying true root causes."
+  },
+
+  {
+    id: "mfg-maintenance-strategy-weak",
+    name: "Weak maintenance strategy across production facilities",
+    tier: 3,
+    category: "Machinery",
+    triggers: ["maintenance_backlog", "downtime"],
+    supportSignals: ["machine_breakdown"],
+    diagnosticChains: ["maintenance_failure_chain"],
+    relatedKPIs: ["mtbf", "mttr", "pm_compliance", "oee"],
+    description: "No coherent maintenance strategy links equipment criticality to maintenance investment."
+  },
+
+  {
+    id: "mfg-operational-data-fragmented",
+    name: "Fragmented operational data preventing performance monitoring",
+    tier: 3,
+    category: "Machinery",
+    triggers: [],
+    supportSignals: ["downtime", "rework"],
+    relatedKPIs: ["oee", "throughput", "first_pass_yield"],
+    description: "Production data is scattered across disconnected systems, preventing holistic performance analysis."
+  },
+
+  {
+    id: "mfg-metrics-unstandardized",
+    name: "Lack of standardized operational metrics across plants",
+    tier: 3,
+    category: "Machinery",
+    triggers: [],
+    supportSignals: [],
+    relatedKPIs: ["oee", "first_pass_yield", "throughput"],
+    description: "Different production areas use inconsistent metrics, preventing meaningful comparison and benchmarking."
+  },
+
+  {
+    id: "mfg-capital-investment-planning",
+    name: "Poor capital investment planning for equipment upgrades",
+    tier: 3,
+    category: "Machinery",
+    triggers: ["downtime", "maintenance_backlog"],
+    supportSignals: ["machine_breakdown"],
+    relatedKPIs: ["oee", "roi", "mtbf"],
+    description: "Equipment replacement and upgrade decisions are reactive rather than planned against lifecycle data."
+  },
+
+  {
+    id: "mfg-technology-adoption-lag",
+    name: "Slow technology adoption limiting production capability",
+    tier: 3,
+    category: "Machinery",
+    triggers: [],
+    supportSignals: ["downtime"],
+    relatedKPIs: ["oee", "throughput", "cost_per_unit"],
+    description: "Outdated technology constrains production capability while competitors advance."
+  },
+
+  {
+    id: "mfg-capacity-planning-strategic",
+    name: "Weak long-term capacity planning against market growth",
+    tier: 3,
+    category: "Machinery",
+    triggers: ["overtime_spike", "otd_decline"],
+    supportSignals: ["inventory_buildup"],
+    relatedKPIs: ["utilization_rate", "throughput", "otd"],
+    description: "Capacity expansion decisions lag behind demand growth, creating chronic constraint."
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // TIER 3 — MANPOWER (systemic / management)
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    id: "mfg-workforce-development-strategy",
+    name: "Weak workforce development strategy",
+    tier: 3,
+    category: "Manpower",
+    triggers: [],
+    supportSignals: ["rework", "overtime_spike"],
+    relatedKPIs: ["first_pass_yield", "labor_utilization", "overtime_ratio"],
+    description: "No systematic plan for developing operator skills aligned with production technology requirements."
+  },
+
+  {
+    id: "mfg-skill-certification-absent",
+    name: "Lack of structured operator skill certification",
+    tier: 3,
+    category: "Manpower",
+    triggers: [],
+    supportSignals: ["rework"],
+    relatedKPIs: ["first_pass_yield", "rework_rate"],
+    description: "No formal certification process validates operator competency before assignment to critical tasks."
+  },
+
+  {
+    id: "mfg-retention-strategy-weak",
+    name: "Weak employee retention strategy increasing turnover",
+    tier: 3,
+    category: "Manpower",
+    triggers: ["overtime_spike"],
+    supportSignals: ["downtime"],
+    relatedKPIs: ["turnover_rate", "overtime_ratio", "labor_utilization"],
+    description: "High turnover of skilled operators erodes production capability and increases training costs."
+  },
+
+  {
+    id: "mfg-succession-planning-absent",
+    name: "No succession planning for critical production roles",
+    tier: 3,
+    category: "Manpower",
+    triggers: [],
+    supportSignals: ["overtime_spike", "downtime"],
+    relatedKPIs: ["labor_utilization", "overtime_ratio"],
+    description: "Departure of key personnel creates immediate capability gaps with no prepared replacements."
+  },
+
+  {
+    id: "mfg-safety-culture-weak",
+    name: "Weak safety culture increasing incident risk",
+    tier: 3,
+    category: "Manpower",
+    triggers: [],
+    supportSignals: ["downtime", "overtime_spike"],
+    relatedKPIs: ["incident_rate", "lost_time_injury"],
+    description: "Safety is not embedded in operational culture, increasing incident frequency and production disruption."
+  },
+
+  {
+    id: "mfg-knowledge-management-absent",
+    name: "No knowledge management system for production expertise",
+    tier: 3,
+    category: "Manpower",
+    triggers: [],
+    supportSignals: ["rework"],
+    relatedKPIs: ["first_pass_yield", "rework_rate"],
+    description: "Critical production knowledge exists only in individuals' heads and is lost when they leave."
+  },
+
+  {
+    id: "mfg-performance-management-weak",
+    name: "Weak performance management system for production staff",
+    tier: 3,
+    category: "Manpower",
+    triggers: [],
+    supportSignals: ["rework", "scrap"],
+    relatedKPIs: ["first_pass_yield", "labor_utilization"],
+    description: "No structured feedback or accountability system links individual performance to production outcomes."
+  },
+
+  {
+    id: "mfg-organizational-structure-misaligned",
+    name: "Organizational structure misaligned with production priorities",
+    tier: 3,
+    category: "Manpower",
+    triggers: [],
+    supportSignals: ["overtime_spike", "rework"],
+    relatedKPIs: ["throughput", "schedule_adherence"],
+    description: "Reporting lines and role definitions do not support efficient production decision-making."
+  },
+
+  {
+    id: "mfg-leadership-development-gap",
+    name: "Lack of leadership development for production supervisors",
+    tier: 3,
+    category: "Manpower",
+    triggers: [],
+    supportSignals: ["rework", "overtime_spike"],
+    relatedKPIs: ["first_pass_yield", "throughput"],
+    description: "Supervisors are promoted without management training, reducing shop floor effectiveness."
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // TIER 3 — MATERIALS (systemic / management)
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    id: "mfg-supplier-collaboration-strategy",
+    name: "Weak supplier collaboration strategy",
+    tier: 3,
+    category: "Materials",
+    triggers: ["inventory_shortage"],
+    supportSignals: ["scrap"],
+    relatedKPIs: ["supplier_otd", "incoming_quality"],
+    description: "Supplier relationships are transactional rather than collaborative, limiting joint improvement."
+  },
+
+  {
+    id: "mfg-supply-chain-resilience",
+    name: "Lack of long-term supply chain resilience planning",
+    tier: 3,
+    category: "Materials",
+    triggers: ["inventory_shortage"],
+    supportSignals: ["downtime"],
+    relatedKPIs: ["supplier_otd", "material_availability"],
+    description: "Supply chain is vulnerable to disruption due to single-source dependencies and no contingency plans."
+  },
+
+  {
+    id: "mfg-inventory-strategy-misaligned",
+    name: "Inventory strategy misaligned with production complexity",
+    tier: 3,
+    category: "Materials",
+    triggers: ["inventory_buildup", "inventory_shortage"],
+    supportSignals: [],
+    relatedKPIs: ["inventory_turnover", "inventory_accuracy"],
+    description: "Inventory policies do not reflect product mix complexity, lead time variability, or demand patterns."
+  },
+
+  {
+    id: "mfg-supplier-development-absent",
+    name: "No supplier development program for critical materials",
+    tier: 3,
+    category: "Materials",
+    triggers: ["scrap"],
+    supportSignals: ["inventory_shortage"],
+    relatedKPIs: ["incoming_quality", "supplier_otd"],
+    description: "No structured effort to improve supplier capabilities for quality and delivery performance."
+  },
+
+  {
+    id: "mfg-material-standardization-weak",
+    name: "Weak material standardization increasing procurement complexity",
+    tier: 3,
+    category: "Materials",
+    triggers: ["inventory_buildup"],
+    supportSignals: [],
+    relatedKPIs: ["inventory_turnover", "cost_per_unit"],
+    description: "Excessive material variants inflate inventory and complicate procurement without adding value."
+  },
+
+  {
+    id: "mfg-demand-supply-integration",
+    name: "Poor demand-supply integration across planning horizons",
+    tier: 3,
+    category: "Materials",
+    triggers: ["inventory_buildup", "otd_decline"],
+    supportSignals: ["inventory_shortage"],
+    relatedKPIs: ["forecast_accuracy", "inventory_turnover", "otd"],
+    description: "Sales forecasts, production plans, and procurement are not synchronized across time horizons."
+  },
+
+  {
+    id: "mfg-quality-system-maturity",
+    name: "Low quality management system maturity",
+    tier: 3,
+    category: "Materials",
+    triggers: ["rework", "scrap"],
+    supportSignals: [],
+    diagnosticChains: ["quality_breakdown_chain"],
+    relatedKPIs: ["first_pass_yield", "scrap_rate", "rework_rate"],
+    description: "Quality management lacks systematic processes for prevention, detection, and continuous improvement."
+  },
+
+  {
+    id: "mfg-traceability-gap",
+    name: "Lack of material traceability across production processes",
+    tier: 3,
+    category: "Materials",
+    triggers: ["rework"],
+    supportSignals: ["scrap"],
+    relatedKPIs: ["first_pass_yield", "scrap_rate"],
+    description: "Materials cannot be traced from receipt through production, hindering defect investigation."
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // TIER 3 — MONEY (systemic / management)
   // ═══════════════════════════════════════════════════════════════
 
   {
@@ -937,6 +1271,127 @@ export const manufacturingRootCauses: ManufacturingRootCause[] = [
     supportSignals: ["overtime_spike"],
     relatedKPIs: ["gross_margin", "cost_per_unit"],
     description: "Inefficient cost allocation reduces profitability."
+  },
+
+  {
+    id: "mfg-financial-visibility",
+    name: "Lack of financial visibility into operational efficiency",
+    tier: 3,
+    category: "Money",
+    triggers: [],
+    supportSignals: ["overtime_spike", "scrap"],
+    relatedKPIs: ["cost_per_unit", "gross_margin", "roi"],
+    description: "Financial reporting does not connect operational performance to cost outcomes at process level."
+  },
+
+  {
+    id: "mfg-investment-prioritization",
+    name: "Poor investment prioritization for operational improvements",
+    tier: 3,
+    category: "Money",
+    triggers: [],
+    supportSignals: ["downtime", "maintenance_backlog"],
+    relatedKPIs: ["roi", "oee", "cost_per_unit"],
+    description: "Capital and operational improvement budgets are allocated without data-driven prioritization."
+  },
+
+  {
+    id: "mfg-total-cost-ownership-absent",
+    name: "No total cost of ownership analysis for equipment decisions",
+    tier: 3,
+    category: "Money",
+    triggers: ["maintenance_backlog"],
+    supportSignals: ["downtime"],
+    relatedKPIs: ["roi", "maintenance_cost_ratio", "oee"],
+    description: "Equipment purchase decisions consider acquisition cost only, ignoring lifetime operating costs."
+  },
+
+  {
+    id: "mfg-profitability-analysis-gap",
+    name: "Lack of product-level profitability analysis",
+    tier: 3,
+    category: "Money",
+    triggers: [],
+    supportSignals: ["overtime_spike", "scrap"],
+    relatedKPIs: ["gross_margin", "cost_per_unit"],
+    description: "Unable to identify which products or orders are profitable versus loss-making."
+  },
+
+  {
+    id: "mfg-working-capital-management",
+    name: "Poor working capital management in manufacturing operations",
+    tier: 3,
+    category: "Money",
+    triggers: ["inventory_buildup"],
+    supportSignals: [],
+    relatedKPIs: ["inventory_turnover", "cash_conversion_cycle"],
+    description: "Excess inventory and slow receivables tie up capital needed for operational improvements."
+  },
+
+  {
+    id: "mfg-automation-strategy-absent",
+    name: "No automation strategy for repetitive production tasks",
+    tier: 3,
+    category: "Machinery",
+    triggers: [],
+    supportSignals: ["overtime_spike"],
+    relatedKPIs: ["throughput", "cost_per_unit", "labor_utilization"],
+    description: "Manual processes persist where automation would improve consistency and reduce labor dependency."
+  },
+
+  {
+    id: "mfg-change-management-weak",
+    name: "Weak change management for production process updates",
+    tier: 3,
+    category: "Manpower",
+    triggers: ["rework"],
+    supportSignals: ["scrap"],
+    relatedKPIs: ["first_pass_yield", "rework_rate"],
+    description: "Process changes are implemented without structured communication, training, or validation."
+  },
+
+  {
+    id: "mfg-supplier-risk-management",
+    name: "Lack of supplier risk management framework",
+    tier: 3,
+    category: "Materials",
+    triggers: ["inventory_shortage"],
+    supportSignals: [],
+    relatedKPIs: ["supplier_otd", "material_availability"],
+    description: "No formal assessment of supplier financial health, capacity constraints, or geopolitical risk."
+  },
+
+  {
+    id: "mfg-waste-reduction-strategy",
+    name: "No systematic waste reduction strategy across operations",
+    tier: 3,
+    category: "Money",
+    triggers: ["scrap"],
+    supportSignals: ["rework", "overtime_spike"],
+    relatedKPIs: ["scrap_rate", "cost_per_unit", "gross_margin"],
+    description: "Waste is accepted as normal rather than systematically targeted for reduction."
+  },
+
+  {
+    id: "mfg-benchmarking-absent",
+    name: "Lack of operational benchmarking against industry standards",
+    tier: 3,
+    category: "Machinery",
+    triggers: [],
+    supportSignals: [],
+    relatedKPIs: ["oee", "first_pass_yield", "cost_per_unit"],
+    description: "Performance is measured in isolation without comparison to industry or competitor benchmarks."
+  },
+
+  {
+    id: "mfg-shift-pattern-strategy",
+    name: "Shift pattern strategy misaligned with production demand",
+    tier: 3,
+    category: "Manpower",
+    triggers: ["overtime_spike"],
+    supportSignals: ["downtime"],
+    relatedKPIs: ["overtime_ratio", "utilization_rate", "throughput"],
+    description: "Shift structures do not flex with demand cycles, causing chronic over- or understaffing."
   }
 
 ];

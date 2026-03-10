@@ -8,7 +8,7 @@ The platform has two primary user types:
 - **Admin/Consultant**: Manages knowledge base, client organizations, uploads documents, runs AI diagnostics, and generates PDF reports
 - **Clients (Paying Companies)**: View their issues, diagnoses, and solutions through a dedicated read-only portal
 
-Key capabilities include AI-powered root cause analysis governed by curated knowledge libraries (not free-form AI generation), support for 13+ industries with 146+ industry-specific problems, document parsing (Excel, Word, PDF, PowerPoint), PDF report generation with professional branding, and a management dashboard view.
+Key capabilities include AI-powered root cause analysis governed by curated knowledge libraries (not free-form AI generation), 119 manufacturing root causes across 3 tiers (operational/process/management), support for 13+ industries with 146+ industry-specific problems, document parsing (Excel, Word, PDF, PowerPoint), PDF report generation with professional branding, and a management dashboard view.
 
 The main application lives in the `RCI-Root-Cause-Identifier/` directory. The root-level `package.json` contains shared utility dependencies, while `.replit_integration_files/` contains Replit-provided integration utilities (chat, audio, image, batch processing).
 
