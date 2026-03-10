@@ -29,9 +29,9 @@ export function scoreRootCauses(detectedSignals: { signalId: string }[]) {
 
     }
 
-    for (const support of cause.support) {
+    for (const signal of cause.supportSignals) {
 
-      if (signalIds.includes(support)) {
+      if (signalIds.includes(signal)) {
         supportMatches++;
       }
 

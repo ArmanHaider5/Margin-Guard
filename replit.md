@@ -41,7 +41,7 @@ Preferred communication style: Simple, everyday language.
   - `server/core/` — AI analyzer, bulk analyzer (main analysis pipeline)
   - `server/diagnostics/` — Expert root cause engine, scorer, diagnostic matrix, diagnostic export
   - `server/signals/` — Signal normalizer, aggregator, graph, map engine, category dominance, diagnostic chains, signal normalization library
-  - `server/industries/` — Industry profiles, industry detection, manufacturing root causes/KPIs/vocabulary
+  - `server/industries/` — Industry profiles, industry detection, manufacturing root causes/KPIs/vocabulary. `manufacturing-root-causes.ts` exports typed `ManufacturingRootCause[]` with consulting-grade schema: `id`, `name`, `tier` (1=operational, 2=process, 3=management), `category` (4M), `description`, `triggers`, `supportSignals`, optional `diagnosticChains` and `relatedKPIs`
   - `server/documents/` — Document parser
   - `server/reports/` — Report generator, export PDF generator
   - `server/system/` — Routes, database, storage, authentication
