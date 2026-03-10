@@ -56,7 +56,7 @@ import {
   getManufacturingRootCausesV2,
   type ManufacturingV2Entry,
 } from "@shared/root-cause-library";
-import { manufacturingRootCauseLibrary } from "../industries/manufacturing-root-cause-library";
+import { manufacturingRootCauseLibrary } from "../industry-models/manufacturing/manufacturing-root-causes";
 import {
   recommendationArchetypes,
   type RecommendationArchetype,

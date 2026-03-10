@@ -4,7 +4,7 @@ import { allIndustryProblems, industryLabels, getIndustryProblemById, type Indus
 import { runExpertDiagnosis } from "../diagnostics/root-cause-expert-engine";
 import { normalizeSignals } from "../signals/signal-normalizer";
 import { generateConsultingDiagnosticReport, type ConsultingDiagnosticReport } from "../diagnostics/consulting-diagnostic-engine";
-import { manufacturingRootCauseLibrary } from "../industries/manufacturing-root-cause-library";
+import { manufacturingRootCauseLibrary } from "../industry-models/manufacturing/manufacturing-root-causes";
 import { manufacturingDiagnosticChains } from "../industries/manufacturing-diagnostic-chains";
 
 interface AnalysisInput {
