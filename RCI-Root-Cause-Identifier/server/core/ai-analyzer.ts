@@ -3,6 +3,9 @@ import { problemLibrary, getProblemById, getCategoryLabel } from "@shared/proble
 import { allIndustryProblems, industryLabels, getIndustryProblemById, type Industry } from "@shared/industry-problems";
 import { runExpertDiagnosis } from "../diagnostics/root-cause-expert-engine";
 import { normalizeSignals } from "../signals/signal-normalizer";
+import { generateConsultingDiagnosticReport, type ConsultingDiagnosticReport } from "../diagnostics/consulting-diagnostic-engine";
+import { manufacturingRootCauses } from "../industries/manufacturing-root-causes";
+import { manufacturingDiagnosticChains } from "../industries/manufacturing-diagnostic-chains";
 
 interface AnalysisInput {
   symptom: string;
@@ -22,7 +25,13 @@ const categoryToIndicatorMap: Record<string, ManagementIndicator> = {
   "Machinery": "Machine Indicator",
 };
 
-export async function analyzeSymptom(input: AnalysisInput): Promise<{ rootCauses: RootCause[]; primaryIndicator: ManagementIndicator }> {
+export interface AnalysisResult {
+  rootCauses: RootCause[];
+  primaryIndicator: ManagementIndicator;
+  consultingReport?: ConsultingDiagnosticReport | null;
+}
+
+export async function analyzeSymptom(input: AnalysisInput): Promise<AnalysisResult> {
   console.log("📄 PIPELINE: DOCUMENT PARSING STARTED");
   const inputText = buildAnalysisText(input);
 
@@ -63,9 +72,27 @@ export async function analyzeSymptom(input: AnalysisInput): Promise<{ rootCauses
         ]
       }));
 
+      const mfgRootCauseLookup = new Map(manufacturingRootCauses.map(rc => [rc.id, rc]));
+      const matchedMfgRootCauses = expertResults
+        .map(er => mfgRootCauseLookup.get(er.id))
+        .filter((rc): rc is NonNullable<typeof rc> => rc != null);
+
+      const allKpis = matchedMfgRootCauses
+        .flatMap(rc => rc.relatedKPIs || [])
+        .filter((kpi, i, arr) => arr.indexOf(kpi) === i);
+
+      console.log("📋 PIPELINE: CONSULTING DIAGNOSTIC ENGINE STARTED");
+      const consultingReport = generateConsultingDiagnosticReport({
+        rootCauses: matchedMfgRootCauses,
+        signals: normalizedSignals,
+        kpis: allKpis,
+        chains: manufacturingDiagnosticChains
+      });
+
       return {
         rootCauses,
-        primaryIndicator: rootCauses[0].indicator
+        primaryIndicator: rootCauses[0].indicator,
+        consultingReport
       };
     }
   }
@@ -101,7 +128,7 @@ function buildAnalysisText(input: AnalysisInput): string {
   return parts.join("\n");
 }
 
-function getFallbackAnalysis(input: AnalysisInput): { rootCauses: RootCause[]; primaryIndicator: ManagementIndicator } {
+function getFallbackAnalysis(input: AnalysisInput): AnalysisResult {
   if (input.selectedProblemId) {
     const problem = getProblemById(input.selectedProblemId);
     if (problem) {
