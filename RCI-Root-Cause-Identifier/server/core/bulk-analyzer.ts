@@ -80,6 +80,7 @@ import {
 import { normalizeSignals } from "../signals/signal-normalizer";
 import { buildSignalGraph } from "../signals/signal-graph";
 import { runExpertDiagnosis } from "../diagnostics/root-cause-expert-engine";
+import { buildRootCauseTree, type RootCauseTree } from "../diagnostics/root-cause-tree-engine";
 import { aggregateSignals } from "../signals/signal-aggregator";
 import { detectCategoryDominance } from "../signals/category-dominance";
 import { industryProfiles } from "../industries/industry-profiles";
@@ -1359,6 +1360,7 @@ interface AnalysisResult {
     totalEvidenceSignals: number;
     activeCategories: number;
   };
+  rootCauseTree?: RootCauseTree;
 }
 
 /**
@@ -3204,6 +3206,9 @@ function generateManufacturingV2Result(
 
     }));
 
+  const rootCauseTree = buildRootCauseTree(finalFindings);
+  console.log("🌳 ROOT CAUSE TREE:", rootCauseTree);
+
   return {
     findings: finalFindings,
     summary: `${summaryPrefix} ${findingsPhrase}`,
@@ -3220,6 +3225,7 @@ function generateManufacturingV2Result(
       totalEvidenceSignals,
       activeCategories
     },
+    rootCauseTree,
   };
 }
 
