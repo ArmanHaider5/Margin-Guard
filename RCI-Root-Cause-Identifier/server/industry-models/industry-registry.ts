@@ -7,6 +7,10 @@ import { healthcareRootCauses } from "./healthcare/healthcare-root-causes";
 import { healthcareSignals } from "./healthcare/healthcare-signals";
 import { healthcareBenchmarks } from "./healthcare/healthcare-benchmarks";
 import { healthcareMappings } from "./healthcare/healthcare-mappings";
+import { logisticsRootCauses } from "./logistics/logistics-root-causes";
+import { logisticsSignals } from "./logistics/logistics-signals";
+import { logisticsBenchmarks } from "./logistics/logistics-benchmarks";
+import { logisticsMappings } from "./logistics/logistics-mappings";
 
 export const industryRegistry = {
 
@@ -23,6 +27,13 @@ export const industryRegistry = {
     signals: healthcareSignals,
     benchmarks: healthcareBenchmarks,
     mappings: healthcareMappings
+  },
+
+  logistics: {
+    rootCauses: logisticsRootCauses,
+    signals: logisticsSignals,
+    benchmarks: logisticsBenchmarks,
+    mappings: logisticsMappings
   }
 
 };
