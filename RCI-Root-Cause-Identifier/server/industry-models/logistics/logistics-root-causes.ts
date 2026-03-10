@@ -1,0 +1,103 @@
+export const logisticsRootCauses = [
+
+  {
+    id: "LG001",
+    category: "Transportation",
+    rootCause: "Inefficient route planning",
+    description: "Poor route optimization causing longer delivery times and increased fuel costs",
+    signals: ["route_delay", "delivery_delay"],
+    kpis: ["delivery_time", "transport_cost"],
+    impactWeight: 0.85
+  },
+
+  {
+    id: "LG002",
+    category: "Transportation",
+    rootCause: "Fleet downtime",
+    description: "Vehicle breakdowns reducing delivery capacity",
+    signals: ["vehicle_breakdown", "fleet_unavailability"],
+    kpis: ["fleet_utilization", "delivery_delay"],
+    impactWeight: 0.9
+  },
+
+  {
+    id: "LG003",
+    category: "Warehouse",
+    rootCause: "Warehouse picking inefficiency",
+    description: "Slow order picking processes reducing throughput",
+    signals: ["picking_delay", "order_backlog"],
+    kpis: ["order_fulfillment_time", "warehouse_throughput"],
+    impactWeight: 0.8
+  },
+
+  {
+    id: "LG004",
+    category: "Warehouse",
+    rootCause: "Inventory location errors",
+    description: "Incorrect inventory location records causing delays in order fulfillment",
+    signals: ["inventory_mismatch", "picking_delay"],
+    kpis: ["inventory_accuracy", "order_fulfillment_time"],
+    impactWeight: 0.75
+  },
+
+  {
+    id: "LG005",
+    category: "Inventory",
+    rootCause: "Poor inventory visibility",
+    description: "Lack of real-time inventory tracking leading to stockouts or overstocking",
+    signals: ["inventory_shortage", "inventory_overstock"],
+    kpis: ["inventory_turnover", "order_fill_rate"],
+    impactWeight: 0.85
+  },
+
+  {
+    id: "LG006",
+    category: "Planning",
+    rootCause: "Demand forecasting inaccuracies",
+    description: "Incorrect demand projections causing supply imbalances",
+    signals: ["demand_spike", "inventory_shortage"],
+    kpis: ["forecast_accuracy", "inventory_turnover"],
+    impactWeight: 0.78
+  },
+
+  {
+    id: "LG007",
+    category: "Supplier",
+    rootCause: "Supplier delivery delays",
+    description: "Late supplier deliveries affecting downstream logistics operations",
+    signals: ["supplier_delay", "inventory_shortage"],
+    kpis: ["supplier_on_time_delivery"],
+    impactWeight: 0.82
+  },
+
+  {
+    id: "LG008",
+    category: "Operations",
+    rootCause: "Order processing bottlenecks",
+    description: "Administrative or system delays slowing order processing",
+    signals: ["order_processing_delay", "order_backlog"],
+    kpis: ["order_cycle_time"],
+    impactWeight: 0.77
+  },
+
+  {
+    id: "LG009",
+    category: "Capacity",
+    rootCause: "Warehouse capacity constraints",
+    description: "Limited storage capacity causing operational congestion",
+    signals: ["warehouse_overcapacity", "inventory_overstock"],
+    kpis: ["warehouse_utilization"],
+    impactWeight: 0.8
+  },
+
+  {
+    id: "LG010",
+    category: "Labor",
+    rootCause: "Warehouse labor shortages",
+    description: "Insufficient warehouse staffing slowing operations",
+    signals: ["labor_shortage", "order_backlog"],
+    kpis: ["warehouse_throughput"],
+    impactWeight: 0.84
+  }
+
+];
