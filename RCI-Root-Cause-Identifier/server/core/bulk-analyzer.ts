@@ -81,6 +81,7 @@ import { normalizeSignals } from "../signals/signal-normalizer";
 import { buildSignalGraph } from "../signals/signal-graph";
 import { runExpertDiagnosis } from "../diagnostics/root-cause-expert-engine";
 import { buildRootCauseTree, type RootCauseTree } from "../diagnostics/root-cause-tree-engine";
+import { buildCausalChains, type CausalChain } from "../diagnostics/causal-chain-engine";
 import { aggregateSignals } from "../signals/signal-aggregator";
 import { detectCategoryDominance } from "../signals/category-dominance";
 import { industryProfiles } from "../industries/industry-profiles";
@@ -1361,6 +1362,7 @@ interface AnalysisResult {
     activeCategories: number;
   };
   rootCauseTree?: RootCauseTree;
+  causalChains?: CausalChain[];
 }
 
 /**
@@ -3209,6 +3211,9 @@ function generateManufacturingV2Result(
   const rootCauseTree = buildRootCauseTree(finalFindings);
   console.log("🌳 ROOT CAUSE TREE:", rootCauseTree);
 
+  const causalChains = buildCausalChains(concreteSignals, finalFindings);
+  console.log("🔗 CAUSAL CHAINS:", causalChains);
+
   return {
     findings: finalFindings,
     summary: `${summaryPrefix} ${findingsPhrase}`,
@@ -3226,6 +3231,7 @@ function generateManufacturingV2Result(
       activeCategories
     },
     rootCauseTree,
+    causalChains,
   };
 }
 
