@@ -4,7 +4,7 @@ import { allIndustryProblems, industryLabels, getIndustryProblemById, type Indus
 import { runExpertDiagnosis } from "../diagnostics/root-cause-expert-engine";
 import { normalizeSignals } from "../signals/signal-normalizer";
 import { generateConsultingDiagnosticReport, type ConsultingDiagnosticReport } from "../diagnostics/consulting-diagnostic-engine";
-import { manufacturingRootCauses } from "../industries/manufacturing-root-causes";
+import { manufacturingRootCauseLibrary } from "../industries/manufacturing-root-cause-library";
 import { manufacturingDiagnosticChains } from "../industries/manufacturing-diagnostic-chains";
 
 interface AnalysisInput {
@@ -72,14 +72,22 @@ export async function analyzeSymptom(input: AnalysisInput): Promise<AnalysisResu
         ]
       }));
 
-      const mfgRootCauseLookup = new Map(manufacturingRootCauses.map(rc => [rc.id, rc]));
-      const matchedMfgRootCauses = expertResults
+      const mfgRootCauseLookup = new Map(manufacturingRootCauseLibrary.map(rc => [rc.id, rc]));
+      const matchedEntries = expertResults
         .map(er => mfgRootCauseLookup.get(er.id))
         .filter((rc): rc is NonNullable<typeof rc> => rc != null);
 
-      const allKpis = matchedMfgRootCauses
-        .flatMap(rc => rc.relatedKPIs || [])
-        .filter((kpi, i, arr) => arr.indexOf(kpi) === i);
+      const matchedMfgRootCauses = matchedEntries.map(entry => ({
+        id: entry.id,
+        name: entry.name,
+        tier: (entry.tier === "primary" ? 1 : 2) as 1 | 2 | 3,
+        category: entry.category,
+        description: entry.description,
+        triggers: entry.triggers,
+        supportSignals: entry.supportingSignals,
+      }));
+
+      const allKpis: string[] = [];
 
       console.log("📋 PIPELINE: CONSULTING DIAGNOSTIC ENGINE STARTED");
       const consultingReport = generateConsultingDiagnosticReport({

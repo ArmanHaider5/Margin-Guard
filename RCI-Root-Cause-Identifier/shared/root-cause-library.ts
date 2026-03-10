@@ -1519,7 +1519,7 @@ function normalizeV2Category(category: string): FourMCategory {
  * V2 entries use `evidenceSignals` instead of `symptoms` for matching.
  */
 function calculateConfidenceV2(
-  cause: (typeof manufacturingRootCausesV2)[0],
+  cause: ManufacturingV2Entry,
   context: SelectionContext
 ): number {
   // V2 entries don't have baseConfidence, use 50 as default
@@ -1620,7 +1620,7 @@ function calculateConfidenceV2(
 /**
  * Manufacturing V2 Root Cause Selection
  * 
- * EXCLUSIVE selection from manufacturingRootCausesV2 for Manufacturing industry.
+ * EXCLUSIVE selection from manufacturing V2 root causes for Manufacturing industry.
  * - NO fallback to generic root cause library
  * - NO cross-industry causes
  * - Uses V2 field structure (evidenceSignals instead of symptoms)
@@ -1636,8 +1636,8 @@ function selectFromManufacturingV2(
     Machinery: [],
   };
 
-  // Score and sort all V2 causes
-  const scoredCauses = manufacturingRootCausesV2
+  const v2Data = getManufacturingRootCausesV2();
+  const scoredCauses = v2Data
     .map((cause) => ({
       ...cause,
       normalizedCategory: normalizeV2Category(cause.category),
@@ -1731,8 +1731,7 @@ export function selectRootCausesFromLibrary(
   context: SelectionContext,
   maxPerCategory: number = 3,
 ): RootCauseSelection {
-  // MANUFACTURING V2: Use manufacturingRootCausesV2 exclusively for Manufacturing industry
-  // No fallback to generic library, no cross-industry causes
+  // MANUFACTURING V2: Use manufacturing root cause library exclusively for Manufacturing industry
   const normalizedIndustries = normalizeIndustry(context.industry);
   const isManufacturing = normalizedIndustries.some(
     (ind) => ind.toLowerCase() === "manufacturing"
@@ -1976,288 +1975,36 @@ export function getLikelyRootCauses(
 }
 
 // ======================================================
-// RCI MANUFACTURING ROOT CAUSE LIBRARY v2 (PERNAS-GRADE)
+// MANUFACTURING V2 ENTRY TYPE & REGISTRATION
+// Data is registered at startup by bulk-analyzer.ts from
+// the authoritative manufacturingRootCauseLibrary (104 entries).
 // ======================================================
 
-export const manufacturingRootCausesV2 = [
-  {
-    id: "mfg-m-01",
-    industry: "Manufacturing",
-    category: "Money",
-    primaryContext: "Money",
-    title:
-      "Cash flow pressure caused by production costs incurred before billing milestones",
-    signalTriggers: [
-      "cash flow",
-      "cash flow tight",
-      "short-term funding",
-      "liquidity",
-      "working capital"
-    ],
-    evidenceSignals: [
-      "production costs incurred before invoicing",
-      "billing milestones delayed",
-      "negative operating cash flow during active production",
-    ],
-    whyItMatters:
-      "Cash is consumed well before revenue is realised, increasing reliance on short-term funding.",
-    interventionDirection: "Alignment of cost incurrence and billing triggers.",
-    interventionType: "consultant-required",
-  },
-  {
-    id: "mfg-m-02",
-    industry: "Manufacturing",
-    category: "Money",
-    primaryContext: "Money",
-    title: "Margin erosion from untracked material cost increases",
-    signalTriggers: [
-      "margin",
-      "cost increase",
-      "material cost",
-      "shrinking margins",
-      "raw material cost"
-    ],
-    evidenceSignals: [
-      "supplier price increases not reflected in costing",
-      "material cost variance against estimates",
-      "actual costs exceeding bill of materials assumptions",
-    ],
-    whyItMatters:
-      "Margins deteriorate as input costs rise without pricing adjustment.",
-    interventionDirection:
-      "Visibility of material cost movements against pricing assumptions.",
-    interventionType: "consultant-required",
-  },
-  {
-    id: "mfg-p-01",
-    industry: "Manufacturing",
-    category: "Manpower",
-    primaryContext: "People",
-    title:
-      "Supervisory oversight gaps allowing quality defects to pass downstream",
-    signalTriggers: [
-      "quality escape",
-      "reject rate",
-      "rework",
-      "defect",
-      "inspection failure"
-    ],
-    evidenceSignals: [
-      "late-stage defect detection",
-      "rework after final inspection",
-      "lack of documented escalation actions",
-    ],
-    whyItMatters:
-      "Defects propagate across stages, increasing rework and scrap.",
-    interventionDirection:
-      "Clear supervisory accountability for quality control.",
-    interventionType: "advisory",
-  },
-  {
-    id: "mfg-p-02",
-    industry: "Manufacturing",
-    category: "Manpower",
-    primaryContext: "People",
-    title: "Operational dependency on a small number of experienced operators",
-    signalTriggers: [
-      "staff leaving",
-      "resignation",
-      "attrition",
-      "skill shortage",
-      "experienced operator"
-    ],
-    evidenceSignals: [
-      "overtime concentrated on specific individuals",
-      "production delays during key staff absence",
-      "limited cross-training coverage",
-    ],
-    whyItMatters:
-      "Production continuity is vulnerable to individual availability.",
-    interventionDirection: "Reduction of single-point human dependency.",
-    interventionType: "advisory",
-  },
-  {
-    id: "mfg-mat-01",
-    industry: "Manufacturing",
-    category: "Material",
-    primaryContext: "Supply",
-    title:
-      "Stockouts caused by fixed inventory thresholds despite demand variability",
-    signalTriggers: [
-      "stockout",
-      "inventory shortage",
-      "material unavailable",
-      "urgent purchase",
-      "supply disruption"
-    ],
-    evidenceSignals: [
-      "urgent material purchases",
-      "repeated stockout incidents",
-      "static inventory min-max settings",
-    ],
-    whyItMatters: "Production halts despite available demand and capacity.",
-    interventionDirection:
-      "Inventory parameters responsive to demand fluctuations.",
-    interventionType: "self-fixable",
-  },
-  {
-    id: "mfg-mat-02",
-    industry: "Manufacturing",
-    category: "Material",
-    primaryContext: "Supply",
-    title:
-      "Excess inventory accumulation due to forecast and production mismatch",
-    signalTriggers: [
-      "excess inventory",
-      "slow moving stock",
-      "ageing inventory",
-      "forecast variance",
-      "overstock"
-    ],
-    evidenceSignals: [
-      "slow-moving or ageing inventory",
-      "forecast variance against actual output",
-      "materials held beyond normal turnover",
-    ],
-    whyItMatters:
-      "Capital is tied up in materials that do not convert into revenue.",
-    interventionDirection: "Alignment of forecasts with production planning.",
-    interventionType: "advisory",
-  },
-  {
-    id: "mfg-e-01",
-    industry: "Manufacturing",
-    category: "Machinery",
-    primaryContext: "Systems",
-    title:
-      "Unplanned downtime from maintenance performed only after breakdowns",
-    signalTriggers: [
-      "downtime",
-      "pm overdue",
-      "maintenance",
-      "breakdown",
-      "machine failure"
-    ],
-    evidenceSignals: [
-      "frequent emergency repairs",
-      "absence of preventive maintenance records",
-      "downtime during peak production periods",
-    ],
-    whyItMatters: "Equipment failures interrupt output at critical periods.",
-    interventionDirection: "Shift from reactive to preventive maintenance.",
-    interventionType: "consultant-required",
-  },
-  {
-    id: "mfg-e-02",
-    industry: "Manufacturing",
-    category: "Machinery",
-    primaryContext: "Systems",
-    title: "Production bottlenecks limiting overall output capacity",
-    signalTriggers: [
-      "capacity",
-      "bottleneck",
-      "throughput",
-      "overtime",
-      "output constraint"
-    ],
-    evidenceSignals: [
-      "queue build-up at specific workstations",
-      "uneven utilisation across equipment",
-      "recurring delays at the same process step",
-    ],
-    whyItMatters: "One constrained step caps total factory throughput.",
-    interventionDirection: "Constraint-focused capacity management.",
-    interventionType: "consultant-required",
-  },
-  {
-    id: "mfg-s-01",
-    industry: "Manufacturing",
-    category: "Machinery",
-    primaryContext: "Process",
-    title:
-      "Delayed management response due to lack of real-time production visibility",
-    signalTriggers: [
-      "reporting delay",
-      "manual tracking",
-      "no real-time data",
-      "end of day report",
-      "late visibility"
-    ],
-    evidenceSignals: [
-      "end-of-day production reporting only",
-      "manual tracking of output",
-      "issues identified after performance loss",
-    ],
-    whyItMatters:
-      "Management reacts after losses occur instead of during execution.",
-    interventionDirection: "Timely visibility into production performance.",
-    interventionType: "advisory",
-  },
-  {
-    id: "mfg-s-02",
-    industry: "Manufacturing",
-    category: "Machinery",
-    primaryContext: "Process",
-    title: "Specification changes not fully reflected on the production floor",
-    signalTriggers: [
-      "engineering change",
-      "outdated drawing",
-      "spec mismatch",
-      "revision control",
-      "design change scrap"
-    ],
-    evidenceSignals: [
-      "scrap increase after design changes",
-      "outdated drawings in circulation",
-      "engineering change notices not acknowledged",
-    ],
-    whyItMatters: "Work is executed against outdated requirements.",
-    interventionDirection: "Controlled propagation of specification changes.",
-    interventionType: "advisory",
-  },
-  {
-    id: "mfg-s-03",
-    industry: "Manufacturing",
-    category: "Machinery",
-    primaryContext: "Process",
-    title: "Recurring defects without a structured resolution mechanism",
-    signalTriggers: [
-      "repeat defect",
-      "non-conformance",
-      "corrective action",
-      "recurring issue",
-      "ncr reopened"
-    ],
-    evidenceSignals: [
-      "repeat non-conformance reports",
-      "lack of permanent corrective actions",
-      "issues reopened multiple times",
-    ],
-    whyItMatters: "The same problems recur without structural resolution.",
-    interventionDirection: "Formal closure of recurring defect causes.",
-    interventionType: "consultant-required",
-  },
-  {
-    id: "mfg-s-04",
-    industry: "Manufacturing",
-    category: "Machinery",
-    primaryContext: "Process",
-    title: "Production planning misaligned with sales order volatility",
-    signalTriggers: [
-      "rescheduling",
-      "rush order",
-      "planning mismatch",
-      "idle capacity",
-      "order volatility"
-    ],
-    evidenceSignals: [
-      "frequent production rescheduling",
-      "rush orders disrupting plans",
-      "idle capacity alternating with overload",
-    ],
-    whyItMatters: "Capacity utilisation becomes inconsistent and inefficient.",
-    interventionDirection:
-      "Integration of sales volatility into production planning.",
-    interventionType: "consultant-required",
-  },
-];
+export interface ManufacturingV2Entry {
+  id: string;
+  industry: string;
+  category: string;
+  primaryContext: string;
+  title: string;
+  signalTriggers: string[];
+  evidenceSignals: string[];
+  symptomTags?: string[];
+  whyItMatters: string;
+  interventionDirection: string;
+  interventionType: string;
+  archetypeIds: string[];
+}
+
+let _manufacturingV2Data: ManufacturingV2Entry[] = [];
+
+export function registerManufacturingV2Data(entries: ManufacturingV2Entry[]): void {
+  _manufacturingV2Data = entries;
+  console.log(`📋 REGISTERED ${entries.length} manufacturing V2 root causes`);
+}
+
+export function getManufacturingRootCausesV2(): ManufacturingV2Entry[] {
+  if (_manufacturingV2Data.length === 0) {
+    console.warn("⚠️ getManufacturingRootCausesV2() called before data registered — returning empty array");
+  }
+  return _manufacturingV2Data;
+}

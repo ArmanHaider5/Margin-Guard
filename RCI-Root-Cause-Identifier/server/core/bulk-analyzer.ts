@@ -51,9 +51,12 @@ import {
 // KNOWLEDGE LIBRARY IMPORTS - These are the ONLY sources for root causes and recommendations
 import {
   rootCauseLibrary,
-  manufacturingRootCausesV2,
   type RootCauseEntry,
+  registerManufacturingV2Data,
+  getManufacturingRootCausesV2,
+  type ManufacturingV2Entry,
 } from "@shared/root-cause-library";
+import { manufacturingRootCauseLibrary } from "../industries/manufacturing-root-cause-library";
 import {
   recommendationArchetypes,
   type RecommendationArchetype,
@@ -86,6 +89,30 @@ import { detectIndustryFromDocuments } from "../industries/industryDetection";
 import { detectDiagnosticChains } from "../signals/diagnosticChains";
 import XLSX from "xlsx";
 import fs from "fs";
+
+const categoryToPrimaryContext: Record<string, string> = {
+  Money: "Money",
+  Manpower: "People",
+  Machinery: "Systems",
+  Materials: "Supply",
+};
+
+registerManufacturingV2Data(
+  manufacturingRootCauseLibrary.map(entry => ({
+    id: entry.id,
+    industry: "Manufacturing",
+    category: entry.category,
+    primaryContext: categoryToPrimaryContext[entry.category] || entry.category,
+    title: entry.name,
+    signalTriggers: entry.triggers.map(t => t.replace(/_/g, " ")),
+    evidenceSignals: entry.supportingSignals.map(s => s.replace(/_/g, " ")),
+    symptomTags: entry.triggers.map(t => t.replace(/_/g, " ").toLowerCase()),
+    whyItMatters: entry.description,
+    interventionDirection: `Address ${entry.name.toLowerCase()} through targeted corrective actions.`,
+    interventionType: "consultant-required",
+    archetypeIds: [],
+  }))
+);
 
 /**
  * ============================================================================
@@ -2300,7 +2327,7 @@ Return JSON:
  * MANUFACTURING V2 RESULT GENERATOR
  * ============================================================================
  *
- * Generates analysis results using EXCLUSIVELY manufacturingRootCausesV2.
+ * Generates analysis results using EXCLUSIVELY manufacturingRootCauseLibrary.
  * - No fallback to generic root cause library
  * - No cross-industry causes
  * - Uses V2 field structure (evidenceSignals, whyItMatters, interventionDirection)
@@ -2319,11 +2346,12 @@ function generateManufacturingV2Result(
     documents,
   } = input;
 
+  const manufacturingV2Causes = getManufacturingRootCausesV2();
   console.log(
-    "PIPELINE: Generating results from manufacturingRootCausesV2",
+    "PIPELINE: Generating results from manufacturingRootCauseLibrary",
   );
   console.log(
-    `PIPELINE: ${manufacturingRootCausesV2.length} root causes available`,
+    `PIPELINE: ${manufacturingV2Causes.length} root causes available`,
   );
 
   // Normalize category from V2 format
@@ -2745,7 +2773,7 @@ function generateManufacturingV2Result(
 
   const signalCategories = new Set(concreteSignals.map((s) => s.category));
 
-  const scoredCauses = manufacturingRootCausesV2.map((rc) => {
+  const scoredCauses = manufacturingV2Causes.map((rc) => {
     let score = 0;
     let isContextMatched = false;
     let problemMatches = 0;
@@ -3661,12 +3689,12 @@ function generateMockAnalysisResult(
   }
 
   // ============================================================================
-  // MANUFACTURING V2: Use manufacturingRootCausesV2 exclusively for Manufacturing
+  // MANUFACTURING: Use manufacturingRootCauseLibrary exclusively for Manufacturing
   // No fallback to generic library, no cross-industry causes
   // ============================================================================
   if (industry.toLowerCase() === "manufacturing") {
     console.log(
-      "PIPELINE: Using manufacturingRootCausesV2 exclusively",
+      "PIPELINE: Using manufacturingRootCauseLibrary exclusively",
     );
     return generateManufacturingV2Result(input, isBaseline);
   }
