@@ -11,6 +11,10 @@ import { logisticsRootCauses } from "./logistics/logistics-root-causes";
 import { logisticsSignals } from "./logistics/logistics-signals";
 import { logisticsBenchmarks } from "./logistics/logistics-benchmarks";
 import { logisticsMappings } from "./logistics/logistics-mappings";
+import { retailRootCauses } from "./retail/retail-root-causes";
+import { retailSignals } from "./retail/retail-signals";
+import { retailBenchmarks } from "./retail/retail-benchmarks";
+import { retailMappings } from "./retail/retail-mappings";
 
 export const industryRegistry = {
 
@@ -34,6 +38,13 @@ export const industryRegistry = {
     signals: logisticsSignals,
     benchmarks: logisticsBenchmarks,
     mappings: logisticsMappings
+  },
+
+  retail: {
+    rootCauses: retailRootCauses,
+    signals: retailSignals,
+    benchmarks: retailBenchmarks,
+    mappings: retailMappings
   }
 
 };
