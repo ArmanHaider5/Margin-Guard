@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,11 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Client } from "@shared/schema";
+import HealthScoreCards from "../../../../server/frontend/dashboard/health-score-cards";
+import RiskHeatmap from "../../../../server/frontend/dashboard/risk-heatmap";
+import RootCausePanel from "../../../../server/frontend/dashboard/root-cause-panel";
+import BenchmarkTable from "../../../../server/frontend/dashboard/benchmark-table";
+import RoadmapPanel from "../../../../server/frontend/dashboard/roadmap-panel";
 
 interface AdminStats {
   totalClients: number;
@@ -31,7 +37,8 @@ interface AdminStats {
 
 export default function AdminDashboard() {
   const { isConsultant, isClient } = useRole();
-  
+  const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
+
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
   });
@@ -102,6 +109,16 @@ export default function AdminDashboard() {
                   </p>
                 </CardContent>
               </Card>
+            )}
+
+            {diagnosticResult && (
+              <>
+                <HealthScoreCards result={diagnosticResult} />
+                <RiskHeatmap result={diagnosticResult} />
+                <RootCausePanel result={diagnosticResult} />
+                <BenchmarkTable result={diagnosticResult} />
+                <RoadmapPanel result={diagnosticResult} />
+              </>
             )}
 
           </div>
