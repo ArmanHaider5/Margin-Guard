@@ -7,6 +7,7 @@ import {
   type RecurrencePrediction,
   type FourMCategory
 } from "@shared/schema";
+import type { ConsultingDiagnosticReport } from "../diagnostics/consulting-diagnostic-engine";
 
 // PDF export must be robust regardless of content length.
 
@@ -35,6 +36,7 @@ const FOURM_COLORS: Record<FourMCategory, string> = {
 interface ReportData {
   analysis: ClientAnalysis;
   client: Client;
+  consultingReport?: ConsultingDiagnosticReport | null;
 }
 
 // PDF export must be robust regardless of content length.
@@ -196,6 +198,207 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
           .join(" | ");
         doc.text(distText || "No categorized findings");
         doc.moveDown(1);
+      }
+
+      // ========== CONSULTING DIAGNOSTIC SECTIONS ==========
+      if (data.consultingReport) {
+        const cr = data.consultingReport;
+
+        // --- Primary Root Cause ---
+        ensureSpace(80);
+        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
+        doc.text("Primary Root Cause", marginLeft);
+        doc.moveDown(0.3);
+        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
+        doc.moveDown(0.5);
+
+        const primaryColor = FOURM_COLORS[cr.primaryRootCause.category as FourMCategory] || EDX_COLORS.muted;
+        doc.rect(marginLeft, doc.y, 4, 55).fill(primaryColor);
+        const primaryX = marginLeft + 12;
+
+        doc.fontSize(12).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
+        doc.text(cr.primaryRootCause.name, primaryX, doc.y, { width: pageWidth - 20 });
+        doc.fontSize(9).fillColor(EDX_COLORS.text).font("Helvetica");
+        doc.text(cr.primaryRootCause.description, primaryX, doc.y + 2, { width: pageWidth - 20, lineGap: 2 });
+        doc.fontSize(8).fillColor(EDX_COLORS.muted);
+        doc.text(`Category: ${cr.primaryRootCause.category} | Tier ${cr.primaryRootCause.tier} | ID: ${cr.primaryRootCause.id}`, primaryX, doc.y + 2);
+        doc.moveDown(1.5);
+
+        // --- Secondary Root Causes ---
+        ensureSpace(60);
+        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
+        doc.text("Secondary Root Causes", marginLeft);
+        doc.moveDown(0.3);
+        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
+        doc.moveDown(0.5);
+
+        if (cr.secondaryRootCauses.length > 0) {
+          cr.secondaryRootCauses.forEach((rc, i) => {
+            ensureSpace(50);
+            const color = FOURM_COLORS[rc.category as FourMCategory] || EDX_COLORS.muted;
+            doc.rect(marginLeft, doc.y, 4, 40).fill(color);
+            const rcX = marginLeft + 12;
+
+            doc.fontSize(11).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
+            doc.text(`${i + 1}. ${rc.name}`, rcX, doc.y, { width: pageWidth - 20 });
+            doc.fontSize(9).fillColor(EDX_COLORS.text).font("Helvetica");
+            const descSlice = rc.description.slice(0, 160) + (rc.description.length > 160 ? "..." : "");
+            doc.text(descSlice, rcX, doc.y + 2, { width: pageWidth - 20, lineGap: 2 });
+            doc.fontSize(8).fillColor(EDX_COLORS.muted);
+            doc.text(`${rc.category} | Tier ${rc.tier}`, rcX, doc.y + 2);
+            doc.moveDown(1);
+          });
+        } else {
+          doc.fontSize(10).fillColor(EDX_COLORS.muted).font("Helvetica");
+          doc.text("No secondary root causes identified.", marginLeft);
+          doc.moveDown(1);
+        }
+
+        // --- Operational Symptoms ---
+        ensureSpace(60);
+        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
+        doc.text("Operational Symptoms", marginLeft);
+        doc.moveDown(0.3);
+        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
+        doc.moveDown(0.5);
+
+        if (cr.operationalSymptoms.length > 0) {
+          const uniqueSymptoms = cr.operationalSymptoms.filter((s, i, arr) => arr.indexOf(s) === i);
+          const symptomText = uniqueSymptoms
+            .map(s => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()))
+            .join(", ");
+
+          doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica");
+          doc.text(symptomText, marginLeft, doc.y, { width: pageWidth, lineGap: 3 });
+          doc.moveDown(0.3);
+          doc.fontSize(8).fillColor(EDX_COLORS.muted);
+          doc.text(`${uniqueSymptoms.length} operational signals detected from documents`, marginLeft);
+          doc.moveDown(1);
+        } else {
+          doc.fontSize(10).fillColor(EDX_COLORS.muted).font("Helvetica");
+          doc.text("No operational symptoms detected.", marginLeft);
+          doc.moveDown(1);
+        }
+
+        // --- Financial Impact ---
+        ensureSpace(80);
+        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
+        doc.text("Financial Impact", marginLeft);
+        doc.moveDown(0.3);
+        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
+        doc.moveDown(0.5);
+
+        const severityColorMap: Record<string, string> = {
+          critical: EDX_COLORS.danger,
+          high: EDX_COLORS.warning,
+          moderate: EDX_COLORS.accent,
+          low: EDX_COLORS.success,
+        };
+        const sevColor = severityColorMap[cr.financialImpact.estimatedSeverity] || EDX_COLORS.muted;
+
+        doc.fontSize(11).fillColor(EDX_COLORS.text).font("Helvetica-Bold");
+        doc.text("Estimated Severity: ", marginLeft, doc.y, { continued: true });
+        doc.fillColor(sevColor).font("Helvetica-Bold");
+        doc.text(cr.financialImpact.estimatedSeverity.toUpperCase());
+        doc.moveDown(0.5);
+
+        if (cr.financialImpact.affectedCategories.length > 0) {
+          doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica");
+          doc.text(`Affected Categories: ${cr.financialImpact.affectedCategories.join(", ")}`, marginLeft);
+          doc.moveDown(0.3);
+        }
+
+        if (cr.financialImpact.costDrivers.length > 0) {
+          doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica");
+          const driverLabels = cr.financialImpact.costDrivers
+            .map(d => d.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()));
+          doc.text(`Cost Drivers: ${driverLabels.join(", ")}`, marginLeft, doc.y, { width: pageWidth });
+          doc.moveDown(1);
+        }
+
+        // --- Evidence From Documents ---
+        ensureSpace(60);
+        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
+        doc.text("Evidence From Documents", marginLeft);
+        doc.moveDown(0.3);
+        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
+        doc.moveDown(0.5);
+
+        doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica");
+        doc.text(`The diagnostic engine detected ${cr.operationalSymptoms.length} signal matches from uploaded documents. `, marginLeft, doc.y, { width: pageWidth, continued: true });
+        doc.text(`These signals were scored against ${cr.secondaryRootCauses.length + 1} root causes across the 4M framework.`, { width: pageWidth });
+        doc.moveDown(0.5);
+
+        if (cr.confidence.chainMatchCount > 0) {
+          doc.fontSize(9).fillColor(EDX_COLORS.text).font("Helvetica");
+          doc.text(`${cr.confidence.chainMatchCount} diagnostic failure chain(s) matched, strengthening causal linkage.`, marginLeft);
+          doc.moveDown(0.3);
+        }
+
+        doc.fontSize(9).fillColor(EDX_COLORS.muted).font("Helvetica");
+        doc.text(`Signal-to-trigger coverage: ${cr.confidence.signalCoverage}%`, marginLeft);
+        doc.moveDown(1);
+
+        // --- Recommended Actions ---
+        ensureSpace(80);
+        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
+        doc.text("Recommended Actions", marginLeft);
+        doc.moveDown(0.3);
+        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
+        doc.moveDown(0.5);
+
+        if (cr.recommendations.length > 0) {
+          const priorityColors: Record<string, string> = {
+            immediate: EDX_COLORS.danger,
+            "short-term": EDX_COLORS.warning,
+            "medium-term": EDX_COLORS.secondary,
+          };
+
+          cr.recommendations.forEach((rec, i) => {
+            ensureSpace(30);
+            const pColor = priorityColors[rec.priority] || EDX_COLORS.muted;
+            doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica-Bold");
+            doc.text(`${i + 1}. `, marginLeft, doc.y, { continued: true });
+            doc.font("Helvetica").text(rec.action, { width: pageWidth - 20 });
+            doc.fontSize(8).fillColor(pColor).font("Helvetica-Bold");
+            doc.text(`   Priority: ${rec.priority.toUpperCase()}`, marginLeft + 15, doc.y, { continued: true });
+            doc.fillColor(EDX_COLORS.muted).font("Helvetica");
+            doc.text(` | Target: ${rec.targetCategory}`);
+            doc.moveDown(0.5);
+          });
+          doc.moveDown(0.5);
+        } else {
+          doc.fontSize(10).fillColor(EDX_COLORS.muted).font("Helvetica");
+          doc.text("No specific recommendations generated.", marginLeft);
+          doc.moveDown(1);
+        }
+
+        // --- Confidence Level ---
+        ensureSpace(60);
+        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
+        doc.text("Confidence Level", marginLeft);
+        doc.moveDown(0.3);
+        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
+        doc.moveDown(0.5);
+
+        const confColorMap: Record<string, string> = {
+          high: EDX_COLORS.success,
+          moderate: EDX_COLORS.warning,
+          low: EDX_COLORS.danger,
+        };
+        const confColor = confColorMap[cr.confidence.level] || EDX_COLORS.muted;
+
+        doc.fontSize(22).fillColor(confColor).font("Helvetica-Bold");
+        doc.text(`${cr.confidence.score}%`, marginLeft, doc.y, { continued: true });
+        doc.fontSize(12).fillColor(EDX_COLORS.text).font("Helvetica");
+        doc.text(`  ${cr.confidence.level.toUpperCase()} CONFIDENCE`);
+        doc.moveDown(0.5);
+
+        doc.fontSize(9).fillColor(EDX_COLORS.text).font("Helvetica");
+        doc.text(`Signal Coverage: ${cr.confidence.signalCoverage}% of root cause triggers matched by document signals`, marginLeft, doc.y, { width: pageWidth });
+        doc.moveDown(0.2);
+        doc.text(`Chain Matches: ${cr.confidence.chainMatchCount} diagnostic failure chains confirmed`, marginLeft, doc.y, { width: pageWidth });
+        doc.moveDown(1.5);
       }
 
       // ========== FINDINGS ==========
