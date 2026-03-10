@@ -418,6 +418,48 @@ export const manufacturingSignals: ManufacturingSignal[] = [
     ]
   },
   {
+    id: "capacity_constraint",
+    category: "Machinery",
+    phrases: [
+      "capacity constraint",
+      "production bottleneck",
+      "throughput limitation",
+      "capacity limit",
+      "capacity shortage",
+      "output constrained",
+      "capacity ceiling",
+      "at maximum capacity"
+    ]
+  },
+  {
+    id: "material_shortage",
+    category: "Materials",
+    phrases: [
+      "material shortage",
+      "raw material shortage",
+      "material stockout",
+      "material unavailable",
+      "material supply gap",
+      "material not available",
+      "shortage of material",
+      "material supply disruption"
+    ]
+  },
+  {
+    id: "margin_erosion",
+    category: "Money",
+    phrases: [
+      "margin erosion",
+      "margin decline",
+      "shrinking margins",
+      "reduced margins",
+      "profit margin drop",
+      "margin deterioration",
+      "eroding margins",
+      "margin compression"
+    ]
+  },
+  {
     id: "oee_decline",
     category: "Machinery",
     phrases: [
