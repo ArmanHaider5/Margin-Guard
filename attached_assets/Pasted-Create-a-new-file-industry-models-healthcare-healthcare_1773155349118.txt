@@ -1,0 +1,108 @@
+Create a new file:
+
+/industry-models/healthcare/healthcare-signals.ts
+
+
+Export:
+
+export const healthcareSignals
+
+
+Each signal must contain:
+
+signal
+description
+signalType
+relatedKPI
+
+
+Add the following signals:
+
+
+export const healthcareSignals = [
+
+{
+signal: "triage_delay",
+description: "Delays in patient triage assessment",
+signalType: "process",
+relatedKPI: "patient_wait_time"
+},
+
+{
+signal: "patient_queue",
+description: "Large number of patients waiting for treatment",
+signalType: "capacity",
+relatedKPI: "patient_wait_time"
+},
+
+{
+signal: "appointment_delay",
+description: "Appointments starting later than scheduled",
+signalType: "scheduling",
+relatedKPI: "appointment_adherence"
+},
+
+{
+signal: "doctor_idle_time",
+description: "Doctors idle due to scheduling inefficiencies",
+signalType: "capacity",
+relatedKPI: "patient_throughput"
+},
+
+{
+signal: "ot_idle_time",
+description: "Operating theatres unused during scheduled hours",
+signalType: "capacity",
+relatedKPI: "ot_utilisation"
+},
+
+{
+signal: "surgery_delay",
+description: "Surgical procedures starting late",
+signalType: "process",
+relatedKPI: "ot_utilisation"
+},
+
+{
+signal: "duplicate_tests",
+description: "Patients undergoing repeated diagnostic tests",
+signalType: "clinical",
+relatedKPI: "cost_per_patient"
+},
+
+{
+signal: "lab_backlog",
+description: "Accumulation of lab tests awaiting processing",
+signalType: "capacity",
+relatedKPI: "diagnostic_turnaround_time"
+},
+
+{
+signal: "staff_shortage",
+description: "Insufficient doctors or nurses available",
+signalType: "manpower",
+relatedKPI: "staff_overtime"
+},
+
+{
+signal: "staff_overtime",
+description: "Excessive overtime by healthcare staff",
+signalType: "manpower",
+relatedKPI: "staff_overtime"
+},
+
+{
+signal: "bed_shortage",
+description: "Hospital bed capacity exceeded",
+signalType: "capacity",
+relatedKPI: "bed_occupancy"
+},
+
+{
+signal: "ed_backlog",
+description: "Emergency department patient backlog",
+signalType: "capacity",
+relatedKPI: "ed_wait_time"
+}
+
+]
