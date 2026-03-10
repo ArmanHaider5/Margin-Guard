@@ -1,0 +1,127 @@
+Create a new file:
+
+/industry-models/retail/retail-root-causes.ts
+
+
+Export:
+
+export const retailRootCauses
+
+
+Structure for each root cause:
+
+id
+category
+rootCause
+description
+signals
+kpis
+impactWeight
+
+
+Add the following root causes:
+
+
+export const retailRootCauses = [
+
+{
+id: "RT001",
+category: "Inventory",
+rootCause: "Frequent stockouts",
+description: "Products unavailable due to poor inventory planning",
+signals: ["stockout","inventory_shortage"],
+kpis: ["shelf_availability","inventory_turnover"],
+impactWeight: 0.9
+},
+
+{
+id: "RT002",
+category: "Inventory",
+rootCause: "Excess inventory accumulation",
+description: "Overstocking causing storage congestion and capital lockup",
+signals: ["inventory_overstock","slow_inventory_turnover"],
+kpis: ["inventory_turnover","storage_utilization"],
+impactWeight: 0.8
+},
+
+{
+id: "RT003",
+category: "Demand Planning",
+rootCause: "Demand forecasting inaccuracies",
+description: "Incorrect sales forecasts causing supply imbalance",
+signals: ["forecast_error","inventory_shortage"],
+kpis: ["forecast_accuracy","inventory_turnover"],
+impactWeight: 0.85
+},
+
+{
+id: "RT004",
+category: "Supplier",
+rootCause: "Supplier delivery delays",
+description: "Late supplier deliveries disrupting store replenishment",
+signals: ["supplier_delay","inventory_shortage"],
+kpis: ["supplier_on_time_delivery"],
+impactWeight: 0.8
+},
+
+{
+id: "RT005",
+category: "Store Operations",
+rootCause: "Poor shelf replenishment",
+description: "Slow or inconsistent shelf restocking causing lost sales",
+signals: ["empty_shelves","stockout"],
+kpis: ["shelf_availability"],
+impactWeight: 0.87
+},
+
+{
+id: "RT006",
+category: "Store Operations",
+rootCause: "Checkout congestion",
+description: "Long queues reducing customer satisfaction",
+signals: ["checkout_delay","customer_queue"],
+kpis: ["checkout_time"],
+impactWeight: 0.78
+},
+
+{
+id: "RT007",
+category: "Logistics",
+rootCause: "Distribution center bottlenecks",
+description: "Warehouse inefficiencies slowing store replenishment",
+signals: ["dc_delay","shipment_backlog"],
+kpis: ["replenishment_time"],
+impactWeight: 0.82
+},
+
+{
+id: "RT008",
+category: "Inventory Accuracy",
+rootCause: "Inventory record inaccuracies",
+description: "Mismatch between system records and physical inventory",
+signals: ["inventory_mismatch","stockout"],
+kpis: ["inventory_accuracy"],
+impactWeight: 0.75
+},
+
+{
+id: "RT009",
+category: "Pricing",
+rootCause: "Ineffective pricing strategy",
+description: "Incorrect pricing affecting demand and margins",
+signals: ["low_sales","excess_inventory"],
+kpis: ["sales_velocity"],
+impactWeight: 0.7
+},
+
+{
+id: "RT010",
+category: "Labor",
+rootCause: "Store staffing shortages",
+description: "Insufficient employees affecting store operations",
+signals: ["labor_shortage","checkout_delay"],
+kpis: ["store_service_time"],
+impactWeight: 0.83
+}
+
+]
