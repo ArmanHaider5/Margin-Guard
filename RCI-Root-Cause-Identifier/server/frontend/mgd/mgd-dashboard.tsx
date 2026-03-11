@@ -21,18 +21,23 @@ export default function MGDDashboard() {
       try {
         const response = await fetch("/api/diagnostic-route", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({
             industry: "manufacturing",
             signals: ["machine_breakdown", "downtime", "overtime"],
-            kpiData: [
-              { kpiId: "downtime", value: 18 },
-              { kpiId: "otd", value: 70 }
-            ]
+            kpiData: {
+              downtime: 18,
+              otd: 70
+            }
           })
         });
 
         const data = await response.json();
+
+        console.log("MGD API Response:", data);
+
         setResult(data);
       } catch (err: any) {
         setError(err.message);
