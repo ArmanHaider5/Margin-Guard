@@ -17,43 +17,20 @@ export default function MGDDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function runDiagnostic() {
-      try {
-        const response = await fetch("/api/diagnostic-route", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            industry: "manufacturing",
-            signals: [
-              "maintenance_overdue",
-              "maintenance_backlog",
-              "pm_non_compliance",
-              "machine_failure",
-              "capacity_bottleneck"
-            ],
-            kpiData: {
-              downtime: 18,
-              otd: 70
-            }
-          })
-        });
+    async function loadDiagnostic() {
 
-        const data = await response.json();
+      const diagnosticId = "9b24bd79-febd-4ac2-90d8-566fc49b87f7";
 
-        console.log("MGD API Response:", data);
+      const response = await fetch(`/api/diagnostics/${diagnosticId}`);
 
-        setResult(data);
-      } catch (err: any) {
-        setError(err.message);
-        setResult(placeholderData);
-      } finally {
-        setLoading(false);
-      }
+      const data = await response.json();
+
+      console.log("Loaded diagnostic:", data);
+
+      setResult(data);
     }
 
-    runDiagnostic();
+    loadDiagnostic();
   }, []);
 
   if (loading) {
