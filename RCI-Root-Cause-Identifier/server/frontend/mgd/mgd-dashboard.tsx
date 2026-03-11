@@ -26,7 +26,13 @@ export default function MGDDashboard() {
           },
           body: JSON.stringify({
             industry: "manufacturing",
-            signals: ["machine_breakdown", "downtime", "overtime"],
+            signals: [
+              "maintenance_overdue",
+              "maintenance_backlog",
+              "pm_non_compliance",
+              "machine_failure",
+              "capacity_bottleneck"
+            ],
             kpiData: {
               downtime: 18,
               otd: 70
