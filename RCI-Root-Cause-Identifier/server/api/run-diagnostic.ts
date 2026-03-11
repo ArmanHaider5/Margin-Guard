@@ -34,6 +34,23 @@ export async function runMGDDiagnostic(industry: string, signals: string[], kpiD
 
   const roadmap = generateTransformationRoadmap(rootCauseTree.primary);
 
+  console.log("MGD Diagnostic Running");
+
+  console.log(
+    JSON.stringify(
+      {
+        healthScore,
+        rootCauseTree,
+        causalChains,
+        benchmarks,
+        savings,
+        roadmap
+      },
+      null,
+      2
+    )
+  );
+
   return {
     healthScore,
     rootCauseTree,
