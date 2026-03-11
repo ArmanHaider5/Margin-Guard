@@ -16,6 +16,7 @@ import { generateAnalysisReport } from "../reports/report-generator";
 import { generateExportPDF } from "../reports/export-pdf-generator";
 import { generateDiagnosticExport } from "../diagnostics/diagnostic-export";
 import executionRoutes from "../../src/modules/execution/routes/execution.routes";
+import { diagnosticHandler } from "../api/diagnostic-route";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -1406,6 +1407,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch issues" });
     }
   });
+
+  app.post("/api/diagnostic-route", diagnosticHandler);
 
   const httpServer = createServer(app);
 
