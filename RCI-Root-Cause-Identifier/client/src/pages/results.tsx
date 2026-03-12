@@ -9,7 +9,7 @@ import { Home, AlertCircle, Clock, Target, TrendingUp, DollarSign, Gauge, Loader
 import { type DiagnosticSession, type ManagementIndicator, fourMCategoryColors, indicatorColors } from "@shared/schema";
 import { AuthHeader } from "@/components/auth-header";
 import MgdResults from "@/components/mgd-results";
-import RootCauseGraph from "@/components/root-cause-graph";
+import RootCauseGraph from "@/features/root-cause/root-cause-graph";
 
 export default function Results() {
   const [match, params] = useRoute("/results/:sessionId");
