@@ -1,0 +1,93 @@
+import React, { useState } from "react";
+
+export default function RootCauseExplorer({
+  rootCauseTree,
+  causalChains,
+  savings
+}: any) {
+
+  const rootCauses = [
+    rootCauseTree?.primaryCause,
+    ...(rootCauseTree?.secondaryCauses || [])
+  ].filter(Boolean);
+
+  const [selected, setSelected] = useState(rootCauses[0]);
+
+  if (!rootCauses.length) return null;
+
+  return (
+    <div className="card mt-6">
+
+      <h3 className="text-lg font-semibold mb-4">
+        Root Cause Explorer
+      </h3>
+
+      <div className="flex gap-6">
+
+        {/* Root Cause List */}
+
+        <div className="w-1/3 border-r pr-4">
+
+          {rootCauses.map((rc: any, i: number) => (
+            <div
+              key={i}
+              className={`p-2 cursor-pointer ${
+                selected?.id === rc.id ? "bg-gray-200" : ""
+              }`}
+              onClick={() => setSelected(rc)}
+            >
+              {rc.title || rc.name}
+            </div>
+          ))}
+
+        </div>
+
+        {/* Details Panel */}
+
+        <div className="flex-1">
+
+          <h4 className="font-semibold mb-2">
+            {selected?.title || selected?.name}
+          </h4>
+
+          <p className="mb-4">
+            {selected?.description || "No description available."}
+          </p>
+
+          {/* Causal Chain */}
+
+          {causalChains?.length > 0 && (
+            <div className="mb-4">
+              <strong>Causal Chain</strong>
+
+              <ul className="list-disc ml-5">
+                {causalChains[0].chain.map((c: string, i: number) => (
+                  <li key={i}>{c}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Recommendations */}
+
+          {savings && (
+            <div>
+              <strong>Recommended Actions</strong>
+
+              <ul className="list-disc ml-5">
+                {savings.map((s: any, i: number) => (
+                  <li key={i}>
+                    {s.title || s.description}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
