@@ -17,6 +17,13 @@ export function logDiagnosticTrace(trace: DiagnosticTrace) {
     console.log(` - ${rc.title || rc.name || rc.id}`)
   );
 
+  console.log("\nConfidence Scores:");
+  trace.rootCauses.forEach(rc => {
+    if (rc.probability) {
+      console.log(` - ${rc.id}: ${rc.probability}%`);
+    }
+  });
+
   console.log("\nCausal Chains:");
   trace.causalChains.forEach(chain =>
     console.log(" -", chain.chain?.join(" → "))
