@@ -6,6 +6,7 @@ import { calculateOperationalHealthScore } from "../engines/operational-health-s
 import { estimateCostSavings } from "../engines/cost-saving-engine";
 import { generateTransformationRoadmap } from "../engines/transformation-roadmap-engine";
 import { generateConsultingNarrative } from "../engines/consulting-narrative-engine";
+import { industryRegistry } from "../industry-models/industry-registry";
 
 export async function runUnifiedDiagnostic({
   industry,
@@ -19,7 +20,17 @@ export async function runUnifiedDiagnostic({
   baseFindings: any[];
 }) {
 
-  const rootCauseTree = buildRootCauseTree(signals);
+  const industryModel = (industryRegistry as any)[industry];
+
+  if (!industryModel) {
+    throw new Error("Industry model not found: " + industry);
+  }
+
+  const rootCauseTree = buildRootCauseTree(
+    signals,
+    industryModel.rootCauses,
+    industryModel.mappings
+  );
 
   const causalChains = buildCausalChains(
     signals,
@@ -28,7 +39,10 @@ export async function runUnifiedDiagnostic({
 
   const patterns = detectRootCausePatterns(signals);
 
-  const benchmarks = evaluateIndustryBenchmarks(kpiData);
+  const benchmarks = evaluateIndustryBenchmarks(
+    kpiData,
+    industryModel.benchmarks
+  );
 
   const healthScore = calculateOperationalHealthScore(
     rootCauseTree.findings || [],
