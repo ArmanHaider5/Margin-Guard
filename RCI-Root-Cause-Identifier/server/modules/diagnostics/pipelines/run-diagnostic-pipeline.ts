@@ -16,7 +16,7 @@ export async function runDiagnosticPipeline({
     industry,
     signals,
     kpiData,
-    baseFindings: findings
+    baseFindings: finalFindings
   });
 
   return {
