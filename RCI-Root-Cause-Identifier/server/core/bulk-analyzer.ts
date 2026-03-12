@@ -56,7 +56,7 @@ import {
   getManufacturingRootCausesV2,
   type ManufacturingV2Entry,
 } from "@shared/root-cause-library";
-import { manufacturingRootCauseLibrary } from "../industry-models/manufacturing/manufacturing-root-causes";
+import { manufacturingRootCauseLibrary } from "../modules/industries/manufacturing/manufacturing-root-causes";
 import {
   recommendationArchetypes,
   type RecommendationArchetype,
@@ -88,7 +88,7 @@ import { evaluateIndustryBenchmarks, type BenchmarkEvaluation } from "../modules
 import { aggregateSignals } from "../modules/signals/signal-aggregator";
 import { detectCategoryDominance } from "../modules/signals/category-dominance";
 import { industryProfiles } from "../industries/industry-profiles";
-import { manufacturingVocabulary } from "../industry-models/manufacturing/manufacturing-signals";
+import { manufacturingVocabulary } from "../modules/industries/manufacturing/manufacturing-signals";
 import { manufacturingKpis } from "../industries/manufacturing-kpis";
 import { detectIndustryFromDocuments } from "../industries/industryDetection";
 import { detectDiagnosticChains } from "../modules/signals/diagnosticChains";

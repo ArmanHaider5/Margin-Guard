@@ -1,1 +1,1 @@
-export { manufacturingSignals, manufacturingVocabulary, type ManufacturingSignal } from "../industry-models/manufacturing/manufacturing-signals";
+export { manufacturingSignals, manufacturingVocabulary, type ManufacturingSignal } from "../modules/industries/manufacturing/manufacturing-signals";

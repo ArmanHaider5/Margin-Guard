@@ -1,5 +1,5 @@
 import { manufacturingRootCauseLibrary }
-  from "../../../industry-models/manufacturing/manufacturing-root-causes";
+  from "../../../modules/industries/manufacturing/manufacturing-root-causes";
 
 export function scoreRootCauses(detectedSignals: { signalId: string }[]) {
 
