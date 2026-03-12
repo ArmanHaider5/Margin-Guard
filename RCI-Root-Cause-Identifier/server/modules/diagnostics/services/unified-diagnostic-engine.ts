@@ -8,6 +8,7 @@ import { generateTransformationRoadmap } from "../engines/transformation-roadmap
 import { generateConsultingNarrative } from "../engines/consulting-narrative-engine";
 import { industryRegistry } from "../../industries/industry-registry";
 import { logDiagnosticTrace } from "../utils/diagnostic-trace-logger";
+import { calculateRootCauseConfidence } from "../engines/root-cause-confidence-engine";
 
 export async function runUnifiedDiagnostic({
   industry,
@@ -32,6 +33,8 @@ export async function runUnifiedDiagnostic({
   );
 
   const rootCauses = baseFindings;
+
+  const confidenceScores = calculateRootCauseConfidence(rootCauses);
 
   const causalChains = buildCausalChains(
     signals,
@@ -69,7 +72,8 @@ export async function runUnifiedDiagnostic({
     healthScore,
     savings,
     roadmap,
-    narrative
+    narrative,
+    confidenceScores
   };
 
   logDiagnosticTrace({
