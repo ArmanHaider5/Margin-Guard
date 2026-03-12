@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
-import { Home, AlertCircle, Clock, Target, TrendingUp, DollarSign, Gauge, Loader2, Activity, GitBranch, BarChart2, Map } from "lucide-react";
+import { Home, AlertCircle, Clock, Target, TrendingUp, DollarSign, Gauge, Loader2 } from "lucide-react";
 import { type DiagnosticSession, type ManagementIndicator, fourMCategoryColors, indicatorColors } from "@shared/schema";
 import { AuthHeader } from "@/components/auth-header";
+import MgdResults from "@/components/mgd-results";
 
 export default function Results() {
   const [match, params] = useRoute("/results/:sessionId");
@@ -56,8 +57,6 @@ export default function Results() {
       </div>
     );
   }
-
-  const mgd = (session as any)?.mgdAnalysis;
 
   return (
     <div className="min-h-screen bg-background">
@@ -129,138 +128,7 @@ export default function Results() {
             </div>
           </Card>
 
-          {/* MGD Analysis — only rendered when present */}
-          {mgd && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-medium text-foreground">MGD Analysis</h2>
-
-              {/* Health Score */}
-              {mgd?.healthScore !== undefined && (
-                <Card className="p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Activity className="w-5 h-5 text-primary" />
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Operational Health Score</h3>
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <span className="text-4xl font-bold text-foreground">{mgd.healthScore}</span>
-                    <span className="text-sm text-muted-foreground mb-1">/ 100</span>
-                  </div>
-                  <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${mgd.healthScore >= 70 ? "bg-green-500" : mgd.healthScore >= 40 ? "bg-amber-500" : "bg-red-500"}`}
-                      style={{ width: `${Math.min(100, Math.max(0, mgd.healthScore))}%` }}
-                    />
-                  </div>
-                </Card>
-              )}
-
-              {/* Root Cause Tree — primary */}
-              {mgd?.rootCauseTree?.primary && (
-                <Card className="p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <GitBranch className="w-5 h-5 text-primary" />
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Primary Root Cause</h3>
-                  </div>
-                  <p className="text-base font-medium text-foreground">
-                    {mgd.rootCauseTree.primary?.name ?? mgd.rootCauseTree.primary}
-                  </p>
-                  {mgd.rootCauseTree.primary?.category && (
-                    <Badge variant="outline" className="mt-2">{mgd.rootCauseTree.primary.category}</Badge>
-                  )}
-                </Card>
-              )}
-
-              {/* Benchmarks */}
-              {Array.isArray(mgd?.benchmarks) && mgd.benchmarks.length > 0 && (
-                <Card className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <BarChart2 className="w-5 h-5 text-primary" />
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Industry Benchmarks</h3>
-                  </div>
-                  <div className="space-y-3">
-                    {mgd.benchmarks.map((b: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{b.kpi ?? b.metric ?? b.name ?? `KPI ${i + 1}`}</span>
-                        <div className="flex items-center gap-2">
-                          {b.value !== undefined && <span className="font-medium text-foreground">{b.value}</span>}
-                          {b.status && (
-                            <Badge
-                              variant="outline"
-                              className={b.status === "above" ? "border-green-500 text-green-700" : b.status === "below" ? "border-red-500 text-red-700" : ""}
-                            >
-                              {b.status}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-
-              {/* Cost Savings */}
-              {mgd?.savings && (
-                <Card className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <DollarSign className="w-5 h-5 text-primary" />
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Cost Saving Opportunities</h3>
-                  </div>
-                  {mgd.savings.totalEstimate !== undefined && (
-                    <p className="text-2xl font-bold text-foreground mb-3">
-                      {typeof mgd.savings.totalEstimate === "number"
-                        ? `RM ${mgd.savings.totalEstimate.toLocaleString()}`
-                        : mgd.savings.totalEstimate}
-                    </p>
-                  )}
-                  {Array.isArray(mgd.savings.opportunities) && mgd.savings.opportunities.length > 0 && (
-                    <ul className="space-y-2">
-                      {mgd.savings.opportunities.map((opp: any, i: number) => (
-                        <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                          <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                          {typeof opp === "string" ? opp : opp.description ?? opp.label ?? JSON.stringify(opp)}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </Card>
-              )}
-
-              {/* Roadmap */}
-              {Array.isArray(mgd?.roadmap) && mgd.roadmap.length > 0 && (
-                <Card className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Map className="w-5 h-5 text-primary" />
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Recovery Roadmap</h3>
-                  </div>
-                  <ol className="space-y-3">
-                    {mgd.roadmap.map((step: any, i: number) => (
-                      <li key={i} className="flex items-start gap-3 text-sm">
-                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-semibold text-xs shrink-0">
-                          {i + 1}
-                        </span>
-                        <span className="text-foreground leading-relaxed">
-                          {typeof step === "string" ? step : step.action ?? step.description ?? step.label ?? JSON.stringify(step)}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                </Card>
-              )}
-
-              {/* Narrative */}
-              {mgd?.narrative && (
-                <Card className="p-6 bg-muted/30">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Target className="w-5 h-5 text-primary" />
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Consulting Narrative</h3>
-                  </div>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
-                    {typeof mgd.narrative === "string" ? mgd.narrative : mgd.narrative?.summary ?? JSON.stringify(mgd.narrative)}
-                  </p>
-                </Card>
-              )}
-            </div>
-          )}
+          <MgdResults mgd={(session as any)?.mgdAnalysis} />
 
           {/* Problem Summary */}
           <Card className="p-6">
