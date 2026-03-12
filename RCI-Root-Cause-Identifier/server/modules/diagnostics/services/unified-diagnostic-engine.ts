@@ -27,15 +27,10 @@ export async function runUnifiedDiagnostic({
   }
 
   const rootCauseTree = buildRootCauseTree(
-    signals,
-    industryModel.rootCauses,
-    industryModel.mappings
+    baseFindings
   );
 
-  const rootCauses = [
-    rootCauseTree.primaryCause,
-    ...(rootCauseTree.secondaryCauses || [])
-  ].filter(Boolean);
+  const rootCauses = baseFindings;
 
   const causalChains = buildCausalChains(
     signals,
