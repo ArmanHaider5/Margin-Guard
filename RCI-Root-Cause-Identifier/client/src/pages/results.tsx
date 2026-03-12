@@ -10,6 +10,7 @@ import { type DiagnosticSession, type ManagementIndicator, fourMCategoryColors, 
 import { AuthHeader } from "@/components/auth-header";
 import MgdResults from "@/components/mgd-results";
 import RootCauseGraph from "@/features/root-cause/root-cause-graph";
+import RootCauseExplorer from "@/features/root-cause/root-cause-explorer";
 import HealthScoreGauge from "@/features/diagnostics/health-score-gauge";
 import BenchmarkChart from "@/features/benchmarks/benchmark-chart";
 import RiskIndicators from "@/features/diagnostics/risk-indicators";
@@ -161,6 +162,14 @@ export default function Results() {
 
               <RootCauseGraph chains={mgd.causalChains} />
             </div>
+          )}
+
+          {mgd && (
+            <RootCauseExplorer
+              rootCauseTree={mgd.rootCauseTree}
+              causalChains={mgd.causalChains}
+              savings={mgd.savings}
+            />
           )}
 
           {/* Problem Summary */}
