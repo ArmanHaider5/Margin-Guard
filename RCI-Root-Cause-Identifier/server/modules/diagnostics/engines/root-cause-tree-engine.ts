@@ -1,88 +1,37 @@
-export interface RootCauseTreeNode {
-  id: string;
-  title: string;
-  category: string;
-  score: number;
-}
-
 export interface RootCauseTree {
-  primaryCause: RootCauseTreeNode | null;
-  secondaryCauses: RootCauseTreeNode[];
-  contributingFactors: RootCauseTreeNode[];
+  primaryCause: any | null;
+  secondaryCauses: any[];
+  contributingFactors: any[];
   category: string;
 }
 
-export function buildRootCauseTree(
-  signals: string[],
-  rootCauses: any[],
-  mappings: Record<string, string[]>
-): RootCauseTree {
-  if (!signals || signals.length === 0 || !rootCauses || rootCauses.length === 0) {
-    console.log("🌳 ROOT CAUSE TREE BUILT");
-    console.log("Primary:", null);
-    console.log("Secondary:", 0);
-    console.log("Contributing:", 0);
+export function buildRootCauseTree(findings: any[]): RootCauseTree {
+
+  if (!findings || findings.length === 0) {
+    console.log("ROOT TREE: No findings provided");
     return {
       primaryCause: null,
       secondaryCauses: [],
       contributingFactors: [],
-      category: "",
+      category: ""
     };
   }
 
-  // Score each root cause by counting how many input signals map to it
-  const scoreMap: Record<string, number> = {};
-  for (const signal of signals) {
-    const matchedRootCauses = mappings[signal] || [];
-    for (const rcId of matchedRootCauses) {
-      scoreMap[rcId] = (scoreMap[rcId] || 0) + 20;
-    }
-  }
+  // Sort findings by score (highest first)
+  const sorted = [...findings].sort((a, b) => (b.score || 0) - (a.score || 0));
 
-  // Build scored entries from the root cause library
-  const scored = rootCauses
-    .map((rc: any) => ({
-      id: rc.id,
-      title: rc.name || rc.title || rc.id,
-      category: rc.category || rc.fourMCategory || "",
-      score: scoreMap[rc.id] || 0,
-    }))
-    .filter((rc) => rc.score > 0)
-    .sort((a, b) => b.score - a.score);
+  const primary = sorted[0] || null;
 
-  if (scored.length === 0) {
-    console.log("🌳 ROOT CAUSE TREE BUILT");
-    console.log("Primary:", null);
-    console.log("Secondary:", 0);
-    console.log("Contributing:", 0);
-    return {
-      primaryCause: null,
-      secondaryCauses: [],
-      contributingFactors: [],
-      category: "",
-    };
-  }
-
-  const rankedRootCauses = scored;
-
-  const primaryCause =
-    rankedRootCauses?.[0] ||
-    rootCauses?.[0] ||
-    null;
-
-  const secondaryCauses =
-    rankedRootCauses?.slice(1, 3) ||
-    rootCauses?.slice(1, 3) ||
-    [];
+  const secondary = sorted.slice(1, 3);
 
   console.log("🌳 ROOT CAUSE TREE BUILT");
-  console.log("Primary:", primaryCause?.id ?? null);
-  console.log("Secondary:", secondaryCauses.length);
+  console.log("Primary:", primary?.title || primary?.name || primary?.id || "unknown");
+  console.log("Secondary:", secondary.length);
 
   return {
-    primaryCause,
-    secondaryCauses,
+    primaryCause: primary,
+    secondaryCauses: secondary,
     contributingFactors: [],
-    category: primaryCause?.category || ""
+    category: primary?.category || ""
   };
 }
