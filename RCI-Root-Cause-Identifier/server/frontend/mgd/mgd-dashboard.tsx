@@ -18,16 +18,22 @@ export default function MGDDashboard() {
 
   useEffect(() => {
     async function loadDiagnostic() {
+      try {
+        const diagnosticId = "9b24bd79-febd-4ac2-90d8-566fc49b87f7";
 
-      const diagnosticId = "9b24bd79-febd-4ac2-90d8-566fc49b87f7";
+        const response = await fetch(`/api/diagnostics/${diagnosticId}`);
 
-      const response = await fetch(`/api/diagnostics/${diagnosticId}`);
+        const data = await response.json();
 
-      const data = await response.json();
+        console.log("Loaded diagnostic:", data);
 
-      console.log("Loaded diagnostic:", data);
-
-      setResult(data);
+        setResult(data);
+      } catch (err: any) {
+        setError(err.message);
+        setResult(placeholderData);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadDiagnostic();
