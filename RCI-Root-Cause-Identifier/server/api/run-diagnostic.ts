@@ -1,11 +1,11 @@
-import { buildRootCauseTree } from "../diagnostics/root-cause-tree-engine";
-import { buildCausalChains } from "../diagnostics/causal-chain-engine";
-import { generateConsultingNarrative } from "../diagnostics/consulting-narrative-engine";
-import { estimateCostSavings } from "../diagnostics/cost-saving-engine";
-import { evaluateIndustryBenchmarks } from "../diagnostics/industry-benchmark-engine";
-import { calculateOperationalHealthScore } from "../diagnostics/operational-health-score-engine";
-import { detectRootCausePatterns } from "../diagnostics/root-cause-pattern-engine";
-import { generateTransformationRoadmap } from "../diagnostics/transformation-roadmap-engine";
+import { buildRootCauseTree } from "../engines/root-cause-tree-engine";
+import { buildCausalChains } from "../engines/causal-chain-engine";
+import { generateConsultingNarrative } from "../engines/consulting-narrative-engine";
+import { estimateCostSavings } from "../engines/cost-saving-engine";
+import { evaluateIndustryBenchmarks } from "../engines/industry-benchmark-engine";
+import { calculateOperationalHealthScore } from "../engines/operational-health-score-engine";
+import { detectRootCausePatterns } from "../engines/root-cause-pattern-engine";
+import { generateTransformationRoadmap } from "../engines/transformation-roadmap-engine";
 import { industryRegistry } from "../industry-models/industry-registry";
 
 export async function runMGDDiagnostic(industry: string, signals: string[], kpiData: any) {
