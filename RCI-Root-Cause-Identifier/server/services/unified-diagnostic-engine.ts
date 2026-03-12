@@ -1,4 +1,11 @@
-import { runMGDDiagnostic } from "../api/run-diagnostic";
+import { buildRootCauseTree } from "../engines/root-cause-tree-engine";
+import { buildCausalChains } from "../engines/causal-chain-engine";
+import { detectRootCausePatterns } from "../engines/root-cause-pattern-engine";
+import { evaluateIndustryBenchmarks } from "../engines/industry-benchmark-engine";
+import { calculateOperationalHealthScore } from "../engines/operational-health-score-engine";
+import { estimateCostSavings } from "../engines/cost-saving-engine";
+import { generateTransformationRoadmap } from "../engines/transformation-roadmap-engine";
+import { generateConsultingNarrative } from "../engines/consulting-narrative-engine";
 
 export async function runUnifiedDiagnostic({
   industry,
@@ -12,14 +19,37 @@ export async function runUnifiedDiagnostic({
   baseFindings: any[];
 }) {
 
-  const mgdAnalysis = await runMGDDiagnostic(
-    industry,
+  const rootCauseTree = buildRootCauseTree(signals);
+
+  const causalChains = buildCausalChains(
     signals,
-    kpiData
+    rootCauseTree.findings || []
   );
+
+  const patterns = detectRootCausePatterns(signals);
+
+  const benchmarks = evaluateIndustryBenchmarks(kpiData);
+
+  const healthScore = calculateOperationalHealthScore(
+    rootCauseTree.findings || [],
+    benchmarks.benchmarkResults
+  );
+
+  const savings = estimateCostSavings(rootCauseTree, causalChains);
+
+  const roadmap = generateTransformationRoadmap(rootCauseTree.primary);
+
+  const narrative = generateConsultingNarrative(rootCauseTree, causalChains);
 
   return {
     findings: baseFindings,
-    mgdAnalysis
+    rootCauseTree,
+    causalChains,
+    patterns,
+    benchmarks,
+    healthScore,
+    savings,
+    roadmap,
+    narrative
   };
 }
