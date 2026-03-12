@@ -15,6 +15,7 @@ import DiagnosticTimeline from "@/features/diagnostics/diagnostic-timeline";
 import HealthScoreGauge from "@/features/diagnostics/health-score-gauge";
 import BenchmarkChart from "@/features/benchmarks/benchmark-chart";
 import RiskIndicators from "@/features/diagnostics/risk-indicators";
+import { generateDiagnosticReport } from "@/features/reports/diagnostic-report-generator";
 
 export default function Results() {
   const [match, params] = useRoute("/results/:sessionId");
@@ -137,6 +138,19 @@ export default function Results() {
           </Card>
 
           <MgdResults mgd={(session as any)?.mgdAnalysis} />
+
+          {mgd && (
+            <div className="mb-6">
+
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+                onClick={() => generateDiagnosticReport(mgd)}
+              >
+                Generate Consulting Report
+              </button>
+
+            </div>
+          )}
 
           {mgd && (
             <div className="grid grid-cols-3 gap-6 mt-6">
