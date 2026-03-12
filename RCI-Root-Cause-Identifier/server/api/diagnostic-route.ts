@@ -1,5 +1,5 @@
 import { normalizeSignals } from "../signals/signal-normalizer";
-import { runDiagnosticPipeline } from "../pipelines/run-diagnostic-pipeline";
+import { queueDiagnosticJob } from "../queues/diagnostic-queue";
 
 export async function diagnosticHandler(req: any, res: any) {
   try {
@@ -16,11 +16,10 @@ export async function diagnosticHandler(req: any, res: any) {
       signalIds = normalizedSignals.map(s => s.signalId);
     }
 
-    const result = await runDiagnosticPipeline({
+    const result = await queueDiagnosticJob({
       industry,
       signals: signalIds,
-      kpiData,
-      findings: []
+      kpiData
     });
 
     res.json(result);
