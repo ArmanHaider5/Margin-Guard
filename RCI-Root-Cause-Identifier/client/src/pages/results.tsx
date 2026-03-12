@@ -10,6 +10,9 @@ import { type DiagnosticSession, type ManagementIndicator, fourMCategoryColors, 
 import { AuthHeader } from "@/components/auth-header";
 import MgdResults from "@/components/mgd-results";
 import RootCauseGraph from "@/features/root-cause/root-cause-graph";
+import HealthScoreGauge from "@/features/diagnostics/health-score-gauge";
+import BenchmarkChart from "@/features/benchmarks/benchmark-chart";
+import RiskIndicators from "@/features/diagnostics/risk-indicators";
 
 export default function Results() {
   const [match, params] = useRoute("/results/:sessionId");
@@ -132,6 +135,23 @@ export default function Results() {
           </Card>
 
           <MgdResults mgd={(session as any)?.mgdAnalysis} />
+
+          {mgd && (
+            <div className="grid grid-cols-3 gap-6 mt-6">
+
+              <HealthScoreGauge score={mgd.healthScore} />
+
+              <RiskIndicators
+                rootCauses={[
+                  mgd.rootCauseTree?.primaryCause,
+                  ...(mgd.rootCauseTree?.secondaryCauses || [])
+                ]}
+              />
+
+              <BenchmarkChart data={mgd.benchmarks?.benchmarkResults || []} />
+
+            </div>
+          )}
 
           {mgd?.causalChains && (
             <div className="card mt-6">
