@@ -85,6 +85,7 @@ import { buildCausalChains, type CausalChain } from "../modules/diagnostics/engi
 import { generateConsultingNarrative, type ConsultingNarrative } from "../modules/diagnostics/engines/consulting-narrative-engine";
 import { estimateCostSavings, type CostSavingEstimate } from "../modules/diagnostics/engines/cost-saving-engine";
 import { evaluateIndustryBenchmarks, type BenchmarkEvaluation } from "../modules/diagnostics/engines/industry-benchmark-engine";
+import { runUnifiedDiagnostic } from "../modules/diagnostics/services/unified-diagnostic-engine";
 import { aggregateSignals } from "../modules/signals/signal-aggregator";
 import { detectCategoryDominance } from "../modules/signals/category-dominance";
 import { industryProfiles } from "../industries/industry-profiles";
@@ -2344,10 +2345,10 @@ Return JSON:
  *
  * ============================================================================
  */
-function generateManufacturingV2Result(
+async function generateManufacturingV2Result(
   input: AnalysisInput,
   isBaseline: boolean,
-): AnalysisResult {
+): Promise<AnalysisResult> {
   const {
     clientName,
     analysisType,
@@ -3219,20 +3220,22 @@ function generateManufacturingV2Result(
 
     }));
 
-  const rootCauseTree = buildRootCauseTree(finalFindings);
-  console.log("🌳 ROOT CAUSE TREE:", rootCauseTree);
+  const unified = await runUnifiedDiagnostic({
+    industry,
+    signals,
+    kpiData,
+    baseFindings: finalFindings
+  });
 
-  const causalChains = buildCausalChains(concreteSignals, finalFindings);
-  console.log("🔗 CAUSAL CHAINS:", causalChains);
-
-  const consultingNarrative = generateConsultingNarrative(rootCauseTree, causalChains);
-  console.log("🧠 CONSULTING NARRATIVE:", consultingNarrative.summary);
-
-  const costSavingEstimate = estimateCostSavings(rootCauseTree, causalChains);
-  console.log("💰 COST SAVINGS:", costSavingEstimate.opportunities.length);
-
-  const industryBenchmarks = evaluateIndustryBenchmarks(collectedKpiValues);
-  console.log("📊 BENCHMARK RESULTS:", industryBenchmarks.benchmarkResults.length);
+  const {
+    rootCauseTree,
+    causalChains,
+    benchmarks,
+    savings,
+    roadmap,
+    narrative,
+    healthScore
+  } = unified.mgdAnalysis;
 
   return {
     findings: finalFindings,
@@ -3274,7 +3277,7 @@ function generateManufacturingV2Result(
  * 5. Enrich findings with signal-driven evidence anchors
  * ============================================================================
  */
-function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
+async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<AnalysisResult> {
   const {
     industry,
     clientName,
@@ -3286,7 +3289,7 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
   console.log("📄 PIPELINE: DOCUMENT PARSING STARTED");
 
   if (industry.toLowerCase() === "manufacturing") {
-    return generateManufacturingV2Result(input, false);
+    return await generateManufacturingV2Result(input, false);
   }
 
   const processedDocs = documents.filter(
@@ -3701,10 +3704,10 @@ function runSignalDrivenDeepAnalysis(input: AnalysisInput): AnalysisResult {
  * This is a wrapper ONLY - does NOT change business logic.
  * ============================================================================
  */
-function generateMockAnalysisResult(
+async function generateMockAnalysisResult(
   input: AnalysisInput,
   isBaseline: boolean,
-): AnalysisResult {
+): Promise<AnalysisResult> {
   // Context reflects user focus, evidence determines truth.
   const {
     industry,
@@ -3731,7 +3734,7 @@ function generateMockAnalysisResult(
     console.log(
       "PIPELINE: Using manufacturingRootCauseLibrary exclusively",
     );
-    return generateManufacturingV2Result(input, isBaseline);
+    return await generateManufacturingV2Result(input, isBaseline);
   }
 
   // Get relevant root causes for this industry (deterministic based on industry)
@@ -3970,7 +3973,7 @@ export async function runBulkAnalysis(
     console.log(
       `PIPELINE: Bypassing mock mode — ${processedDocs.length} document(s) uploaded`,
     );
-    result = runSignalDrivenDeepAnalysis(input);
+    result = await runSignalDrivenDeepAnalysis(input);
   } else if (input.mode === "deep" && MOCK_MODE) {
     console.log(
       `DEEP DIAGNOSTIC BLOCKED: No processed documents and mock mode active`,
@@ -3989,7 +3992,7 @@ export async function runBulkAnalysis(
     console.log(
       `MOCK MODE: Skipping AI API calls, returning mock results. Mode: ${input.mode}`,
     );
-    result = generateMockAnalysisResult(input, isBaseline);
+    result = await generateMockAnalysisResult(input, isBaseline);
   } else if (isBaseline) {
     console.log("MODE: Baseline (Preliminary). Running Baseline analysis.");
     result = await runBaselineAnalysis(input);
