@@ -158,7 +158,7 @@ export const clientAnalyses = pgTable("client_analyses", {
   analysisMode: varchar("analysis_mode").$type<DiagnosticMode>(), // "baseline" or "evidence-enriched"
   confidence: varchar("confidence").$type<ConfidenceLevel>(), // "preliminary" or "substantiated"
   isMockMode: boolean("is_mock_mode").default(false), // Flag for mock mode results
-  mgdAnalysis: jsonb("mgd_analysis"), // MGD engine output (health score, root cause tree, roadmap)
+  mgdAnalysis: jsonb("mgd_analysis").$type<any>(), // MGD engine output (health score, root cause tree, roadmap)
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),
 });
