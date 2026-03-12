@@ -23,11 +23,11 @@ export default function MGDDashboard() {
 
         const response = await fetch(`/api/diagnostics/${diagnosticId}`);
 
-        const data = await response.json();
+        const diagnostic = await response.json();
 
-        console.log("Loaded diagnostic:", data);
+        console.log("Loaded diagnostic:", diagnostic);
 
-        setResult(data);
+        setResult(diagnostic.mgdAnalysis);
       } catch (err: any) {
         setError(err.message);
         setResult(placeholderData);
