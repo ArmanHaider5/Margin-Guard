@@ -9,6 +9,7 @@ import { Home, AlertCircle, Clock, Target, TrendingUp, DollarSign, Gauge, Loader
 import { type DiagnosticSession, type ManagementIndicator, fourMCategoryColors, indicatorColors } from "@shared/schema";
 import { AuthHeader } from "@/components/auth-header";
 import MgdResults from "@/components/mgd-results";
+import RootCauseGraph from "@/components/root-cause-graph";
 
 export default function Results() {
   const [match, params] = useRoute("/results/:sessionId");
@@ -57,6 +58,8 @@ export default function Results() {
       </div>
     );
   }
+
+  const mgd = (session as any)?.mgdAnalysis;
 
   return (
     <div className="min-h-screen bg-background">
@@ -129,6 +132,16 @@ export default function Results() {
           </Card>
 
           <MgdResults mgd={(session as any)?.mgdAnalysis} />
+
+          {mgd?.causalChains && (
+            <div className="card mt-6">
+              <h3 className="text-lg font-semibold mb-4">
+                Root Cause Chain
+              </h3>
+
+              <RootCauseGraph chains={mgd.causalChains} />
+            </div>
+          )}
 
           {/* Problem Summary */}
           <Card className="p-6">
