@@ -101,110 +101,110 @@ export default function Results() {
             </Link>
           </div>
 
-          {/* CEO Summary Card */}
-          <Card className="p-6 bg-primary/5 border-primary/20">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-medium text-card-foreground">CEO Summary</h2>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Primary Indicator */}
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Primary Indicator</p>
-                  {session.primaryIndicator && (
-                    <Badge 
-                      className={`${indicatorColors[session.primaryIndicator as ManagementIndicator]?.bg || 'bg-primary'} ${indicatorColors[session.primaryIndicator as ManagementIndicator]?.text || 'text-white'}`}
-                      data-testid="badge-primary-indicator"
-                    >
-                      {session.primaryIndicator}
-                    </Badge>
-                  )}
-                </div>
-                
-                {/* Root Causes Found */}
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Root Causes Found</p>
-                  <p className="text-2xl font-semibold text-card-foreground" data-testid="text-causes-count">
-                    {session.rootCauses?.length || 0}
-                  </p>
-                </div>
-                
-                {/* Severity Level */}
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Top Severity</p>
-                  <p className="text-2xl font-semibold text-card-foreground">
-                    {session.rootCauses?.[0]?.severity === "high" ? "High" : session.rootCauses?.[0]?.severity === "medium" ? "Medium" : "Low"}
-                  </p>
+          <div className="space-y-6">
+
+            {/* CASE SUMMARY */}
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-3">
+                Case Overview
+              </h2>
+
+              <p>
+                Analysis Confidence: {session?.confidence}
+              </p>
+
+              <p>
+                Documents Analysed: {(session as any)?.documentIds?.length}
+              </p>
+            </div>
+
+            {/* OPERATIONAL HEALTH */}
+            {mgd?.healthScore && (
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-3">
+                  Operational Health Score
+                </h2>
+
+                <div className="text-3xl font-bold">
+                  {mgd.healthScore}/100
                 </div>
               </div>
-            </div>
-          </Card>
+            )}
 
-          <MgdResults mgd={(session as any)?.mgdAnalysis} />
+            {/* ROOT CAUSES */}
+            {mgd?.rootCauseTree && (
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-3">
+                  Root Cause Tree
+                </h2>
 
-          <DiagnosticRunsPanel
-            runs={[session]}
-            selectedRun={selectedRun}
-            onSelect={setSelectedRun}
-          />
+                <p>
+                  Primary Cause: {mgd.rootCauseTree.primaryCause?.name || "Not identified"}
+                </p>
 
-          {mgd && (
-            <div className="mb-6">
+                <p>
+                  Secondary Causes: {mgd.rootCauseTree.secondaryCauses?.length || 0}
+                </p>
+              </div>
+            )}
 
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded"
-                onClick={() => generateDiagnosticReport(mgd)}
-              >
-                Generate Consulting Report
-              </button>
+            {/* CAUSAL CHAINS */}
+            {mgd?.causalChains && (
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-3">
+                  Causal Chains
+                </h2>
 
-            </div>
-          )}
+                {mgd.causalChains.map((c: any, i: number) => (
+                  <div key={i} className="mb-2">
+                    {c.chain.join(" → ")}
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {mgd && (
-            <div className="grid grid-cols-3 gap-6 mt-6">
+            {/* COST SAVINGS */}
+            {mgd?.savings && (
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-3">
+                  Cost Saving Opportunities
+                </h2>
 
-              <HealthScoreGauge score={mgd.healthScore} />
+                <pre>
+                  {JSON.stringify(mgd.savings, null, 2)}
+                </pre>
+              </div>
+            )}
 
-              <RiskIndicators
-                rootCauses={[
-                  mgd.rootCauseTree?.primaryCause,
-                  ...(mgd.rootCauseTree?.secondaryCauses || [])
-                ]}
-              />
+            {/* ROADMAP */}
+            {mgd?.roadmap && (
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-3">
+                  Transformation Roadmap
+                </h2>
 
-              <BenchmarkChart data={mgd.benchmarks?.benchmarkResults || []} />
+                <pre>
+                  {JSON.stringify(mgd.roadmap, null, 2)}
+                </pre>
+              </div>
+            )}
 
-            </div>
-          )}
+            {/* CONSULTING NARRATIVE */}
+            {mgd?.narrative && (
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-3">
+                  Consulting Narrative
+                </h2>
 
-          {mgd?.financialImpact && (
-            <FinancialImpactPanel impact={mgd.financialImpact} />
-          )}
+                <p>
+                  {typeof mgd.narrative === "string"
+                    ? mgd.narrative
+                    : mgd.narrative.summary}
+                </p>
+              </div>
+            )}
 
-          {mgd?.causalChains && (
-            <div className="card mt-6">
-              <h3 className="text-lg font-semibold mb-4">
-                Root Cause Chain
-              </h3>
-
-              <RootCauseGraph chains={mgd.causalChains} />
-            </div>
-          )}
-
-          {mgd && (
-            <RootCauseExplorer
-              rootCauseTree={mgd.rootCauseTree}
-              causalChains={mgd.causalChains}
-              savings={mgd.savings}
-            />
-          )}
-
-          {mgd?.causalChains && (
-            <DiagnosticTimeline chains={mgd.causalChains} />
-          )}
+          </div>
 
           {/* Problem Summary */}
           <Card className="p-6">

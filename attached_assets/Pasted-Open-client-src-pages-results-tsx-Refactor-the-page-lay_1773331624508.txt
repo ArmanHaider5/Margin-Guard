@@ -1,0 +1,118 @@
+Open:
+
+client/src/pages/results.tsx
+
+Refactor the page layout so the result screen is structured into sections.
+
+Replace the top result layout with:
+
+<div className="space-y-6">
+
+{/* CASE SUMMARY */}
+
+  <div className="card">
+    <h2 className="text-xl font-semibold mb-3">
+      Case Overview
+    </h2>
+
+```
+<p>
+  Analysis Confidence: {session?.confidence}
+</p>
+
+<p>
+  Documents Analysed: {session?.documentIds?.length}
+</p>
+```
+
+  </div>
+
+{/* OPERATIONAL HEALTH */}
+{mgd?.healthScore && ( <div className="card"> <h2 className="text-xl font-semibold mb-3">
+Operational Health Score </h2>
+
+```
+  <div className="text-3xl font-bold">
+    {mgd.healthScore}/100
+  </div>
+</div>
+```
+
+)}
+
+{/* ROOT CAUSES */}
+{mgd?.rootCauseTree && ( <div className="card"> <h2 className="text-xl font-semibold mb-3">
+Root Cause Tree </h2>
+
+```
+  <p>
+    Primary Cause:
+    {mgd.rootCauseTree.primaryCause?.name || "Not identified"}
+  </p>
+
+  <p>
+    Secondary Causes:
+    {mgd.rootCauseTree.secondaryCauses?.length || 0}
+  </p>
+</div>
+```
+
+)}
+
+{/* CAUSAL CHAINS */}
+{mgd?.causalChains && ( <div className="card"> <h2 className="text-xl font-semibold mb-3">
+Causal Chains </h2>
+
+```
+  {mgd.causalChains.map((c:any,i:number)=>(
+    <div key={i} className="mb-2">
+      {c.chain.join(" → ")}
+    </div>
+  ))}
+</div>
+```
+
+)}
+
+{/* COST SAVINGS */}
+{mgd?.savings && ( <div className="card"> <h2 className="text-xl font-semibold mb-3">
+Cost Saving Opportunities </h2>
+
+```
+  <pre>
+    {JSON.stringify(mgd.savings,null,2)}
+  </pre>
+</div>
+```
+
+)}
+
+{/* ROADMAP */}
+{mgd?.roadmap && ( <div className="card"> <h2 className="text-xl font-semibold mb-3">
+Transformation Roadmap </h2>
+
+```
+  <pre>
+    {JSON.stringify(mgd.roadmap,null,2)}
+  </pre>
+</div>
+```
+
+)}
+
+{/* CONSULTING NARRATIVE */}
+{mgd?.narrative && ( <div className="card"> <h2 className="text-xl font-semibold mb-3">
+Consulting Narrative </h2>
+
+```
+  <p>
+    {typeof mgd.narrative === "string"
+      ? mgd.narrative
+      : mgd.narrative.summary}
+  </p>
+</div>
+```
+
+)}
+
+</div>
