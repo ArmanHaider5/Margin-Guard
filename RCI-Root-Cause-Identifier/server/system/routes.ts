@@ -17,7 +17,7 @@ import { generateExportPDF } from "../reports/export-pdf-generator";
 import { generateDiagnosticExport } from "../diagnostics/diagnostic-export";
 import executionRoutes from "../../src/modules/execution/routes/execution.routes";
 import { diagnosticHandler } from "../api/diagnostic-route";
-import { runUnifiedDiagnostic } from "../services/unified-diagnostic-engine";
+import { runUnifiedDiagnostic } from "../modules/diagnostics/services/unified-diagnostic-engine";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) {

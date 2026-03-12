@@ -1,6 +1,6 @@
-import { ManufacturingRootCause } from "../industries/manufacturing-root-causes";
-import { NormalizedSignal } from "../signals/signal-normalizer";
-import { DiagnosticChain } from "../industries/manufacturing-diagnostic-chains";
+import { ManufacturingRootCause } from "../../../industries/manufacturing-root-causes";
+import { NormalizedSignal } from "../../../signals/signal-normalizer";
+import { DiagnosticChain } from "../../../industries/manufacturing-diagnostic-chains";
 
 export interface FinancialImpact {
   estimatedSeverity: "low" | "moderate" | "high" | "critical";

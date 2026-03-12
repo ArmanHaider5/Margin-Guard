@@ -1,9 +1,9 @@
 import { type RootCause, type FourMCategory, type ManagementIndicator, categoryToIndicator } from "@shared/schema";
 import { problemLibrary, getProblemById, getCategoryLabel } from "@shared/problem-library";
 import { allIndustryProblems, industryLabels, getIndustryProblemById, type Industry } from "@shared/industry-problems";
-import { runExpertDiagnosis } from "../engines/root-cause-expert-engine";
+import { runExpertDiagnosis } from "../modules/diagnostics/engines/root-cause-expert-engine";
 import { normalizeSignals } from "../signals/signal-normalizer";
-import { generateConsultingDiagnosticReport, type ConsultingDiagnosticReport } from "../engines/consulting-diagnostic-engine";
+import { generateConsultingDiagnosticReport, type ConsultingDiagnosticReport } from "../modules/diagnostics/engines/consulting-diagnostic-engine";
 import { manufacturingRootCauseLibrary } from "../industry-models/manufacturing/manufacturing-root-causes";
 import { manufacturingDiagnosticChains } from "../industries/manufacturing-diagnostic-chains";
 

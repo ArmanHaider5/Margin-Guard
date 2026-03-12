@@ -79,12 +79,12 @@ import {
 } from "@shared/analysis-builder";
 import { normalizeSignals } from "../signals/signal-normalizer";
 import { buildSignalGraph } from "../signals/signal-graph";
-import { runExpertDiagnosis } from "../engines/root-cause-expert-engine";
-import { buildRootCauseTree, type RootCauseTree } from "../engines/root-cause-tree-engine";
-import { buildCausalChains, type CausalChain } from "../engines/causal-chain-engine";
-import { generateConsultingNarrative, type ConsultingNarrative } from "../engines/consulting-narrative-engine";
-import { estimateCostSavings, type CostSavingEstimate } from "../engines/cost-saving-engine";
-import { evaluateIndustryBenchmarks, type BenchmarkEvaluation } from "../engines/industry-benchmark-engine";
+import { runExpertDiagnosis } from "../modules/diagnostics/engines/root-cause-expert-engine";
+import { buildRootCauseTree, type RootCauseTree } from "../modules/diagnostics/engines/root-cause-tree-engine";
+import { buildCausalChains, type CausalChain } from "../modules/diagnostics/engines/causal-chain-engine";
+import { generateConsultingNarrative, type ConsultingNarrative } from "../modules/diagnostics/engines/consulting-narrative-engine";
+import { estimateCostSavings, type CostSavingEstimate } from "../modules/diagnostics/engines/cost-saving-engine";
+import { evaluateIndustryBenchmarks, type BenchmarkEvaluation } from "../modules/diagnostics/engines/industry-benchmark-engine";
 import { aggregateSignals } from "../signals/signal-aggregator";
 import { detectCategoryDominance } from "../signals/category-dominance";
 import { industryProfiles } from "../industries/industry-profiles";

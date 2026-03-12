@@ -1,5 +1,5 @@
 import PQueue from "p-queue";
-import { runDiagnosticPipeline } from "../pipelines/run-diagnostic-pipeline";
+import { runDiagnosticPipeline } from "../modules/diagnostics/pipelines/run-diagnostic-pipeline";
 
 const queue = new PQueue({
   concurrency: 2

@@ -7,7 +7,7 @@ import {
   type RecurrencePrediction,
   type FourMCategory
 } from "@shared/schema";
-import type { ConsultingDiagnosticReport } from "../engines/consulting-diagnostic-engine";
+import type { ConsultingDiagnosticReport } from "../modules/diagnostics/engines/consulting-diagnostic-engine";
 
 // PDF export must be robust regardless of content length.
 

@@ -6,7 +6,7 @@ import { calculateOperationalHealthScore } from "../engines/operational-health-s
 import { estimateCostSavings } from "../engines/cost-saving-engine";
 import { generateTransformationRoadmap } from "../engines/transformation-roadmap-engine";
 import { generateConsultingNarrative } from "../engines/consulting-narrative-engine";
-import { industryRegistry } from "../industry-models/industry-registry";
+import { industryRegistry } from "../../../industry-models/industry-registry";
 
 export async function runUnifiedDiagnostic({
   industry,

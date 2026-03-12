@@ -1,5 +1,5 @@
-import { manufacturingRootCauseLibrary } from "../industry-models/manufacturing/manufacturing-root-causes";
-import { evaluateSignalMaps } from "../signals/signal-map-engine";
+import { manufacturingRootCauseLibrary } from "../../../industry-models/manufacturing/manufacturing-root-causes";
+import { evaluateSignalMaps } from "../../../signals/signal-map-engine";
 import { scoreRootCauses } from "./root-cause-scorer";
 
 console.log(
