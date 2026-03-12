@@ -63,53 +63,26 @@ export function buildRootCauseTree(
     };
   }
 
-  const primary = scored[0];
-  const primaryCategory = primary.category;
+  const rankedRootCauses = scored;
 
-  const primaryCause: RootCauseTreeNode = {
-    id: primary.id,
-    title: primary.title,
-    category: primaryCategory,
-    score: primary.score,
-  };
+  const primaryCause =
+    rankedRootCauses?.[0] ||
+    rootCauses?.[0] ||
+    null;
 
-  const secondaryCauses: RootCauseTreeNode[] = scored
-    .filter(
-      (f) =>
-        f.category === primaryCategory &&
-        f.id !== primary.id &&
-        f.score >= 40
-    )
-    .map((c) => ({
-      id: c.id,
-      title: c.title,
-      category: c.category,
-      score: c.score,
-    }));
-
-  const contributingFactors: RootCauseTreeNode[] = scored
-    .filter(
-      (f) =>
-        f.score >= 20 &&
-        f.id !== primary.id &&
-        !secondaryCauses.find((s) => s.id === f.id)
-    )
-    .map((c) => ({
-      id: c.id,
-      title: c.title,
-      category: c.category,
-      score: c.score,
-    }));
+  const secondaryCauses =
+    rankedRootCauses?.slice(1, 3) ||
+    rootCauses?.slice(1, 3) ||
+    [];
 
   console.log("🌳 ROOT CAUSE TREE BUILT");
-  console.log("Primary:", primary.id);
+  console.log("Primary:", primaryCause?.id ?? null);
   console.log("Secondary:", secondaryCauses.length);
-  console.log("Contributing:", contributingFactors.length);
 
   return {
     primaryCause,
     secondaryCauses,
-    contributingFactors,
-    category: primaryCategory,
+    contributingFactors: [],
+    category: primaryCause?.category || ""
   };
 }
