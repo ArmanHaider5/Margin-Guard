@@ -16,6 +16,7 @@ import HealthScoreGauge from "@/features/diagnostics/health-score-gauge";
 import BenchmarkChart from "@/features/benchmarks/benchmark-chart";
 import RiskIndicators from "@/features/diagnostics/risk-indicators";
 import { generateDiagnosticReport } from "@/features/reports/diagnostic-report-generator";
+import FinancialImpactPanel from "@/features/diagnostics/financial-impact-panel";
 
 export default function Results() {
   const [match, params] = useRoute("/results/:sessionId");
@@ -167,6 +168,10 @@ export default function Results() {
               <BenchmarkChart data={mgd.benchmarks?.benchmarkResults || []} />
 
             </div>
+          )}
+
+          {mgd?.financialImpact && (
+            <FinancialImpactPanel impact={mgd.financialImpact} />
           )}
 
           {mgd?.causalChains && (
