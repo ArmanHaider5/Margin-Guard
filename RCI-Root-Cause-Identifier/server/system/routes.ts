@@ -17,7 +17,7 @@ import { generateExportPDF } from "../reports/export-pdf-generator";
 import { generateDiagnosticExport } from "../diagnostics/diagnostic-export";
 import executionRoutes from "../../src/modules/execution/routes/execution.routes";
 import { diagnosticHandler } from "../api/diagnostic-route";
-import { runMGDDiagnostic } from "../api/run-diagnostic";
+import { runUnifiedDiagnostic } from "../services/unified-diagnostic-engine";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -1024,11 +1024,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         let mgdAnalysis: any = null;
         try {
-          mgdAnalysis = await runMGDDiagnostic(
-            client.industry || "manufacturing",
-            extractedSignals,
-            extractedKPIData
-          );
+          const diagnosticResult = await runUnifiedDiagnostic({
+            industry: client.industry || "manufacturing",
+            signals: extractedSignals,
+            kpiData: extractedKPIData,
+            baseFindings: result.findings
+          });
+          mgdAnalysis = diagnosticResult.mgdAnalysis;
         } catch (mgdError) {
           console.error("MGD engine error (non-critical):", mgdError);
         }
