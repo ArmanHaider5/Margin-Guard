@@ -7,6 +7,7 @@ import { estimateCostSavings } from "../engines/cost-saving-engine";
 import { generateTransformationRoadmap } from "../engines/transformation-roadmap-engine";
 import { generateConsultingNarrative } from "../engines/consulting-narrative-engine";
 import { industryRegistry } from "../../industries/industry-registry";
+import { logDiagnosticTrace } from "../utils/diagnostic-trace-logger";
 
 export async function runUnifiedDiagnostic({
   industry,
@@ -70,6 +71,13 @@ export async function runUnifiedDiagnostic({
     roadmap,
     narrative
   };
+
+  logDiagnosticTrace({
+    signals,
+    rootCauses,
+    causalChains,
+    recommendations: savings || []
+  });
 
   return {
     findings: baseFindings,
