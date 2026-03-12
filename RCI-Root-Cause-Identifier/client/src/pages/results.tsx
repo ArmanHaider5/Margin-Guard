@@ -11,6 +11,7 @@ import { AuthHeader } from "@/components/auth-header";
 import MgdResults from "@/components/mgd-results";
 import RootCauseGraph from "@/features/root-cause/root-cause-graph";
 import RootCauseExplorer from "@/features/root-cause/root-cause-explorer";
+import DiagnosticTimeline from "@/features/diagnostics/diagnostic-timeline";
 import HealthScoreGauge from "@/features/diagnostics/health-score-gauge";
 import BenchmarkChart from "@/features/benchmarks/benchmark-chart";
 import RiskIndicators from "@/features/diagnostics/risk-indicators";
@@ -170,6 +171,10 @@ export default function Results() {
               causalChains={mgd.causalChains}
               savings={mgd.savings}
             />
+          )}
+
+          {mgd?.causalChains && (
+            <DiagnosticTimeline chains={mgd.causalChains} />
           )}
 
           {/* Problem Summary */}
