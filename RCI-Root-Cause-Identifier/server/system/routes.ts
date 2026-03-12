@@ -17,6 +17,7 @@ import { generateExportPDF } from "../reports/export-pdf-generator";
 import { generateDiagnosticExport } from "../diagnostics/diagnostic-export";
 import executionRoutes from "../../src/modules/execution/routes/execution.routes";
 import { diagnosticHandler } from "../api/diagnostic-route";
+import { runMGDDiagnostic } from "../api/run-diagnostic";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -1010,6 +1011,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           selectedSymptoms: analysis.selectedSymptoms || undefined,
         });
 
+        // Derive signals from matched evidence across all findings
+        const extractedSignals: string[] = Array.from(new Set(
+          result.findings.flatMap(f => [
+            ...(f.evidenceTrail?.matchedConcreteSignals ?? []),
+            ...(f.evidenceTrail?.matchedEvidenceSignals ?? []),
+          ])
+        ));
+
+        // No KPI values available at this pipeline stage — engine will use available signals only
+        const extractedKPIData: Record<string, number> = {};
+
+        let mgdAnalysis: any = null;
+        try {
+          mgdAnalysis = await runMGDDiagnostic(
+            client.industry || "manufacturing",
+            extractedSignals,
+            extractedKPIData
+          );
+        } catch (mgdError) {
+          console.error("MGD engine error (non-critical):", mgdError);
+        }
+
         const updatedAnalysis = await storage.updateClientAnalysis(analysis.id, {
           status: "completed",
           findings: result.findings,
@@ -1019,6 +1042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           analysisMode: result.analysisMode,
           confidence: result.confidence,
           isMockMode: result.isMockMode,
+          mgdAnalysis,
           completedAt: new Date(),
         });
 
