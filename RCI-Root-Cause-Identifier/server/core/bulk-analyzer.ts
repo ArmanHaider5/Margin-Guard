@@ -77,21 +77,21 @@ import {
   getIndustryMoneyInterpretation,
   applySymptomAlignmentGuardrail,
 } from "@shared/analysis-builder";
-import { normalizeSignals } from "../signals/signal-normalizer";
-import { buildSignalGraph } from "../signals/signal-graph";
+import { normalizeSignals } from "../modules/signals/signal-normalizer";
+import { buildSignalGraph } from "../modules/signals/signal-graph";
 import { runExpertDiagnosis } from "../modules/diagnostics/engines/root-cause-expert-engine";
 import { buildRootCauseTree, type RootCauseTree } from "../modules/diagnostics/engines/root-cause-tree-engine";
 import { buildCausalChains, type CausalChain } from "../modules/diagnostics/engines/causal-chain-engine";
 import { generateConsultingNarrative, type ConsultingNarrative } from "../modules/diagnostics/engines/consulting-narrative-engine";
 import { estimateCostSavings, type CostSavingEstimate } from "../modules/diagnostics/engines/cost-saving-engine";
 import { evaluateIndustryBenchmarks, type BenchmarkEvaluation } from "../modules/diagnostics/engines/industry-benchmark-engine";
-import { aggregateSignals } from "../signals/signal-aggregator";
-import { detectCategoryDominance } from "../signals/category-dominance";
+import { aggregateSignals } from "../modules/signals/signal-aggregator";
+import { detectCategoryDominance } from "../modules/signals/category-dominance";
 import { industryProfiles } from "../industries/industry-profiles";
 import { manufacturingVocabulary } from "../industry-models/manufacturing/manufacturing-signals";
 import { manufacturingKpis } from "../industries/manufacturing-kpis";
 import { detectIndustryFromDocuments } from "../industries/industryDetection";
-import { detectDiagnosticChains } from "../signals/diagnosticChains";
+import { detectDiagnosticChains } from "../modules/signals/diagnosticChains";
 import XLSX from "xlsx";
 import fs from "fs";
 

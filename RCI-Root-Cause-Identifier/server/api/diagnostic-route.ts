@@ -1,4 +1,4 @@
-import { normalizeSignals } from "../signals/signal-normalizer";
+import { normalizeSignals } from "../modules/signals/signal-normalizer";
 import { queueDiagnosticJob } from "../queues/diagnostic-queue";
 
 export async function diagnosticHandler(req: any, res: any) {

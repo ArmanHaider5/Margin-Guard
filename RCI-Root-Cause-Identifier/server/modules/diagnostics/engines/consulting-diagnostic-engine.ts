@@ -1,5 +1,5 @@
 import { ManufacturingRootCause } from "../../../industries/manufacturing-root-causes";
-import { NormalizedSignal } from "../../../signals/signal-normalizer";
+import { NormalizedSignal } from "../../signals/signal-normalizer";
 import { DiagnosticChain } from "../../../industries/manufacturing-diagnostic-chains";
 
 export interface FinancialImpact {

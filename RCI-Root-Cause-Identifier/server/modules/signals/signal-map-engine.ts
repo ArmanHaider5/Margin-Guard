@@ -1,4 +1,4 @@
-import { ROOT_CAUSE_SIGNAL_MAPS } from "../../shared/root-cause-signal-map";
+import { ROOT_CAUSE_SIGNAL_MAPS } from "../../../shared/root-cause-signal-map";
 
 export function evaluateSignalMaps(signals: string[]) {
 
