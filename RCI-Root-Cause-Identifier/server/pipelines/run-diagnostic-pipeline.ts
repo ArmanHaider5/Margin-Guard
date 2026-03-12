@@ -1,0 +1,26 @@
+import { runUnifiedDiagnostic } from "../services/unified-diagnostic-engine";
+
+export async function runDiagnosticPipeline({
+  industry,
+  signals,
+  kpiData,
+  findings
+}: {
+  industry: string;
+  signals: string[];
+  kpiData: any;
+  findings: any[];
+}) {
+
+  const unified = await runUnifiedDiagnostic({
+    industry,
+    signals,
+    kpiData,
+    baseFindings: findings
+  });
+
+  return {
+    findings: unified.findings,
+    mgdAnalysis: unified.mgdAnalysis
+  };
+}
