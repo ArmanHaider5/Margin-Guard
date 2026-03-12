@@ -9,6 +9,7 @@ import { generateConsultingNarrative } from "../engines/consulting-narrative-eng
 import { industryRegistry } from "../../industries/industry-registry";
 import { logDiagnosticTrace } from "../utils/diagnostic-trace-logger";
 import { calculateRootCauseConfidence } from "../engines/root-cause-confidence-engine";
+import { estimateFinancialImpact } from "../engines/financial-impact-engine";
 
 export async function runUnifiedDiagnostic({
   industry,
@@ -27,6 +28,8 @@ export async function runUnifiedDiagnostic({
   if (!industryModel) {
     throw new Error("Industry model not found: " + industry);
   }
+
+  const financialImpact = estimateFinancialImpact(signals);
 
   const rootCauseTree = buildRootCauseTree(
     baseFindings
@@ -73,7 +76,8 @@ export async function runUnifiedDiagnostic({
     savings,
     roadmap,
     narrative,
-    confidenceScores
+    confidenceScores,
+    financialImpact
   };
 
   logDiagnosticTrace({
