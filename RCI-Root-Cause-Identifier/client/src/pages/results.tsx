@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRoute, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import BenchmarkChart from "@/features/benchmarks/benchmark-chart";
 import RiskIndicators from "@/features/diagnostics/risk-indicators";
 import { generateDiagnosticReport } from "@/features/reports/diagnostic-report-generator";
 import FinancialImpactPanel from "@/features/diagnostics/financial-impact-panel";
+import DiagnosticRunsPanel from "@/features/diagnostics/diagnostic-runs-panel";
 
 export default function Results() {
   const [match, params] = useRoute("/results/:sessionId");
@@ -67,6 +69,8 @@ export default function Results() {
   }
 
   const mgd = (session as any)?.mgdAnalysis;
+
+  const [selectedRun, setSelectedRun] = useState(session);
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,6 +143,12 @@ export default function Results() {
           </Card>
 
           <MgdResults mgd={(session as any)?.mgdAnalysis} />
+
+          <DiagnosticRunsPanel
+            runs={[session]}
+            selectedRun={selectedRun}
+            onSelect={setSelectedRun}
+          />
 
           {mgd && (
             <div className="mb-6">
