@@ -12,6 +12,8 @@ export async function runDiagnosticPipeline({
   findings: any[];
 }) {
 
+  const finalFindings = findings;
+
   const unified = await runUnifiedDiagnostic({
     industry,
     signals,
