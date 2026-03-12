@@ -12,8 +12,12 @@ export interface RootCauseTree {
   category: string;
 }
 
-export function buildRootCauseTree(findings: any[]): RootCauseTree {
-  if (!findings || findings.length === 0) {
+export function buildRootCauseTree(
+  signals: string[],
+  rootCauses: any[],
+  mappings: Record<string, string[]>
+): RootCauseTree {
+  if (!signals || signals.length === 0 || !rootCauses || rootCauses.length === 0) {
     console.log("🌳 ROOT CAUSE TREE BUILT");
     console.log("Primary:", null);
     console.log("Secondary:", 0);
@@ -26,48 +30,79 @@ export function buildRootCauseTree(findings: any[]): RootCauseTree {
     };
   }
 
-  const sorted = [...findings].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  // Score each root cause by counting how many input signals map to it
+  const scoreMap: Record<string, number> = {};
+  for (const signal of signals) {
+    const matchedRootCauses = mappings[signal] || [];
+    for (const rcId of matchedRootCauses) {
+      scoreMap[rcId] = (scoreMap[rcId] || 0) + 20;
+    }
+  }
 
-  const primary = sorted[0];
-  const primaryCategory = primary.fourMCategory || primary.category || "";
+  // Build scored entries from the root cause library
+  const scored = rootCauses
+    .map((rc: any) => ({
+      id: rc.id,
+      title: rc.name || rc.title || rc.id,
+      category: rc.category || rc.fourMCategory || "",
+      score: scoreMap[rc.id] || 0,
+    }))
+    .filter((rc) => rc.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (scored.length === 0) {
+    console.log("🌳 ROOT CAUSE TREE BUILT");
+    console.log("Primary:", null);
+    console.log("Secondary:", 0);
+    console.log("Contributing:", 0);
+    return {
+      primaryCause: null,
+      secondaryCauses: [],
+      contributingFactors: [],
+      category: "",
+    };
+  }
+
+  const primary = scored[0];
+  const primaryCategory = primary.category;
 
   const primaryCause: RootCauseTreeNode = {
     id: primary.id,
-    title: primary.name || primary.title || "",
+    title: primary.title,
     category: primaryCategory,
-    score: primary.score ?? 0,
+    score: primary.score,
   };
 
-  const secondaryCauses: RootCauseTreeNode[] = sorted
+  const secondaryCauses: RootCauseTreeNode[] = scored
     .filter(
       (f) =>
-        (f.fourMCategory || f.category || "") === primaryCategory &&
+        f.category === primaryCategory &&
         f.id !== primary.id &&
-        (f.score ?? 0) >= 40,
+        f.score >= 40
     )
     .map((c) => ({
       id: c.id,
-      title: c.name || c.title || "",
-      category: c.fourMCategory || c.category || "",
-      score: c.score ?? 0,
+      title: c.title,
+      category: c.category,
+      score: c.score,
     }));
 
-  const contributingFactors: RootCauseTreeNode[] = sorted
+  const contributingFactors: RootCauseTreeNode[] = scored
     .filter(
       (f) =>
-        (f.score ?? 0) >= 20 &&
+        f.score >= 20 &&
         f.id !== primary.id &&
-        !secondaryCauses.find((s) => s.id === f.id),
+        !secondaryCauses.find((s) => s.id === f.id)
     )
     .map((c) => ({
       id: c.id,
-      title: c.name || c.title || "",
-      category: c.fourMCategory || c.category || "",
-      score: c.score ?? 0,
+      title: c.title,
+      category: c.category,
+      score: c.score,
     }));
 
   console.log("🌳 ROOT CAUSE TREE BUILT");
-  console.log("Primary:", primary?.id);
+  console.log("Primary:", primary.id);
   console.log("Secondary:", secondaryCauses.length);
   console.log("Contributing:", contributingFactors.length);
 

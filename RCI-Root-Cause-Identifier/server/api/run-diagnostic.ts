@@ -15,16 +15,33 @@ export async function runMGDDiagnostic(industry: string, signals: string[], kpiD
     throw new Error("Industry model not found");
   }
 
-  const rootCauseTree = buildRootCauseTree(signals);
+  const rootCauseTree = buildRootCauseTree(
+    signals,
+    industryModel.rootCauses,
+    industryModel.mappings
+  );
 
-  const causalChains = buildCausalChains(signals, rootCauseTree.findings || []);
+  // Flatten tree nodes for engines that need an array of scored root causes
+  const allRootCauses = [
+    rootCauseTree.primaryCause,
+    ...rootCauseTree.secondaryCauses,
+    ...rootCauseTree.contributingFactors,
+  ].filter(Boolean);
+
+  const causalChains = buildCausalChains(
+    signals,
+    allRootCauses
+  );
 
   const patterns = detectRootCausePatterns(signals);
 
-  const benchmarks = evaluateIndustryBenchmarks(kpiData);
+  const benchmarks = evaluateIndustryBenchmarks(
+    kpiData,
+    industryModel.benchmarks
+  );
 
   const healthScore = calculateOperationalHealthScore(
-    rootCauseTree.findings || [],
+    allRootCauses,
     benchmarks.benchmarkResults
   );
 
@@ -32,7 +49,7 @@ export async function runMGDDiagnostic(industry: string, signals: string[], kpiD
 
   const savings = estimateCostSavings(rootCauseTree, causalChains);
 
-  const roadmap = generateTransformationRoadmap(rootCauseTree.primary);
+  const roadmap = generateTransformationRoadmap(rootCauseTree.primaryCause);
 
   console.log("MGD Diagnostic Running");
 

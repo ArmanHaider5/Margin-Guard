@@ -1,6 +1,3 @@
-import { manufacturingBenchmarks } from
-  "../industry-models/manufacturing/manufacturing-benchmarks";
-
 export interface BenchmarkResult {
   kpi: string;
   actual: number;
@@ -25,25 +22,28 @@ function evaluateSeverity(actual: number, target: number, isInverted: boolean): 
   return "High";
 }
 
-const INVERTED_KPIS = new Set(["otd"]);
+const INVERTED_KPIS = new Set(["otd", "oee", "yield", "first_pass_yield"]);
 
-export function evaluateIndustryBenchmarks(detectedKpis: any[]): BenchmarkEvaluation {
+export function evaluateIndustryBenchmarks(
+  kpiData: Record<string, number>,
+  benchmarks: Record<string, { target: number; unit: string }>
+): BenchmarkEvaluation {
   const benchmarkResults: BenchmarkResult[] = [];
 
-  for (const kpi of detectedKpis || []) {
-    const id = (kpi.kpiId || kpi.id || "").toLowerCase().replace(/ /g, "_");
-    const bench = manufacturingBenchmarks[id];
+  for (const [id, actual] of Object.entries(kpiData || {})) {
+    const key = id.toLowerCase().replace(/ /g, "_");
+    const bench = benchmarks?.[key];
     if (!bench) continue;
 
-    const actual = typeof kpi.value === "number" ? kpi.value : parseFloat(kpi.value);
-    if (isNaN(actual)) continue;
+    const actualNum = typeof actual === "number" ? actual : parseFloat(actual as any);
+    if (isNaN(actualNum)) continue;
 
-    const isInverted = INVERTED_KPIS.has(id);
-    const severity = evaluateSeverity(actual, bench.target, isInverted);
+    const isInverted = INVERTED_KPIS.has(key);
+    const severity = evaluateSeverity(actualNum, bench.target, isInverted);
 
     benchmarkResults.push({
-      kpi: id,
-      actual,
+      kpi: key,
+      actual: actualNum,
       benchmark: bench.target,
       unit: bench.unit,
       severity,
