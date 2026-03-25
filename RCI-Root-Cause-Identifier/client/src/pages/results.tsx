@@ -120,105 +120,159 @@ export default function Results() {
 
           <div className="space-y-6">
 
-            {/* CASE SUMMARY */}
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-3">
-                Case Overview
-              </h2>
-
-              <p>
-                Analysis Confidence: {session?.confidence}
-              </p>
-
-              <p>
-                Documents Analysed: {(session as any)?.documentIds?.length}
-              </p>
-            </div>
-
-            {/* OPERATIONAL HEALTH */}
-            {mgd?.healthScore && (
+            {/* CASE TAB */}
+            {activeTab === "case" && (
               <div className="card">
                 <h2 className="text-xl font-semibold mb-3">
-                  Operational Health Score
+                  Case Overview
                 </h2>
 
-                <div className="text-3xl font-bold">
-                  {mgd.healthScore}/100
-                </div>
+                <p>Documents analysed: {(session as any)?.documentIds?.length}</p>
+                <p>Confidence: {session?.confidence}</p>
               </div>
             )}
 
-            {/* ROOT CAUSES */}
-            {mgd?.rootCauseTree && (
-              <div className="card">
-                <h2 className="text-xl font-semibold mb-3">
-                  Root Cause Tree
-                </h2>
+            {/* DIAGNOSIS TAB */}
+            {activeTab === "diagnosis" && (
+              <>
+                {/* Health Score */}
+                {mgd?.healthScore && (
+                  <div className="card">
+                    <h2 className="text-xl font-semibold mb-3">
+                      Operational Health Score
+                    </h2>
 
-                <p>
-                  Primary Cause: {mgd.rootCauseTree.primaryCause?.name || "Not identified"}
-                </p>
-
-                <p>
-                  Secondary Causes: {mgd.rootCauseTree.secondaryCauses?.length || 0}
-                </p>
-              </div>
-            )}
-
-            {/* CAUSAL CHAINS */}
-            {mgd?.causalChains && (
-              <div className="card">
-                <h2 className="text-xl font-semibold mb-3">
-                  Causal Chains
-                </h2>
-
-                {mgd.causalChains.map((c: any, i: number) => (
-                  <div key={i} className="mb-2">
-                    {c.chain.join(" → ")}
+                    <div className="text-3xl font-bold">
+                      {mgd.healthScore}/100
+                    </div>
                   </div>
-                ))}
-              </div>
+                )}
+
+                {/* Benchmarks */}
+                {mgd?.benchmarks && (
+                  <div className="card">
+                    <h2 className="text-xl font-semibold mb-3">
+                      Benchmarks
+                    </h2>
+
+                    <pre>
+                      {JSON.stringify(mgd.benchmarks, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Financial Impact */}
+                {mgd?.financialImpact && (
+                  <div className="card">
+                    <h2 className="text-xl font-semibold mb-3">
+                      Financial Impact
+                    </h2>
+
+                    <pre>
+                      {JSON.stringify(mgd.financialImpact, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </>
             )}
 
-            {/* COST SAVINGS */}
-            {mgd?.savings && (
-              <div className="card">
-                <h2 className="text-xl font-semibold mb-3">
-                  Cost Saving Opportunities
-                </h2>
+            {/* ROOT CAUSES TAB */}
+            {activeTab === "rootcauses" && (
+              <>
+                {/* Root Cause Tree */}
+                {mgd?.rootCauseTree && (
+                  <div className="card">
+                    <h2 className="text-xl font-semibold mb-3">
+                      Root Cause Tree
+                    </h2>
 
-                <pre>
-                  {JSON.stringify(mgd.savings, null, 2)}
-                </pre>
-              </div>
+                    <p>
+                      Primary Cause: {mgd.rootCauseTree.primaryCause?.name || "Not identified"}
+                    </p>
+
+                    <p>
+                      Secondary Causes: {mgd.rootCauseTree.secondaryCauses?.length || 0}
+                    </p>
+                  </div>
+                )}
+
+                {/* Causal Chains */}
+                {mgd?.causalChains && (
+                  <div className="card">
+                    <h2 className="text-xl font-semibold mb-3">
+                      Causal Chains
+                    </h2>
+
+                    {mgd.causalChains.map((c: any, i: number) => (
+                      <div key={i} className="mb-2">
+                        {c.chain.join(" → ")}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Findings */}
+                {session.rootCauses && session.rootCauses.length > 0 && (
+                  <div className="card">
+                    <h2 className="text-xl font-semibold mb-3">
+                      Findings ({session.rootCauses.length})
+                    </h2>
+
+                    {session.rootCauses.map((rc: any, i: number) => (
+                      <div key={i} className="mb-2 border-b pb-2 last:border-0">
+                        <p className="font-medium">{rc.name || rc.title}</p>
+                        <p className="text-sm text-gray-500">{rc.category} — {rc.severity}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
 
-            {/* ROADMAP */}
-            {mgd?.roadmap && (
-              <div className="card">
-                <h2 className="text-xl font-semibold mb-3">
-                  Transformation Roadmap
-                </h2>
+            {/* ACTION TAB */}
+            {activeTab === "action" && (
+              <>
+                {/* Roadmap */}
+                {mgd?.roadmap && (
+                  <div className="card">
+                    <h2 className="text-xl font-semibold mb-3">
+                      Transformation Roadmap
+                    </h2>
 
-                <pre>
-                  {JSON.stringify(mgd.roadmap, null, 2)}
-                </pre>
-              </div>
-            )}
+                    <pre>
+                      {JSON.stringify(mgd.roadmap, null, 2)}
+                    </pre>
+                  </div>
+                )}
 
-            {/* CONSULTING NARRATIVE */}
-            {mgd?.narrative && (
-              <div className="card">
-                <h2 className="text-xl font-semibold mb-3">
-                  Consulting Narrative
-                </h2>
+                {/* Cost Saving Opportunities */}
+                {mgd?.savings && (
+                  <div className="card">
+                    <h2 className="text-xl font-semibold mb-3">
+                      Cost Saving Opportunities
+                    </h2>
 
-                <p>
-                  {typeof mgd.narrative === "string"
-                    ? mgd.narrative
-                    : mgd.narrative.summary}
-                </p>
-              </div>
+                    <pre>
+                      {JSON.stringify(mgd.savings, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Consulting Narrative */}
+                {mgd?.narrative && (
+                  <div className="card">
+                    <h2 className="text-xl font-semibold mb-3">
+                      Consulting Narrative
+                    </h2>
+
+                    <p>
+                      {typeof mgd.narrative === "string"
+                        ? mgd.narrative
+                        : mgd.narrative.summary}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
           </div>
