@@ -71,6 +71,7 @@ export default function Results() {
   const mgd = (session as any)?.mgdAnalysis;
 
   const [selectedRun, setSelectedRun] = useState(session);
+  const [activeTab, setActiveTab] = useState("diagnosis");
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,6 +100,22 @@ export default function Results() {
                 Home
               </Button>
             </Link>
+          </div>
+
+          <div className="flex gap-4 mb-6 border-b pb-2">
+            {["case", "diagnosis", "rootcauses", "action"].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-2 ${
+                  activeTab === tab
+                    ? "border-b-2 border-blue-500 font-semibold"
+                    : "text-gray-500"
+                }`}
+              >
+                {tab.toUpperCase()}
+              </button>
+            ))}
           </div>
 
           <div className="space-y-6">
