@@ -25,6 +25,7 @@ export function detectFileType(filename: string): DocumentType {
 }
 
 export async function parseExcelFile(filePath: string): Promise<ExtractedDocumentData> {
+  const fileBuffer = fs.readFileSync(filePath);
   const workbook = XLSX.read(fileBuffer, { type: "buffer" });
   const tables: ExtractedDocumentData['tables'] = [];
   const allText: string[] = [];

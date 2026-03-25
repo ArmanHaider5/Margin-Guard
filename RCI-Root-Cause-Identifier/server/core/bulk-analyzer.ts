@@ -3223,7 +3223,7 @@ async function generateManufacturingV2Result(
   const unified = await runUnifiedDiagnostic({
     industry,
     signals: diagnosticSignals,
-    kpiData,
+    kpiData: collectedKpiValues,
     baseFindings: finalFindings
   });
 
