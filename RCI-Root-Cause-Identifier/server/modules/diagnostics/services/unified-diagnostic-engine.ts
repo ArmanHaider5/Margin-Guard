@@ -84,7 +84,7 @@ export async function runUnifiedDiagnostic({
     signals,
     rootCauses,
     causalChains,
-    recommendations: savings || []
+    recommendations: Array.isArray(savings) ? savings : []
   });
 
   return {
