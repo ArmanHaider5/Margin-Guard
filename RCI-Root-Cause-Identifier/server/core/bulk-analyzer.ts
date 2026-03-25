@@ -3255,9 +3255,9 @@ async function generateManufacturingV2Result(
     },
     rootCauseTree,
     causalChains,
-    consultingNarrative,
-    costSavingEstimate,
-    industryBenchmarks,
+    consultingNarrative: narrative,
+    costSavingEstimate: savings,
+    industryBenchmarks: benchmarks,
   };
 }
 
