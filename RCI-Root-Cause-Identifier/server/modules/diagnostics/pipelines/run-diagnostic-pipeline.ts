@@ -3,12 +3,12 @@ import { runUnifiedDiagnostic } from "../services/unified-diagnostic-engine";
 export async function runDiagnosticPipeline({
   industry,
   signals,
-  kpiData,
+  kpiData = {},
   findings
 }: {
   industry: string;
   signals: string[];
-  kpiData: any;
+  kpiData?: any;
   findings: any[];
 }) {
 
