@@ -264,8 +264,19 @@ export default function AnalysisResults() {
     );
   }
 
+  const criticalCount = findings.filter(f => f.severity === "critical").length;
+  const highCount = findings.filter(f => f.severity === "high").length;
+  const healthScore = mgd?.healthScore ?? null;
+  const healthStatus = healthScore == null ? null : healthScore >= 70 ? "Healthy" : healthScore >= 40 ? "At Risk" : "Critical";
+  const healthStatusColors = {
+    Healthy: { bg: "bg-emerald-50 dark:bg-emerald-950/40", border: "border-emerald-200 dark:border-emerald-800", score: "text-emerald-700 dark:text-emerald-300", badge: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300" },
+    "At Risk": { bg: "bg-amber-50 dark:bg-amber-950/40", border: "border-amber-200 dark:border-amber-800", score: "text-amber-700 dark:text-amber-300", badge: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300" },
+    Critical: { bg: "bg-red-50 dark:bg-red-950/40", border: "border-red-200 dark:border-red-800", score: "text-red-700 dark:text-red-300", badge: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300" },
+  };
+  const hc = healthStatus ? healthStatusColors[healthStatus] : null;
+
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-6 space-y-10">
 
       {/* ── HEADER ─────────────────────────────────────────────────── */}
       <div className="flex items-start gap-4">
@@ -371,6 +382,72 @@ export default function AnalysisResults() {
         </Card>
       )}
 
+      {/* ── HERO: HEALTH + KEY METRICS ─────────────────────────────── */}
+      <div
+        className={`rounded-2xl border shadow-md p-6 sm:p-8 ${hc ? `${hc.bg} ${hc.border}` : "bg-muted/30 border-border"}`}
+        data-testid="card-hero"
+      >
+        <div className="flex flex-col lg:flex-row items-start gap-8">
+
+          {/* LEFT — Health Score */}
+          <div className="flex flex-col items-center gap-4 lg:w-60 shrink-0">
+            <HealthScoreGauge score={healthScore ?? 0} />
+            {healthScore != null ? (
+              <>
+                <div className="text-center">
+                  <p className={`text-6xl font-black leading-none ${hc?.score ?? ""}`}>
+                    {healthScore}<span className="text-2xl font-bold opacity-50">/100</span>
+                  </p>
+                  <span className={`inline-block mt-2 px-4 py-1 rounded-full text-sm font-semibold ${hc?.badge ?? ""}`}>
+                    {healthStatus}
+                  </span>
+                </div>
+                {mgd?.narrative?.summary && (
+                  <p className="text-xs text-muted-foreground text-center leading-relaxed max-w-xs">
+                    {mgd.narrative.summary}
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground font-medium">Health score unavailable</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Run Deep Diagnostic with documents</p>
+              </div>
+            )}
+          </div>
+
+          {/* DIVIDER */}
+          <div className="hidden lg:block w-px self-stretch bg-border/60" />
+
+          {/* RIGHT — Key metrics grid */}
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-5 w-full">
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Total Issues</p>
+              <p className="text-5xl font-extrabold text-orange-600 dark:text-orange-400 leading-none" data-testid="text-findings-count">
+                {findings.length}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">root causes identified</p>
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Critical Issues</p>
+              <p className="text-5xl font-extrabold text-red-600 dark:text-red-400 leading-none">
+                {criticalCount}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">{highCount} high severity</p>
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Saving Opportunities</p>
+              <p className="text-5xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none" data-testid="text-savings-count">
+                {costSavings.length}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {predictions.length > 0 ? `${predictions.length} risk predictions` : "see breakdown below"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ── CAUSAL CHAIN ───────────────────────────────────────────── */}
       <Card data-testid="card-causal-chain">
         <div className="p-6">
@@ -409,128 +486,18 @@ export default function AnalysisResults() {
         </div>
       </Card>
 
-      {/* ── SCORECARD ROW ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <Card className="relative overflow-hidden border-orange-200 dark:border-orange-800/50">
-          <div className="p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Issues Found</p>
-                <p className="text-5xl font-extrabold text-orange-600 dark:text-orange-400 leading-none" data-testid="text-findings-count">
-                  {findings.length}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {findings.filter(f => f.severity === "critical" || f.severity === "high").length} high / critical
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-              </div>
-            </div>
-          </div>
-        </Card>
 
-        <Card className="relative overflow-hidden border-emerald-200 dark:border-emerald-800/50">
-          <div className="p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Saving Opportunities</p>
-                <p className="text-5xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none" data-testid="text-savings-count">
-                  {costSavings.length}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Identified by the analysis engine
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="relative overflow-hidden border-blue-200 dark:border-blue-800/50">
-          <div className="p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Predictions</p>
-                <p className="text-5xl font-extrabold text-blue-600 dark:text-blue-400 leading-none" data-testid="text-predictions-count">
-                  {predictions.length}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Recurrence risk forecasts
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* ── OPERATIONAL HEALTH SCORE ───────────────────────────────── */}
-      <Card data-testid="card-health-score">
-        <div className="p-6">
-          <div className="flex items-center gap-2.5 mb-6">
-            <Activity className="w-5 h-5 text-muted-foreground shrink-0" />
-            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
-              Operational Health Score
-            </h2>
-          </div>
-          {mgd?.healthScore != null ? (
-            <div className="flex flex-col sm:flex-row items-center gap-8">
-              <div className="shrink-0">
-                <HealthScoreGauge score={mgd.healthScore} />
-              </div>
-              <div className="flex-1 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-extrabold shrink-0"
-                    style={{
-                      background: mgd.healthScore >= 70 ? "rgb(220 252 231)" : mgd.healthScore >= 40 ? "rgb(254 243 199)" : "rgb(254 226 226)",
-                      color: mgd.healthScore >= 70 ? "rgb(22 101 52)" : mgd.healthScore >= 40 ? "rgb(120 53 15)" : "rgb(127 29 29)",
-                    }}
-                  >
-                    {mgd.healthScore}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground">
-                      {mgd.healthScore >= 70 ? "Operational Stability" : mgd.healthScore >= 40 ? "At Risk" : "Critical State"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Score out of 100 · Generated by MGD engine
-                    </p>
-                  </div>
-                </div>
-                {mgd.narrative?.summary && (
-                  <p className="text-sm text-muted-foreground leading-relaxed border-l-2 border-border pl-4">
-                    {mgd.narrative.summary}
-                  </p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Activity className="w-7 h-7 text-muted-foreground" />
-              </div>
-              <p className="text-sm font-medium text-muted-foreground">Health score not available</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Run a Deep Diagnostic with uploaded documents to generate this score.</p>
-            </div>
-          )}
+      <div>
+        <div className="flex items-center gap-2.5 mb-5">
+          <AlertTriangle className="w-5 h-5 text-muted-foreground shrink-0" />
+          <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
+            Diagnostic Findings
+          </h2>
+          <span className="ml-auto text-xs text-muted-foreground">{findings.length} finding{findings.length !== 1 ? "s" : ""}</span>
         </div>
-      </Card>
-
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5" />
-          Findings
-        </h2>
-        <div className="space-y-4">
+        <div className="space-y-5">
           {findings.map((finding, idx) => {
             const colors = fourMColors[finding.fourMCategory] || fourMColors.Money;
-            const severity = severityColors[finding.severity] || severityColors.medium;
             const isIndicative = finding.collapsedNote?.includes("guided validation") || finding.title?.startsWith("[NEEDS VALIDATION]");
             const evidenceStrengthColors: Record<string, { bg: string; text: string; label: string }> = {
               STRONG: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", label: "Strong" },
@@ -541,13 +508,26 @@ export default function AnalysisResults() {
             const hasSignals = finding.evidenceAnchors && finding.evidenceAnchors.length > 0;
             const hasAnyConcreteOutput = hasSignals || (finding.impactObserved && finding.impactObserved.length > 0);
             const noSignalsFallback = !hasAnyConcreteOutput && finding.evidenceStrength === "WEAK";
+            const severityBorderColor =
+              finding.severity === "critical" ? "#ef4444" :
+              finding.severity === "high" ? "#f97316" :
+              finding.severity === "medium" ? "#eab308" : "#9ca3af";
+            const severityBadgeClass =
+              finding.severity === "critical" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300" :
+              finding.severity === "high" ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" :
+              finding.severity === "medium" ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300" :
+              "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400";
             return (
-              <Card key={finding.id || idx} className="p-4 border-l-4" style={{ borderLeftColor: 'currentColor' }}>
-                <div className="flex-1">
+              <div
+                key={finding.id || idx}
+                className="rounded-xl border bg-card shadow-sm overflow-hidden"
+                style={{ borderLeftWidth: "4px", borderLeftColor: severityBorderColor }}
+              >
+                <div className="p-5">
                   <div className="flex items-center gap-2 flex-wrap mb-4">
                     <h3 className="font-semibold">{finding.evidenceLedTitle || finding.title}</h3>
                     <Badge className={`${colors.bg} ${colors.text}`}>{finding.fourMCategory}</Badge>
-                    <Badge className={`${severity.bg} ${severity.text}`}>{finding.severity}</Badge>
+                    <Badge className={severityBadgeClass}>{finding.severity}</Badge>
                     {esStyle && (
                       <Badge className={`${esStyle.bg} ${esStyle.text}`}>
                         {esStyle.label}
@@ -643,76 +623,102 @@ export default function AnalysisResults() {
                     )}
                   </div>
                 </div>
-              </Card>
+              </div>
             );
           })}
           {findings.length === 0 && (
             <p className="text-center text-muted-foreground py-4">No findings available</p>
           )}
         </div>
-      </Card>
+      </div>
 
       {costSavings.length > 0 && (
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            Cost Saving Opportunities
-          </h2>
+        <div>
+          <div className="flex items-center gap-2.5 mb-5">
+            <DollarSign className="w-5 h-5 text-muted-foreground shrink-0" />
+            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
+              Cost Saving Opportunities
+            </h2>
+            <span className="ml-auto text-xs text-muted-foreground">{costSavings.length} identified</span>
+          </div>
           <div className="space-y-4">
             {costSavings.map((opp, idx) => (
-              <Card key={opp.id || idx} className="p-4">
-                <div className="flex items-start justify-between">
+              <div key={opp.id || idx} className="rounded-xl border bg-card shadow-sm p-5">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold">{opp.title}</h3>
-                    <p className="text-muted-foreground text-sm mt-1">{opp.description}</p>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Lightbulb className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <h3 className="font-semibold text-sm">{opp.title}</h3>
+                    </div>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{opp.description}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-emerald-600">{opp.estimatedSavings}</p>
-                    <Badge variant="outline">{opp.implementationEffort} effort</Badge>
+                  <div className="text-right shrink-0">
+                    <p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{opp.estimatedSavings}</p>
+                    <Badge
+                      variant="outline"
+                      className={
+                        opp.implementationEffort === "low" ? "border-emerald-300 text-emerald-600 dark:text-emerald-400 mt-1" :
+                        opp.implementationEffort === "high" ? "border-orange-300 text-orange-600 dark:text-orange-400 mt-1" :
+                        "mt-1"
+                      }
+                    >
+                      {opp.implementationEffort} effort
+                    </Badge>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
       {predictions.length > 0 && (
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Predictions
-          </h2>
-          <div className="space-y-4">
-            {predictions.map((pred, idx) => (
-              <Card key={pred.id || idx} className="p-4">
-                <div className="flex items-start gap-4">
-                  <Clock className="w-5 h-5 text-muted-foreground mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{pred.issue}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant={
-                        pred.likelihood === "high" ? "destructive" : 
-                        pred.likelihood === "medium" ? "default" : "secondary"
-                      }>
-                        {pred.likelihood} likelihood
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">{pred.expectedTimeframe}</span>
-                    </div>
-                                      </div>
-                </div>
-              </Card>
-            ))}
+        <div>
+          <div className="flex items-center gap-2.5 mb-5">
+            <TrendingUp className="w-5 h-5 text-muted-foreground shrink-0" />
+            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
+              Risk Predictions
+            </h2>
+            <span className="ml-auto text-xs text-muted-foreground" data-testid="text-predictions-count">{predictions.length} forecast{predictions.length !== 1 ? "s" : ""}</span>
           </div>
-        </Card>
+          <div className="space-y-4">
+            {predictions.map((pred, idx) => {
+              const likelihoodClass =
+                pred.likelihood === "high" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200" :
+                pred.likelihood === "medium" ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200" :
+                "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200";
+              return (
+                <div key={pred.id || idx} className="rounded-xl border bg-card shadow-sm p-5">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${likelihoodClass}`}>
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-sm mb-2">{pred.issue}</h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className={likelihoodClass}>
+                          {pred.likelihood} likelihood
+                        </Badge>
+                        {pred.expectedTimeframe && (
+                          <span className="text-xs text-muted-foreground">{pred.expectedTimeframe}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* FINANCIAL IMPACT */}
-      <Card className="p-6" data-testid="card-financial-impact">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <DollarSign className="w-5 h-5" />
-          Financial Impact
-        </h2>
+      <Card className="overflow-hidden" data-testid="card-financial-impact">
+        <div className="px-6 pt-6 pb-1 flex items-center gap-2.5">
+          <DollarSign className="w-5 h-5 text-muted-foreground shrink-0" />
+          <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">Financial Impact</h2>
+        </div>
+        <div className="p-6 pt-4">
         {mgd?.financialImpact ? (
           <div className="space-y-4">
             {mgd.financialImpact.estimatedSeverity && (
@@ -784,15 +790,17 @@ export default function AnalysisResults() {
         ) : (
           <p className="text-muted-foreground text-sm">Not available</p>
         )}
+        </div>
       </Card>
 
       {/* TRANSFORMATION ROADMAP */}
       {mgd?.roadmap && (
-        <Card className="p-6" data-testid="card-roadmap">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Map className="w-5 h-5" />
-            Transformation Roadmap
-          </h2>
+        <Card data-testid="card-roadmap">
+          <div className="px-6 pt-6 pb-1 flex items-center gap-2.5">
+            <Map className="w-5 h-5 text-muted-foreground shrink-0" />
+            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">Transformation Roadmap</h2>
+          </div>
+          <div className="p-6 pt-4">
           {Array.isArray(mgd.roadmap) ? (
             <div className="space-y-3">
               {mgd.roadmap.map((step: any, i: number) => (
@@ -846,16 +854,18 @@ export default function AnalysisResults() {
           ) : (
             <p className="text-sm text-muted-foreground">{String(mgd.roadmap)}</p>
           )}
+          </div>
         </Card>
       )}
 
       {/* INDUSTRY BENCHMARKS */}
       {mgd?.benchmarks && (
-        <Card className="p-6" data-testid="card-benchmarks">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChart2 className="w-5 h-5" />
-            Industry Benchmarks
-          </h2>
+        <Card data-testid="card-benchmarks">
+          <div className="px-6 pt-6 pb-1 flex items-center gap-2.5">
+            <BarChart2 className="w-5 h-5 text-muted-foreground shrink-0" />
+            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">Industry Benchmarks</h2>
+          </div>
+          <div className="p-6 pt-4">
           {Array.isArray(mgd.benchmarks) && mgd.benchmarks.length > 0 ? (
             <div className="space-y-3">
               {mgd.benchmarks.map((bm: any, i: number) => (
@@ -898,16 +908,18 @@ export default function AnalysisResults() {
           ) : (
             <p className="text-sm text-muted-foreground">No benchmark data available</p>
           )}
+          </div>
         </Card>
       )}
 
       {/* MGD COST SAVINGS */}
       {mgd?.savings && (
-        <Card className="p-6" data-testid="card-mgd-savings">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Layers className="w-5 h-5" />
-            MGD Cost Savings
-          </h2>
+        <Card data-testid="card-mgd-savings">
+          <div className="px-6 pt-6 pb-1 flex items-center gap-2.5">
+            <Layers className="w-5 h-5 text-muted-foreground shrink-0" />
+            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">MGD Cost Savings</h2>
+          </div>
+          <div className="p-6 pt-4">
           {Array.isArray(mgd.savings) && mgd.savings.length > 0 ? (
             <div className="space-y-3">
               {mgd.savings.map((s: any, i: number) => (
@@ -944,6 +956,7 @@ export default function AnalysisResults() {
           ) : (
             <p className="text-sm text-muted-foreground">No savings data available</p>
           )}
+          </div>
         </Card>
       )}
 

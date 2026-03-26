@@ -1,0 +1,137 @@
+Upgrade admin/analysis-results.tsx to make the results page feel like a premium AI consulting dashboard.
+
+Do NOT change backend logic.
+Do NOT remove any working sections.
+This is a visual + layout upgrade only.
+
+==================================================
+
+1. CREATE A HERO SECTION (TOP PRIORITY)
+   ==================================================
+
+At the very top of the page (below header), create a new "hero" section.
+
+This section must visually dominate the page.
+
+It should include:
+
+LEFT SIDE:
+
+* Operational Health Score (large and dominant)
+* Use HealthScoreGauge at a larger size
+* Add a big numeric score (e.g. 62/100)
+* Add status label:
+
+  * Green → "Healthy"
+  * Amber → "At Risk"
+  * Red → "Critical"
+
+RIGHT SIDE:
+
+* Key summary metrics:
+
+  * Total Issues
+  * Critical Issues
+  * Estimated Savings (RM)
+* Display these as compact stat blocks
+
+STYLE:
+
+* Use a slightly elevated card (shadow-md or similar)
+* Add subtle gradient or background tint
+* Increase padding (p-6 or p-8)
+* This should feel like a dashboard centerpiece
+
+==================================================
+2) UPGRADE FINDINGS INTO INSIGHT CARDS
+======================================
+
+Replace the current simple list with structured cards.
+
+Each finding should:
+
+* Be its own card (rounded-xl, border, padding)
+* Show:
+
+  * Title (root cause)
+  * Severity badge (Critical / High / Medium / Low)
+  * Category (Machinery, Materials, etc.)
+* Add left border color based on severity:
+
+  * Red (critical)
+  * Orange (high)
+  * Yellow (medium)
+  * Grey (low)
+
+OPTIONAL (if data exists):
+
+* show confidence score
+* show supporting signal count
+
+Spacing:
+
+* use gap-4 or gap-5 between cards
+
+Goal:
+This should feel like consultant insights, not a checklist.
+
+==================================================
+3) ADD SECTION VISUAL HIERARCHY
+===============================
+
+Differentiate sections more clearly:
+
+* Alternate subtle background tints between sections (very light)
+* Increase vertical spacing between major sections (space-y-10 or more)
+* Use consistent section headers:
+
+  * uppercase
+  * tracking-wide
+  * slightly muted color
+
+==================================================
+4) IMPROVE COST SAVINGS SECTION
+===============================
+
+Upgrade each savings item into a card:
+
+* Title
+* Description
+* Estimated savings (highlighted in green)
+* Effort level badge (low / medium / high)
+
+Make savings feel:
+
+* tangible
+* actionable
+* valuable
+
+==================================================
+5) IMPROVE PREDICTIONS SECTION
+==============================
+
+Turn each prediction into a card:
+
+* Add severity or likelihood badge
+* Add subtle icon
+* Improve spacing and readability
+
+==================================================
+6) KEEP EVERYTHING SAFE
+=======================
+
+* No backend changes
+* No API changes
+* No data structure changes
+* Only UI improvements
+
+==================================================
+7) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What changed visually
+2. Which sections improved most
+3. If any data fields were missing
+4. If everything still renders cleanly
