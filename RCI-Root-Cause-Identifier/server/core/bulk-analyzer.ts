@@ -2333,6 +2333,45 @@ Return JSON:
   };
 }
 
+function extractKpiValuesFromExcel(filePath: string, industryKpis: string[]) {
+  try {
+    const buffer = fs.readFileSync(filePath);
+    const workbook = XLSX.read(buffer, { type: "buffer" });
+
+    const extractedRows: any[] = [];
+    const detectedColumns = new Set<string>();
+
+    for (const sheetName of workbook.SheetNames) {
+      const worksheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet);
+
+      if (Array.isArray(rows)) {
+        extractedRows.push(...rows);
+
+        for (const row of rows as any[]) {
+          for (const key of Object.keys(row || {})) {
+            const normalizedKey = String(key).trim().toLowerCase();
+            if (industryKpis.includes(normalizedKey)) {
+              detectedColumns.add(String(key).trim());
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      extractedRows,
+      detectedColumns: Array.from(detectedColumns)
+    };
+  } catch (error) {
+    console.error("Excel KPI extraction failed:", filePath, error);
+    return {
+      extractedRows: [],
+      detectedColumns: []
+    };
+  }
+}
+
 /**
  * ============================================================================
  * MANUFACTURING V2 RESULT GENERATOR
@@ -2454,112 +2493,50 @@ async function generateManufacturingV2Result(
         fileName
       );
 
-      try {
+      const { extractedRows, detectedColumns } = extractKpiValuesFromExcel(doc.filePath, industryKpis);
+      const tableData = extractedRows;
+      const detectedKpis = detectedColumns;
 
-        const workbook =
-          XLSX.read(fs.readFileSync(doc.filePath), {
-            type: "buffer"
+      console.log("📊 EXCEL TABLE EXTRACTED:", tableData.slice(0, 5));
+      console.log("📈 KPI COLUMNS DETECTED:", detectedKpis);
+
+      const trendSignals: { signalId: string; category: string }[] = [];
+
+      for (const column of detectedKpis) {
+
+        const values = (tableData as any[])
+          .map((row: any) => row[column])
+          .filter((v: any) => typeof v === "number");
+
+        if (values.length < 3) continue;
+
+        const first = values[0];
+        const last = values[values.length - 1];
+
+        const kpiId = column.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+        collectedKpiValues.push({ kpiId, value: last, phrase: column });
+
+        if (last > first * 1.3) {
+
+          trendSignals.push({
+            signalId: column.toLowerCase() + "_trend_up",
+            category: "Operations"
           });
 
-        const sheetName =
-          workbook.SheetNames[0];
-
-        const sheet =
-          workbook.Sheets[sheetName];
-
-        const tableData =
-          XLSX.utils.sheet_to_json(sheet);
-
-        console.log(
-          "📊 EXCEL TABLE EXTRACTED:",
-          tableData.slice(0, 5)
-        );
-
-        const kpiColumns = [
-          "downtime",
-          "overtime",
-          "otd",
-          "on-time delivery",
-          "rework",
-          "scrap",
-          "inventory",
-          "lead time",
-          "utilization"
-        ];
-
-        const detectedKpis: string[] = [];
-
-        for (const column of Object.keys((tableData as any[])[0] || {})) {
-
-          const columnLower =
-            column.toLowerCase();
-
-          for (const kpi of kpiColumns) {
-
-            if (columnLower.includes(kpi)) {
-
-              detectedKpis.push(column);
-
-            }
-
-          }
-
         }
 
-        console.log(
-          "📈 KPI COLUMNS DETECTED:",
-          detectedKpis
-        );
+        if (last < first * 0.7) {
 
-        const trendSignals: { signalId: string; category: string }[] = [];
-
-        for (const column of detectedKpis) {
-
-          const values = (tableData as any[])
-            .map((row: any) => row[column])
-            .filter((v: any) => typeof v === "number");
-
-          if (values.length < 3) continue;
-
-          const first = values[0];
-          const last = values[values.length - 1];
-
-          const kpiId = column.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
-          collectedKpiValues.push({ kpiId, value: last, phrase: column });
-
-          if (last > first * 1.3) {
-
-            trendSignals.push({
-              signalId: column.toLowerCase() + "_trend_up",
-              category: "Operations"
-            });
-
-          }
-
-          if (last < first * 0.7) {
-
-            trendSignals.push({
-              signalId: column.toLowerCase() + "_trend_down",
-              category: "Operations"
-            });
-
-          }
+          trendSignals.push({
+            signalId: column.toLowerCase() + "_trend_down",
+            category: "Operations"
+          });
 
         }
-
-        console.log(
-          "📉 KPI TREND SIGNALS:",
-          trendSignals
-        );
-
-      } catch (err) {
-
-        console.error(
-          "Excel extraction failed:",
-          err
-        );
 
       }
+
+      console.log("📉 KPI TREND SIGNALS:", trendSignals);
 
     }
 
@@ -3350,109 +3327,47 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
         fileName
       );
 
-      try {
+      const { extractedRows, detectedColumns } = extractKpiValuesFromExcel(doc.filePath, industryKpis);
+      const tableData = extractedRows;
+      const detectedKpis = detectedColumns;
 
-        const workbook =
-          XLSX.read(fs.readFileSync(doc.filePath), {
-            type: "buffer"
+      console.log("📊 EXCEL TABLE EXTRACTED:", tableData.slice(0, 5));
+      console.log("📈 KPI COLUMNS DETECTED:", detectedKpis);
+
+      const trendSignals: { signalId: string; category: string }[] = [];
+
+      for (const column of detectedKpis) {
+
+        const values = (tableData as any[])
+          .map((row: any) => row[column])
+          .filter((v: any) => typeof v === "number");
+
+        if (values.length < 3) continue;
+
+        const first = values[0];
+        const last = values[values.length - 1];
+
+        if (last > first * 1.3) {
+
+          trendSignals.push({
+            signalId: column.toLowerCase() + "_trend_up",
+            category: "Operations"
           });
 
-        const sheetName =
-          workbook.SheetNames[0];
-
-        const sheet =
-          workbook.Sheets[sheetName];
-
-        const tableData =
-          XLSX.utils.sheet_to_json(sheet);
-
-        console.log(
-          "📊 EXCEL TABLE EXTRACTED:",
-          tableData.slice(0, 5)
-        );
-
-        const kpiColumns = [
-          "downtime",
-          "overtime",
-          "otd",
-          "on-time delivery",
-          "rework",
-          "scrap",
-          "inventory",
-          "lead time",
-          "utilization"
-        ];
-
-        const detectedKpis: string[] = [];
-
-        for (const column of Object.keys((tableData as any[])[0] || {})) {
-
-          const columnLower =
-            column.toLowerCase();
-
-          for (const kpi of kpiColumns) {
-
-            if (columnLower.includes(kpi)) {
-
-              detectedKpis.push(column);
-
-            }
-
-          }
-
         }
 
-        console.log(
-          "📈 KPI COLUMNS DETECTED:",
-          detectedKpis
-        );
+        if (last < first * 0.7) {
 
-        const trendSignals: { signalId: string; category: string }[] = [];
-
-        for (const column of detectedKpis) {
-
-          const values = (tableData as any[])
-            .map((row: any) => row[column])
-            .filter((v: any) => typeof v === "number");
-
-          if (values.length < 3) continue;
-
-          const first = values[0];
-          const last = values[values.length - 1];
-
-          if (last > first * 1.3) {
-
-            trendSignals.push({
-              signalId: column.toLowerCase() + "_trend_up",
-              category: "Operations"
-            });
-
-          }
-
-          if (last < first * 0.7) {
-
-            trendSignals.push({
-              signalId: column.toLowerCase() + "_trend_down",
-              category: "Operations"
-            });
-
-          }
+          trendSignals.push({
+            signalId: column.toLowerCase() + "_trend_down",
+            category: "Operations"
+          });
 
         }
-
-        console.log(
-          "📉 KPI TREND SIGNALS:",
-          trendSignals
-        );
-
-      } catch (err) {
-
-        console.error(
-          "Excel extraction failed:",
-          err
-        );
 
       }
+
+      console.log("📉 KPI TREND SIGNALS:", trendSignals);
 
     }
 
