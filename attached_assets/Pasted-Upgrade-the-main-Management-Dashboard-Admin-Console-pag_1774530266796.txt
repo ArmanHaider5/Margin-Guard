@@ -1,0 +1,121 @@
+Upgrade the main Management Dashboard / Admin Console page to feel like a premium operational command center.
+
+Do NOT change backend logic.
+Do NOT change routes or API.
+Do NOT change functionality.
+This is a UI/UX upgrade only.
+
+Target the main admin dashboard page that includes:
+
+* Run Diagnostic section
+* Intelligence Overview
+* Awaiting Review
+* Quick Actions
+
+==================================================
+
+1. UPGRADE THE PAGE HEADER
+   ==================================================
+
+Improve the top area so it feels more like a command center.
+
+Requirements:
+
+* Stronger title hierarchy
+* Cleaner supporting subtitle / role text
+* Better spacing and visual balance
+* Improve overall premium B2B feel
+
+Goal:
+This should feel like the main operating screen of the software.
+
+==================================================
+2) UPGRADE THE OVERVIEW / KPI AREA
+==================================
+
+Improve the dashboard metrics / intelligence overview section.
+
+Requirements:
+
+* Better card styling
+* Better number hierarchy
+* Easier scanning of active diagnoses / counts / industries
+* More polished layout
+
+Optional if data exists:
+
+* Most active industry
+* Recent activity summary
+* High-priority count
+
+Goal:
+This section should feel useful and glanceable.
+
+==================================================
+3) IMPROVE THE “AWAITING REVIEW” SECTION
+========================================
+
+This is likely a high-value workflow section.
+
+Upgrade it so it feels like a priority queue.
+
+Requirements:
+
+* Better row/card styling
+* Clearer visual hierarchy
+* Better spacing
+* Better urgency treatment
+
+Goal:
+A consultant should immediately know what needs attention.
+
+==================================================
+4) IMPROVE QUICK ACTIONS
+========================
+
+Upgrade the Quick Actions section.
+
+Requirements:
+
+* Better button/card styling
+* Stronger visual hierarchy
+* Make each action feel intentional and clickable
+* Improve spacing and polish
+
+Goal:
+This should feel like a real action hub, not just links.
+
+==================================================
+5) IMPROVE THE MAIN LAYOUT
+==========================
+
+Across the whole dashboard:
+
+* reduce flatness
+* improve spacing
+* improve card hierarchy
+* keep design modern, minimal, premium
+
+Do NOT over-design.
+Keep it clean and product-like.
+
+==================================================
+6) KEEP SAFE
+============
+
+* No backend changes
+* No API changes
+* No route changes
+* No logic changes
+* UI only
+
+==================================================
+7) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. Which file(s) were updated
+2. What visually improved most
+3. Whether the dashboard feels more premium
+4. Whether everything still builds cleanly
