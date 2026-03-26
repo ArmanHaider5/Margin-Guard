@@ -1,32 +1,31 @@
 import PDFDocument from "pdfkit";
-import { 
-  type ClientAnalysis, 
+import {
+  type ClientAnalysis,
   type Client,
   type AnalysisFinding,
   type CostSavingOpportunity,
   type RecurrencePrediction,
-  type FourMCategory
+  type FourMCategory,
 } from "@shared/schema";
 import type { ConsultingDiagnosticReport } from "../modules/diagnostics/engines/consulting-diagnostic-engine";
 
-// PDF export must be robust regardless of content length.
-
+// ── Brand colour palette ──────────────────────────────────────────────────────
 const C = {
-  primary:    "#1a2f4a",   // deep navy — main brand
-  secondary:  "#2563eb",   // blue accent
-  accent:     "#f59e0b",   // amber highlight
-  text:       "#1e293b",   // near-black body
-  muted:      "#64748b",   // slate muted
-  border:     "#e2e8f0",   // light rule
-  success:    "#16a34a",   // green
-  warning:    "#d97706",   // amber
-  danger:     "#dc2626",   // red
-  light:      "#f8fafc",   // near-white background
-  white:      "#ffffff",
-  money:      "#16a34a",
-  materials:  "#d97706",
-  manpower:   "#2563eb",
-  machinery:  "#7c3aed",
+  primary:   "#1a2f4a",
+  secondary: "#2563eb",
+  accent:    "#f59e0b",
+  text:      "#1e293b",
+  muted:     "#64748b",
+  border:    "#e2e8f0",
+  success:   "#16a34a",
+  warning:   "#d97706",
+  danger:    "#dc2626",
+  light:     "#f8fafc",
+  white:     "#ffffff",
+  money:     "#16a34a",
+  materials: "#d97706",
+  manpower:  "#2563eb",
+  machinery: "#7c3aed",
 };
 
 const FOURM: Record<FourMCategory, string> = {
@@ -55,7 +54,7 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
     try {
       const doc = new PDFDocument({
         size: "A4",
-        margins: { top: 50, bottom: 60, left: 55, right: 55 },
+        margins: { top: 55, bottom: 65, left: 55, right: 55 },
         bufferPages: true,
         info: {
           Title: `${data.client.name} — Operational Diagnostic Report`,
@@ -66,657 +65,1000 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
 
       const chunks: Buffer[] = [];
       doc.on("data", (chunk) => chunks.push(chunk));
-      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("end",  () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
 
-      const pw  = doc.page.width  - doc.page.margins.left - doc.page.margins.right;
-      const ph  = doc.page.height;
-      const ml  = doc.page.margins.left;
-      const mb  = doc.page.margins.bottom;
+      const pw = doc.page.width  - doc.page.margins.left - doc.page.margins.right;
+      const ph = doc.page.height;
+      const ml = doc.page.margins.left;
+      const mb = doc.page.margins.bottom;
 
-      // ── Convenience helpers ─────────────────────────────────────────
-      const ensureSpace = (h: number) => {
-        if (doc.y > ph - mb - h) doc.addPage();
-      };
+      // ─────────────────────────────────────────────────────────────────────
+      // LAYOUT HELPERS
+      // ─────────────────────────────────────────────────────────────────────
 
       // Safe uppercase — never throws on null / undefined
       const safeUpper = (value: unknown, fallback = "N/A"): string =>
         String(value ?? fallback).toUpperCase();
 
+      // Check remaining page space; add page if needed
+      const ensureSpace = (needed: number) => {
+        if (doc.y > ph - mb - needed) doc.addPage();
+      };
+
+      // Section divider with numbered pill + title
+      // Captures startY before drawing so pill and title share the same baseline.
+      const SECTION_TOP_GAP    = 20; // space above section header
+      const SECTION_RULE_GAP   =  8; // space between rule and first content
+      const SECTION_PILL_H     = 18;
+      const SECTION_PILL_W     = 26;
+
       const sectionHeader = (num: string, title: string) => {
-        ensureSpace(60);
-        // Number pill
+        ensureSpace(70);
+        doc.y += SECTION_TOP_GAP;
+        const startY = doc.y;
+
+        // Filled pill
         doc.save();
-        doc.roundedRect(ml, doc.y, 26, 16, 3).fill(C.secondary);
+        doc.roundedRect(ml, startY, SECTION_PILL_W, SECTION_PILL_H, 3).fill(C.secondary);
         doc.fontSize(8).fillColor(C.white).font("Helvetica-Bold");
-        doc.text(num.padStart(2, "0"), ml + 1, doc.y - 15, { width: 26, align: "center" });
+        doc.text(
+          num.padStart(2, "0"),
+          ml, startY + 4,
+          { width: SECTION_PILL_W, align: "center" }
+        );
         doc.restore();
 
-        doc.fontSize(15).fillColor(C.primary).font("Helvetica-Bold");
-        doc.text(title, ml + 32, doc.y - 16, { width: pw - 32 });
-        doc.moveDown(0.15);
-        doc.moveTo(ml, doc.y).lineTo(ml + pw, doc.y).strokeColor(C.border).lineWidth(0.75).stroke();
-        doc.moveDown(0.8);
+        // Title — same Y baseline as pill
+        doc.fontSize(14).fillColor(C.primary).font("Helvetica-Bold");
+        doc.text(title, ml + SECTION_PILL_W + 8, startY + 1, {
+          width: pw - SECTION_PILL_W - 8,
+        });
+
+        // Advance cursor to below whichever element is taller
+        const afterY = Math.max(doc.y, startY + SECTION_PILL_H + 4);
+        doc.y = afterY;
+
+        // Horizontal rule
+        doc.moveTo(ml, doc.y)
+           .lineTo(ml + pw, doc.y)
+           .strokeColor(C.border)
+           .lineWidth(0.5)
+           .stroke();
+
+        doc.y += SECTION_RULE_GAP;
       };
 
-      const fieldLabel = (text: string) => {
-        doc.fontSize(8).fillColor(C.muted).font("Helvetica-Bold");
-        doc.text(safeUpper(text), ml, doc.y, { characterSpacing: 0.4 });
-        doc.moveDown(0.2);
+      // Uppercase field label
+      const fieldLabel = (text: string, indentX = ml) => {
+        ensureSpace(24);
+        doc.fontSize(7.5).fillColor(C.muted).font("Helvetica-Bold");
+        doc.text(safeUpper(text), indentX, doc.y, { characterSpacing: 0.5 });
+        doc.y += 4;
       };
 
-      const bodyText = (text: string, indent = 0) => {
+      // Justified body paragraph
+      const bodyText = (text: string, indentLeft = 0) => {
         doc.fontSize(10).fillColor(C.text).font("Helvetica");
-        doc.text(String(text ?? ""), ml + indent, doc.y, { width: pw - indent, lineGap: 3, align: "justify" });
-        doc.moveDown(0.8);
+        doc.text(
+          String(text ?? ""),
+          ml + indentLeft, doc.y,
+          { width: pw - indentLeft, lineGap: 3, align: "justify" }
+        );
+        doc.y += 10;
       };
 
-      const pill = (label: unknown, color: string, x: number, y: number, w = 70, h = 16) => {
-        doc.save();
-        doc.roundedRect(x, y, w, h, 3).fill(color + "22");
-        doc.roundedRect(x, y, w, h, 3).stroke(color);
-        doc.fontSize(8).fillColor(color).font("Helvetica-Bold");
-        doc.text(safeUpper(label), x, y + 4, { width: w, align: "center" });
-        doc.restore();
-      };
+      // ─────────────────────────────────────────────────────────────────────
+      // DATA SETUP
+      // ─────────────────────────────────────────────────────────────────────
 
-      // ── Safe mgdAnalysis access ──────────────────────────────────────
-      const mgd = (data.analysis as any).mgdAnalysis as Record<string, any> | null | undefined;
-
-      const findings           = (data.analysis.findings || []) as AnalysisFinding[];
-      const costSavings        = (data.analysis.costSavingOpportunities || []) as CostSavingOpportunity[];
-      const predictions        = (data.analysis.recurrencePredictions || []) as RecurrencePrediction[];
-      const criticalCount      = findings.filter(f => f.severity === "critical" || f.severity === "high").length;
+      const mgd         = (data.analysis as any).mgdAnalysis as Record<string, any> | null | undefined;
+      const findings    = (data.analysis.findings              || []) as AnalysisFinding[];
+      const costSavings = (data.analysis.costSavingOpportunities || []) as CostSavingOpportunity[];
+      const predictions = (data.analysis.recurrencePredictions || []) as RecurrencePrediction[];
+      const critCount   = findings.filter(f => f.severity === "critical" || f.severity === "high").length;
+      const healthScore = mgd?.healthScore;
 
       const analysisDate = data.analysis.completedAt
-        ? new Date(data.analysis.completedAt).toLocaleDateString("en-MY", { year: "numeric", month: "long", day: "numeric" })
-        : new Date().toLocaleDateString("en-MY", { year: "numeric", month: "long", day: "numeric" });
+        ? new Date(data.analysis.completedAt).toLocaleDateString("en-MY", {
+            year: "numeric", month: "long", day: "numeric"
+          })
+        : new Date().toLocaleDateString("en-MY", {
+            year: "numeric", month: "long", day: "numeric"
+          });
 
-      const analysisTypeLabel = data.analysis.analysisType === "quick" ? "Quick Analysis" : "Deep Diagnostic";
-      const modeLabel = data.analysis.analysisMode === "baseline"
+      const analysisTypeLabel = data.analysis.analysisType === "quick"
+        ? "Quick Analysis" : "Deep Diagnostic";
+      const isBaseline = data.analysis.analysisMode === "baseline" || data.analysis.isMockMode;
+      const modeLabel  = isBaseline
         ? "Baseline — Pattern Analysis"
         : "Evidence-Enriched — Signal Driven";
 
-      // ═══════════════════════════════════════════════════════════════
-      // PAGE 1 — COVER PAGE
-      // ═══════════════════════════════════════════════════════════════
+      // ═══════════════════════════════════════════════════════════════════
+      // PAGE 1 — COVER
+      // ═══════════════════════════════════════════════════════════════════
 
-      // Full-width dark header band
-      doc.rect(0, 0, doc.page.width, 180).fill(C.primary);
+      // Full-width header band (absolute, never moves cursor)
+      doc.rect(0, 0, doc.page.width, 175).fill(C.primary);
 
       // EDX wordmark
       doc.fontSize(30).fillColor(C.white).font("Helvetica-Bold");
-      doc.text("EDX", ml, 38, { width: pw, align: "center" });
+      doc.text("EDX", ml, 36, { width: pw, align: "center" });
 
       doc.fontSize(9).fillColor("#94a3b8").font("Helvetica");
-      doc.text("EFFICIENCY  ·  DEPLOYMENT  ·  EXCELLENCE", ml, 76, { width: pw, align: "center", characterSpacing: 1 });
+      doc.text(
+        "EFFICIENCY  ·  DEPLOYMENT  ·  EXCELLENCE",
+        ml, 74,
+        { width: pw, align: "center", characterSpacing: 1 }
+      );
 
       doc.fontSize(8).fillColor("#cbd5e1").font("Helvetica");
-      doc.text("OPERATIONAL DIAGNOSTIC REPORT", ml, 100, { width: pw, align: "center", characterSpacing: 1.2 });
+      doc.text(
+        "OPERATIONAL DIAGNOSTIC REPORT",
+        ml, 98,
+        { width: pw, align: "center", characterSpacing: 1.2 }
+      );
 
-      // Accent rule inside header
-      const ruleY = 125;
-      doc.moveTo(ml + pw / 2 - 60, ruleY).lineTo(ml + pw / 2 + 60, ruleY)
-        .strokeColor(C.accent).lineWidth(1.5).stroke();
+      // Amber accent rule
+      doc.moveTo(ml + pw / 2 - 55, 122).lineTo(ml + pw / 2 + 55, 122)
+         .strokeColor(C.accent).lineWidth(1.5).stroke();
 
-      // Confidential tag inside header
       doc.fontSize(7).fillColor("#94a3b8").font("Helvetica");
-      doc.text("CONFIDENTIAL & PROPRIETARY", ml, 140, { width: pw, align: "center", characterSpacing: 0.8 });
+      doc.text("CONFIDENTIAL & PROPRIETARY", ml, 137, {
+        width: pw, align: "center", characterSpacing: 0.8,
+      });
 
-      // Client name — below header
-      doc.y = 208;
-      doc.fontSize(9).fillColor(C.muted).font("Helvetica");
+      // ── Below header band ────────────────────────────────────────────
+      doc.y = 200;
+
+      doc.fontSize(8.5).fillColor(C.muted).font("Helvetica");
       doc.text("Prepared for", ml, doc.y, { width: pw, align: "center" });
-      doc.moveDown(0.4);
+      doc.y += 14;
 
       doc.fontSize(22).fillColor(C.primary).font("Helvetica-Bold");
       doc.text(data.client.name, ml, doc.y, { width: pw, align: "center" });
-      doc.moveDown(0.5);
+      doc.y += 26;
 
-      // Industry badge area
-      const industryLabel = (data.client.industry || "General").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const industryLabel = (data.client.industry || "General")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c: string) => c.toUpperCase());
       doc.fontSize(10).fillColor(C.muted).font("Helvetica");
       doc.text(industryLabel, ml, doc.y, { width: pw, align: "center" });
-      doc.moveDown(1.5);
+      doc.y += 30;
 
-      // Title divider
-      doc.moveTo(ml + pw / 2 - 80, doc.y).lineTo(ml + pw / 2 + 80, doc.y)
-        .strokeColor(C.border).lineWidth(0.75).stroke();
-      doc.moveDown(1.5);
+      // Divider rule
+      doc.moveTo(ml + pw / 2 - 75, doc.y)
+         .lineTo(ml + pw / 2 + 75, doc.y)
+         .strokeColor(C.border).lineWidth(0.75).stroke();
+      doc.y += 24;
 
       // Report title
-      doc.fontSize(18).fillColor(C.primary).font("Helvetica-Bold");
       const reportTitle = data.analysis.title || `${analysisTypeLabel} — ${data.client.name}`;
+      doc.fontSize(17).fillColor(C.primary).font("Helvetica-Bold");
       doc.text(reportTitle, ml, doc.y, { width: pw, align: "center" });
-      doc.moveDown(0.6);
+      doc.y += 18;
 
       doc.fontSize(10).fillColor(C.muted).font("Helvetica");
-      doc.text(`${analysisTypeLabel}  ·  ${analysisDate}`, ml, doc.y, { width: pw, align: "center" });
-      doc.moveDown(0.35);
+      doc.text(`${analysisTypeLabel}  ·  ${analysisDate}`, ml, doc.y, {
+        width: pw, align: "center",
+      });
+      doc.y += 14;
 
-      // Mode label
-      const modeColor = data.analysis.analysisMode === "baseline" ? C.muted : C.success;
+      const modeColor = isBaseline ? C.muted : C.success;
       doc.fontSize(9).fillColor(modeColor).font("Helvetica-Bold");
       doc.text(modeLabel, ml, doc.y, { width: pw, align: "center" });
+      doc.y += 30;
 
-      doc.moveDown(2);
+      // ── KPI boxes ─────────────────────────────────────────────────────
+      const bw  = (pw - 16) / 3;
+      const by  = doc.y;
+      const bh  = 54;
+      const bgap = 8;
 
-      // ── KPI BOXES ──────────────────────────────────────────────────
-      const bw = (pw - 20) / 3;
-      const by = doc.y;
-      const bh = 56;
-
-      // Box 1: Issues found
+      // Box 1 — Issues Found
       doc.rect(ml, by, bw, bh).fill(C.primary);
       doc.fontSize(22).fillColor(C.white).font("Helvetica-Bold");
-      doc.text(String(findings.length), ml, by + 8, { width: bw, align: "center" });
-      doc.fontSize(8).font("Helvetica").fillColor("#94a3b8");
-      doc.text("Issues Found", ml, by + 36, { width: bw, align: "center" });
+      doc.text(String(findings.length), ml, by + 7, { width: bw, align: "center" });
+      doc.fontSize(7.5).font("Helvetica").fillColor("#94a3b8");
+      doc.text("Issues Found", ml, by + 35, { width: bw, align: "center" });
 
-      // Box 2: Savings
-      doc.rect(ml + bw + 10, by, bw, bh).fill(C.success);
+      // Box 2 — Saving Opportunities
+      const b2x = ml + bw + bgap;
+      doc.rect(b2x, by, bw, bh).fill(C.success);
       doc.fontSize(22).fillColor(C.white).font("Helvetica-Bold");
-      doc.text(String(costSavings.length), ml + bw + 10, by + 8, { width: bw, align: "center" });
-      doc.fontSize(8).font("Helvetica").fillColor("#d1fae5");
-      doc.text("Saving Opportunities", ml + bw + 10, by + 36, { width: bw, align: "center" });
+      doc.text(String(costSavings.length), b2x, by + 7, { width: bw, align: "center" });
+      doc.fontSize(7.5).font("Helvetica").fillColor("#d1fae5");
+      doc.text("Saving Opportunities", b2x, by + 35, { width: bw, align: "center" });
 
-      // Box 3: Critical
-      const box3Color = criticalCount > 0 ? C.danger : C.muted;
-      doc.rect(ml + (bw + 10) * 2, by, bw, bh).fill(box3Color);
+      // Box 3 — Critical/High
+      const b3x = ml + (bw + bgap) * 2;
+      const b3c = critCount > 0 ? C.danger : C.muted;
+      doc.rect(b3x, by, bw, bh).fill(b3c);
       doc.fontSize(22).fillColor(C.white).font("Helvetica-Bold");
-      doc.text(String(criticalCount), ml + (bw + 10) * 2, by + 8, { width: bw, align: "center" });
-      doc.fontSize(8).font("Helvetica").fillColor("#f1f5f9");
-      doc.text("Critical / High Issues", ml + (bw + 10) * 2, by + 36, { width: bw, align: "center" });
+      doc.text(String(critCount), b3x, by + 7, { width: bw, align: "center" });
+      doc.fontSize(7.5).font("Helvetica").fillColor("#f1f5f9");
+      doc.text("Critical / High Issues", b3x, by + 35, { width: bw, align: "center" });
 
-      doc.y = by + bh + 20;
+      doc.y = by + bh + 18;
 
-      // Optional MGD health score on cover
-      const healthScore = mgd?.healthScore;
+      // Health score on cover (optional)
       if (typeof healthScore === "number") {
-        const hsColor = healthScore >= 70 ? C.success : healthScore >= 40 ? C.warning : C.danger;
-        const hsLabel = healthScore >= 70 ? "Healthy" : healthScore >= 40 ? "At Risk" : "Critical";
-        doc.moveDown(0.5);
-        doc.fontSize(9).fillColor(C.muted).font("Helvetica");
+        const hsc   = healthScore >= 70 ? C.success : healthScore >= 40 ? C.warning : C.danger;
+        const hslbl = healthScore >= 70 ? "Healthy" : healthScore >= 40 ? "At Risk" : "Critical";
+        doc.y += 6;
+        doc.fontSize(8.5).fillColor(C.muted).font("Helvetica");
         doc.text("Operational Health Score", ml, doc.y, { width: pw, align: "center" });
-        doc.moveDown(0.2);
-        doc.fontSize(28).fillColor(hsColor).font("Helvetica-Bold");
-        doc.text(`${healthScore}`, ml, doc.y, { continued: true, width: pw / 2 + 30, align: "right" });
-        doc.fontSize(11).font("Helvetica").fillColor(C.muted);
-        doc.text(`  / 100  —  ${hsLabel}`, { width: pw / 2 - 30, align: "left" });
-        doc.moveDown(0.5);
+        doc.y += 14;
+        // Score centred using two adjacent texts
+        const scoreStr = `${healthScore} / 100  —  ${hslbl}`;
+        doc.fontSize(20).fillColor(hsc).font("Helvetica-Bold");
+        doc.text(scoreStr, ml, doc.y, { width: pw, align: "center" });
+        doc.y += 24;
       }
 
-      // ── Cover footer ───────────────────────────────────────────────
-      const coverFooterY = ph - mb - 48;
-      doc.moveTo(ml, coverFooterY).lineTo(ml + pw, coverFooterY).strokeColor(C.border).lineWidth(0.5).stroke();
+      // ── Cover footer ──────────────────────────────────────────────────
+      const cfY = ph - mb - 50;
+      doc.moveTo(ml, cfY).lineTo(ml + pw, cfY)
+         .strokeColor(C.border).lineWidth(0.5).stroke();
 
-      doc.fontSize(8).fillColor(C.muted).font("Helvetica");
-      doc.text("Prepared by", ml, coverFooterY + 8);
+      doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
+      doc.text("Prepared by",    ml, cfY + 8);
       doc.fontSize(10).fillColor(C.text).font("Helvetica-Bold");
-      doc.text("EDX Consulting", ml, coverFooterY + 20);
-      doc.fontSize(8).fillColor(C.muted).font("Helvetica");
-      doc.text("www.edx-consulting.com", ml, coverFooterY + 34);
+      doc.text("EDX Consulting", ml, cfY + 20);
+      doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
+      doc.text("www.edx-consulting.com", ml, cfY + 34);
 
-      doc.fontSize(8).fillColor(C.muted).font("Helvetica");
-      doc.text(`Ref: ${data.analysis.id?.slice(0, 8).toUpperCase() || "N/A"}  ·  Generated ${new Date().toLocaleDateString("en-MY")}`, ml, coverFooterY + 8, { width: pw, align: "right" });
-      doc.text("This document contains confidential information prepared exclusively for the named client.", ml, coverFooterY + 34, { width: pw, align: "right" });
+      const refStr = `Ref: ${String(data.analysis.id ?? "").slice(0, 8).toUpperCase() || "N/A"}  ·  Generated ${new Date().toLocaleDateString("en-MY")}`;
+      doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
+      doc.text(refStr, ml, cfY + 8, { width: pw, align: "right" });
+      doc.text(
+        "This document contains confidential information prepared exclusively for the named client.",
+        ml, cfY + 34,
+        { width: pw, align: "right" }
+      );
 
-      // ═══════════════════════════════════════════════════════════════
+      // ═══════════════════════════════════════════════════════════════════
       // PAGE 2+ — BODY
-      // ═══════════════════════════════════════════════════════════════
+      // ═══════════════════════════════════════════════════════════════════
       doc.addPage();
-      let sectionNum = 1;
+      let sNum = 1;
 
-      // Mock mode notice
-      if (data.analysis.isMockMode) {
-        doc.rect(ml, doc.y, pw, 26).fill("#fef9c3");
-        doc.fontSize(9).fillColor("#92400e").font("Helvetica-Bold");
-        doc.text("⚠  BASELINE MODE — This report was produced from pattern analysis without uploaded documents. Upload operational data for evidence-enriched findings.", ml + 6, doc.y - 20, { width: pw - 12 });
-        doc.moveDown(1.2);
+      // ── Baseline Advisory Notice ──────────────────────────────────────
+      // Shown for Quick Analysis / baseline mode. Designed advisory block,
+      // not raw debug text.
+      if (isBaseline) {
+        const noticeY  = doc.y;
+        const noticeH  = 54;
+        // Soft amber background
+        doc.roundedRect(ml, noticeY, pw, noticeH, 4).fill("#fffbeb");
+        // Amber left strip
+        doc.roundedRect(ml, noticeY, 4, noticeH, 2).fill(C.warning);
+        // Fine border
+        doc.roundedRect(ml, noticeY, pw, noticeH, 4)
+           .stroke(C.warning + "55").lineWidth(0.5);
+
+        const nx = ml + 14;
+        doc.fontSize(9).fillColor(C.warning).font("Helvetica-Bold");
+        doc.text("Advisory  —  Baseline Pattern Analysis", nx, noticeY + 9, {
+          width: pw - 20,
+        });
+        doc.fontSize(8.5).fillColor("#92400e").font("Helvetica");
+        doc.text(
+          "This report was prepared using baseline pattern analysis without uploaded documents. "
+          + "For evidence-enriched findings, upload operational data to enable deep signal-driven diagnostics.",
+          nx, doc.y + 3,
+          { width: pw - 22, lineGap: 2 }
+        );
+        doc.y = Math.max(doc.y, noticeY + noticeH) + 16;
       }
 
-      // ── SECTION 1: EXECUTIVE SUMMARY ──────────────────────────────
-      sectionHeader(String(sectionNum++), "Executive Summary");
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 1 — EXECUTIVE SUMMARY
+      // ─────────────────────────────────────────────────────────────────
+      sectionHeader(String(sNum++), "Executive Summary");
 
       fieldLabel("Analysis Type & Mode");
       doc.fontSize(10).fillColor(C.text).font("Helvetica");
-      doc.text(`${analysisTypeLabel}  ·  ${modeLabel}  ·  ${analysisDate}`, ml, doc.y, { width: pw });
-      doc.moveDown(0.8);
+      doc.text(
+        `${analysisTypeLabel}  ·  ${modeLabel}  ·  ${analysisDate}`,
+        ml, doc.y,
+        { width: pw }
+      );
+      doc.y += 14;
 
       fieldLabel("Summary");
-      const summaryText = data.analysis.summary
-        || (mgd?.narrative?.executiveSummary)
-        || "The diagnostic analysis has been completed. Please review the detailed findings below for root causes and recommended actions.";
+      const summaryText = String(
+        data.analysis.summary
+        || mgd?.narrative?.executiveSummary
+        || "The diagnostic analysis has been completed. Please review the detailed findings below for root causes and recommended actions."
+      );
       bodyText(summaryText);
 
-      // 4M category distribution
+      // 4M distribution tiles
       if (findings.length > 0) {
-        const cats: Record<FourMCategory, number> = { Money: 0, Materials: 0, Manpower: 0, Machinery: 0 };
+        const cats: Record<FourMCategory, number> = {
+          Money: 0, Materials: 0, Manpower: 0, Machinery: 0,
+        };
         findings.forEach(f => { if (f.fourMCategory) cats[f.fourMCategory]++; });
         const populated = Object.entries(cats).filter(([, n]) => n > 0);
+
         if (populated.length > 0) {
+          ensureSpace(56);
           fieldLabel("4M Category Distribution");
-          let cx = ml;
-          const catW = pw / populated.length - 6;
-          const catY = doc.y;
+          const tileW   = Math.floor((pw - (populated.length - 1) * 8) / populated.length);
+          const tileH   = 38;
+          const tilesY  = doc.y;
+          let tx = ml;
+
           populated.forEach(([cat, count]) => {
             const col = FOURM[cat as FourMCategory] || C.muted;
-            doc.rect(cx, catY, catW, 36).fill(col + "15");
-            doc.roundedRect(cx, catY, catW, 36, 3).stroke(col + "55");
+            doc.roundedRect(tx, tilesY, tileW, tileH, 4).fill(col + "14");
+            doc.roundedRect(tx, tilesY, tileW, tileH, 4)
+               .stroke(col + "55").lineWidth(0.5);
             doc.fontSize(16).fillColor(col).font("Helvetica-Bold");
-            doc.text(String(count), cx, catY + 4, { width: catW, align: "center" });
+            doc.text(String(count), tx, tilesY + 4, { width: tileW, align: "center" });
             doc.fontSize(7).fillColor(col).font("Helvetica-Bold");
-            doc.text(cat.toUpperCase(), cx, catY + 24, { width: catW, align: "center" });
-            cx += catW + 6;
+            doc.text(cat.toUpperCase(), tx, tilesY + 24, { width: tileW, align: "center" });
+            tx += tileW + 8;
           });
-          doc.y = catY + 46;
-          doc.moveDown(0.8);
+          doc.y = tilesY + tileH + 14;
         }
       }
 
-      // ── SECTION 2: DIAGNOSTIC FINDINGS ─────────────────────────────
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 2 — DIAGNOSTIC FINDINGS
+      // ─────────────────────────────────────────────────────────────────
       if (findings.length > 0) {
-        sectionHeader(String(sectionNum++), "Diagnostic Findings");
+        sectionHeader(String(sNum++), "Diagnostic Findings");
 
         findings.forEach((finding, idx) => {
-          ensureSpace(80);
+          const MIN_ROW_H = 72;
+          ensureSpace(MIN_ROW_H + 16);
 
           const catColor = FOURM[finding.fourMCategory] || C.muted;
-          const sevColor = SEV[finding.severity] || C.muted;
-          const rowY = doc.y;
+          const sevColor = SEV[String(finding.severity || "medium")] || C.muted;
+          const rowStartY = doc.y;
 
-          // Left category bar
-          doc.rect(ml, rowY, 4, 64).fill(catColor);
+          // Left category colour bar — draw with minimum height first
+          doc.rect(ml, rowStartY, 4, MIN_ROW_H).fill(catColor);
 
           // Index circle
           doc.save();
-          doc.circle(ml + 20, rowY + 10, 9).fill(C.primary);
+          doc.circle(ml + 20, rowStartY + 12, 9).fill(C.primary);
           doc.fontSize(8).fillColor(C.white).font("Helvetica-Bold");
-          doc.text(String(idx + 1).padStart(2, "0"), ml + 12, rowY + 5, { width: 16, align: "center" });
+          doc.text(
+            String(idx + 1).padStart(2, "0"),
+            ml + 12, rowStartY + 7,
+            { width: 16, align: "center" }
+          );
           doc.restore();
 
-          const fx = ml + 36;
-          const fw = pw - 40;
+          // Chip badges — drawn at absolute position top-right before title
+          const chipW  = 54;
+          const chip1X = ml + pw - chipW * 2 - 6;
+          const chip2X = ml + pw - chipW;
+          const chipY  = rowStartY + 3;
+          const chipH  = 14;
 
-          // Severity + category chips — top right
-          const chips: { label: string; color: string }[] = [
-            { label: safeUpper(finding.severity, "medium"), color: sevColor },
-            { label: safeUpper(finding.fourMCategory, "—"), color: catColor },
-          ];
-          let chipX = ml + pw - 110;
-          chips.forEach(ch => {
-            doc.save();
-            doc.roundedRect(chipX, rowY + 1, 52, 13, 2).fill(ch.color + "18");
-            doc.fontSize(6.5).fillColor(ch.color).font("Helvetica-Bold");
-            doc.text(ch.label, chipX + 1, rowY + 4, { width: 50, align: "center" });
-            doc.restore();
-            chipX += 56;
-          });
+          // Severity chip
+          doc.save();
+          doc.roundedRect(chip1X, chipY, chipW, chipH, 2).fill(sevColor + "18");
+          doc.roundedRect(chip1X, chipY, chipW, chipH, 2)
+             .stroke(sevColor + "55").lineWidth(0.4);
+          doc.fontSize(6.5).fillColor(sevColor).font("Helvetica-Bold");
+          doc.text(
+            safeUpper(finding.severity, "medium"),
+            chip1X, chipY + 4,
+            { width: chipW, align: "center" }
+          );
+          doc.restore();
+
+          // Category chip
+          doc.save();
+          doc.roundedRect(chip2X, chipY, chipW, chipH, 2).fill(catColor + "18");
+          doc.roundedRect(chip2X, chipY, chipW, chipH, 2)
+             .stroke(catColor + "55").lineWidth(0.4);
+          doc.fontSize(6.5).fillColor(catColor).font("Helvetica-Bold");
+          doc.text(
+            safeUpper(finding.fourMCategory, "—"),
+            chip2X, chipY + 4,
+            { width: chipW, align: "center" }
+          );
+          doc.restore();
+
+          // Content area starts to the right of the left bar + index circle
+          const cx   = ml + 36;
+          const cw   = pw - 36 - chipW * 2 - 8;
+
+          doc.y = rowStartY + 4;
 
           // Title
           doc.fontSize(11).fillColor(C.primary).font("Helvetica-Bold");
-          doc.text(finding.title, fx, rowY + 2, { width: fw - 120 });
+          doc.text(String(finding.title || "Untitled Finding"), cx, doc.y, { width: cw });
 
           // Description
-          const descY = doc.y + 2;
-          const desc = finding.description?.slice(0, 220) + (finding.description?.length > 220 ? "…" : "");
+          doc.y += 3;
+          const desc = String(finding.description || "").slice(0, 240)
+            + (String(finding.description || "").length > 240 ? "…" : "");
           doc.fontSize(9).fillColor(C.text).font("Helvetica");
-          doc.text(desc, fx, descY, { width: fw, lineGap: 2 });
+          doc.text(desc, cx, doc.y, { width: pw - 40, lineGap: 2 });
 
-          // Cost impact + evidence count
-          const metaY = doc.y + 2;
-          doc.fontSize(8).fillColor(C.muted).font("Helvetica");
-          const costStr = finding.estimatedCostImpact ? `Est. Impact: ${finding.estimatedCostImpact}` : "";
-          const evidStr = (finding as any).evidenceCount ? `  ·  ${(finding as any).evidenceCount} evidence signal${(finding as any).evidenceCount !== 1 ? "s" : ""}` : "";
-          if (costStr || evidStr) {
-            doc.text(`${costStr}${evidStr}`, fx, metaY);
-            doc.moveDown(0.3);
+          // Meta line
+          const costStr = finding.estimatedCostImpact
+            ? `Est. Impact: ${finding.estimatedCostImpact}` : "";
+          const evStr   = (finding as any).evidenceCount
+            ? `  ·  ${(finding as any).evidenceCount} signal${(finding as any).evidenceCount !== 1 ? "s" : ""}` : "";
+          if (costStr || evStr) {
+            doc.y += 3;
+            doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
+            doc.text(`${costStr}${evStr}`, cx, doc.y, { width: pw - 40 });
           }
 
-          doc.moveDown(1);
+          // Advance cursor at least past minimum row height, then add gap
+          doc.y = Math.max(doc.y, rowStartY + MIN_ROW_H) + 12;
         });
       }
 
-      // ── SECTION 3: ROOT CAUSE ANALYSIS (MGD) ───────────────────────
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 3 — ROOT CAUSE ANALYSIS
+      // ─────────────────────────────────────────────────────────────────
       const rootCauseTree = mgd?.rootCauseTree;
+
       if (rootCauseTree?.primary) {
-        sectionHeader(String(sectionNum++), "Root Cause Analysis");
+        sectionHeader(String(sNum++), "Root Cause Analysis");
 
+        // Primary
         fieldLabel("Primary Root Cause");
-        ensureSpace(50);
-        const rcY = doc.y;
-        const primaryColor = FOURM[rootCauseTree.primary.category as FourMCategory] || C.secondary;
-        doc.rect(ml, rcY, 4, 50).fill(primaryColor);
+        ensureSpace(60);
+        const rcStartY  = doc.y;
+        const primaryCol = FOURM[rootCauseTree.primary.category as FourMCategory] || C.secondary;
 
+        doc.rect(ml, rcStartY, 4, 56).fill(primaryCol);
+        const rx = ml + 14;
+
+        doc.y = rcStartY + 2;
         doc.fontSize(12).fillColor(C.primary).font("Helvetica-Bold");
-        doc.text(rootCauseTree.primary.name, ml + 12, rcY, { width: pw - 16 });
-        doc.fontSize(9).fillColor(C.text).font("Helvetica");
+        doc.text(String(rootCauseTree.primary.name || "Unknown Root Cause"), rx, doc.y, {
+          width: pw - 18,
+        });
         if (rootCauseTree.primary.description) {
-          doc.text(rootCauseTree.primary.description.slice(0, 200), ml + 12, doc.y + 2, { width: pw - 16, lineGap: 2 });
+          doc.y += 3;
+          doc.fontSize(9).fillColor(C.text).font("Helvetica");
+          doc.text(
+            String(rootCauseTree.primary.description).slice(0, 220),
+            rx, doc.y,
+            { width: pw - 18, lineGap: 2 }
+          );
         }
-        doc.fontSize(8).fillColor(C.muted);
-        doc.text(`${rootCauseTree.primary.category || ""}${rootCauseTree.primary.tier ? "  ·  Tier " + rootCauseTree.primary.tier : ""}`, ml + 12, doc.y + 2);
-        doc.moveDown(1);
+        doc.y += 3;
+        doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
+        const catStr  = String(rootCauseTree.primary.category || "");
+        const tierStr = rootCauseTree.primary.tier ? `  ·  Tier ${rootCauseTree.primary.tier}` : "";
+        doc.text(`${catStr}${tierStr}`, rx, doc.y);
 
-        if (rootCauseTree.secondary?.length > 0) {
+        doc.y = Math.max(doc.y, rcStartY + 60) + 14;
+
+        // Secondary root causes
+        if (Array.isArray(rootCauseTree.secondary) && rootCauseTree.secondary.length > 0) {
           fieldLabel("Contributing Root Causes");
           rootCauseTree.secondary.slice(0, 5).forEach((rc: any, i: number) => {
-            ensureSpace(45);
-            const scY = doc.y;
-            const scColor = FOURM[rc.category as FourMCategory] || C.muted;
-            doc.rect(ml, scY, 3, 38).fill(scColor);
+            const MIN_SC_H = 44;
+            ensureSpace(MIN_SC_H + 10);
+            const scStart = doc.y;
+            const scCol   = FOURM[rc.category as FourMCategory] || C.muted;
+
+            doc.rect(ml, scStart, 3, MIN_SC_H).fill(scCol);
+            const scx = ml + 11;
+            doc.y = scStart + 2;
 
             doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
-            doc.text(`${i + 1}. ${rc.name}`, ml + 10, scY, { width: pw - 14 });
-            doc.fontSize(9).fillColor(C.text).font("Helvetica");
+            doc.text(`${i + 1}. ${String(rc.name || "Unknown")}`, scx, doc.y, {
+              width: pw - 15,
+            });
             if (rc.description) {
-              doc.text(rc.description.slice(0, 160) + (rc.description.length > 160 ? "…" : ""), ml + 10, doc.y + 1, { width: pw - 14, lineGap: 2 });
+              doc.y += 2;
+              doc.fontSize(9).fillColor(C.text).font("Helvetica");
+              doc.text(
+                String(rc.description).slice(0, 160) + (String(rc.description).length > 160 ? "…" : ""),
+                scx, doc.y,
+                { width: pw - 15, lineGap: 2 }
+              );
             }
-            doc.fontSize(8).fillColor(C.muted);
-            doc.text(`${rc.category || ""}${rc.tier ? "  ·  Tier " + rc.tier : ""}`, ml + 10, doc.y + 1);
-            doc.moveDown(0.9);
+            doc.y += 2;
+            doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
+            const scCat  = String(rc.category || "");
+            const scTier = rc.tier ? `  ·  Tier ${rc.tier}` : "";
+            doc.text(`${scCat}${scTier}`, scx, doc.y);
+            doc.y = Math.max(doc.y, scStart + MIN_SC_H) + 10;
           });
         }
       } else if (data.consultingReport) {
-        // Fallback to consultingReport if mgdAnalysis not present
         const cr = data.consultingReport;
-        sectionHeader(String(sectionNum++), "Root Cause Analysis");
+        sectionHeader(String(sNum++), "Root Cause Analysis");
 
         fieldLabel("Primary Root Cause");
-        const primaryColor = FOURM[cr.primaryRootCause.category as FourMCategory] || C.secondary;
-        const rcY = doc.y;
-        doc.rect(ml, rcY, 4, 50).fill(primaryColor);
+        ensureSpace(60);
+        const rcStartY   = doc.y;
+        const primaryCol = FOURM[cr.primaryRootCause.category as FourMCategory] || C.secondary;
+
+        doc.rect(ml, rcStartY, 4, 56).fill(primaryCol);
+        const rx = ml + 14;
+        doc.y = rcStartY + 2;
+
         doc.fontSize(12).fillColor(C.primary).font("Helvetica-Bold");
-        doc.text(cr.primaryRootCause.name, ml + 12, rcY, { width: pw - 16 });
+        doc.text(String(cr.primaryRootCause.name || "Unknown"), rx, doc.y, {
+          width: pw - 18,
+        });
+        doc.y += 3;
         doc.fontSize(9).fillColor(C.text).font("Helvetica");
-        doc.text(cr.primaryRootCause.description.slice(0, 200), ml + 12, doc.y + 2, { width: pw - 16, lineGap: 2 });
-        doc.moveDown(1);
+        doc.text(
+          String(cr.primaryRootCause.description || "").slice(0, 220),
+          rx, doc.y,
+          { width: pw - 18, lineGap: 2 }
+        );
+        doc.y = Math.max(doc.y, rcStartY + 60) + 14;
 
         if (cr.secondaryRootCauses.length > 0) {
           fieldLabel("Contributing Root Causes");
           cr.secondaryRootCauses.slice(0, 4).forEach((rc, i) => {
-            ensureSpace(40);
-            const scY = doc.y;
-            doc.rect(ml, scY, 3, 34).fill(FOURM[rc.category as FourMCategory] || C.muted);
+            const MIN_SC_H = 40;
+            ensureSpace(MIN_SC_H + 10);
+            const scStart = doc.y;
+            doc.rect(ml, scStart, 3, MIN_SC_H).fill(FOURM[rc.category as FourMCategory] || C.muted);
+            const scx = ml + 11;
+            doc.y = scStart + 2;
+
             doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
-            doc.text(`${i + 1}. ${rc.name}`, ml + 10, scY, { width: pw - 14 });
+            doc.text(`${i + 1}. ${String(rc.name || "Unknown")}`, scx, doc.y, {
+              width: pw - 15,
+            });
+            doc.y += 2;
             doc.fontSize(9).fillColor(C.text).font("Helvetica");
-            doc.text(rc.description.slice(0, 140) + (rc.description.length > 140 ? "…" : ""), ml + 10, doc.y + 1, { width: pw - 14, lineGap: 2 });
-            doc.moveDown(0.8);
+            doc.text(
+              String(rc.description || "").slice(0, 160)
+              + (String(rc.description || "").length > 160 ? "…" : ""),
+              scx, doc.y,
+              { width: pw - 15, lineGap: 2 }
+            );
+            doc.y = Math.max(doc.y, scStart + MIN_SC_H) + 10;
           });
         }
       }
 
-      // ── SECTION 4: CAUSAL CHAIN ─────────────────────────────────────
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 4 — CAUSAL CHAIN
+      // ─────────────────────────────────────────────────────────────────
       const causalChains = mgd?.causalChains;
-      if (causalChains?.length > 0) {
-        sectionHeader(String(sectionNum++), "Causal Chain");
+      if (Array.isArray(causalChains) && causalChains.length > 0) {
+        sectionHeader(String(sNum++), "Causal Chain");
 
         const chain = causalChains[0];
         fieldLabel("Primary Failure Path");
         doc.fontSize(9).fillColor(C.muted).font("Helvetica");
-        doc.text("The following causal chain describes how the identified root cause propagates through operations to produce the observed symptoms.", ml, doc.y, { width: pw, lineGap: 3 });
-        doc.moveDown(0.6);
+        doc.text(
+          "The following path shows how the identified root cause propagates through operations to produce the observed symptoms.",
+          ml, doc.y,
+          { width: pw, lineGap: 3 }
+        );
+        doc.y += 10;
 
-        // Chain steps as horizontal flow
         const steps: string[] = chain.chain || chain.steps || [];
-        if (steps.length > 0) {
-          steps.forEach((step: string, i: number) => {
-            ensureSpace(30);
-            const stepY = doc.y;
-            const isLast = i === steps.length - 1;
+        steps.forEach((step: string, i: number) => {
+          const isFirst = i === 0;
+          const isLast  = i === steps.length - 1;
+          const stepH   = 24;
+          ensureSpace(stepH + (isLast ? 0 : 14));
 
-            doc.save();
-            doc.roundedRect(ml, stepY, pw - 20, 22, 3).fill(i === 0 ? C.primary + "12" : C.light);
-            doc.roundedRect(ml, stepY, pw - 20, 22, 3).stroke(C.border);
-            doc.fontSize(9).fillColor(i === 0 ? C.primary : C.text).font(i === 0 ? "Helvetica-Bold" : "Helvetica");
-            doc.text(step, ml + 8, stepY + 6, { width: pw - 36 });
-            doc.restore();
+          const stepY = doc.y;
+          const stepW = pw - 22;
 
-            if (!isLast) {
-              doc.fontSize(10).fillColor(C.muted);
-              doc.text("↓", ml + pw - 18, stepY + 4, { width: 16, align: "center" });
-            }
+          doc.roundedRect(ml, stepY, stepW, stepH, 3)
+             .fill(isFirst ? C.primary + "12" : C.light);
+          doc.roundedRect(ml, stepY, stepW, stepH, 3)
+             .stroke(isFirst ? C.secondary + "66" : C.border)
+             .lineWidth(0.4);
 
-            doc.y = stepY + 28;
-          });
-        }
+          doc.fontSize(9)
+             .fillColor(isFirst ? C.primary : C.text)
+             .font(isFirst ? "Helvetica-Bold" : "Helvetica");
+          doc.text(String(step || ""), ml + 9, stepY + 7, { width: stepW - 18 });
+
+          // Arrow connector
+          if (!isLast) {
+            doc.fontSize(10).fillColor(C.muted).font("Helvetica");
+            doc.text("↓", ml + pw - 18, stepY + 6, { width: 16, align: "center" });
+          }
+
+          doc.y = stepY + stepH + 6;
+        });
 
         if (chain.description) {
-          doc.moveDown(0.5);
+          doc.y += 4;
           fieldLabel("Chain Description");
-          bodyText(chain.description);
+          bodyText(String(chain.description));
         }
-        doc.moveDown(0.5);
+        doc.y += 4;
       }
 
-      // ── SECTION 5: COST SAVING OPPORTUNITIES ───────────────────────
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 5 — COST SAVING OPPORTUNITIES  (premium white card design)
+      // ─────────────────────────────────────────────────────────────────
       if (costSavings.length > 0) {
-        sectionHeader(String(sectionNum++), "Cost Saving Opportunities");
+        sectionHeader(String(sNum++), "Cost Saving Opportunities");
 
+        const uniqueCats = [...new Set(costSavings.map(s => s.category).filter(Boolean))].length;
         doc.fontSize(9).fillColor(C.muted).font("Helvetica");
-        doc.text(`${costSavings.length} opportunity${costSavings.length !== 1 ? "ies" : ""} identified across ${[...new Set(costSavings.map(s => s.category))].length} operational category${[...new Set(costSavings.map(s => s.category))].length !== 1 ? "ies" : ""}.`, ml, doc.y, { width: pw });
-        doc.moveDown(0.6);
+        doc.text(
+          `${costSavings.length} opportunit${costSavings.length !== 1 ? "ies" : "y"} identified`
+          + (uniqueCats > 0 ? ` across ${uniqueCats} operational categor${uniqueCats !== 1 ? "ies" : "y"}` : "") + ".",
+          ml, doc.y,
+          { width: pw }
+        );
+        doc.y += 14;
 
         costSavings.forEach((opp, i) => {
-          ensureSpace(55);
-          const oppY = doc.y;
-          const catColor = FOURM[opp.category as FourMCategory] || C.secondary;
+          const MIN_CARD_H = 68;
+          ensureSpace(MIN_CARD_H + 10);
 
-          doc.rect(ml, oppY, pw, 46).fill(C.success + "08");
-          doc.rect(ml, oppY, 4, 46).fill(C.success);
+          const cardY = doc.y;
 
-          const ox = ml + 12;
-          doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
-          doc.text(`${i + 1}. ${opp.title}`, ox, oppY + 4, { width: pw - 100 });
+          // White card with subtle border
+          doc.roundedRect(ml, cardY, pw, MIN_CARD_H, 4).fill(C.white);
+          doc.roundedRect(ml, cardY, pw, MIN_CARD_H, 4)
+             .stroke(C.border).lineWidth(0.5);
 
-          // Savings amount — top right
+          // Green left accent strip
+          doc.roundedRect(ml, cardY, 4, MIN_CARD_H, 2).fill(C.success);
+
+          // Card content
+          const kx = ml + 16;
+          const kw = pw - 20;
+
+          // Number + title (left) and savings amount (right) on same row
+          const titleY = cardY + 10;
+          doc.y = titleY;
+
+          // Savings amount — right-aligned, drawn first (doesn't affect cursor)
           if (opp.estimatedSavings) {
             doc.fontSize(10).fillColor(C.success).font("Helvetica-Bold");
-            doc.text(opp.estimatedSavings, ml, oppY + 4, { width: pw, align: "right" });
+            doc.text(String(opp.estimatedSavings), ml, titleY, {
+              width: pw, align: "right",
+            });
           }
 
-          doc.fontSize(9).fillColor(C.text).font("Helvetica");
+          // Title — left
+          doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
+          doc.text(
+            `${i + 1}.  ${String(opp.title || "Opportunity")}`,
+            kx, titleY,
+            { width: kw - (opp.estimatedSavings ? 110 : 0) }
+          );
+
+          // Description
           if (opp.description) {
-            doc.text(opp.description.slice(0, 160) + (opp.description.length > 160 ? "…" : ""), ox, doc.y + 1, { width: pw - 16, lineGap: 2 });
+            doc.y += 3;
+            doc.fontSize(9).fillColor(C.text).font("Helvetica");
+            doc.text(
+              String(opp.description).slice(0, 160) + (String(opp.description).length > 160 ? "…" : ""),
+              kx, doc.y,
+              { width: kw, lineGap: 2 }
+            );
           }
-          doc.fontSize(8).fillColor(C.muted);
-          doc.text(`Category: ${opp.category || "N/A"}${opp.timeframe ? "  ·  Timeframe: " + opp.timeframe : ""}`, ox, doc.y + 1);
 
-          doc.y = oppY + 50;
-          doc.moveDown(0.5);
+          // Meta row
+          const metaParts: string[] = [];
+          if (opp.category)  metaParts.push(String(opp.category));
+          if ((opp as any).effort)    metaParts.push(`Effort: ${(opp as any).effort}`);
+          if (opp.timeframe) metaParts.push(`Timeframe: ${opp.timeframe}`);
+          if (metaParts.length > 0) {
+            doc.y += 3;
+            doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
+            doc.text(metaParts.join("  ·  "), kx, doc.y, { width: kw });
+          }
+
+          // Ensure cursor is past the card
+          doc.y = Math.max(doc.y, cardY + MIN_CARD_H) + 10;
         });
       }
 
-      // ── SECTION 6: RISK PREDICTIONS ─────────────────────────────────
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 6 — RISK PREDICTIONS
+      // ─────────────────────────────────────────────────────────────────
       if (predictions.length > 0) {
-        sectionHeader(String(sectionNum++), "Risk Predictions");
+        sectionHeader(String(sNum++), "Risk Predictions");
 
         doc.fontSize(9).fillColor(C.muted).font("Helvetica");
-        doc.text("The following risks are predicted based on the identified root causes and current operational signals.", ml, doc.y, { width: pw, lineGap: 3 });
-        doc.moveDown(0.6);
+        doc.text(
+          "The following risks are predicted based on the identified root causes and current operational signals.",
+          ml, doc.y,
+          { width: pw, lineGap: 3 }
+        );
+        doc.y += 12;
 
         predictions.forEach((pred, i) => {
-          ensureSpace(55);
-          const predY = doc.y;
-          const isHigh = pred.likelihood === "high";
-          const borderColor = isHigh ? C.danger : pred.likelihood === "medium" ? C.warning : C.muted;
+          const MIN_PRED_H = 58;
+          ensureSpace(MIN_PRED_H + 10);
 
-          doc.rect(ml, predY, pw, 46).fill(isHigh ? C.danger + "08" : C.light);
-          doc.rect(ml, predY, 4, 46).fill(borderColor);
+          const isHigh     = String(pred.likelihood || "").toLowerCase() === "high";
+          const borderCol  = isHigh ? C.danger
+            : String(pred.likelihood || "").toLowerCase() === "medium" ? C.warning : C.muted;
 
-          const px = ml + 12;
-          doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
-          doc.text(`${i + 1}. ${pred.title}`, px, predY + 4, { width: pw - 90 });
+          const predStartY = doc.y;
 
-          // Likelihood chip
+          // Card
+          doc.roundedRect(ml, predStartY, pw, MIN_PRED_H, 4)
+             .fill(isHigh ? "#fef2f2" : C.light);
+          doc.roundedRect(ml, predStartY, pw, MIN_PRED_H, 4)
+             .stroke(isHigh ? C.danger + "44" : C.border).lineWidth(0.5);
+          doc.rect(ml, predStartY, 4, MIN_PRED_H).fill(borderCol);
+
+          // Likelihood chip — top right
+          const chipW  = 76;
+          const chipH  = 14;
+          const chipX  = ml + pw - chipW - 6;
+          const chipCY = predStartY + 6;
           doc.save();
-          doc.roundedRect(ml + pw - 75, predY + 5, 68, 14, 2).fill(borderColor + "22");
-          doc.fontSize(7.5).fillColor(borderColor).font("Helvetica-Bold");
-          doc.text(`${(pred.likelihood || "N/A").toUpperCase()} RISK`, ml + pw - 74, predY + 9, { width: 66, align: "center" });
+          doc.roundedRect(chipX, chipCY, chipW, chipH, 2).fill(borderCol + "1a");
+          doc.roundedRect(chipX, chipCY, chipW, chipH, 2)
+             .stroke(borderCol + "55").lineWidth(0.4);
+          doc.fontSize(6.5).fillColor(borderCol).font("Helvetica-Bold");
+          doc.text(
+            `${safeUpper(pred.likelihood)} RISK`,
+            chipX, chipCY + 4,
+            { width: chipW, align: "center" }
+          );
           doc.restore();
 
-          doc.fontSize(9).fillColor(C.text).font("Helvetica");
-          if (pred.description) {
-            doc.text(pred.description.slice(0, 160) + (pred.description.length > 160 ? "…" : ""), px, doc.y + 1, { width: pw - 16, lineGap: 2 });
-          }
-          doc.fontSize(8).fillColor(C.muted);
-          if (pred.timeframe) doc.text(`Timeframe: ${pred.timeframe}`, px, doc.y + 1);
+          const px = ml + 14;
+          doc.y = predStartY + 8;
 
-          doc.y = predY + 50;
-          doc.moveDown(0.5);
+          doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
+          doc.text(
+            `${i + 1}.  ${String(pred.title || "Risk")}`,
+            px, doc.y,
+            { width: pw - chipW - 22 }
+          );
+
+          if (pred.description) {
+            doc.y += 3;
+            doc.fontSize(9).fillColor(C.text).font("Helvetica");
+            doc.text(
+              String(pred.description).slice(0, 180) + (String(pred.description).length > 180 ? "…" : ""),
+              px, doc.y,
+              { width: pw - 20, lineGap: 2 }
+            );
+          }
+
+          if (pred.timeframe) {
+            doc.y += 2;
+            doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
+            doc.text(`Timeframe: ${pred.timeframe}`, px, doc.y);
+          }
+
+          doc.y = Math.max(doc.y, predStartY + MIN_PRED_H) + 10;
         });
       }
 
-      // ── SECTION 7: FINANCIAL IMPACT (MGD) ──────────────────────────
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 7 — FINANCIAL IMPACT
+      // ─────────────────────────────────────────────────────────────────
       const financialImpact = mgd?.financialImpact ?? data.consultingReport?.financialImpact;
       if (financialImpact) {
-        sectionHeader(String(sectionNum++), "Financial Impact");
+        sectionHeader(String(sNum++), "Financial Impact");
 
-        const sevColor = SEV[financialImpact.estimatedSeverity] || C.muted;
-        const impactY = doc.y;
-        doc.rect(ml, impactY, pw, 36).fill(sevColor + "10");
-        doc.rect(ml, impactY, 4, 36).fill(sevColor);
-        doc.fontSize(12).fillColor(sevColor).font("Helvetica-Bold");
-        doc.text(safeUpper(financialImpact.estimatedSeverity), ml + 12, impactY + 5, { continued: true });
-        doc.fontSize(10).fillColor(C.text).font("Helvetica");
-        doc.text("  Estimated Financial Severity", { width: pw - 16 });
-        doc.fontSize(9).fillColor(C.muted).font("Helvetica");
-        const affectedCats = financialImpact.affectedCategories?.join(", ");
-        if (affectedCats) doc.text(`Affected: ${affectedCats}`, ml + 12, doc.y + 2);
-        doc.y = impactY + 40;
-        doc.moveDown(0.5);
+        const sevRaw  = String(financialImpact.estimatedSeverity || "");
+        const sevCol  = SEV[sevRaw.toLowerCase()] || C.muted;
+        const MIN_F_H = 40;
+        ensureSpace(MIN_F_H + 10);
+        const fiY = doc.y;
 
-        if (financialImpact.costDrivers?.length > 0) {
+        doc.roundedRect(ml, fiY, pw, MIN_F_H, 4).fill(sevCol + "0e");
+        doc.roundedRect(ml, fiY, pw, MIN_F_H, 4)
+           .stroke(sevCol + "44").lineWidth(0.5);
+        doc.rect(ml, fiY, 4, MIN_F_H).fill(sevCol);
+
+        doc.y = fiY + 8;
+        doc.fontSize(12).fillColor(sevCol).font("Helvetica-Bold");
+        doc.text(
+          safeUpper(financialImpact.estimatedSeverity) + "  Financial Severity",
+          ml + 14, doc.y,
+          { continued: false, width: pw - 18 }
+        );
+
+        const affectedCats = Array.isArray(financialImpact.affectedCategories)
+          ? financialImpact.affectedCategories.join(", ") : "";
+        if (affectedCats) {
+          doc.y += 2;
+          doc.fontSize(8.5).fillColor(C.muted).font("Helvetica");
+          doc.text(`Affected areas: ${affectedCats}`, ml + 14, doc.y, { width: pw - 18 });
+        }
+
+        doc.y = Math.max(doc.y, fiY + MIN_F_H) + 12;
+
+        if (Array.isArray(financialImpact.costDrivers) && financialImpact.costDrivers.length > 0) {
           fieldLabel("Cost Drivers");
           const driverText = financialImpact.costDrivers
-            .map((d: string) => d.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()))
+            .map((d: unknown) =>
+              String(d ?? "").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())
+            )
             .join(", ");
           bodyText(driverText);
         }
       }
 
-      // ── SECTION 8: OPERATIONAL HEALTH SCORE ────────────────────────
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 8 — OPERATIONAL HEALTH SCORE
+      // ─────────────────────────────────────────────────────────────────
       if (typeof healthScore === "number") {
-        sectionHeader(String(sectionNum++), "Operational Health Score");
+        sectionHeader(String(sNum++), "Operational Health Score");
 
-        const hsColor = healthScore >= 70 ? C.success : healthScore >= 40 ? C.warning : C.danger;
-        const hsLabel = healthScore >= 70 ? "Healthy" : healthScore >= 40 ? "At Risk" : "Critical";
-        const hsDesc = healthScore >= 70
+        const hsc   = healthScore >= 70 ? C.success : healthScore >= 40 ? C.warning : C.danger;
+        const hslbl = healthScore >= 70 ? "Healthy" : healthScore >= 40 ? "At Risk" : "Critical";
+        const hsdsc = healthScore >= 70
           ? "The organisation demonstrates healthy operational fundamentals. Minor improvements may still deliver meaningful efficiency gains."
           : healthScore >= 40
           ? "The organisation is operating under stress in one or more key areas. Targeted intervention is recommended."
           : "The organisation shows critical operational vulnerabilities. Immediate action is required to prevent further deterioration.";
 
-        ensureSpace(70);
+        const MIN_HS_H = 60;
+        ensureSpace(MIN_HS_H + 10);
         const hsY = doc.y;
-        doc.rect(ml, hsY, pw, 56).fill(hsColor + "0C");
-        doc.rect(ml, hsY, 4, 56).fill(hsColor);
 
-        doc.fontSize(32).fillColor(hsColor).font("Helvetica-Bold");
-        doc.text(`${healthScore}`, ml + 16, hsY + 5, { continued: true });
+        doc.roundedRect(ml, hsY, pw, MIN_HS_H, 4).fill(hsc + "0c");
+        doc.roundedRect(ml, hsY, pw, MIN_HS_H, 4)
+           .stroke(hsc + "44").lineWidth(0.5);
+        doc.rect(ml, hsY, 4, MIN_HS_H).fill(hsc);
+
+        doc.y = hsY + 6;
+        doc.fontSize(30).fillColor(hsc).font("Helvetica-Bold");
+        doc.text(String(healthScore), ml + 18, hsY + 6, { continued: true });
         doc.fontSize(12).fillColor(C.muted).font("Helvetica");
         doc.text(" / 100", { continued: true });
-        doc.fontSize(13).fillColor(hsColor).font("Helvetica-Bold");
-        doc.text(`   ${hsLabel}`, { width: pw - 60 });
+        doc.fontSize(13).fillColor(hsc).font("Helvetica-Bold");
+        doc.text(`   ${hslbl}`, { width: pw - 70 });
+
+        doc.y += 4;
         doc.fontSize(9).fillColor(C.text).font("Helvetica");
-        doc.text(hsDesc, ml + 16, doc.y + 2, { width: pw - 20, lineGap: 3 });
-        doc.y = hsY + 60;
-        doc.moveDown(0.5);
+        doc.text(hsdsc, ml + 18, doc.y, { width: pw - 22, lineGap: 3 });
+
+        doc.y = Math.max(doc.y, hsY + MIN_HS_H) + 12;
       }
 
-      // ── SECTION 9: TRANSFORMATION ROADMAP ──────────────────────────
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 9 — TRANSFORMATION ROADMAP
+      // ─────────────────────────────────────────────────────────────────
       const roadmap = mgd?.roadmap;
       if (Array.isArray(roadmap) && roadmap.length > 0) {
-        sectionHeader(String(sectionNum++), "Transformation Roadmap");
+        sectionHeader(String(sNum++), "Transformation Roadmap");
 
+        const phaseColors = [C.danger, C.warning, C.secondary, C.success, C.muted];
         roadmap.slice(0, 5).forEach((item: any, i: number) => {
-          ensureSpace(50);
-          const rmY = doc.y;
-          const phaseColors = [C.danger, C.warning, C.secondary, C.success, C.muted];
-          const phColor = phaseColors[i] || C.muted;
+          const MIN_RM_H = 50;
+          ensureSpace(MIN_RM_H + 10);
 
-          doc.rect(ml, rmY, pw, 44).fill(C.light);
-          doc.rect(ml, rmY, 4, 44).fill(phColor);
+          const rmStartY = doc.y;
+          const phCol    = phaseColors[i] || C.muted;
+
+          doc.roundedRect(ml, rmStartY, pw, MIN_RM_H, 4).fill(C.light);
+          doc.roundedRect(ml, rmStartY, pw, MIN_RM_H, 4)
+             .stroke(C.border).lineWidth(0.4);
+          doc.rect(ml, rmStartY, 4, MIN_RM_H).fill(phCol);
 
           const rmx = ml + 14;
-          doc.fontSize(9).fillColor(phColor).font("Helvetica-Bold");
-          const phaseLabel = item.phase || item.priority || `Phase ${i + 1}`;
-          doc.text(safeUpper(phaseLabel, `Phase ${i + 1}`), rmx, rmY + 4, { characterSpacing: 0.5 });
+          doc.y = rmStartY + 6;
+
+          doc.fontSize(8).fillColor(phCol).font("Helvetica-Bold");
+          const phLabel = String(item.phase || item.priority || `Phase ${i + 1}`);
+          doc.text(safeUpper(phLabel, `Phase ${i + 1}`), rmx, doc.y, {
+            characterSpacing: 0.4,
+          });
+          doc.y += 2;
 
           doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
-          doc.text(item.title || item.name || "Intervention", rmx, doc.y + 1, { width: pw - 50 });
+          doc.text(
+            String(item.title || item.name || "Intervention"),
+            rmx, doc.y,
+            { width: pw - 20 }
+          );
 
-          doc.fontSize(8.5).fillColor(C.text).font("Helvetica");
-          if (item.description || item.action) {
-            doc.text(
-              (item.description || item.action || "").slice(0, 140),
-              rmx, doc.y + 1, { width: pw - 18, lineGap: 2 }
-            );
+          const desc = String(item.description || item.action || "").slice(0, 150);
+          if (desc) {
+            doc.y += 2;
+            doc.fontSize(8.5).fillColor(C.text).font("Helvetica");
+            doc.text(desc, rmx, doc.y, { width: pw - 20, lineGap: 2 });
           }
 
-          doc.y = rmY + 48;
-          doc.moveDown(0.4);
+          doc.y = Math.max(doc.y, rmStartY + MIN_RM_H) + 8;
         });
       }
 
-      // ── SECTION 10: INDUSTRY BENCHMARKS ────────────────────────────
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 10 — INDUSTRY BENCHMARKS
+      // ─────────────────────────────────────────────────────────────────
       const benchmarks = mgd?.benchmarks;
       if (Array.isArray(benchmarks) && benchmarks.length > 0) {
-        sectionHeader(String(sectionNum++), "Industry Benchmarks");
+        sectionHeader(String(sNum++), "Industry Benchmarks");
 
         fieldLabel("Performance vs. Industry Standard");
+        doc.y += 2;
+
         benchmarks.slice(0, 6).forEach((bm: any) => {
-          ensureSpace(30);
-          const bmY = doc.y;
-          const label = bm.metric || bm.name || "Metric";
-          const status = bm.status || bm.rating || "";
-          const bmColor = status === "good" || status === "above" ? C.success
-            : status === "below" || status === "poor" ? C.danger
+          ensureSpace(36);
+          const bmY    = doc.y;
+          const label  = String(bm.metric || bm.name || "Metric");
+          const status = String(bm.status || bm.rating || "");
+          const bmCol  = status === "good"  || status === "above" ? C.success
+            : status === "below" || status === "poor"  ? C.danger
             : C.warning;
 
-          doc.fontSize(9).fillColor(C.text).font("Helvetica-Bold");
-          doc.text(label, ml, bmY, { continued: true });
-          doc.font("Helvetica").fillColor(C.muted);
-          if (bm.clientValue) doc.text(`  —  ${bm.clientValue}`);
-          else doc.text("");
+          // Background row
+          doc.rect(ml, bmY, pw, 28).fill(bmY % 56 < 28 ? C.light : C.white);
 
-          if (bm.industryAverage || bm.benchmark) {
-            doc.fontSize(8).fillColor(C.muted);
-            doc.text(`Industry avg: ${bm.industryAverage || bm.benchmark}`, ml + 10, doc.y);
+          const val = bm.clientValue ? `  —  ${bm.clientValue}` : "";
+          doc.y = bmY + 5;
+          doc.fontSize(9).fillColor(C.text).font("Helvetica-Bold");
+          doc.text(label, ml + 6, doc.y, { continued: !!val });
+          if (val) {
+            doc.font("Helvetica").fillColor(C.muted);
+            doc.text(val);
+          } else {
+            doc.text("");
           }
+
+          const avg = bm.industryAverage || bm.benchmark;
+          if (avg) {
+            doc.y += 1;
+            doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
+            doc.text(`Industry avg: ${avg}`, ml + 12, doc.y);
+          }
+
           if (status) {
-            doc.fontSize(8).fillColor(bmColor).font("Helvetica-Bold");
-            doc.text(safeUpper(status), ml + pw - 60, bmY, { width: 58, align: "right" });
+            doc.fontSize(7.5).fillColor(bmCol).font("Helvetica-Bold");
+            doc.text(safeUpper(status), ml, bmY + 8, {
+              width: pw - 6, align: "right",
+            });
           }
-          doc.moveDown(0.5);
+
+          doc.y = Math.max(doc.y, bmY + 28) + 4;
         });
       }
 
-      // ── CLOSING ─────────────────────────────────────────────────────
-      ensureSpace(80);
-      doc.moveDown(1);
-      doc.moveTo(ml, doc.y).lineTo(ml + pw, doc.y).strokeColor(C.border).lineWidth(0.5).stroke();
-      doc.moveDown(0.8);
+      // ─────────────────────────────────────────────────────────────────
+      // CLOSING CTA
+      // ─────────────────────────────────────────────────────────────────
+      ensureSpace(70);
+      doc.y += 16;
+      doc.moveTo(ml, doc.y).lineTo(ml + pw, doc.y)
+         .strokeColor(C.border).lineWidth(0.5).stroke();
+      doc.y += 12;
 
       doc.fontSize(11).fillColor(C.primary).font("Helvetica-Bold");
-      doc.text("Contact EDX for Implementation Support", ml);
-      doc.moveDown(0.3);
+      doc.text("Contact EDX for Implementation Support", ml, doc.y);
+      doc.y += 6;
       doc.fontSize(9).fillColor(C.text).font("Helvetica");
-      doc.text("Our consultants are available to support implementation, capability building, and follow-up diagnostics.", ml, doc.y, { width: pw });
-      doc.moveDown(0.2);
+      doc.text(
+        "Our consultants are available to support implementation, capability building, and follow-up diagnostics.",
+        ml, doc.y,
+        { width: pw }
+      );
+      doc.y += 6;
       doc.fontSize(9).fillColor(C.secondary).font("Helvetica");
       doc.text("consulting@edx.com  ·  www.edx-consulting.com", ml);
 
-      // ── FOOTER on all pages ─────────────────────────────────────────
+      // ─────────────────────────────────────────────────────────────────
+      // FOOTER — every page
+      // ─────────────────────────────────────────────────────────────────
       const range = doc.bufferedPageRange();
       for (let i = range.start; i < range.start + range.count; i++) {
         doc.switchToPage(i);
-        doc.moveTo(ml, ph - mb - 12).lineTo(ml + pw, ph - mb - 12).strokeColor(C.border).lineWidth(0.4).stroke();
-        doc.fontSize(7).fillColor(C.muted).font("Helvetica");
+        const footerY = ph - mb - 14;
+        doc.moveTo(ml, footerY - 2)
+           .lineTo(ml + pw, footerY - 2)
+           .strokeColor(C.border).lineWidth(0.4).stroke();
+        doc.fontSize(6.5).fillColor(C.muted).font("Helvetica");
         doc.text(
-          `Page ${i + 1} of ${range.count}  ·  EDX Consulting — Efficiency, Deployment, Excellence  ·  Confidential`,
-          ml, ph - mb - 6,
+          `Page ${i - range.start + 1} of ${range.count}  ·  EDX Consulting — Efficiency, Deployment, Excellence  ·  Confidential`,
+          ml, footerY,
           { width: pw, align: "center" }
         );
       }

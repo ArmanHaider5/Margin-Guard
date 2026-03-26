@@ -1,0 +1,158 @@
+Stabilize and redesign the exported PDF report layout.
+
+This is NOT a diagnostic logic task.
+Do NOT change scoring.
+Do NOT change findings generation.
+Do NOT change analysis logic.
+Do NOT change root cause logic.
+This task is strictly about PDF layout stability, spacing, and visual quality.
+
+Current problem:
+The report exports successfully, but the layout is visually broken:
+
+* section titles overlap with nearby content
+* text blocks collide vertically
+* spacing is inconsistent
+* some sections feel cramped while others have too much empty space
+* Cost Saving Opportunities looks visually harsh / unprofessional
+* Quick Analysis baseline note looks like debug text instead of designed report content
+
+==================================================
+PRIMARY GOAL
+============
+
+Make the PDF export feel like a polished consulting deliverable.
+
+It must:
+
+* never overlap text or sections
+* maintain clean vertical rhythm
+* handle variable content safely
+* look premium and organized
+
+==================================================
+
+1. FIX THE LAYOUT ENGINE / CURSOR FLOW
+   ==================================================
+
+In:
+server/reports/report-generator.ts
+
+Refactor the layout flow so sections do NOT rely on fragile hardcoded Y spacing.
+
+Requirements:
+
+* each section should calculate the vertical space it actually uses
+* each section should return the updated Y cursor
+* long content must push later sections downward safely
+* if a section would overflow the page, trigger a clean page break before rendering it
+* no section title or card should overlap the previous or next section
+
+Goal:
+Eliminate all title collisions, text overlap, and stacked content bugs.
+
+==================================================
+2) STANDARDIZE SECTION SPACING
+==============================
+
+Create a consistent report rhythm.
+
+Requirements:
+
+* consistent top margin before each major section
+* consistent spacing between:
+
+  * section title
+  * intro/meta line
+  * body content
+  * cards / rows / chips
+* improve whitespace so the document feels premium and readable
+
+Goal:
+The report should feel intentionally designed, not auto-generated.
+
+==================================================
+3) REDESIGN COST SAVING OPPORTUNITIES
+=====================================
+
+The current visual treatment is too harsh and looks like an alert/error block.
+
+Redesign this section to feel premium and commercially valuable.
+
+Preferred direction:
+
+* white or very light neutral card background
+* subtle green accent border / strip / heading treatment
+* amount aligned cleanly on the right
+* title + description on the left
+* small metadata row below (category / effort / timeframe if available)
+
+Goal:
+This section should feel like "value creation", not "system warning".
+
+==================================================
+4) REDESIGN QUICK ANALYSIS / BASELINE NOTICE
+============================================
+
+The baseline / non-document notice should become a designed advisory block.
+
+Requirements:
+
+* visually distinct but subtle
+* professional consulting tone
+* not raw debug-looking text
+* use soft amber / muted advisory styling instead of harsh warning styling
+
+Goal:
+Quick Analysis reports should still look polished and intentional.
+
+==================================================
+5) IMPROVE TYPOGRAPHY + ALIGNMENT
+=================================
+
+Improve visual hierarchy across the report.
+
+Requirements:
+
+* section titles should align consistently
+* badges/chips should not collide with body text
+* numbered finding rows should align cleanly
+* paragraph spacing should be more readable
+* improve left/right alignment of labels, values, and supporting text
+* ensure no heading sits too close to the next block
+
+Goal:
+The report should look structured, calm, and executive-friendly.
+
+==================================================
+6) KEEP EXISTING CONTENT
+========================
+
+Do NOT remove current report sections.
+Keep all existing supported sections:
+
+* cover
+* executive summary
+* findings
+* root cause / causal chain
+* savings
+* predictions
+* financial impact
+* health score
+* roadmap
+* benchmarks
+
+Only improve layout, rendering, and styling.
+
+==================================================
+7) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What layout/rendering changes were made
+2. How overlap was prevented
+3. How Cost Saving Opportunities was redesigned
+4. How Quick Analysis advisory styling was improved
+5. Whether the PDF now handles long/variable content cleanly
+6. Whether build remains clean
