@@ -2151,6 +2151,104 @@ export const manufacturingSignals: ManufacturingSignal[] = [
       "inventory audit finding",
       "bin quantity mismatch"
     ]
+  },
+  {
+    id: "schedule_deviation",
+    category: "Machinery",
+    phrases: [
+      "schedule deviation",
+      "schedule miss",
+      "schedule not met",
+      "off schedule",
+      "schedule adherence low",
+      "production schedule missed",
+      "schedule disruption",
+      "plan deviation"
+    ]
+  },
+  {
+    id: "rush_order",
+    category: "Materials",
+    phrases: [
+      "rush order",
+      "expedite order",
+      "expediting",
+      "hot job",
+      "emergency order",
+      "unplanned order",
+      "priority order",
+      "urgent order"
+    ]
+  },
+  {
+    id: "wip_buildup",
+    category: "Machinery",
+    phrases: [
+      "WIP buildup",
+      "work in progress buildup",
+      "WIP accumulation",
+      "high WIP",
+      "WIP increasing",
+      "excessive WIP",
+      "work in progress high",
+      "WIP pile up"
+    ]
+  },
+  {
+    id: "safety_stock_breach",
+    category: "Materials",
+    phrases: [
+      "safety stock breach",
+      "below safety stock",
+      "safety stock depleted",
+      "safety stock low",
+      "safety stock violated",
+      "safety level breached",
+      "buffer stock depleted",
+      "minimum stock breached"
+    ]
+  },
+  {
+    id: "reorder_point_failure",
+    category: "Materials",
+    phrases: [
+      "reorder point breach",
+      "below reorder point",
+      "reorder point missed",
+      "reorder level breached",
+      "failed to reorder",
+      "reorder not triggered",
+      "reorder point not met",
+      "reorder delay"
+    ]
+  },
+  {
+    id: "inventory_turnover_decline",
+    category: "Materials",
+    phrases: [
+      "inventory turnover low",
+      "slow inventory turns",
+      "low stock turns",
+      "inventory turnover decline",
+      "poor inventory velocity",
+      "slow moving inventory",
+      "low turnover rate",
+      "inventory turnover below target"
+    ]
+  },
+  {
+    id: "shift_handover_gap",
+    category: "Manpower",
+    phrases: [
+      "shift handover issue",
+      "handover incomplete",
+      "no handover",
+      "poor handover",
+      "handover gap",
+      "shift change problem",
+      "handover not done",
+      "shift transition failure"
+    ]
   }
 
 ];

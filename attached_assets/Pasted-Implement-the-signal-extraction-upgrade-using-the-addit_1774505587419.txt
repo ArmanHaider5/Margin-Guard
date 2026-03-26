@@ -1,0 +1,200 @@
+Implement the signal extraction upgrade using the additive-only plan from the signal gap audit.
+
+Do this exactly:
+
+==================================================
+
+1. UPDATE: shared/evidence-signals.ts
+   ==================================================
+
+A. Add the following new phrases into the correct existing SIGNAL_RULES terms arrays:
+
+MANPOWER terms — add:
+
+* operator error
+* human error
+* worker error
+* operator mistake
+* communication breakdown
+* miscommunication
+* poor communication
+* lack of communication
+* shift handover
+* handover incomplete
+* no handover
+* poor handover
+* handover gap
+* rushing
+* time pressure
+* rushing to meet targets
+* inexperienced operator
+* new hire
+* new employee not competent
+* unclear work instruction
+* unclear SOP
+* misunderstood procedure
+
+MATERIALS terms — add:
+
+* partial delivery
+* short delivery
+* short shipment
+* under-delivery
+* delivery shortfall
+* return to vendor
+* RTV
+* supplier rejection
+* goods returned to supplier
+* safety stock
+* below safety stock
+* safety stock depleted
+* safety stock breach
+* inventory turnover
+* stock turns
+* slow inventory turns
+* low inventory turns
+* reorder point
+* below reorder point
+* reorder breach
+* cycle count discrepancy
+* cycle count variance
+* stock count error
+* physical count mismatch
+* stock aging
+* aged stock
+* supplier scorecard
+* goods received note
+* GRN
+* incoming goods rejected
+* rush order
+* expedite order
+* expediting
+* hot job
+* emergency order
+* unplanned order
+
+MONEY terms — add:
+
+* cost of poor quality
+* COPQ
+* cost of quality
+* COQ
+* quality cost
+* purchase price variance
+* PPV
+* material cost variance
+* price variance
+* standard vs actual
+* energy cost
+* utility cost
+* electricity cost
+* power cost
+* energy expense
+* warranty claim
+* warranty cost
+* warranty repair
+* freight cost
+* shipping cost
+* expedite freight
+* airfreight
+* freight surcharge
+* overtime premium
+* maintenance cost increase
+* delivery penalty
+* penalty for late delivery
+
+MACHINERY terms — add:
+
+* WIP
+* work in progress
+* WIP buildup
+* WIP accumulation
+* high WIP
+* schedule adherence
+* schedule deviation
+* schedule miss
+* schedule not met
+* off schedule
+* throughput below plan
+* throughput shortfall
+* output below target
+* production shortfall
+* production target not met
+* below production target
+* last-minute change
+* plan change
+* schedule disruption
+* line efficiency
+* production efficiency drop
+
+---
+
+## B. Add new EVENT_PATTERNS entries at the END of the existing array
+
+Add patterns for:
+
+* operator / human error
+* communication breakdown
+* shift handover issue
+* schedule deviation / schedule miss
+* rush / expedite order
+* partial / short delivery
+* return to vendor / RTV
+* safety stock breach
+* reorder point breach
+* cycle count discrepancy
+
+Use the existing EVENT_PATTERNS structure and formatting style already used in this file.
+Do NOT change existing patterns — only append new ones.
+
+---
+
+## C. Add new METRIC_PATTERNS entries at the END of the existing array
+
+Add quantified metric patterns for:
+
+* COPQ / cost of poor quality
+* inventory turnover / stock turns
+* warranty cost
+* energy / utility cost
+* overtime premium cost
+* maintenance cost increase
+* purchase price variance / PPV
+
+Use the same METRIC_PATTERNS structure and style already used in the file.
+Do NOT change any existing patterns.
+
+==================================================
+2) UPDATE: server/modules/industries/manufacturing/manufacturing-signals.ts
+===========================================================================
+
+Add new manufacturing signal entries for:
+
+* operator_error
+* schedule_deviation
+* rush_order
+* wip_buildup
+* safety_stock_breach
+* reorder_point_failure
+* inventory_turnover_decline
+* communication_breakdown
+* shift_handover_gap
+
+Match the style and structure of the existing manufacturing signal definitions.
+Do NOT remove or rename any existing signals.
+
+==================================================
+3) SAFETY CHECK
+===============
+
+After changes:
+
+* verify TypeScript compiles
+* verify server still runs
+* do not modify routes, pipelines, scoring logic, schemas, or UI
+
+Then tell me:
+
+1. exactly which phrases/patterns/signals were added
+2. whether any duplicate or conflicting signal IDs were found
+3. whether the app still runs cleanly
