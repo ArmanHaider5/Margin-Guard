@@ -228,7 +228,7 @@ export default function ClientDiagnosticsNew() {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
 
         {/* ── STEP 1: PROBLEM CONTEXT ─────────────────────────────── */}
         <div>
@@ -240,8 +240,8 @@ export default function ClientDiagnosticsNew() {
             </div>
           </div>
 
-          <Card className="overflow-hidden">
-            <div className="p-6 space-y-6">
+          <Card className="overflow-hidden shadow-sm border-border/80">
+            <div className="p-6 space-y-7">
 
               {/* Title */}
               <div>
@@ -399,30 +399,52 @@ export default function ClientDiagnosticsNew() {
             )}
           </div>
 
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden shadow-sm border-border/80">
             {uploadedDocs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <div className="flex flex-col items-center justify-center py-14 px-6 text-center">
                 <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-4">
                   <UploadCloud className="w-6 h-6 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-medium text-foreground mb-1">No documents available</p>
+                <p className="text-sm font-semibold text-foreground mb-1">No documents available</p>
                 <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                   Upload Ops, Finance, Maintenance, or QC files from the Client Overview to enable evidence-enriched diagnostics.
                 </p>
               </div>
             ) : (
               <div>
-                <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/30">
-                  <p className="text-xs text-muted-foreground font-medium">
-                    {errorCount > 0 ? `${errorCount} file${errorCount > 1 ? "s" : ""} failed to process — can still be selected` : "Select files to include in this diagnostic"}
-                  </p>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectAll} data-testid="button-select-all">
+                {/* Summary bar */}
+                <div className="flex items-center justify-between px-5 py-4 border-b bg-muted/20">
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-semibold text-foreground">
+                      {uploadedDocs.length} file{uploadedDocs.length !== 1 ? "s" : ""}
+                    </span>
+                    <span className="text-muted-foreground/40">·</span>
+                    <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                      <CheckCircle2 className="w-3 h-3" /> {processedCount} ready
+                    </span>
+                    {errorCount > 0 && (
+                      <>
+                        <span className="text-muted-foreground/40">·</span>
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                          <AlertTriangle className="w-3 h-3" /> {errorCount} failed
+                        </span>
+                      </>
+                    )}
+                    {selectedDocs.length > 0 && (
+                      <>
+                        <span className="text-muted-foreground/40">·</span>
+                        <span className="text-xs text-primary font-semibold">{selectedDocs.length} selected</span>
+                      </>
+                    )}
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs font-medium" onClick={selectAll} data-testid="button-select-all">
                     {selectedDocs.length === uploadedDocs.length ? "Deselect All" : "Select All"}
                   </Button>
                 </div>
+
+                {/* File rows */}
                 <div className="divide-y">
                   {uploadedDocs.map((doc) => {
-                    const Icon = fileTypeIcons[doc.fileType] || File;
                     const ftLabel = fileTypeLabel[doc.fileType] || fileTypeLabel.other;
                     const isSelected = selectedDocs.includes(doc.id);
                     const isProcessed = doc.status === "processed" && !doc.processingError;
@@ -430,17 +452,15 @@ export default function ClientDiagnosticsNew() {
                     const isError = doc.status === "error";
                     const isProcessing = doc.status === "processing" || doc.status === "uploaded";
                     return (
-                      <div key={doc.id}>
+                      <div key={doc.id} className={isError || isLimited ? "border-l-2 border-l-amber-300 dark:border-l-amber-600" : ""}>
                         <div
                           onClick={() => toggleDoc(doc.id)}
-                          className={`flex items-center gap-3 px-5 py-3.5 cursor-pointer transition-colors ${
-                            isSelected
-                              ? "bg-primary/5 hover:bg-primary/8"
-                              : "hover:bg-muted/40"
+                          className={`flex items-center gap-3.5 px-5 py-4 cursor-pointer transition-colors ${
+                            isSelected ? "bg-primary/5" : "hover:bg-muted/30"
                           }`}
                           data-testid={`doc-select-${doc.id}`}
                         >
-                          {/* Selection indicator */}
+                          {/* Selection box */}
                           <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
                             isSelected ? "bg-primary border-primary" : "border-border"
                           }`}>
@@ -453,38 +473,43 @@ export default function ClientDiagnosticsNew() {
                           </span>
 
                           {/* File name */}
-                          <span className="flex-1 text-sm truncate font-medium">{doc.fileName}</span>
+                          <span className="flex-1 text-sm truncate">{doc.fileName}</span>
 
-                          {/* Status chip */}
+                          {/* Status pill */}
                           {isProcessed && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 text-[11px] font-semibold shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[11px] font-semibold border border-emerald-200 dark:border-emerald-800 shrink-0">
                               <CheckCircle2 className="w-3 h-3" /> Ready
                             </span>
                           )}
                           {isLimited && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[11px] font-semibold shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[11px] font-semibold border border-amber-200 dark:border-amber-800 shrink-0">
                               <AlertTriangle className="w-3 h-3" /> Limited
                             </span>
                           )}
                           {isError && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-[11px] font-semibold shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 text-[11px] font-semibold border border-red-200 dark:border-red-800 shrink-0">
                               <XCircle className="w-3 h-3" /> Failed
                             </span>
                           )}
                           {isProcessing && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[11px] font-semibold shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-[11px] font-semibold border border-border shrink-0">
                               <Loader2 className="w-3 h-3 animate-spin" /> Processing
                             </span>
                           )}
                         </div>
 
+                        {/* Error / partial message */}
                         {doc.processingError && (
-                          <div className={`mx-5 mb-2 text-xs rounded-lg px-3 py-2 ${
+                          <div className={`flex items-start gap-2 mx-5 mb-3 text-xs rounded-lg px-3 py-2.5 ${
                             isError
-                              ? "text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 border border-red-100 dark:border-red-900/30"
-                              : "text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30"
+                              ? "text-red-700 bg-red-50 dark:bg-red-950/20 dark:text-red-400"
+                              : "text-amber-700 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400"
                           }`}>
-                            {isError ? "Extraction failed — " : "Partial extraction — "}{doc.processingError}
+                            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                            <div>
+                              <p>{isError ? "Extraction failed" : "Partial extraction"} — {doc.processingError}</p>
+                              {isError && <p className="mt-0.5 opacity-70">This file can still be included — it may contribute partial signal data.</p>}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -513,55 +538,55 @@ export default function ClientDiagnosticsNew() {
               type="button"
               onClick={() => !hasDocumentsSelected && setSelectedMode("quick")}
               disabled={hasDocumentsSelected}
-              className={`rounded-xl border-2 p-5 text-left transition-all ${
+              className={`rounded-xl border-2 p-6 text-left transition-all ${
                 effectiveMode === "quick"
                   ? "border-primary bg-primary/5 shadow-sm"
                   : hasDocumentsSelected
-                    ? "opacity-40 cursor-not-allowed border-border bg-muted/20"
-                    : "border-border hover:border-primary/40 hover:bg-muted/30 cursor-pointer"
+                    ? "opacity-35 cursor-not-allowed border-border bg-muted/10"
+                    : "border-border hover:border-primary/50 hover:bg-muted/20 cursor-pointer"
               }`}
               data-testid="button-mode-quick"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                   effectiveMode === "quick" ? "bg-primary/10" : "bg-muted"
                 }`}>
-                  <Zap className={`w-4.5 h-4.5 ${effectiveMode === "quick" ? "text-primary" : "text-muted-foreground"}`} style={{ width: "1.125rem", height: "1.125rem" }} />
+                  <Zap className="w-5 h-5" style={{ color: effectiveMode === "quick" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }} />
                 </div>
                 {effectiveMode === "quick" && (
-                  <span className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                  <span className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 text-primary-foreground" />
                   </span>
                 )}
               </div>
-              <p className="font-semibold text-sm mb-1">Quick Analysis</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Fast pattern matching based on problem statement and industry context. Best for initial scoping.
+              <p className="font-semibold text-base mb-1.5">Quick Analysis</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Fast pattern matching based on your problem statement and industry context. Ideal for initial scoping.
               </p>
               {hasDocumentsSelected && (
-                <p className="text-[11px] text-muted-foreground/60 mt-2 italic">Unavailable when documents are selected</p>
+                <p className="text-[11px] text-muted-foreground/60 mt-3 italic">Not available when documents are selected</p>
               )}
             </button>
 
-            {/* Deep Analysis */}
+            {/* Deep Diagnostic */}
             <button
               type="button"
               onClick={() => setSelectedMode("deep")}
-              className={`rounded-xl border-2 p-5 text-left transition-all relative ${
+              className={`rounded-xl border-2 p-6 text-left transition-all relative ${
                 effectiveMode === "deep"
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border hover:border-primary/40 hover:bg-muted/30 cursor-pointer"
+                  ? "border-primary bg-primary/5 shadow-md"
+                  : "border-border bg-muted/5 hover:border-primary/50 hover:bg-muted/20 cursor-pointer"
               }`}
               data-testid="button-mode-deep"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                   effectiveMode === "deep" ? "bg-primary/10" : "bg-muted"
                 }`}>
-                  <Search className={`w-4.5 h-4.5 ${effectiveMode === "deep" ? "text-primary" : "text-muted-foreground"}`} style={{ width: "1.125rem", height: "1.125rem" }} />
+                  <Search className="w-5 h-5" style={{ color: effectiveMode === "deep" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }} />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wide">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wide border border-primary/20">
                     Recommended
                   </span>
                   {effectiveMode === "deep" && (
@@ -571,9 +596,9 @@ export default function ClientDiagnosticsNew() {
                   )}
                 </div>
               </div>
-              <p className="font-semibold text-sm mb-1">Deep Diagnostic</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Comprehensive evidence-driven analysis using document signals and symptoms. Produces substantiated, high-confidence findings.
+              <p className="font-semibold text-base mb-1.5">Deep Diagnostic</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Evidence-driven analysis using document signals and observed symptoms. Produces substantiated, high-confidence root cause findings.
               </p>
             </button>
           </div>
@@ -602,72 +627,89 @@ export default function ClientDiagnosticsNew() {
             </div>
           </div>
 
-          <Card className="overflow-hidden" data-testid="card-diagnostic-mode">
-            {/* Readiness summary strip */}
-            <div className="px-6 py-4 border-b bg-muted/20">
-              <div className="grid grid-cols-3 gap-4 text-sm">
+          <Card className="overflow-hidden shadow-sm border-border/80" data-testid="card-diagnostic-mode">
+            {/* Pre-flight summary — 3 status columns */}
+            <div className="px-6 py-5 border-b bg-muted/20">
+              <div className="grid grid-cols-3 gap-6">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Mode</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Mode</p>
                   <Badge
                     variant={diagnosticMode === "baseline" ? "secondary" : "default"}
-                    className="text-xs"
+                    className="text-xs px-2.5"
                     data-testid="badge-diagnostic-mode"
                   >
                     {diagnosticMode === "baseline" ? "Baseline" : "Deep Diagnostic"}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Documents</p>
-                  <p className={`text-sm font-semibold ${selectedDocs.length > 0 ? "text-primary" : "text-muted-foreground"}`}>
-                    {selectedDocs.length > 0 ? `${selectedDocs.length} selected` : "None"}
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Documents</p>
+                  <p className={`text-sm font-bold ${selectedDocs.length > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                    {selectedDocs.length > 0 ? `${selectedDocs.length} included` : "None selected"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Readiness</p>
-                  {isProblemStatementValid ? (
-                    <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 text-sm font-semibold">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Ready
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Status</p>
+                  {isProblemStatementValid && !(hasDocumentsSelected && hasDocsStillProcessing) ? (
+                    <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 text-sm font-bold">
+                      <CheckCircle2 className="w-4 h-4" /> Ready
+                    </span>
+                  ) : hasDocumentsSelected && hasDocsStillProcessing ? (
+                    <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Processing
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 text-sm font-semibold">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Incomplete
+                    <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                      <AlertTriangle className="w-4 h-4" /> Incomplete
                     </span>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="px-6 py-5">
-              <p className="text-xs text-muted-foreground mb-4">
-                {diagnosticMode === "baseline"
-                  ? "Running without documents. Results will be based on industry pattern matching."
-                  : `Using ${selectedDocs.length} document${selectedDocs.length !== 1 ? "s" : ""} for evidence-driven signal extraction and substantiated root cause findings.`}
-              </p>
+            {/* CTA area */}
+            <div className="px-6 pt-5 pb-6">
+              {/* Pre-flight message */}
+              <div className={`flex items-start gap-2.5 rounded-lg px-4 py-3 mb-5 text-sm ${
+                !isProblemStatementValid
+                  ? "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300"
+                  : hasDocumentsSelected && hasDocsStillProcessing
+                  ? "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300"
+                  : diagnosticMode === "deep"
+                  ? "bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+                  : "bg-muted/40 border border-border text-muted-foreground"
+              }`}>
+                {!isProblemStatementValid ? (
+                  <><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /><span>Complete the Problem Statement in Step 1 to proceed.</span></>
+                ) : hasDocumentsSelected && hasDocsStillProcessing ? (
+                  <><Loader2 className="w-4 h-4 mt-0.5 shrink-0 animate-spin" /><span>Waiting for documents to finish processing before running.</span></>
+                ) : diagnosticMode === "deep" && selectedDocs.length > 0 ? (
+                  <><CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /><span>{selectedDocs.length} document{selectedDocs.length !== 1 ? "s" : ""} included — Deep Diagnostic ready to run.</span></>
+                ) : (
+                  <><CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /><span>Problem context set. Baseline analysis will use industry pattern matching.</span></>
+                )}
+              </div>
+
               <Button
                 size="lg"
-                className="w-full h-12 text-base font-semibold"
+                className="w-full h-13 text-base font-bold"
+                style={{ height: "3.25rem" }}
                 onClick={handleRunAnalysis}
                 disabled={createAndRunMutation.isPending || !isProblemStatementValid || (hasDocumentsSelected && hasDocsStillProcessing)}
                 data-testid="button-run-analysis"
               >
                 {createAndRunMutation.isPending ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 mr-2.5 animate-spin" />
                     Running Diagnostic…
                   </>
                 ) : (
                   <>
-                    {effectiveMode === "quick" ? <Zap className="w-5 h-5 mr-2" /> : <Search className="w-5 h-5 mr-2" />}
+                    {effectiveMode === "quick" ? <Zap className="w-5 h-5 mr-2.5" /> : <Search className="w-5 h-5 mr-2.5" />}
                     Run {effectiveMode === "quick" ? "Quick Analysis" : "Deep Diagnostic"}
-                    <ChevronRight className="w-4 h-4 ml-2 opacity-70" />
+                    <ChevronRight className="w-4 h-4 ml-2 opacity-60" />
                   </>
                 )}
               </Button>
-              {!isProblemStatementValid && (
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  Add a Problem Statement above to continue.
-                </p>
-              )}
             </div>
           </Card>
         </div>

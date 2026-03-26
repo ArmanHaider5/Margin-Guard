@@ -1,0 +1,141 @@
+Upgrade the Run Diagnostic page to feel like a guided, premium workflow.
+
+Do NOT change backend logic.
+Do NOT change API or functionality.
+This is a visual + UX refinement only.
+
+==================================================
+
+1. IMPROVE SECTION HIERARCHY (CRITICAL)
+   ==================================================
+
+Each step should feel like a distinct card/section.
+
+Wrap each of these in a stronger container:
+
+* Problem Context
+* Supporting Documents
+* Analysis Mode
+* Run Diagnostic
+
+Each section should have:
+
+* clear header (Step 1, Step 2, etc.)
+* slightly elevated card (border + subtle shadow)
+* better spacing between sections (space-y-8 or more)
+
+Goal:
+Make the page feel like a structured workflow, not a long form.
+
+==================================================
+2) UPGRADE DOCUMENT SECTION (BIGGEST IMPACT)
+============================================
+
+This section is currently too dense.
+
+Improve it:
+
+A) Add summary row at top:
+
+* Total files
+* Ready count
+* Failed count
+
+Example:
+"13 files • 12 ready • 1 failed"
+
+B) Separate files visually:
+
+* Group Ready and Failed files OR
+* Use clearer color separation
+
+C) Improve file rows:
+Each file row should show:
+
+* file name
+* status badge (Ready / Failed)
+* cleaner spacing
+* less cramped layout
+
+D) Failed file UX:
+
+* Add subtle warning styling (not aggressive red block)
+* Add helper text: “Can retry or remove file”
+
+Goal:
+Make this section feel controlled, not chaotic.
+
+==================================================
+3) UPGRADE ANALYSIS MODE SELECTION
+==================================
+
+This is a key decision moment.
+
+Upgrade Quick vs Deep into proper cards:
+
+Each card should:
+
+* have more padding
+* include icon
+* include title + short explanation
+* have strong selected state (border + background)
+
+Deep Diagnostic should visually feel like:
+
+* more powerful
+* more advanced
+
+==================================================
+4) IMPROVE RUN DIAGNOSTIC AREA
+==============================
+
+This is your main action.
+
+Upgrade it:
+
+* Make button larger and more prominent
+
+* Add stronger label:
+  "Run Deep Diagnostic" or "Run Full Diagnostic"
+
+* Add helper line above button:
+  e.g. “All documents processed — ready to run”
+
+* Improve layout so CTA is clearly separated from other sections
+
+Goal:
+User should feel confident clicking it.
+
+==================================================
+5) REDUCE VISUAL CLUTTER
+========================
+
+Across the page:
+
+* Increase spacing between elements
+* Reduce cramped text
+* Simplify chip/buttons layout in “Observed Symptoms”
+* Avoid too many tightly packed pills
+
+Goal:
+Cleaner, calmer interface
+
+==================================================
+6) KEEP SAFE
+============
+
+* No backend changes
+* No API changes
+* No logic changes
+* UI only
+
+==================================================
+7) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. Which sections improved most
+2. Whether document section feels cleaner
+3. Whether CTA feels stronger
+4. If anything broke visually or functionally
