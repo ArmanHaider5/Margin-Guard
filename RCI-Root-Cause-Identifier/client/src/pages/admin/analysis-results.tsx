@@ -274,6 +274,19 @@ export default function AnalysisResults() {
     Critical: { bg: "bg-red-50 dark:bg-red-950/40", border: "border-red-200 dark:border-red-800", score: "text-red-700 dark:text-red-300", badge: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300" },
   };
   const hc = healthStatus ? healthStatusColors[healthStatus] : null;
+  const primaryCategory = findings[0]?.fourMCategory ?? null;
+  const heroGradientStyle = healthStatus === "Healthy"
+    ? { background: "linear-gradient(135deg, #ecfdf5 0%, #f8fafc 55%, #f0fdf4 100%)" }
+    : healthStatus === "At Risk"
+    ? { background: "linear-gradient(135deg, #fffbeb 0%, #f8fafc 55%, #fef9c3 100%)" }
+    : healthStatus === "Critical"
+    ? { background: "linear-gradient(135deg, #fef2f2 0%, #f8fafc 55%, #fff1f2 100%)" }
+    : { background: "linear-gradient(135deg, #f1f5f9 0%, #f8fafc 100%)" };
+  const healthStatusSubtext: Record<string, string> = {
+    Healthy: "Operations within acceptable parameters.",
+    "At Risk": "Moderate concerns require attention.",
+    Critical: "Immediate intervention required.",
+  };
 
   return (
     <div className="p-6 space-y-10">
@@ -384,65 +397,98 @@ export default function AnalysisResults() {
 
       {/* ── HERO: HEALTH + KEY METRICS ─────────────────────────────── */}
       <div
-        className={`rounded-2xl border shadow-md p-6 sm:p-8 ${hc ? `${hc.bg} ${hc.border}` : "bg-muted/30 border-border"}`}
+        className={`rounded-2xl border-2 shadow-lg overflow-hidden ${hc ? hc.border : "border-border"}`}
+        style={heroGradientStyle}
         data-testid="card-hero"
       >
-        <div className="flex flex-col lg:flex-row items-start gap-8">
+        <div className="p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row items-start gap-8 lg:gap-10">
 
-          {/* LEFT — Health Score */}
-          <div className="flex flex-col items-center gap-4 lg:w-60 shrink-0">
-            <HealthScoreGauge score={healthScore ?? 0} />
-            {healthScore != null ? (
-              <>
-                <div className="text-center">
-                  <p className={`text-6xl font-black leading-none ${hc?.score ?? ""}`}>
-                    {healthScore}<span className="text-2xl font-bold opacity-50">/100</span>
-                  </p>
-                  <span className={`inline-block mt-2 px-4 py-1 rounded-full text-sm font-semibold ${hc?.badge ?? ""}`}>
-                    {healthStatus}
-                  </span>
-                </div>
-                {mgd?.narrative?.summary && (
-                  <p className="text-xs text-muted-foreground text-center leading-relaxed max-w-xs">
-                    {mgd.narrative.summary}
-                  </p>
-                )}
-              </>
-            ) : (
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground font-medium">Health score unavailable</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">Run Deep Diagnostic with documents</p>
+            {/* LEFT — Health Score */}
+            <div className="flex flex-col items-center gap-3 lg:w-64 shrink-0">
+              <div className="scale-110 origin-top">
+                <HealthScoreGauge score={healthScore ?? 0} />
               </div>
-            )}
-          </div>
-
-          {/* DIVIDER */}
-          <div className="hidden lg:block w-px self-stretch bg-border/60" />
-
-          {/* RIGHT — Key metrics grid */}
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-5 w-full">
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Total Issues</p>
-              <p className="text-5xl font-extrabold text-orange-600 dark:text-orange-400 leading-none" data-testid="text-findings-count">
-                {findings.length}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">root causes identified</p>
+              {healthScore != null ? (
+                <div className="text-center space-y-1.5">
+                  <p className={`text-7xl font-black leading-none tracking-tight ${hc?.score ?? ""}`}>
+                    {healthScore}
+                    <span className="text-3xl font-bold opacity-40">/100</span>
+                  </p>
+                  <div>
+                    <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold ${hc?.badge ?? ""}`}>
+                      <span className={`w-2 h-2 rounded-full ${
+                        healthStatus === "Healthy" ? "bg-emerald-500" :
+                        healthStatus === "At Risk" ? "bg-amber-500" : "bg-red-500"
+                      }`} />
+                      {healthStatus}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed px-2">
+                    {healthStatus ? healthStatusSubtext[healthStatus] : ""}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground font-medium">Health score unavailable</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Run Deep Diagnostic with documents</p>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Critical Issues</p>
-              <p className="text-5xl font-extrabold text-red-600 dark:text-red-400 leading-none">
-                {criticalCount}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">{highCount} high severity</p>
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Saving Opportunities</p>
-              <p className="text-5xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none" data-testid="text-savings-count">
-                {costSavings.length}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {predictions.length > 0 ? `${predictions.length} risk predictions` : "see breakdown below"}
-              </p>
+
+            {/* DIVIDER */}
+            <div className="hidden lg:block w-px self-stretch bg-border/50" />
+
+            {/* RIGHT — KPI cards grid */}
+            <div className="flex-1 grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
+
+              {/* Total Issues */}
+              <div className="bg-background/70 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Total Issues</p>
+                <p className="text-5xl font-extrabold text-orange-600 dark:text-orange-400 leading-none" data-testid="text-findings-count">
+                  {findings.length}
+                </p>
+                <p className="text-xs text-muted-foreground">root causes identified</p>
+              </div>
+
+              {/* Critical Issues */}
+              <div className="bg-background/70 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Critical Issues</p>
+                <p className="text-5xl font-extrabold text-red-600 dark:text-red-400 leading-none">
+                  {criticalCount}
+                </p>
+                <p className="text-xs text-muted-foreground">{highCount} high severity</p>
+              </div>
+
+              {/* Saving Opportunities */}
+              <div className="bg-background/70 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Saving Opportunities</p>
+                <p className="text-5xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none" data-testid="text-savings-count">
+                  {costSavings.length}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {predictions.length > 0 ? `${predictions.length} risk forecast${predictions.length !== 1 ? "s" : ""}` : "see breakdown below"}
+                </p>
+              </div>
+
+              {/* Primary Category */}
+              <div className="bg-background/70 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Primary Category</p>
+                {primaryCategory ? (
+                  <>
+                    <p className={`text-2xl font-extrabold leading-tight ${fourMColors[primaryCategory as FourMCategory]?.text ?? "text-foreground"}`}>
+                      {primaryCategory}
+                    </p>
+                    <p className="text-xs text-muted-foreground">highest-impact 4M domain</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-2xl font-extrabold text-muted-foreground/40 leading-tight">—</p>
+                    <p className="text-xs text-muted-foreground">no findings yet</p>
+                  </>
+                )}
+              </div>
+
             </div>
           </div>
         </div>
@@ -517,22 +563,48 @@ export default function AnalysisResults() {
               finding.severity === "high" ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" :
               finding.severity === "medium" ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300" :
               "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400";
+            const severityTintBg =
+              finding.severity === "critical" ? "bg-red-50/60 dark:bg-red-950/20" :
+              finding.severity === "high" ? "bg-orange-50/60 dark:bg-orange-950/20" :
+              finding.severity === "medium" ? "bg-yellow-50/40 dark:bg-yellow-950/10" :
+              "bg-card";
+            const evidenceCount = finding.evidenceAnchors?.length ?? 0;
             return (
               <div
                 key={finding.id || idx}
-                className="rounded-xl border bg-card shadow-sm overflow-hidden"
+                className={`rounded-xl border shadow-sm overflow-hidden ${severityTintBg}`}
                 style={{ borderLeftWidth: "4px", borderLeftColor: severityBorderColor }}
               >
                 <div className="p-5">
-                  <div className="flex items-center gap-2 flex-wrap mb-4">
-                    <h3 className="font-semibold">{finding.evidenceLedTitle || finding.title}</h3>
-                    <Badge className={`${colors.bg} ${colors.text}`}>{finding.fourMCategory}</Badge>
-                    <Badge className={severityBadgeClass}>{finding.severity}</Badge>
-                    {esStyle && (
-                      <Badge className={`${esStyle.bg} ${esStyle.text}`}>
-                        {esStyle.label}
-                      </Badge>
-                    )}
+                  <div className="flex items-start gap-2 mb-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 shrink-0">
+                          #{String(idx + 1).padStart(2, "0")}
+                        </span>
+                        <h3 className="font-semibold text-sm leading-snug">{finding.evidenceLedTitle || finding.title}</h3>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge className={`${colors.bg} ${colors.text} text-[11px]`}>{finding.fourMCategory}</Badge>
+                        <Badge className={`${severityBadgeClass} text-[11px]`}>{finding.severity}</Badge>
+                        {esStyle && (
+                          <Badge className={`${esStyle.bg} ${esStyle.text} text-[11px]`}>
+                            {esStyle.label}
+                          </Badge>
+                        )}
+                        {evidenceCount > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/80 text-[11px] text-muted-foreground font-medium">
+                            <FileText className="w-2.5 h-2.5" />
+                            {evidenceCount} evidence
+                          </span>
+                        )}
+                        {(finding as any).confidence && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/80 text-[11px] text-muted-foreground font-medium">
+                            {Math.round((finding as any).confidence * 100)}% confidence
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-3 text-sm">
@@ -643,27 +715,41 @@ export default function AnalysisResults() {
           </div>
           <div className="space-y-4">
             {costSavings.map((opp, idx) => (
-              <div key={opp.id || idx} className="rounded-xl border bg-card shadow-sm p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Lightbulb className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <h3 className="font-semibold text-sm">{opp.title}</h3>
+              <div key={opp.id || idx} className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-emerald-400 to-emerald-600" />
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                          <Lightbulb className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <h3 className="font-semibold text-sm leading-snug">{opp.title}</h3>
+                      </div>
+                      <p className="text-muted-foreground text-sm leading-relaxed mb-2.5 pl-9">{opp.description}</p>
+                      <div className="flex items-center gap-2 pl-9">
+                        <Badge
+                          variant="outline"
+                          className={
+                            opp.implementationEffort === "low" ? "border-emerald-300 text-emerald-700 dark:text-emerald-400 text-[11px]" :
+                            opp.implementationEffort === "high" ? "border-orange-300 text-orange-700 dark:text-orange-400 text-[11px]" :
+                            "text-[11px]"
+                          }
+                        >
+                          {opp.implementationEffort} effort
+                        </Badge>
+                        {(opp as any).category && (
+                          <Badge variant="secondary" className="text-[11px]">{(opp as any).category}</Badge>
+                        )}
+                        {(opp as any).type && (
+                          <Badge variant="secondary" className="text-[11px]">{(opp as any).type}</Badge>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-muted-foreground text-sm leading-relaxed">{opp.description}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{opp.estimatedSavings}</p>
-                    <Badge
-                      variant="outline"
-                      className={
-                        opp.implementationEffort === "low" ? "border-emerald-300 text-emerald-600 dark:text-emerald-400 mt-1" :
-                        opp.implementationEffort === "high" ? "border-orange-300 text-orange-600 dark:text-orange-400 mt-1" :
-                        "mt-1"
-                      }
-                    >
-                      {opp.implementationEffort} effort
-                    </Badge>
+                    <div className="text-right shrink-0 pl-4 border-l border-border/60 ml-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Est. Annual Savings</p>
+                      <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none">{opp.estimatedSavings}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -683,24 +769,48 @@ export default function AnalysisResults() {
           </div>
           <div className="space-y-4">
             {predictions.map((pred, idx) => {
-              const likelihoodClass =
-                pred.likelihood === "high" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200" :
-                pred.likelihood === "medium" ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200" :
+              const isHighRisk = pred.likelihood === "high";
+              const isMedRisk = pred.likelihood === "medium";
+              const likelihoodBadge =
+                isHighRisk ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200" :
+                isMedRisk ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200" :
                 "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200";
+              const iconBg =
+                isHighRisk ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400" :
+                isMedRisk ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400" :
+                "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400";
+              const cardBorder = isHighRisk ? "border-red-200/60 dark:border-red-800/40" : "border-border";
+              const cardBg = isHighRisk ? "bg-red-50/30 dark:bg-red-950/10" : "bg-card";
               return (
-                <div key={pred.id || idx} className="rounded-xl border bg-card shadow-sm p-5">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${likelihoodClass}`}>
-                      <Clock className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-sm mb-2">{pred.issue}</h3>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className={likelihoodClass}>
-                          {pred.likelihood} likelihood
-                        </Badge>
-                        {pred.expectedTimeframe && (
-                          <span className="text-xs text-muted-foreground">{pred.expectedTimeframe}</span>
+                <div key={pred.id || idx} className={`rounded-xl border shadow-sm overflow-hidden ${cardBorder} ${cardBg}`}>
+                  {isHighRisk && <div className="h-0.5 bg-gradient-to-r from-red-400 to-red-600" />}
+                  <div className="p-5">
+                    <div className="flex items-start gap-4">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
+                        <AlertTriangle className="w-4.5 h-4.5" style={{ width: "1.125rem", height: "1.125rem" }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm leading-snug mb-2.5">{pred.issue}</h3>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className={`${likelihoodBadge} text-[11px] font-semibold`}>
+                            {isHighRisk ? "⚠ " : ""}{pred.likelihood} likelihood
+                          </Badge>
+                          {pred.expectedTimeframe && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/80 text-[11px] text-muted-foreground font-medium">
+                              <Clock className="w-2.5 h-2.5" />
+                              {pred.expectedTimeframe}
+                            </span>
+                          )}
+                        </div>
+                        {(pred as any).description && (
+                          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                            {(pred as any).description}
+                          </p>
+                        )}
+                        {(pred as any).notes && (
+                          <p className="text-xs text-muted-foreground mt-2 leading-relaxed italic">
+                            {(pred as any).notes}
+                          </p>
                         )}
                       </div>
                     </div>

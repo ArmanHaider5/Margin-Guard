@@ -1,0 +1,146 @@
+Upgrade admin/analysis-results.tsx again to make the page feel like a premium consulting dashboard.
+
+Do NOT touch backend logic or API.
+Do NOT remove any working sections.
+This is a pure UI/UX enhancement pass.
+
+==================================================
+
+1. STRENGTHEN THE HERO SECTION
+   ==================================================
+
+Upgrade the current hero block so it becomes the strongest visual section on the page.
+
+Requirements:
+
+LEFT SIDE:
+
+* Make Operational Health the dominant focal point
+* Increase size of HealthScoreGauge
+* Increase score typography significantly
+* Add a stronger status label:
+
+  * Healthy
+  * At Risk
+  * Critical
+* Add a short supporting subtext beneath the score
+
+RIGHT SIDE:
+
+* Convert the summary metrics into better dashboard stat cards
+* Include:
+
+  * Total Issues
+  * Critical Issues
+  * Savings Opportunities
+* Add one more stat if available:
+
+  * Estimated Annual Savings
+    OR
+  * Primary Root Cause
+* Each stat should feel like a compact premium KPI card
+
+STYLE:
+
+* Add stronger background treatment (very subtle gradient or richer tint)
+* Add more contrast and hierarchy
+* Reduce excessive empty whitespace
+* Keep it elegant and clean
+
+==================================================
+2) UPGRADE FINDINGS INTO PREMIUM INSIGHT CARDS
+==============================================
+
+Current findings are still too flat.
+
+Improve them so each finding feels like a real consultant insight.
+
+Each finding card should include:
+
+* Root cause title
+* Severity badge
+* Category badge
+* Optional confidence chip (if data exists)
+* Optional evidence count chip (if data exists)
+
+Visual styling:
+
+* Strong left border based on severity
+* Better padding
+* More visual separation
+* Slight elevation or tinted background
+
+Goal:
+These should feel like “priority insight cards”, not rows.
+
+==================================================
+3) MAKE COST SAVINGS FEEL HIGH VALUE
+====================================
+
+Upgrade the Cost Saving Opportunities section.
+
+Each savings item should be a more visually attractive card.
+
+Each card should highlight:
+
+* Title
+* Short explanation
+* Estimated annual savings (prominent green)
+* Effort badge
+* Optional category/type badge if data exists
+
+Goal:
+This section should immediately communicate business value.
+
+==================================================
+4) IMPROVE RISK PREDICTIONS
+===========================
+
+Upgrade the Risk Predictions section so it feels more urgent and actionable.
+
+Each prediction should become a better card with:
+
+* Risk title / summary
+* Likelihood badge
+* Timeline badge if available
+* Stronger warning visual treatment
+* Better spacing and readability
+
+Goal:
+These should feel like operational threats, not just text entries.
+
+==================================================
+5) REDUCE FLATNESS ACROSS THE PAGE
+==================================
+
+Across the entire page:
+
+* Improve contrast slightly
+* Reduce dead empty space
+* Increase visual hierarchy between sections
+* Keep design modern, minimal, premium
+
+Do NOT over-design it.
+Do NOT make it flashy.
+It should look like premium B2B software.
+
+==================================================
+6) KEEP SAFE
+============
+
+* No backend changes
+* No route changes
+* No API changes
+* No data structure changes
+* UI only
+
+==================================================
+7) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What visually improved most
+2. Which sections now feel strongest
+3. If any fields were missing and had fallbacks
+4. Whether the page still builds cleanly
