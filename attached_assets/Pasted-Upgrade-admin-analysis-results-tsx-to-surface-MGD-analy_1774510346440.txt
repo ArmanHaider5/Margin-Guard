@@ -1,0 +1,130 @@
+Upgrade admin/analysis-results.tsx to surface MGD analysis data properly.
+
+Do NOT redesign everything yet. Only implement Phase 1: MGD visibility.
+
+==================================================
+
+1. EXTRACT MGD DATA
+   ==================================================
+
+Inside admin/analysis-results.tsx, after fetching analysis:
+
+Add:
+
+const mgd = (analysis as any)?.mgdAnalysis;
+
+==================================================
+2) ADD OPERATIONAL HEALTH SCORE (TOP SECTION)
+=============================================
+
+Above the findings section, add a new Card:
+
+* Title: "Operational Health Score"
+* If mgd?.healthScore exists:
+
+  * Render HealthScoreGauge component
+  * Pass mgd.healthScore
+* Else:
+
+  * Show fallback text: "Not available"
+
+==================================================
+3) ADD CAUSAL CHAIN DISPLAY
+===========================
+
+Below the summary section, add:
+
+* Title: "Causal Chain"
+* If mgd?.causalChains?.length:
+
+  * Render the first chain using:
+    mgd.causalChains[0].chain.join(" → ")
+* Else:
+
+  * Show "No causal chain available"
+
+==================================================
+4) ADD FINANCIAL IMPACT CARD
+============================
+
+Add a new Card section:
+
+* Title: "Financial Impact"
+* If mgd?.financialImpact:
+
+  * Show:
+
+    * estimatedSeverity
+    * affectedCategories (join with comma)
+    * costDrivers (list)
+* Else:
+
+  * fallback text
+
+==================================================
+5) ADD TRANSFORMATION ROADMAP
+=============================
+
+Add new section:
+
+* Title: "Transformation Roadmap"
+
+If mgd?.roadmap exists:
+
+* Render as list:
+
+  * If array → map each step
+  * If object → render key-value sections
+
+Else:
+
+* fallback text
+
+==================================================
+6) ADD BENCHMARKS (BASIC VERSION)
+=================================
+
+Add new section:
+
+* Title: "Industry Benchmarks"
+
+If mgd?.benchmarks exists:
+
+* Render simple list or JSON preview (temporary)
+* DO NOT use <pre> raw dump — format lightly
+
+==================================================
+7) ADD COST SAVINGS (MGD)
+=========================
+
+Add section:
+
+* Title: "MGD Cost Savings"
+
+If mgd?.savings exists:
+
+* Render list of savings items
+
+==================================================
+8) KEEP EXISTING FINDINGS SECTION UNCHANGED
+===========================================
+
+Do NOT modify findings UI yet — it is already strong.
+
+==================================================
+9) SAFETY
+=========
+
+* Use optional chaining everywhere
+* Do not crash if mgd is null
+* Do not remove existing sections yet
+
+==================================================
+10) AFTER IMPLEMENTATION
+========================
+
+Tell me:
+
+* which sections successfully render
+* what mgd fields appear populated
+* whether any section shows empty/null unexpectedly

@@ -21,12 +21,20 @@ import {
   Loader2,
   Download,
   ClipboardCheck,
-  CheckCircle2
+  CheckCircle2,
+  Activity,
+  ArrowRight,
+  Map,
+  BarChart2,
+  Layers,
+  ChevronDown,
+  ChevronRight as ChevronRightIcon
 } from "lucide-react";
 import type { ClientAnalysis, Client, FourMCategory } from "@shared/schema";
 import { DiagnosticReportView } from "@/components/diagnostic-report-view";
 import { composeDiagnosticReport } from "@shared/diagnostic-composer";
 import type { RootCauseSelection, PrimaryContext } from "@shared/root-cause-library";
+import HealthScoreGauge from "@/features/diagnostics/health-score-gauge";
 
 const fourMColors: Record<FourMCategory, { bg: string; text: string; border: string }> = {
   Money: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200 dark:border-emerald-800" },
@@ -117,6 +125,7 @@ export default function AnalysisResults() {
   const findings = analysis?.findings || [];
   const costSavings = analysis?.costSavingOpportunities || [];
   const predictions = analysis?.predictions || [];
+  const mgd = (analysis as any)?.mgdAnalysis;
 
   // Compose diagnostic report from root cause selection for structured rendering
   // MUST be called unconditionally to satisfy React's rules of hooks
@@ -344,6 +353,32 @@ export default function AnalysisResults() {
         </Card>
       )}
 
+      {/* CAUSAL CHAIN */}
+      <Card className="p-6" data-testid="card-causal-chain">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <ArrowRight className="w-5 h-5" />
+          Causal Chain
+        </h2>
+        {mgd?.causalChains?.length > 0 ? (
+          <div className="space-y-3">
+            {mgd.causalChains.map((c: any, i: number) => (
+              <div key={i} className="flex flex-wrap items-center gap-2">
+                {c.chain.map((step: string, j: number) => (
+                  <span key={j} className="flex items-center gap-2">
+                    <span className="px-3 py-1.5 rounded-md bg-muted text-sm font-medium">{step}</span>
+                    {j < c.chain.length - 1 && (
+                      <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    )}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">No causal chain available</p>
+        )}
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
@@ -373,6 +408,24 @@ export default function AnalysisResults() {
           </div>
         </Card>
       </div>
+
+      {/* OPERATIONAL HEALTH SCORE */}
+      <Card className="p-6" data-testid="card-health-score">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Activity className="w-5 h-5" />
+          Operational Health Score
+        </h2>
+        {mgd?.healthScore != null ? (
+          <div className="flex items-center gap-6">
+            <HealthScoreGauge score={mgd.healthScore} />
+            {mgd.narrative?.summary && (
+              <p className="text-sm text-muted-foreground flex-1">{mgd.narrative.summary}</p>
+            )}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">Not available</p>
+        )}
+      </Card>
 
       <Card className="p-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -556,6 +609,246 @@ export default function AnalysisResults() {
               </Card>
             ))}
           </div>
+        </Card>
+      )}
+
+      {/* FINANCIAL IMPACT */}
+      <Card className="p-6" data-testid="card-financial-impact">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <DollarSign className="w-5 h-5" />
+          Financial Impact
+        </h2>
+        {mgd?.financialImpact ? (
+          <div className="space-y-4">
+            {mgd.financialImpact.estimatedSeverity && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground w-40 shrink-0">Estimated Severity</span>
+                <Badge variant={
+                  mgd.financialImpact.estimatedSeverity === "critical" ? "destructive" :
+                  mgd.financialImpact.estimatedSeverity === "high" ? "default" : "secondary"
+                }>
+                  {mgd.financialImpact.estimatedSeverity}
+                </Badge>
+              </div>
+            )}
+            {mgd.financialImpact.affectedCategories?.length > 0 && (
+              <div className="flex items-start gap-3">
+                <span className="text-sm text-muted-foreground w-40 shrink-0">Affected Categories</span>
+                <div className="flex flex-wrap gap-2">
+                  {mgd.financialImpact.affectedCategories.map((cat: string, i: number) => {
+                    const catColors = fourMColors[cat as FourMCategory] || { bg: "bg-muted", text: "text-muted-foreground", border: "" };
+                    return (
+                      <Badge key={i} className={`${catColors.bg} ${catColors.text}`}>{cat}</Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {mgd.financialImpact.costDrivers?.length > 0 && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Cost Drivers</p>
+                <ul className="space-y-1">
+                  {mgd.financialImpact.costDrivers.map((driver: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <span className="text-muted-foreground mt-0.5">•</span>
+                      <span>{driver}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {mgd.financialImpact.downtimeLoss != null && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t">
+                {mgd.financialImpact.downtimeLoss != null && (
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Downtime Loss</p>
+                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.downtimeLoss).toLocaleString()}</p>
+                  </div>
+                )}
+                {mgd.financialImpact.scrapLoss != null && (
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Scrap Loss</p>
+                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.scrapLoss).toLocaleString()}</p>
+                  </div>
+                )}
+                {mgd.financialImpact.overtimeCost != null && (
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Overtime Cost</p>
+                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.overtimeCost).toLocaleString()}</p>
+                  </div>
+                )}
+                {mgd.financialImpact.totalLoss != null && (
+                  <div className="rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-3">
+                    <p className="text-xs text-orange-600 dark:text-orange-400">Total Estimated Loss</p>
+                    <p className="font-bold text-sm text-orange-700 dark:text-orange-300">RM {Number(mgd.financialImpact.totalLoss).toLocaleString()}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">Not available</p>
+        )}
+      </Card>
+
+      {/* TRANSFORMATION ROADMAP */}
+      {mgd?.roadmap && (
+        <Card className="p-6" data-testid="card-roadmap">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Map className="w-5 h-5" />
+            Transformation Roadmap
+          </h2>
+          {Array.isArray(mgd.roadmap) ? (
+            <div className="space-y-3">
+              {mgd.roadmap.map((step: any, i: number) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/40">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0 mt-0.5">
+                    {i + 1}
+                  </span>
+                  <div className="flex-1">
+                    {typeof step === "string" ? (
+                      <p className="text-sm">{step}</p>
+                    ) : (
+                      <>
+                        {step.phase && <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">{step.phase}</p>}
+                        {step.title && <p className="font-medium text-sm">{step.title}</p>}
+                        {step.description && <p className="text-sm text-muted-foreground mt-0.5">{step.description}</p>}
+                        {step.actions?.length > 0 && (
+                          <ul className="mt-1 space-y-0.5">
+                            {step.actions.map((a: string, j: number) => (
+                              <li key={j} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                                <span className="mt-0.5 shrink-0">•</span>{a}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : typeof mgd.roadmap === "object" ? (
+            <div className="space-y-4">
+              {Object.entries(mgd.roadmap).map(([phase, content]: [string, any]) => (
+                <div key={phase} className="border rounded-lg p-4">
+                  <p className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-2">{phase}</p>
+                  {Array.isArray(content) ? (
+                    <ul className="space-y-1">
+                      {content.map((item: any, i: number) => (
+                        <li key={i} className="text-sm flex items-start gap-1.5">
+                          <span className="mt-0.5 shrink-0 text-muted-foreground">•</span>
+                          {typeof item === "string" ? item : item.title || item.action || JSON.stringify(item)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{String(content)}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">{String(mgd.roadmap)}</p>
+          )}
+        </Card>
+      )}
+
+      {/* INDUSTRY BENCHMARKS */}
+      {mgd?.benchmarks && (
+        <Card className="p-6" data-testid="card-benchmarks">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <BarChart2 className="w-5 h-5" />
+            Industry Benchmarks
+          </h2>
+          {Array.isArray(mgd.benchmarks) && mgd.benchmarks.length > 0 ? (
+            <div className="space-y-3">
+              {mgd.benchmarks.map((bm: any, i: number) => (
+                <div key={i} className="flex items-center gap-4 py-2 border-b last:border-0">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{bm.kpi || bm.name || bm.metric || Object.keys(bm)[0]}</p>
+                    {bm.description && <p className="text-xs text-muted-foreground mt-0.5">{bm.description}</p>}
+                  </div>
+                  <div className="flex items-center gap-4 shrink-0">
+                    {bm.company != null && (
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Company</p>
+                        <p className="text-sm font-semibold">{bm.company}{bm.unit || ""}</p>
+                      </div>
+                    )}
+                    {bm.industry != null && (
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Industry</p>
+                        <p className="text-sm font-semibold text-primary">{bm.industry}{bm.unit || ""}</p>
+                      </div>
+                    )}
+                    {bm.gap != null && (
+                      <Badge variant={Number(bm.gap) < 0 ? "destructive" : "secondary"} className="text-xs">
+                        Gap: {bm.gap}{bm.unit || ""}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : typeof mgd.benchmarks === "object" ? (
+            <div className="space-y-2">
+              {Object.entries(mgd.benchmarks).map(([key, val]: [string, any]) => (
+                <div key={key} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                  <span className="text-sm text-muted-foreground">{key}</span>
+                  <span className="text-sm font-medium">{typeof val === "object" ? JSON.stringify(val) : String(val)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No benchmark data available</p>
+          )}
+        </Card>
+      )}
+
+      {/* MGD COST SAVINGS */}
+      {mgd?.savings && (
+        <Card className="p-6" data-testid="card-mgd-savings">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Layers className="w-5 h-5" />
+            MGD Cost Savings
+          </h2>
+          {Array.isArray(mgd.savings) && mgd.savings.length > 0 ? (
+            <div className="space-y-3">
+              {mgd.savings.map((s: any, i: number) => (
+                <div key={i} className="flex items-start justify-between gap-4 p-3 rounded-lg bg-muted/40">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{s.title || s.description || s.area || `Saving opportunity ${i + 1}`}</p>
+                    {s.description && s.title && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>
+                    )}
+                    {s.category && (
+                      <Badge variant="outline" className="mt-1 text-xs">{s.category}</Badge>
+                    )}
+                  </div>
+                  {s.estimatedSavings && (
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{s.estimatedSavings}</p>
+                      {s.implementationEffort && (
+                        <p className="text-xs text-muted-foreground">{s.implementationEffort} effort</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : typeof mgd.savings === "object" ? (
+            <div className="space-y-2">
+              {Object.entries(mgd.savings).map(([key, val]: [string, any]) => (
+                <div key={key} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                  <span className="text-sm text-muted-foreground">{key}</span>
+                  <span className="text-sm font-medium">{typeof val === "object" ? JSON.stringify(val) : String(val)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No savings data available</p>
+          )}
         </Card>
       )}
 
