@@ -1,0 +1,132 @@
+Upgrade the Client Overview / Client Detail page to feel like a premium client intelligence workspace.
+
+Do NOT change backend logic.
+Do NOT change routes or API.
+Do NOT change functionality.
+This is a UI/UX upgrade only.
+
+Target the page that shows:
+
+* Client name
+* Client profile
+* Diagnostics history/list
+* Run New Diagnostic button
+
+==================================================
+
+1. UPGRADE THE CLIENT HEADER
+   ==================================================
+
+Improve the top section so it feels more premium and informative.
+
+Include:
+
+* Client name as strong page title
+* Industry badge
+* Status badge
+* Better metadata layout
+* Stronger visual hierarchy
+
+Optional if data exists:
+
+* Total diagnostics
+* Last analysis date
+* Latest status
+* Quick health summary
+
+Goal:
+This should feel like the “workspace header” for the client.
+
+==================================================
+2) IMPROVE CLIENT PROFILE CARD
+==============================
+
+The profile section should feel more polished and easier to scan.
+
+Improve:
+
+* spacing
+* icon alignment
+* typography hierarchy
+* overall card styling
+
+Keep all existing data fields.
+
+==================================================
+3) UPGRADE THE DIAGNOSTICS LIST / TABLE
+=======================================
+
+This is the most important section.
+
+Improve it so it feels like a premium diagnostics activity feed.
+
+Requirements:
+
+* Better row spacing
+* Stronger hierarchy for diagnostic name
+* Cleaner status badges
+* Better visual grouping
+* Improve readability of dates / type / status
+
+Optional if easy:
+
+* Hover effect on rows
+* Better click affordance
+* More polished empty state if no diagnostics
+
+Goal:
+The user should immediately understand:
+
+* what analyses exist
+* which ones matter
+* which one to open next
+
+==================================================
+4) IMPROVE CTA / ACTION AREA
+============================
+
+Upgrade the “Run New Diagnostic” button area.
+
+Requirements:
+
+* Stronger primary CTA treatment
+* Better placement / spacing
+* If other actions exist, make hierarchy clearer
+
+Goal:
+The next action should feel obvious.
+
+==================================================
+5) IMPROVE OVERALL PAGE HIERARCHY
+=================================
+
+Across the page:
+
+* better spacing
+* stronger card layout
+* less flatness
+* more polished B2B feel
+
+Do NOT over-design.
+Keep it premium, minimal, clean.
+
+==================================================
+6) KEEP SAFE
+============
+
+* No backend changes
+* No API changes
+* No route changes
+* No logic changes
+* UI only
+
+==================================================
+7) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. Which file(s) were updated
+2. What visually improved most
+3. Whether diagnostics list feels more premium
+4. Whether everything still builds cleanly
