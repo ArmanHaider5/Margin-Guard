@@ -79,6 +79,10 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
         if (doc.y > ph - mb - h) doc.addPage();
       };
 
+      // Safe uppercase — never throws on null / undefined
+      const safeUpper = (value: unknown, fallback = "N/A"): string =>
+        String(value ?? fallback).toUpperCase();
+
       const sectionHeader = (num: string, title: string) => {
         ensureSpace(60);
         // Number pill
@@ -97,22 +101,22 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
 
       const fieldLabel = (text: string) => {
         doc.fontSize(8).fillColor(C.muted).font("Helvetica-Bold");
-        doc.text(text.toUpperCase(), ml, doc.y, { characterSpacing: 0.4 });
+        doc.text(safeUpper(text), ml, doc.y, { characterSpacing: 0.4 });
         doc.moveDown(0.2);
       };
 
       const bodyText = (text: string, indent = 0) => {
         doc.fontSize(10).fillColor(C.text).font("Helvetica");
-        doc.text(text, ml + indent, doc.y, { width: pw - indent, lineGap: 3, align: "justify" });
+        doc.text(String(text ?? ""), ml + indent, doc.y, { width: pw - indent, lineGap: 3, align: "justify" });
         doc.moveDown(0.8);
       };
 
-      const pill = (label: string, color: string, x: number, y: number, w = 70, h = 16) => {
+      const pill = (label: unknown, color: string, x: number, y: number, w = 70, h = 16) => {
         doc.save();
         doc.roundedRect(x, y, w, h, 3).fill(color + "22");
         doc.roundedRect(x, y, w, h, 3).stroke(color);
         doc.fontSize(8).fillColor(color).font("Helvetica-Bold");
-        doc.text(label.toUpperCase(), x, y + 4, { width: w, align: "center" });
+        doc.text(safeUpper(label), x, y + 4, { width: w, align: "center" });
         doc.restore();
       };
 
@@ -336,8 +340,8 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
 
           // Severity + category chips — top right
           const chips: { label: string; color: string }[] = [
-            { label: finding.severity.toUpperCase(), color: sevColor },
-            { label: finding.fourMCategory, color: catColor },
+            { label: safeUpper(finding.severity, "medium"), color: sevColor },
+            { label: safeUpper(finding.fourMCategory, "—"), color: catColor },
           ];
           let chipX = ml + pw - 110;
           chips.forEach(ch => {
@@ -574,7 +578,7 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
         doc.rect(ml, impactY, pw, 36).fill(sevColor + "10");
         doc.rect(ml, impactY, 4, 36).fill(sevColor);
         doc.fontSize(12).fillColor(sevColor).font("Helvetica-Bold");
-        doc.text(financialImpact.estimatedSeverity?.toUpperCase() || "N/A", ml + 12, impactY + 5, { continued: true });
+        doc.text(safeUpper(financialImpact.estimatedSeverity), ml + 12, impactY + 5, { continued: true });
         doc.fontSize(10).fillColor(C.text).font("Helvetica");
         doc.text("  Estimated Financial Severity", { width: pw - 16 });
         doc.fontSize(9).fillColor(C.muted).font("Helvetica");
@@ -638,7 +642,7 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
           const rmx = ml + 14;
           doc.fontSize(9).fillColor(phColor).font("Helvetica-Bold");
           const phaseLabel = item.phase || item.priority || `Phase ${i + 1}`;
-          doc.text(phaseLabel.toUpperCase(), rmx, rmY + 4, { characterSpacing: 0.5 });
+          doc.text(safeUpper(phaseLabel, `Phase ${i + 1}`), rmx, rmY + 4, { characterSpacing: 0.5 });
 
           doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
           doc.text(item.title || item.name || "Intervention", rmx, doc.y + 1, { width: pw - 50 });
@@ -683,7 +687,7 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
           }
           if (status) {
             doc.fontSize(8).fillColor(bmColor).font("Helvetica-Bold");
-            doc.text(status.toUpperCase(), ml + pw - 60, bmY, { width: 58, align: "right" });
+            doc.text(safeUpper(status), ml + pw - 60, bmY, { width: 58, align: "right" });
           }
           doc.moveDown(0.5);
         });

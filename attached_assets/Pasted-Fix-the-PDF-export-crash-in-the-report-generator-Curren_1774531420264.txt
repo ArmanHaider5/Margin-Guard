@@ -1,0 +1,127 @@
+Fix the PDF export crash in the report generator.
+
+Current runtime error when clicking "Download Report":
+Cannot read properties of undefined (reading 'toUpperCase')
+
+Do NOT change diagnostic logic.
+Do NOT change analysis scoring.
+Do NOT change findings generation.
+Do NOT change frontend layout except for preserving current export UX.
+This is a report-generator hardening fix only.
+
+==================================================
+ROOT PROBLEM
+============
+
+The PDF export is crashing because report-generator.ts is calling .toUpperCase() on one or more optional / undefined values.
+
+The report now supports many optional sections:
+
+* findings
+* predictions
+* financial impact
+* roadmap
+* benchmarks
+* root cause tree
+* causal chains
+* health score
+* narrative / mode labels
+
+Some analyses have partial or missing fields.
+
+The report generator must be fully defensive and never crash if any optional field is missing.
+
+==================================================
+TASK
+====
+
+In:
+server/reports/report-generator.ts
+
+Do a full defensive hardening pass.
+
+==================================================
+
+1. FIND ALL .toUpperCase() USAGE
+   ==================================================
+
+Audit every .toUpperCase() call in the file.
+
+Replace unsafe usage like:
+value.toUpperCase()
+
+with safe handling such as:
+String(value ?? "N/A").toUpperCase()
+
+or use a shared helper.
+
+==================================================
+2) CREATE A SAFE HELPER
+=======================
+
+Add a small helper near the top of the file, for example:
+
+const safeUpper = (value: unknown, fallback = "N/A") =>
+String(value ?? fallback).toUpperCase();
+
+Then use this consistently anywhere uppercase labels are rendered.
+
+==================================================
+3) HARDEN ALL OPTIONAL REPORT FIELDS
+====================================
+
+Specifically check these likely problem areas:
+
+* finding.severity
+* finding.category
+* prediction.likelihood
+* roadmap.phase
+* roadmap.title
+* benchmark.metric
+* financialImpact.severity
+* root cause category / tier labels
+* mode / type / status labels
+* any chip / badge / label formatting
+
+If a value is missing:
+
+* do NOT crash
+* use a sensible fallback
+* or skip the line/section cleanly
+
+==================================================
+4) ENSURE REPORT EXPORT NEVER FAILS ON PARTIAL DATA
+===================================================
+
+The PDF generator must gracefully support:
+
+* baseline analysis
+* deep diagnostic
+* partial mgdAnalysis
+* null rootCauseTree
+* null healthScore
+* null financialImpact
+* null roadmap
+* null benchmarks
+* partial findings / predictions
+
+The export should still generate even if only half the advanced fields exist.
+
+==================================================
+5) KEEP UX INTACT
+=================
+
+Do NOT remove the current "Generating PDF..." button UX.
+Do NOT change frontend styling unless absolutely required for the export request to complete.
+Only fix the backend export robustness.
+
+==================================================
+6) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. Every place where .toUpperCase() was hardened
+2. Which field was most likely causing the crash
+3. Whether export now works with partial MGD data
+4. Whether build remains clean
