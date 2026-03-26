@@ -17,7 +17,6 @@ import { generateExportPDF } from "../reports/export-pdf-generator";
 import { generateDiagnosticExport } from "../diagnostics/diagnostic-export";
 import executionRoutes from "../../src/modules/execution/routes/execution.routes";
 import { diagnosticHandler } from "../api/diagnostic-route";
-import { runUnifiedDiagnostic } from "../modules/diagnostics/services/unified-diagnostic-engine";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -1022,18 +1021,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // No KPI values available at this pipeline stage — engine will use available signals only
         const extractedKPIData: Record<string, number> = {};
 
-        let mgdAnalysis: any = null;
-        try {
-          const diagnosticResult = await runUnifiedDiagnostic({
-            industry: client.industry || "manufacturing",
-            signals: extractedSignals,
-            kpiData: extractedKPIData,
-            baseFindings: result.findings
-          });
-          mgdAnalysis = diagnosticResult.mgdAnalysis;
-        } catch (mgdError) {
-          console.error("MGD engine error (non-critical):", mgdError);
-        }
+        const mgdAnalysis = (result as any).mgdAnalysis ?? null;
 
         const updatedAnalysis = await storage.updateClientAnalysis(analysis.id, {
           status: "completed",
