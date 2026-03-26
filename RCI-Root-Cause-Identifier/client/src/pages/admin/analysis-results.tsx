@@ -339,16 +339,33 @@ export default function AnalysisResults() {
           )}
           <Button
             size="sm"
+            className={`font-semibold transition-all ${
+              isDownloading ? "opacity-80" : ""
+            } ${
+              analysis.status !== "completed"
+                ? "opacity-50 cursor-not-allowed"
+                : ""
+            }`}
             onClick={handleDownloadReport}
             disabled={analysis.status !== "completed" || isDownloading}
             data-testid="button-download-report"
+            title={
+              analysis.status !== "completed"
+                ? "Report available once analysis is complete"
+                : "Download PDF report"
+            }
           >
             {isDownloading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating PDF…
+              </>
             ) : (
-              <Download className="w-4 h-4 mr-2" />
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Download Report
+              </>
             )}
-            {isDownloading ? "Generating…" : "Download Report"}
           </Button>
         </div>
       </div>

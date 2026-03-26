@@ -1,0 +1,116 @@
+Upgrade the Report Export / Download Report experience so the software produces a polished, consultant-grade client deliverable.
+
+Do NOT change diagnostic logic.
+Do NOT change root cause scoring.
+Do NOT change backend analysis results.
+This task is about output formatting, structure, presentation, and export UX.
+
+Target the existing "Download Report" functionality and the analysis result export flow.
+
+==================================================
+
+1. IMPROVE THE REPORT STRUCTURE
+   ==================================================
+
+Make the exported report feel like a professional consulting deliverable.
+
+The report should clearly support these sections when data exists:
+
+* Report Header / Cover
+
+* Client name
+
+* Industry
+
+* Analysis type
+
+* Date
+
+* Diagnostic status / confidence
+
+* Executive Summary
+
+* Diagnostic Findings
+
+* Causal Chain
+
+* Risk Predictions
+
+* Cost Saving Opportunities
+
+* Financial Impact
+
+Optional if data exists:
+
+* Operational Health Score
+* Transformation Roadmap
+* Industry Benchmarks
+
+Goal:
+The report should feel polished, structured, and client-ready.
+
+==================================================
+2) IMPROVE VISUAL HIERARCHY
+===========================
+
+Improve the layout and styling of the exported report.
+
+Requirements:
+
+* Strong section hierarchy
+* Better spacing and readability
+* Clear typography hierarchy
+* Better grouping of findings / predictions / savings
+* More premium business-report feel
+
+Goal:
+This should feel like something a consultant can send directly to a client.
+
+==================================================
+3) HANDLE MISSING DATA CLEANLY
+==============================
+
+If some advanced fields are missing (for example causal chain, financial impact, benchmarks, or health score):
+
+* Do NOT break the report
+* Do NOT show ugly raw null / undefined states
+* Use clean fallbacks or omit the section elegantly
+
+Goal:
+The export should always feel professional, even when some sections are incomplete.
+
+==================================================
+4) IMPROVE DOWNLOAD REPORT UX
+=============================
+
+Improve the user experience around clicking "Download Report".
+
+Requirements:
+
+* Ensure the CTA feels responsive and intentional
+* Improve loading / disabled / success / failure handling if needed
+* Make the export flow feel reliable and polished
+
+Goal:
+Downloading a report should feel like a real product feature, not a rough utility.
+
+==================================================
+5) KEEP SAFE
+============
+
+* No changes to diagnostic engine logic
+* No changes to scoring logic
+* No changes to result generation logic
+* Focus on report layout / formatting / presentation / UX only
+
+==================================================
+6) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. Which file(s) were updated
+2. What the report now includes
+3. What improved visually
+4. How missing data is handled
+5. Whether the build remains clean

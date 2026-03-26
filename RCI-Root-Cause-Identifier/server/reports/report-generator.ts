@@ -11,26 +11,36 @@ import type { ConsultingDiagnosticReport } from "../modules/diagnostics/engines/
 
 // PDF export must be robust regardless of content length.
 
-const EDX_COLORS = {
-  primary: "#1a365d",
-  secondary: "#2b6cb0",
-  accent: "#ed8936",
-  text: "#2d3748",
-  muted: "#718096",
-  success: "#38a169",
-  warning: "#d69e2e",
-  danger: "#e53e3e",
-  money: "#38a169",
-  materials: "#d69e2e",
-  manpower: "#3182ce",
-  machinery: "#805ad5",
+const C = {
+  primary:    "#1a2f4a",   // deep navy — main brand
+  secondary:  "#2563eb",   // blue accent
+  accent:     "#f59e0b",   // amber highlight
+  text:       "#1e293b",   // near-black body
+  muted:      "#64748b",   // slate muted
+  border:     "#e2e8f0",   // light rule
+  success:    "#16a34a",   // green
+  warning:    "#d97706",   // amber
+  danger:     "#dc2626",   // red
+  light:      "#f8fafc",   // near-white background
+  white:      "#ffffff",
+  money:      "#16a34a",
+  materials:  "#d97706",
+  manpower:   "#2563eb",
+  machinery:  "#7c3aed",
 };
 
-const FOURM_COLORS: Record<FourMCategory, string> = {
-  Money: EDX_COLORS.money,
-  Materials: EDX_COLORS.materials,
-  Manpower: EDX_COLORS.manpower,
-  Machinery: EDX_COLORS.machinery,
+const FOURM: Record<FourMCategory, string> = {
+  Money:     C.money,
+  Materials: C.materials,
+  Manpower:  C.manpower,
+  Machinery: C.machinery,
+};
+
+const SEV: Record<string, string> = {
+  critical: C.danger,
+  high:     C.warning,
+  medium:   C.secondary,
+  low:      C.muted,
 };
 
 interface ReportData {
@@ -45,12 +55,12 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
     try {
       const doc = new PDFDocument({
         size: "A4",
-        margins: { top: 50, bottom: 50, left: 50, right: 50 },
+        margins: { top: 50, bottom: 60, left: 55, right: 55 },
         bufferPages: true,
         info: {
-          Title: `EDX Analysis Report - ${data.client.name}`,
-          Author: "EDX - Efficiency, Deployment, Excellence",
-          Subject: data.analysis.title,
+          Title: `${data.client.name} — Operational Diagnostic Report`,
+          Author: "EDX Consulting — Efficiency, Deployment, Excellence",
+          Subject: data.analysis.title || "RCI Diagnostic Report",
         },
       });
 
@@ -59,460 +69,651 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
 
-      const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-      const pageHeight = doc.page.height;
-      const marginLeft = doc.page.margins.left;
-      const marginBottom = doc.page.margins.bottom;
+      const pw  = doc.page.width  - doc.page.margins.left - doc.page.margins.right;
+      const ph  = doc.page.height;
+      const ml  = doc.page.margins.left;
+      const mb  = doc.page.margins.bottom;
 
-      // Helper to check if we need a new page
-      const ensureSpace = (requiredSpace: number) => {
-        if (doc.y > pageHeight - marginBottom - requiredSpace) {
-          doc.addPage();
-        }
+      // ── Convenience helpers ─────────────────────────────────────────
+      const ensureSpace = (h: number) => {
+        if (doc.y > ph - mb - h) doc.addPage();
       };
 
-      // ========== TITLE SECTION ==========
-      doc.rect(0, 0, doc.page.width, 120).fill(EDX_COLORS.primary);
-      
-      doc.fontSize(28).fillColor("#ffffff").font("Helvetica-Bold");
-      doc.text("EDX", marginLeft, 30, { width: pageWidth, align: "center" });
-      
-      doc.fontSize(10).font("Helvetica");
-      doc.text("Efficiency • Deployment • Excellence", marginLeft, 65, { width: pageWidth, align: "center" });
+      const sectionHeader = (num: string, title: string) => {
+        ensureSpace(60);
+        // Number pill
+        doc.save();
+        doc.roundedRect(ml, doc.y, 26, 16, 3).fill(C.secondary);
+        doc.fontSize(8).fillColor(C.white).font("Helvetica-Bold");
+        doc.text(num.padStart(2, "0"), ml + 1, doc.y - 15, { width: 26, align: "center" });
+        doc.restore();
 
-      doc.fontSize(9).fillColor("#ffffff");
-      doc.text("Operational Analysis Report", marginLeft, 90, { width: pageWidth, align: "center" });
+        doc.fontSize(15).fillColor(C.primary).font("Helvetica-Bold");
+        doc.text(title, ml + 32, doc.y - 16, { width: pw - 32 });
+        doc.moveDown(0.15);
+        doc.moveTo(ml, doc.y).lineTo(ml + pw, doc.y).strokeColor(C.border).lineWidth(0.75).stroke();
+        doc.moveDown(0.8);
+      };
 
-      doc.y = 140;
+      const fieldLabel = (text: string) => {
+        doc.fontSize(8).fillColor(C.muted).font("Helvetica-Bold");
+        doc.text(text.toUpperCase(), ml, doc.y, { characterSpacing: 0.4 });
+        doc.moveDown(0.2);
+      };
 
-      // Client name and analysis title
-      doc.fontSize(18).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-      doc.text(data.client.name, marginLeft, doc.y, { width: pageWidth, align: "center" });
-      doc.moveDown(0.3);
+      const bodyText = (text: string, indent = 0) => {
+        doc.fontSize(10).fillColor(C.text).font("Helvetica");
+        doc.text(text, ml + indent, doc.y, { width: pw - indent, lineGap: 3, align: "justify" });
+        doc.moveDown(0.8);
+      };
 
-      doc.fontSize(12).fillColor(EDX_COLORS.muted).font("Helvetica");
-      doc.text(data.analysis.title, marginLeft, doc.y, { width: pageWidth, align: "center" });
-      doc.moveDown(0.3);
+      const pill = (label: string, color: string, x: number, y: number, w = 70, h = 16) => {
+        doc.save();
+        doc.roundedRect(x, y, w, h, 3).fill(color + "22");
+        doc.roundedRect(x, y, w, h, 3).stroke(color);
+        doc.fontSize(8).fillColor(color).font("Helvetica-Bold");
+        doc.text(label.toUpperCase(), x, y + 4, { width: w, align: "center" });
+        doc.restore();
+      };
 
-      // Analysis metadata
-      const analysisDate = data.analysis.completedAt 
-        ? new Date(data.analysis.completedAt).toLocaleDateString("en-MY", { 
-            year: "numeric", 
-            month: "long", 
-            day: "numeric" 
-          })
+      // ── Safe mgdAnalysis access ──────────────────────────────────────
+      const mgd = (data.analysis as any).mgdAnalysis as Record<string, any> | null | undefined;
+
+      const findings           = (data.analysis.findings || []) as AnalysisFinding[];
+      const costSavings        = (data.analysis.costSavingOpportunities || []) as CostSavingOpportunity[];
+      const predictions        = (data.analysis.recurrencePredictions || []) as RecurrencePrediction[];
+      const criticalCount      = findings.filter(f => f.severity === "critical" || f.severity === "high").length;
+
+      const analysisDate = data.analysis.completedAt
+        ? new Date(data.analysis.completedAt).toLocaleDateString("en-MY", { year: "numeric", month: "long", day: "numeric" })
         : new Date().toLocaleDateString("en-MY", { year: "numeric", month: "long", day: "numeric" });
-      
-      doc.fontSize(10).fillColor(EDX_COLORS.text);
-      doc.text(`Analysis Date: ${analysisDate}`, marginLeft, doc.y, { width: pageWidth, align: "center" });
-      doc.moveDown(0.2);
 
-      const analysisTypeLabel = data.analysis.analysisType === "quick" ? "Quick Analysis" : "Deep Analysis";
-      doc.text(`Analysis Type: ${analysisTypeLabel}`, marginLeft, doc.y, { width: pageWidth, align: "center" });
-      doc.moveDown(1);
+      const analysisTypeLabel = data.analysis.analysisType === "quick" ? "Quick Analysis" : "Deep Diagnostic";
+      const modeLabel = data.analysis.analysisMode === "baseline"
+        ? "Baseline — Pattern Analysis"
+        : "Evidence-Enriched — Signal Driven";
 
-      // Statistics boxes
-      const findings = data.analysis.findings || [];
-      const costSavings = data.analysis.costSavingOpportunities || [];
-      const criticalCount = findings.filter(f => f.severity === "critical" || f.severity === "high").length;
+      // ═══════════════════════════════════════════════════════════════
+      // PAGE 1 — COVER PAGE
+      // ═══════════════════════════════════════════════════════════════
 
-      const boxWidth = (pageWidth - 30) / 3;
-      const boxY = doc.y;
-      const boxHeight = 50;
+      // Full-width dark header band
+      doc.rect(0, 0, doc.page.width, 180).fill(C.primary);
 
-      doc.rect(marginLeft, boxY, boxWidth, boxHeight).fill(EDX_COLORS.primary);
-      doc.fontSize(18).fillColor("#ffffff").font("Helvetica-Bold");
-      doc.text(String(findings.length), marginLeft, boxY + 10, { width: boxWidth, align: "center" });
-      doc.fontSize(8).font("Helvetica");
-      doc.text("Issues Found", marginLeft, boxY + 32, { width: boxWidth, align: "center" });
+      // EDX wordmark
+      doc.fontSize(30).fillColor(C.white).font("Helvetica-Bold");
+      doc.text("EDX", ml, 38, { width: pw, align: "center" });
 
-      doc.rect(marginLeft + boxWidth + 15, boxY, boxWidth, boxHeight).fill(EDX_COLORS.accent);
-      doc.fontSize(18).fillColor("#ffffff").font("Helvetica-Bold");
-      doc.text(String(costSavings.length), marginLeft + boxWidth + 15, boxY + 10, { width: boxWidth, align: "center" });
-      doc.fontSize(8).font("Helvetica");
-      doc.text("Opportunities", marginLeft + boxWidth + 15, boxY + 32, { width: boxWidth, align: "center" });
+      doc.fontSize(9).fillColor("#94a3b8").font("Helvetica");
+      doc.text("EFFICIENCY  ·  DEPLOYMENT  ·  EXCELLENCE", ml, 76, { width: pw, align: "center", characterSpacing: 1 });
 
-      doc.rect(marginLeft + (boxWidth + 15) * 2, boxY, boxWidth, boxHeight).fill(criticalCount > 0 ? EDX_COLORS.danger : EDX_COLORS.success);
-      doc.fontSize(18).fillColor("#ffffff").font("Helvetica-Bold");
-      doc.text(String(criticalCount), marginLeft + (boxWidth + 15) * 2, boxY + 10, { width: boxWidth, align: "center" });
-      doc.fontSize(8).font("Helvetica");
-      doc.text("Critical/High", marginLeft + (boxWidth + 15) * 2, boxY + 32, { width: boxWidth, align: "center" });
+      doc.fontSize(8).fillColor("#cbd5e1").font("Helvetica");
+      doc.text("OPERATIONAL DIAGNOSTIC REPORT", ml, 100, { width: pw, align: "center", characterSpacing: 1.2 });
 
-      doc.y = boxY + boxHeight + 25;
+      // Accent rule inside header
+      const ruleY = 125;
+      doc.moveTo(ml + pw / 2 - 60, ruleY).lineTo(ml + pw / 2 + 60, ruleY)
+        .strokeColor(C.accent).lineWidth(1.5).stroke();
 
-      // ========== EXECUTIVE SUMMARY ==========
-      ensureSpace(100);
-      
-      doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-      doc.text("Executive Summary", marginLeft);
-      doc.moveDown(0.3);
+      // Confidential tag inside header
+      doc.fontSize(7).fillColor("#94a3b8").font("Helvetica");
+      doc.text("CONFIDENTIAL & PROPRIETARY", ml, 140, { width: pw, align: "center", characterSpacing: 0.8 });
 
-      doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
+      // Client name — below header
+      doc.y = 208;
+      doc.fontSize(9).fillColor(C.muted).font("Helvetica");
+      doc.text("Prepared for", ml, doc.y, { width: pw, align: "center" });
+      doc.moveDown(0.4);
+
+      doc.fontSize(22).fillColor(C.primary).font("Helvetica-Bold");
+      doc.text(data.client.name, ml, doc.y, { width: pw, align: "center" });
       doc.moveDown(0.5);
+
+      // Industry badge area
+      const industryLabel = (data.client.industry || "General").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      doc.fontSize(10).fillColor(C.muted).font("Helvetica");
+      doc.text(industryLabel, ml, doc.y, { width: pw, align: "center" });
+      doc.moveDown(1.5);
+
+      // Title divider
+      doc.moveTo(ml + pw / 2 - 80, doc.y).lineTo(ml + pw / 2 + 80, doc.y)
+        .strokeColor(C.border).lineWidth(0.75).stroke();
+      doc.moveDown(1.5);
+
+      // Report title
+      doc.fontSize(18).fillColor(C.primary).font("Helvetica-Bold");
+      const reportTitle = data.analysis.title || `${analysisTypeLabel} — ${data.client.name}`;
+      doc.text(reportTitle, ml, doc.y, { width: pw, align: "center" });
+      doc.moveDown(0.6);
+
+      doc.fontSize(10).fillColor(C.muted).font("Helvetica");
+      doc.text(`${analysisTypeLabel}  ·  ${analysisDate}`, ml, doc.y, { width: pw, align: "center" });
+      doc.moveDown(0.35);
 
       // Mode label
-      const modeLabel = data.analysis.analysisMode === "baseline" 
-        ? "Baseline (Preliminary)" 
-        : "Deep Diagnostic (Evidence-Enriched)";
-      
-      doc.fontSize(9).fillColor(EDX_COLORS.muted).font("Helvetica-Bold");
-      doc.text(`Mode: ${modeLabel}`, marginLeft);
-      doc.moveDown(0.3);
+      const modeColor = data.analysis.analysisMode === "baseline" ? C.muted : C.success;
+      doc.fontSize(9).fillColor(modeColor).font("Helvetica-Bold");
+      doc.text(modeLabel, ml, doc.y, { width: pw, align: "center" });
 
-      // Mock mode indicator
+      doc.moveDown(2);
+
+      // ── KPI BOXES ──────────────────────────────────────────────────
+      const bw = (pw - 20) / 3;
+      const by = doc.y;
+      const bh = 56;
+
+      // Box 1: Issues found
+      doc.rect(ml, by, bw, bh).fill(C.primary);
+      doc.fontSize(22).fillColor(C.white).font("Helvetica-Bold");
+      doc.text(String(findings.length), ml, by + 8, { width: bw, align: "center" });
+      doc.fontSize(8).font("Helvetica").fillColor("#94a3b8");
+      doc.text("Issues Found", ml, by + 36, { width: bw, align: "center" });
+
+      // Box 2: Savings
+      doc.rect(ml + bw + 10, by, bw, bh).fill(C.success);
+      doc.fontSize(22).fillColor(C.white).font("Helvetica-Bold");
+      doc.text(String(costSavings.length), ml + bw + 10, by + 8, { width: bw, align: "center" });
+      doc.fontSize(8).font("Helvetica").fillColor("#d1fae5");
+      doc.text("Saving Opportunities", ml + bw + 10, by + 36, { width: bw, align: "center" });
+
+      // Box 3: Critical
+      const box3Color = criticalCount > 0 ? C.danger : C.muted;
+      doc.rect(ml + (bw + 10) * 2, by, bw, bh).fill(box3Color);
+      doc.fontSize(22).fillColor(C.white).font("Helvetica-Bold");
+      doc.text(String(criticalCount), ml + (bw + 10) * 2, by + 8, { width: bw, align: "center" });
+      doc.fontSize(8).font("Helvetica").fillColor("#f1f5f9");
+      doc.text("Critical / High Issues", ml + (bw + 10) * 2, by + 36, { width: bw, align: "center" });
+
+      doc.y = by + bh + 20;
+
+      // Optional MGD health score on cover
+      const healthScore = mgd?.healthScore;
+      if (typeof healthScore === "number") {
+        const hsColor = healthScore >= 70 ? C.success : healthScore >= 40 ? C.warning : C.danger;
+        const hsLabel = healthScore >= 70 ? "Healthy" : healthScore >= 40 ? "At Risk" : "Critical";
+        doc.moveDown(0.5);
+        doc.fontSize(9).fillColor(C.muted).font("Helvetica");
+        doc.text("Operational Health Score", ml, doc.y, { width: pw, align: "center" });
+        doc.moveDown(0.2);
+        doc.fontSize(28).fillColor(hsColor).font("Helvetica-Bold");
+        doc.text(`${healthScore}`, ml, doc.y, { continued: true, width: pw / 2 + 30, align: "right" });
+        doc.fontSize(11).font("Helvetica").fillColor(C.muted);
+        doc.text(`  / 100  —  ${hsLabel}`, { width: pw / 2 - 30, align: "left" });
+        doc.moveDown(0.5);
+      }
+
+      // ── Cover footer ───────────────────────────────────────────────
+      const coverFooterY = ph - mb - 48;
+      doc.moveTo(ml, coverFooterY).lineTo(ml + pw, coverFooterY).strokeColor(C.border).lineWidth(0.5).stroke();
+
+      doc.fontSize(8).fillColor(C.muted).font("Helvetica");
+      doc.text("Prepared by", ml, coverFooterY + 8);
+      doc.fontSize(10).fillColor(C.text).font("Helvetica-Bold");
+      doc.text("EDX Consulting", ml, coverFooterY + 20);
+      doc.fontSize(8).fillColor(C.muted).font("Helvetica");
+      doc.text("www.edx-consulting.com", ml, coverFooterY + 34);
+
+      doc.fontSize(8).fillColor(C.muted).font("Helvetica");
+      doc.text(`Ref: ${data.analysis.id?.slice(0, 8).toUpperCase() || "N/A"}  ·  Generated ${new Date().toLocaleDateString("en-MY")}`, ml, coverFooterY + 8, { width: pw, align: "right" });
+      doc.text("This document contains confidential information prepared exclusively for the named client.", ml, coverFooterY + 34, { width: pw, align: "right" });
+
+      // ═══════════════════════════════════════════════════════════════
+      // PAGE 2+ — BODY
+      // ═══════════════════════════════════════════════════════════════
+      doc.addPage();
+      let sectionNum = 1;
+
+      // Mock mode notice
       if (data.analysis.isMockMode) {
-        doc.fontSize(8).fillColor(EDX_COLORS.warning).font("Helvetica");
-        doc.text("[MOCK MODE] This report was generated using simulated diagnostic data.", marginLeft);
-        doc.moveDown(0.3);
+        doc.rect(ml, doc.y, pw, 26).fill("#fef9c3");
+        doc.fontSize(9).fillColor("#92400e").font("Helvetica-Bold");
+        doc.text("⚠  BASELINE MODE — This report was produced from pattern analysis without uploaded documents. Upload operational data for evidence-enriched findings.", ml + 6, doc.y - 20, { width: pw - 12 });
+        doc.moveDown(1.2);
       }
 
-      // Summary text
-      doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica");
-      const summary = data.analysis.summary || "Analysis has been completed. Please review the detailed findings below.";
-      doc.text(summary, marginLeft, doc.y, { width: pageWidth, align: "justify", lineGap: 4 });
-      doc.moveDown(1);
+      // ── SECTION 1: EXECUTIVE SUMMARY ──────────────────────────────
+      sectionHeader(String(sectionNum++), "Executive Summary");
 
-      // 4M Distribution (compact inline version)
+      fieldLabel("Analysis Type & Mode");
+      doc.fontSize(10).fillColor(C.text).font("Helvetica");
+      doc.text(`${analysisTypeLabel}  ·  ${modeLabel}  ·  ${analysisDate}`, ml, doc.y, { width: pw });
+      doc.moveDown(0.8);
+
+      fieldLabel("Summary");
+      const summaryText = data.analysis.summary
+        || (mgd?.narrative?.executiveSummary)
+        || "The diagnostic analysis has been completed. Please review the detailed findings below for root causes and recommended actions.";
+      bodyText(summaryText);
+
+      // 4M category distribution
       if (findings.length > 0) {
-        ensureSpace(60);
-        
-        const categoryCounts: Record<FourMCategory, number> = {
-          Money: 0,
-          Materials: 0,
-          Manpower: 0,
-          Machinery: 0,
-        };
-        findings.forEach(f => {
-          if (f.fourMCategory && categoryCounts[f.fourMCategory] !== undefined) {
-            categoryCounts[f.fourMCategory]++;
-          }
-        });
-
-        doc.fontSize(11).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-        doc.text("4M Distribution: ", marginLeft, doc.y, { continued: true });
-        
-        doc.font("Helvetica").fontSize(10).fillColor(EDX_COLORS.text);
-        const distText = Object.entries(categoryCounts)
-          .filter(([_, count]) => count > 0)
-          .map(([cat, count]) => `${cat}: ${count}`)
-          .join(" | ");
-        doc.text(distText || "No categorized findings");
-        doc.moveDown(1);
+        const cats: Record<FourMCategory, number> = { Money: 0, Materials: 0, Manpower: 0, Machinery: 0 };
+        findings.forEach(f => { if (f.fourMCategory) cats[f.fourMCategory]++; });
+        const populated = Object.entries(cats).filter(([, n]) => n > 0);
+        if (populated.length > 0) {
+          fieldLabel("4M Category Distribution");
+          let cx = ml;
+          const catW = pw / populated.length - 6;
+          const catY = doc.y;
+          populated.forEach(([cat, count]) => {
+            const col = FOURM[cat as FourMCategory] || C.muted;
+            doc.rect(cx, catY, catW, 36).fill(col + "15");
+            doc.roundedRect(cx, catY, catW, 36, 3).stroke(col + "55");
+            doc.fontSize(16).fillColor(col).font("Helvetica-Bold");
+            doc.text(String(count), cx, catY + 4, { width: catW, align: "center" });
+            doc.fontSize(7).fillColor(col).font("Helvetica-Bold");
+            doc.text(cat.toUpperCase(), cx, catY + 24, { width: catW, align: "center" });
+            cx += catW + 6;
+          });
+          doc.y = catY + 46;
+          doc.moveDown(0.8);
+        }
       }
 
-      // ========== CONSULTING DIAGNOSTIC SECTIONS ==========
-      if (data.consultingReport) {
+      // ── SECTION 2: DIAGNOSTIC FINDINGS ─────────────────────────────
+      if (findings.length > 0) {
+        sectionHeader(String(sectionNum++), "Diagnostic Findings");
+
+        findings.forEach((finding, idx) => {
+          ensureSpace(80);
+
+          const catColor = FOURM[finding.fourMCategory] || C.muted;
+          const sevColor = SEV[finding.severity] || C.muted;
+          const rowY = doc.y;
+
+          // Left category bar
+          doc.rect(ml, rowY, 4, 64).fill(catColor);
+
+          // Index circle
+          doc.save();
+          doc.circle(ml + 20, rowY + 10, 9).fill(C.primary);
+          doc.fontSize(8).fillColor(C.white).font("Helvetica-Bold");
+          doc.text(String(idx + 1).padStart(2, "0"), ml + 12, rowY + 5, { width: 16, align: "center" });
+          doc.restore();
+
+          const fx = ml + 36;
+          const fw = pw - 40;
+
+          // Severity + category chips — top right
+          const chips: { label: string; color: string }[] = [
+            { label: finding.severity.toUpperCase(), color: sevColor },
+            { label: finding.fourMCategory, color: catColor },
+          ];
+          let chipX = ml + pw - 110;
+          chips.forEach(ch => {
+            doc.save();
+            doc.roundedRect(chipX, rowY + 1, 52, 13, 2).fill(ch.color + "18");
+            doc.fontSize(6.5).fillColor(ch.color).font("Helvetica-Bold");
+            doc.text(ch.label, chipX + 1, rowY + 4, { width: 50, align: "center" });
+            doc.restore();
+            chipX += 56;
+          });
+
+          // Title
+          doc.fontSize(11).fillColor(C.primary).font("Helvetica-Bold");
+          doc.text(finding.title, fx, rowY + 2, { width: fw - 120 });
+
+          // Description
+          const descY = doc.y + 2;
+          const desc = finding.description?.slice(0, 220) + (finding.description?.length > 220 ? "…" : "");
+          doc.fontSize(9).fillColor(C.text).font("Helvetica");
+          doc.text(desc, fx, descY, { width: fw, lineGap: 2 });
+
+          // Cost impact + evidence count
+          const metaY = doc.y + 2;
+          doc.fontSize(8).fillColor(C.muted).font("Helvetica");
+          const costStr = finding.estimatedCostImpact ? `Est. Impact: ${finding.estimatedCostImpact}` : "";
+          const evidStr = (finding as any).evidenceCount ? `  ·  ${(finding as any).evidenceCount} evidence signal${(finding as any).evidenceCount !== 1 ? "s" : ""}` : "";
+          if (costStr || evidStr) {
+            doc.text(`${costStr}${evidStr}`, fx, metaY);
+            doc.moveDown(0.3);
+          }
+
+          doc.moveDown(1);
+        });
+      }
+
+      // ── SECTION 3: ROOT CAUSE ANALYSIS (MGD) ───────────────────────
+      const rootCauseTree = mgd?.rootCauseTree;
+      if (rootCauseTree?.primary) {
+        sectionHeader(String(sectionNum++), "Root Cause Analysis");
+
+        fieldLabel("Primary Root Cause");
+        ensureSpace(50);
+        const rcY = doc.y;
+        const primaryColor = FOURM[rootCauseTree.primary.category as FourMCategory] || C.secondary;
+        doc.rect(ml, rcY, 4, 50).fill(primaryColor);
+
+        doc.fontSize(12).fillColor(C.primary).font("Helvetica-Bold");
+        doc.text(rootCauseTree.primary.name, ml + 12, rcY, { width: pw - 16 });
+        doc.fontSize(9).fillColor(C.text).font("Helvetica");
+        if (rootCauseTree.primary.description) {
+          doc.text(rootCauseTree.primary.description.slice(0, 200), ml + 12, doc.y + 2, { width: pw - 16, lineGap: 2 });
+        }
+        doc.fontSize(8).fillColor(C.muted);
+        doc.text(`${rootCauseTree.primary.category || ""}${rootCauseTree.primary.tier ? "  ·  Tier " + rootCauseTree.primary.tier : ""}`, ml + 12, doc.y + 2);
+        doc.moveDown(1);
+
+        if (rootCauseTree.secondary?.length > 0) {
+          fieldLabel("Contributing Root Causes");
+          rootCauseTree.secondary.slice(0, 5).forEach((rc: any, i: number) => {
+            ensureSpace(45);
+            const scY = doc.y;
+            const scColor = FOURM[rc.category as FourMCategory] || C.muted;
+            doc.rect(ml, scY, 3, 38).fill(scColor);
+
+            doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
+            doc.text(`${i + 1}. ${rc.name}`, ml + 10, scY, { width: pw - 14 });
+            doc.fontSize(9).fillColor(C.text).font("Helvetica");
+            if (rc.description) {
+              doc.text(rc.description.slice(0, 160) + (rc.description.length > 160 ? "…" : ""), ml + 10, doc.y + 1, { width: pw - 14, lineGap: 2 });
+            }
+            doc.fontSize(8).fillColor(C.muted);
+            doc.text(`${rc.category || ""}${rc.tier ? "  ·  Tier " + rc.tier : ""}`, ml + 10, doc.y + 1);
+            doc.moveDown(0.9);
+          });
+        }
+      } else if (data.consultingReport) {
+        // Fallback to consultingReport if mgdAnalysis not present
         const cr = data.consultingReport;
+        sectionHeader(String(sectionNum++), "Root Cause Analysis");
 
-        // --- Primary Root Cause ---
-        ensureSpace(80);
-        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-        doc.text("Primary Root Cause", marginLeft);
-        doc.moveDown(0.3);
-        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
-        doc.moveDown(0.5);
-
-        const primaryColor = FOURM_COLORS[cr.primaryRootCause.category as FourMCategory] || EDX_COLORS.muted;
-        doc.rect(marginLeft, doc.y, 4, 55).fill(primaryColor);
-        const primaryX = marginLeft + 12;
-
-        doc.fontSize(12).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-        doc.text(cr.primaryRootCause.name, primaryX, doc.y, { width: pageWidth - 20 });
-        doc.fontSize(9).fillColor(EDX_COLORS.text).font("Helvetica");
-        doc.text(cr.primaryRootCause.description, primaryX, doc.y + 2, { width: pageWidth - 20, lineGap: 2 });
-        doc.fontSize(8).fillColor(EDX_COLORS.muted);
-        doc.text(`Category: ${cr.primaryRootCause.category} | Tier ${cr.primaryRootCause.tier} | ID: ${cr.primaryRootCause.id}`, primaryX, doc.y + 2);
-        doc.moveDown(1.5);
-
-        // --- Secondary Root Causes ---
-        ensureSpace(60);
-        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-        doc.text("Secondary Root Causes", marginLeft);
-        doc.moveDown(0.3);
-        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
-        doc.moveDown(0.5);
+        fieldLabel("Primary Root Cause");
+        const primaryColor = FOURM[cr.primaryRootCause.category as FourMCategory] || C.secondary;
+        const rcY = doc.y;
+        doc.rect(ml, rcY, 4, 50).fill(primaryColor);
+        doc.fontSize(12).fillColor(C.primary).font("Helvetica-Bold");
+        doc.text(cr.primaryRootCause.name, ml + 12, rcY, { width: pw - 16 });
+        doc.fontSize(9).fillColor(C.text).font("Helvetica");
+        doc.text(cr.primaryRootCause.description.slice(0, 200), ml + 12, doc.y + 2, { width: pw - 16, lineGap: 2 });
+        doc.moveDown(1);
 
         if (cr.secondaryRootCauses.length > 0) {
-          cr.secondaryRootCauses.forEach((rc, i) => {
-            ensureSpace(50);
-            const color = FOURM_COLORS[rc.category as FourMCategory] || EDX_COLORS.muted;
-            doc.rect(marginLeft, doc.y, 4, 40).fill(color);
-            const rcX = marginLeft + 12;
-
-            doc.fontSize(11).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-            doc.text(`${i + 1}. ${rc.name}`, rcX, doc.y, { width: pageWidth - 20 });
-            doc.fontSize(9).fillColor(EDX_COLORS.text).font("Helvetica");
-            const descSlice = rc.description.slice(0, 160) + (rc.description.length > 160 ? "..." : "");
-            doc.text(descSlice, rcX, doc.y + 2, { width: pageWidth - 20, lineGap: 2 });
-            doc.fontSize(8).fillColor(EDX_COLORS.muted);
-            doc.text(`${rc.category} | Tier ${rc.tier}`, rcX, doc.y + 2);
-            doc.moveDown(1);
+          fieldLabel("Contributing Root Causes");
+          cr.secondaryRootCauses.slice(0, 4).forEach((rc, i) => {
+            ensureSpace(40);
+            const scY = doc.y;
+            doc.rect(ml, scY, 3, 34).fill(FOURM[rc.category as FourMCategory] || C.muted);
+            doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
+            doc.text(`${i + 1}. ${rc.name}`, ml + 10, scY, { width: pw - 14 });
+            doc.fontSize(9).fillColor(C.text).font("Helvetica");
+            doc.text(rc.description.slice(0, 140) + (rc.description.length > 140 ? "…" : ""), ml + 10, doc.y + 1, { width: pw - 14, lineGap: 2 });
+            doc.moveDown(0.8);
           });
-        } else {
-          doc.fontSize(10).fillColor(EDX_COLORS.muted).font("Helvetica");
-          doc.text("No secondary root causes identified.", marginLeft);
-          doc.moveDown(1);
         }
-
-        // --- Operational Symptoms ---
-        ensureSpace(60);
-        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-        doc.text("Operational Symptoms", marginLeft);
-        doc.moveDown(0.3);
-        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
-        doc.moveDown(0.5);
-
-        if (cr.operationalSymptoms.length > 0) {
-          const uniqueSymptoms = cr.operationalSymptoms.filter((s, i, arr) => arr.indexOf(s) === i);
-          const symptomText = uniqueSymptoms
-            .map(s => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()))
-            .join(", ");
-
-          doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica");
-          doc.text(symptomText, marginLeft, doc.y, { width: pageWidth, lineGap: 3 });
-          doc.moveDown(0.3);
-          doc.fontSize(8).fillColor(EDX_COLORS.muted);
-          doc.text(`${uniqueSymptoms.length} operational signals detected from documents`, marginLeft);
-          doc.moveDown(1);
-        } else {
-          doc.fontSize(10).fillColor(EDX_COLORS.muted).font("Helvetica");
-          doc.text("No operational symptoms detected.", marginLeft);
-          doc.moveDown(1);
-        }
-
-        // --- Financial Impact ---
-        ensureSpace(80);
-        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-        doc.text("Financial Impact", marginLeft);
-        doc.moveDown(0.3);
-        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
-        doc.moveDown(0.5);
-
-        const severityColorMap: Record<string, string> = {
-          critical: EDX_COLORS.danger,
-          high: EDX_COLORS.warning,
-          moderate: EDX_COLORS.accent,
-          low: EDX_COLORS.success,
-        };
-        const sevColor = severityColorMap[cr.financialImpact.estimatedSeverity] || EDX_COLORS.muted;
-
-        doc.fontSize(11).fillColor(EDX_COLORS.text).font("Helvetica-Bold");
-        doc.text("Estimated Severity: ", marginLeft, doc.y, { continued: true });
-        doc.fillColor(sevColor).font("Helvetica-Bold");
-        doc.text(cr.financialImpact.estimatedSeverity.toUpperCase());
-        doc.moveDown(0.5);
-
-        if (cr.financialImpact.affectedCategories.length > 0) {
-          doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica");
-          doc.text(`Affected Categories: ${cr.financialImpact.affectedCategories.join(", ")}`, marginLeft);
-          doc.moveDown(0.3);
-        }
-
-        if (cr.financialImpact.costDrivers.length > 0) {
-          doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica");
-          const driverLabels = cr.financialImpact.costDrivers
-            .map(d => d.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()));
-          doc.text(`Cost Drivers: ${driverLabels.join(", ")}`, marginLeft, doc.y, { width: pageWidth });
-          doc.moveDown(1);
-        }
-
-        // --- Evidence From Documents ---
-        ensureSpace(60);
-        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-        doc.text("Evidence From Documents", marginLeft);
-        doc.moveDown(0.3);
-        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
-        doc.moveDown(0.5);
-
-        doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica");
-        doc.text(`The diagnostic engine detected ${cr.operationalSymptoms.length} signal matches from uploaded documents. `, marginLeft, doc.y, { width: pageWidth, continued: true });
-        doc.text(`These signals were scored against ${cr.secondaryRootCauses.length + 1} root causes across the 4M framework.`, { width: pageWidth });
-        doc.moveDown(0.5);
-
-        if (cr.confidence.chainMatchCount > 0) {
-          doc.fontSize(9).fillColor(EDX_COLORS.text).font("Helvetica");
-          doc.text(`${cr.confidence.chainMatchCount} diagnostic failure chain(s) matched, strengthening causal linkage.`, marginLeft);
-          doc.moveDown(0.3);
-        }
-
-        doc.fontSize(9).fillColor(EDX_COLORS.muted).font("Helvetica");
-        doc.text(`Signal-to-trigger coverage: ${cr.confidence.signalCoverage}%`, marginLeft);
-        doc.moveDown(1);
-
-        // --- Recommended Actions ---
-        ensureSpace(80);
-        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-        doc.text("Recommended Actions", marginLeft);
-        doc.moveDown(0.3);
-        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
-        doc.moveDown(0.5);
-
-        if (cr.recommendations.length > 0) {
-          const priorityColors: Record<string, string> = {
-            immediate: EDX_COLORS.danger,
-            "short-term": EDX_COLORS.warning,
-            "medium-term": EDX_COLORS.secondary,
-          };
-
-          cr.recommendations.forEach((rec, i) => {
-            ensureSpace(30);
-            const pColor = priorityColors[rec.priority] || EDX_COLORS.muted;
-            doc.fontSize(10).fillColor(EDX_COLORS.text).font("Helvetica-Bold");
-            doc.text(`${i + 1}. `, marginLeft, doc.y, { continued: true });
-            doc.font("Helvetica").text(rec.action, { width: pageWidth - 20 });
-            doc.fontSize(8).fillColor(pColor).font("Helvetica-Bold");
-            doc.text(`   Priority: ${rec.priority.toUpperCase()}`, marginLeft + 15, doc.y, { continued: true });
-            doc.fillColor(EDX_COLORS.muted).font("Helvetica");
-            doc.text(` | Target: ${rec.targetCategory}`);
-            doc.moveDown(0.5);
-          });
-          doc.moveDown(0.5);
-        } else {
-          doc.fontSize(10).fillColor(EDX_COLORS.muted).font("Helvetica");
-          doc.text("No specific recommendations generated.", marginLeft);
-          doc.moveDown(1);
-        }
-
-        // --- Confidence Level ---
-        ensureSpace(60);
-        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-        doc.text("Confidence Level", marginLeft);
-        doc.moveDown(0.3);
-        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
-        doc.moveDown(0.5);
-
-        const confColorMap: Record<string, string> = {
-          high: EDX_COLORS.success,
-          moderate: EDX_COLORS.warning,
-          low: EDX_COLORS.danger,
-        };
-        const confColor = confColorMap[cr.confidence.level] || EDX_COLORS.muted;
-
-        doc.fontSize(22).fillColor(confColor).font("Helvetica-Bold");
-        doc.text(`${cr.confidence.score}%`, marginLeft, doc.y, { continued: true });
-        doc.fontSize(12).fillColor(EDX_COLORS.text).font("Helvetica");
-        doc.text(`  ${cr.confidence.level.toUpperCase()} CONFIDENCE`);
-        doc.moveDown(0.5);
-
-        doc.fontSize(9).fillColor(EDX_COLORS.text).font("Helvetica");
-        doc.text(`Signal Coverage: ${cr.confidence.signalCoverage}% of root cause triggers matched by document signals`, marginLeft, doc.y, { width: pageWidth });
-        doc.moveDown(0.2);
-        doc.text(`Chain Matches: ${cr.confidence.chainMatchCount} diagnostic failure chains confirmed`, marginLeft, doc.y, { width: pageWidth });
-        doc.moveDown(1.5);
       }
 
-      // ========== FINDINGS ==========
-      if (findings.length > 0) {
-        ensureSpace(80);
-        
-        doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-        doc.text("Detailed Findings", marginLeft);
-        doc.moveDown(0.3);
+      // ── SECTION 4: CAUSAL CHAIN ─────────────────────────────────────
+      const causalChains = mgd?.causalChains;
+      if (causalChains?.length > 0) {
+        sectionHeader(String(sectionNum++), "Causal Chain");
 
-        doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
+        const chain = causalChains[0];
+        fieldLabel("Primary Failure Path");
+        doc.fontSize(9).fillColor(C.muted).font("Helvetica");
+        doc.text("The following causal chain describes how the identified root cause propagates through operations to produce the observed symptoms.", ml, doc.y, { width: pw, lineGap: 3 });
+        doc.moveDown(0.6);
+
+        // Chain steps as horizontal flow
+        const steps: string[] = chain.chain || chain.steps || [];
+        if (steps.length > 0) {
+          steps.forEach((step: string, i: number) => {
+            ensureSpace(30);
+            const stepY = doc.y;
+            const isLast = i === steps.length - 1;
+
+            doc.save();
+            doc.roundedRect(ml, stepY, pw - 20, 22, 3).fill(i === 0 ? C.primary + "12" : C.light);
+            doc.roundedRect(ml, stepY, pw - 20, 22, 3).stroke(C.border);
+            doc.fontSize(9).fillColor(i === 0 ? C.primary : C.text).font(i === 0 ? "Helvetica-Bold" : "Helvetica");
+            doc.text(step, ml + 8, stepY + 6, { width: pw - 36 });
+            doc.restore();
+
+            if (!isLast) {
+              doc.fontSize(10).fillColor(C.muted);
+              doc.text("↓", ml + pw - 18, stepY + 4, { width: 16, align: "center" });
+            }
+
+            doc.y = stepY + 28;
+          });
+        }
+
+        if (chain.description) {
+          doc.moveDown(0.5);
+          fieldLabel("Chain Description");
+          bodyText(chain.description);
+        }
         doc.moveDown(0.5);
+      }
 
-        findings.forEach((finding, index) => {
-          ensureSpace(70);
+      // ── SECTION 5: COST SAVING OPPORTUNITIES ───────────────────────
+      if (costSavings.length > 0) {
+        sectionHeader(String(sectionNum++), "Cost Saving Opportunities");
 
-          const color = FOURM_COLORS[finding.fourMCategory] || EDX_COLORS.muted;
-          doc.rect(marginLeft, doc.y, 4, 50).fill(color);
+        doc.fontSize(9).fillColor(C.muted).font("Helvetica");
+        doc.text(`${costSavings.length} opportunity${costSavings.length !== 1 ? "ies" : ""} identified across ${[...new Set(costSavings.map(s => s.category))].length} operational category${[...new Set(costSavings.map(s => s.category))].length !== 1 ? "ies" : ""}.`, ml, doc.y, { width: pw });
+        doc.moveDown(0.6);
 
-          const findingX = marginLeft + 12;
-          const findingY = doc.y;
+        costSavings.forEach((opp, i) => {
+          ensureSpace(55);
+          const oppY = doc.y;
+          const catColor = FOURM[opp.category as FourMCategory] || C.secondary;
 
-          doc.fontSize(11).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-          doc.text(`${index + 1}. ${finding.title}`, findingX, findingY, { width: pageWidth - 20 });
-          
-          doc.fontSize(9).fillColor(EDX_COLORS.text).font("Helvetica");
-          const descPreview = finding.description.slice(0, 180) + (finding.description.length > 180 ? "..." : "");
-          doc.text(descPreview, findingX, doc.y + 2, { width: pageWidth - 20, lineGap: 2 });
+          doc.rect(ml, oppY, pw, 46).fill(C.success + "08");
+          doc.rect(ml, oppY, 4, 46).fill(C.success);
 
-          doc.fontSize(8).fillColor(EDX_COLORS.muted);
-          doc.text(`${finding.fourMCategory} | ${finding.severity} | ${finding.estimatedCostImpact || "Impact TBD"}`, findingX, doc.y + 2);
-          
-          doc.moveDown(1);
+          const ox = ml + 12;
+          doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
+          doc.text(`${i + 1}. ${opp.title}`, ox, oppY + 4, { width: pw - 100 });
+
+          // Savings amount — top right
+          if (opp.estimatedSavings) {
+            doc.fontSize(10).fillColor(C.success).font("Helvetica-Bold");
+            doc.text(opp.estimatedSavings, ml, oppY + 4, { width: pw, align: "right" });
+          }
+
+          doc.fontSize(9).fillColor(C.text).font("Helvetica");
+          if (opp.description) {
+            doc.text(opp.description.slice(0, 160) + (opp.description.length > 160 ? "…" : ""), ox, doc.y + 1, { width: pw - 16, lineGap: 2 });
+          }
+          doc.fontSize(8).fillColor(C.muted);
+          doc.text(`Category: ${opp.category || "N/A"}${opp.timeframe ? "  ·  Timeframe: " + opp.timeframe : ""}`, ox, doc.y + 1);
+
+          doc.y = oppY + 50;
+          doc.moveDown(0.5);
         });
       }
 
-      // ========== RECOMMENDATIONS ==========
-      ensureSpace(100);
-      
-      doc.fontSize(16).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-      doc.text("Recommendations", marginLeft);
-      doc.moveDown(0.3);
+      // ── SECTION 6: RISK PREDICTIONS ─────────────────────────────────
+      if (predictions.length > 0) {
+        sectionHeader(String(sectionNum++), "Risk Predictions");
 
-      doc.moveTo(marginLeft, doc.y).lineTo(marginLeft + pageWidth, doc.y).strokeColor(EDX_COLORS.accent).lineWidth(1.5).stroke();
-      doc.moveDown(0.5);
+        doc.fontSize(9).fillColor(C.muted).font("Helvetica");
+        doc.text("The following risks are predicted based on the identified root causes and current operational signals.", ml, doc.y, { width: pw, lineGap: 3 });
+        doc.moveDown(0.6);
 
-      const criticalFindings = findings.filter(f => f.severity === "critical" || f.severity === "high");
-      
-      doc.fontSize(11).fillColor(EDX_COLORS.text).font("Helvetica-Bold");
-      doc.text("Immediate Actions:", marginLeft);
-      doc.moveDown(0.3);
+        predictions.forEach((pred, i) => {
+          ensureSpace(55);
+          const predY = doc.y;
+          const isHigh = pred.likelihood === "high";
+          const borderColor = isHigh ? C.danger : pred.likelihood === "medium" ? C.warning : C.muted;
 
-      if (criticalFindings.length > 0) {
-        criticalFindings.slice(0, 3).forEach((f, i) => {
-          ensureSpace(25);
-          doc.font("Helvetica").fontSize(9).fillColor(EDX_COLORS.text);
-          const rec = f.causes?.[0] ? `Address: ${f.causes[0]}` : "Review and implement corrective measures";
-          doc.text(`${i + 1}. ${f.title} - ${rec}`, marginLeft + 10, doc.y, { width: pageWidth - 20 });
+          doc.rect(ml, predY, pw, 46).fill(isHigh ? C.danger + "08" : C.light);
+          doc.rect(ml, predY, 4, 46).fill(borderColor);
+
+          const px = ml + 12;
+          doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
+          doc.text(`${i + 1}. ${pred.title}`, px, predY + 4, { width: pw - 90 });
+
+          // Likelihood chip
+          doc.save();
+          doc.roundedRect(ml + pw - 75, predY + 5, 68, 14, 2).fill(borderColor + "22");
+          doc.fontSize(7.5).fillColor(borderColor).font("Helvetica-Bold");
+          doc.text(`${(pred.likelihood || "N/A").toUpperCase()} RISK`, ml + pw - 74, predY + 9, { width: 66, align: "center" });
+          doc.restore();
+
+          doc.fontSize(9).fillColor(C.text).font("Helvetica");
+          if (pred.description) {
+            doc.text(pred.description.slice(0, 160) + (pred.description.length > 160 ? "…" : ""), px, doc.y + 1, { width: pw - 16, lineGap: 2 });
+          }
+          doc.fontSize(8).fillColor(C.muted);
+          if (pred.timeframe) doc.text(`Timeframe: ${pred.timeframe}`, px, doc.y + 1);
+
+          doc.y = predY + 50;
+          doc.moveDown(0.5);
+        });
+      }
+
+      // ── SECTION 7: FINANCIAL IMPACT (MGD) ──────────────────────────
+      const financialImpact = mgd?.financialImpact ?? data.consultingReport?.financialImpact;
+      if (financialImpact) {
+        sectionHeader(String(sectionNum++), "Financial Impact");
+
+        const sevColor = SEV[financialImpact.estimatedSeverity] || C.muted;
+        const impactY = doc.y;
+        doc.rect(ml, impactY, pw, 36).fill(sevColor + "10");
+        doc.rect(ml, impactY, 4, 36).fill(sevColor);
+        doc.fontSize(12).fillColor(sevColor).font("Helvetica-Bold");
+        doc.text(financialImpact.estimatedSeverity?.toUpperCase() || "N/A", ml + 12, impactY + 5, { continued: true });
+        doc.fontSize(10).fillColor(C.text).font("Helvetica");
+        doc.text("  Estimated Financial Severity", { width: pw - 16 });
+        doc.fontSize(9).fillColor(C.muted).font("Helvetica");
+        const affectedCats = financialImpact.affectedCategories?.join(", ");
+        if (affectedCats) doc.text(`Affected: ${affectedCats}`, ml + 12, doc.y + 2);
+        doc.y = impactY + 40;
+        doc.moveDown(0.5);
+
+        if (financialImpact.costDrivers?.length > 0) {
+          fieldLabel("Cost Drivers");
+          const driverText = financialImpact.costDrivers
+            .map((d: string) => d.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()))
+            .join(", ");
+          bodyText(driverText);
+        }
+      }
+
+      // ── SECTION 8: OPERATIONAL HEALTH SCORE ────────────────────────
+      if (typeof healthScore === "number") {
+        sectionHeader(String(sectionNum++), "Operational Health Score");
+
+        const hsColor = healthScore >= 70 ? C.success : healthScore >= 40 ? C.warning : C.danger;
+        const hsLabel = healthScore >= 70 ? "Healthy" : healthScore >= 40 ? "At Risk" : "Critical";
+        const hsDesc = healthScore >= 70
+          ? "The organisation demonstrates healthy operational fundamentals. Minor improvements may still deliver meaningful efficiency gains."
+          : healthScore >= 40
+          ? "The organisation is operating under stress in one or more key areas. Targeted intervention is recommended."
+          : "The organisation shows critical operational vulnerabilities. Immediate action is required to prevent further deterioration.";
+
+        ensureSpace(70);
+        const hsY = doc.y;
+        doc.rect(ml, hsY, pw, 56).fill(hsColor + "0C");
+        doc.rect(ml, hsY, 4, 56).fill(hsColor);
+
+        doc.fontSize(32).fillColor(hsColor).font("Helvetica-Bold");
+        doc.text(`${healthScore}`, ml + 16, hsY + 5, { continued: true });
+        doc.fontSize(12).fillColor(C.muted).font("Helvetica");
+        doc.text(" / 100", { continued: true });
+        doc.fontSize(13).fillColor(hsColor).font("Helvetica-Bold");
+        doc.text(`   ${hsLabel}`, { width: pw - 60 });
+        doc.fontSize(9).fillColor(C.text).font("Helvetica");
+        doc.text(hsDesc, ml + 16, doc.y + 2, { width: pw - 20, lineGap: 3 });
+        doc.y = hsY + 60;
+        doc.moveDown(0.5);
+      }
+
+      // ── SECTION 9: TRANSFORMATION ROADMAP ──────────────────────────
+      const roadmap = mgd?.roadmap;
+      if (Array.isArray(roadmap) && roadmap.length > 0) {
+        sectionHeader(String(sectionNum++), "Transformation Roadmap");
+
+        roadmap.slice(0, 5).forEach((item: any, i: number) => {
+          ensureSpace(50);
+          const rmY = doc.y;
+          const phaseColors = [C.danger, C.warning, C.secondary, C.success, C.muted];
+          const phColor = phaseColors[i] || C.muted;
+
+          doc.rect(ml, rmY, pw, 44).fill(C.light);
+          doc.rect(ml, rmY, 4, 44).fill(phColor);
+
+          const rmx = ml + 14;
+          doc.fontSize(9).fillColor(phColor).font("Helvetica-Bold");
+          const phaseLabel = item.phase || item.priority || `Phase ${i + 1}`;
+          doc.text(phaseLabel.toUpperCase(), rmx, rmY + 4, { characterSpacing: 0.5 });
+
+          doc.fontSize(10).fillColor(C.primary).font("Helvetica-Bold");
+          doc.text(item.title || item.name || "Intervention", rmx, doc.y + 1, { width: pw - 50 });
+
+          doc.fontSize(8.5).fillColor(C.text).font("Helvetica");
+          if (item.description || item.action) {
+            doc.text(
+              (item.description || item.action || "").slice(0, 140),
+              rmx, doc.y + 1, { width: pw - 18, lineGap: 2 }
+            );
+          }
+
+          doc.y = rmY + 48;
           doc.moveDown(0.4);
         });
-      } else {
-        doc.font("Helvetica").fontSize(9).fillColor(EDX_COLORS.muted);
-        doc.text("No critical issues requiring immediate attention.", marginLeft + 10);
-        doc.moveDown(0.4);
       }
 
-      doc.moveDown(0.5);
+      // ── SECTION 10: INDUSTRY BENCHMARKS ────────────────────────────
+      const benchmarks = mgd?.benchmarks;
+      if (Array.isArray(benchmarks) && benchmarks.length > 0) {
+        sectionHeader(String(sectionNum++), "Industry Benchmarks");
 
-      // Cost savings section (compact)
-      if (costSavings.length > 0) {
-        ensureSpace(60);
-        
-        doc.fontSize(11).fillColor(EDX_COLORS.text).font("Helvetica-Bold");
-        doc.text("Cost Saving Opportunities:", marginLeft);
-        doc.moveDown(0.3);
+        fieldLabel("Performance vs. Industry Standard");
+        benchmarks.slice(0, 6).forEach((bm: any) => {
+          ensureSpace(30);
+          const bmY = doc.y;
+          const label = bm.metric || bm.name || "Metric";
+          const status = bm.status || bm.rating || "";
+          const bmColor = status === "good" || status === "above" ? C.success
+            : status === "below" || status === "poor" ? C.danger
+            : C.warning;
 
-        costSavings.slice(0, 3).forEach((opp, i) => {
-          ensureSpace(25);
-          doc.font("Helvetica").fontSize(9).fillColor(EDX_COLORS.text);
-          doc.text(`${i + 1}. ${opp.title} - ${opp.estimatedSavings}`, marginLeft + 10, doc.y, { width: pageWidth - 20 });
-          doc.moveDown(0.3);
+          doc.fontSize(9).fillColor(C.text).font("Helvetica-Bold");
+          doc.text(label, ml, bmY, { continued: true });
+          doc.font("Helvetica").fillColor(C.muted);
+          if (bm.clientValue) doc.text(`  —  ${bm.clientValue}`);
+          else doc.text("");
+
+          if (bm.industryAverage || bm.benchmark) {
+            doc.fontSize(8).fillColor(C.muted);
+            doc.text(`Industry avg: ${bm.industryAverage || bm.benchmark}`, ml + 10, doc.y);
+          }
+          if (status) {
+            doc.fontSize(8).fillColor(bmColor).font("Helvetica-Bold");
+            doc.text(status.toUpperCase(), ml + pw - 60, bmY, { width: 58, align: "right" });
+          }
+          doc.moveDown(0.5);
         });
-        
-        doc.moveDown(0.5);
       }
 
-      // Contact section
-      ensureSpace(60);
-      
-      doc.fontSize(11).fillColor(EDX_COLORS.primary).font("Helvetica-Bold");
-      doc.text("Contact EDX for Implementation Support", marginLeft);
-      doc.moveDown(0.3);
-      
-      doc.fontSize(9).fillColor(EDX_COLORS.text).font("Helvetica");
-      doc.text("Our consultants can help implement these recommendations.", marginLeft);
-      doc.moveDown(0.3);
-      
-      doc.fontSize(9).fillColor(EDX_COLORS.secondary);
-      doc.text("www.edx-consulting.com | consulting@edx.com", marginLeft);
+      // ── CLOSING ─────────────────────────────────────────────────────
+      ensureSpace(80);
+      doc.moveDown(1);
+      doc.moveTo(ml, doc.y).lineTo(ml + pw, doc.y).strokeColor(C.border).lineWidth(0.5).stroke();
+      doc.moveDown(0.8);
 
-      // ========== FOOTER (on all pages) ==========
-      // PDF export must be robust regardless of content length.
+      doc.fontSize(11).fillColor(C.primary).font("Helvetica-Bold");
+      doc.text("Contact EDX for Implementation Support", ml);
+      doc.moveDown(0.3);
+      doc.fontSize(9).fillColor(C.text).font("Helvetica");
+      doc.text("Our consultants are available to support implementation, capability building, and follow-up diagnostics.", ml, doc.y, { width: pw });
+      doc.moveDown(0.2);
+      doc.fontSize(9).fillColor(C.secondary).font("Helvetica");
+      doc.text("consulting@edx.com  ·  www.edx-consulting.com", ml);
+
+      // ── FOOTER on all pages ─────────────────────────────────────────
       const range = doc.bufferedPageRange();
-      const totalPages = range.count;
-      
       for (let i = range.start; i < range.start + range.count; i++) {
         doc.switchToPage(i);
-        
-        doc.fontSize(7).fillColor(EDX_COLORS.muted).font("Helvetica");
+        doc.moveTo(ml, ph - mb - 12).lineTo(ml + pw, ph - mb - 12).strokeColor(C.border).lineWidth(0.4).stroke();
+        doc.fontSize(7).fillColor(C.muted).font("Helvetica");
         doc.text(
-          `Page ${i + 1} of ${totalPages} | EDX - Efficiency, Deployment, Excellence | Confidential`,
-          marginLeft,
-          pageHeight - 35,
-          { align: "center", width: pageWidth }
+          `Page ${i + 1} of ${range.count}  ·  EDX Consulting — Efficiency, Deployment, Excellence  ·  Confidential`,
+          ml, ph - mb - 6,
+          { width: pw, align: "center" }
         );
       }
 
