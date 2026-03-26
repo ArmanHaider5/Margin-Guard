@@ -265,35 +265,56 @@ export default function AnalysisResults() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="p-6 space-y-8">
+
+      {/* ── HEADER ─────────────────────────────────────────────────── */}
+      <div className="flex items-start gap-4">
         <Link href={`/admin/clients/${analysis.clientId}`}>
-          <Button variant="ghost" size="icon" data-testid="button-back">
+          <Button variant="ghost" size="icon" className="mt-1 shrink-0" data-testid="button-back">
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold" data-testid="text-analysis-title">{analysis.title}</h1>
-          <div className="flex items-center gap-2 mt-1">
-            {client && <span className="text-muted-foreground">{client.name}</span>}
-            <Badge variant="outline">{analysis.analysisType}</Badge>
-            <Badge variant={analysis.status === "completed" ? "default" : "secondary"}>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground leading-tight" data-testid="text-analysis-title">
+            {analysis.title}
+          </h1>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2">
+            {client && (
+              <span className="text-base text-muted-foreground font-medium">{client.name}</span>
+            )}
+            <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+            <Badge variant="outline" className="capitalize text-xs px-2.5 py-0.5">
+              {analysis.analysisType === "deep" ? "Deep Diagnostic" : "Quick Analysis"}
+            </Badge>
+            <Badge
+              variant={analysis.status === "completed" ? "default" : "secondary"}
+              className="capitalize text-xs px-2.5 py-0.5"
+            >
               {analysis.status}
             </Badge>
+            {analysis.confidence && (
+              <Badge
+                variant={analysis.confidence === "preliminary" ? "secondary" : analysis.confidence === "low" ? "outline" : "default"}
+                className="text-xs px-2.5 py-0.5"
+                data-testid="badge-confidence"
+              >
+                {analysis.confidence === "preliminary" ? "Preliminary" : analysis.confidence === "low" ? "Low Confidence" : "Substantiated"}
+              </Badge>
+            )}
+            <span className="text-xs text-muted-foreground">{formatDate(analysis.createdAt)}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {analysis.caseId && (
             <Link href={`/admin/cases/${analysis.caseId}`}>
-              <Button variant="outline" data-testid="button-view-case">
+              <Button variant="outline" size="sm" data-testid="button-view-case">
                 <FolderOpen className="w-4 h-4 mr-2" />
                 View Case
               </Button>
             </Link>
           )}
-          {/* Export enables offline review and institutional reporting. */}
-          <Button 
-            variant="outline" 
+          <Button
+            size="sm"
             onClick={handleDownloadReport}
             disabled={analysis.status !== "completed" || isDownloading}
             data-testid="button-download-report"
@@ -303,128 +324,202 @@ export default function AnalysisResults() {
             ) : (
               <Download className="w-4 h-4 mr-2" />
             )}
-            {isDownloading ? "Generating..." : "Download Report"}
+            {isDownloading ? "Generating…" : "Download Report"}
           </Button>
         </div>
       </div>
 
-      <Card className="p-4 border-l-4 border-l-primary" data-testid="card-mode-indicator">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary" />
-            <span className="font-semibold" data-testid="text-mode-indicator">
-              Mode: {analysis.analysisMode === "baseline" 
-                ? "Baseline (Preliminary)" 
-                : "Deep Diagnostic (Evidence-Enriched)"
-              }
+      {/* ── MODE INDICATOR ─────────────────────────────────────────── */}
+      <Card className="border-l-4 border-l-primary bg-primary/[0.03]" data-testid="card-mode-indicator">
+        <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-1">
+            <Shield className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-sm font-semibold" data-testid="text-mode-indicator">
+              {analysis.analysisMode === "baseline"
+                ? "Baseline — Preliminary Pattern Analysis"
+                : "Deep Diagnostic — Evidence-Enriched Analysis"}
             </span>
-            {analysis.confidence && (
-              <Badge 
-                variant={analysis.confidence === "preliminary" ? "secondary" : analysis.confidence === "low" ? "outline" : "default"}
-                data-testid="badge-confidence"
-              >
-                {analysis.confidence === "preliminary" ? "Preliminary" : analysis.confidence === "low" ? "Low Confidence" : "Substantiated"}
-              </Badge>
-            )}
           </div>
           {analysis.isMockMode ? (
-            <div className="flex items-center gap-2 text-muted-foreground" data-testid="text-mock-mode">
-              <AlertCircle className="w-4 h-4" />
-              <span className="text-sm">Running in baseline pattern mode. Upload documents for signal-driven analysis.</span>
+            <div className="flex items-center gap-1.5 text-muted-foreground" data-testid="text-mock-mode">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-xs">Baseline pattern mode. Upload documents for signal-driven analysis.</span>
             </div>
           ) : analysis.analysisMode === "evidence-enriched" ? (
-            <div className="flex items-center gap-2 text-green-600 dark:text-green-400" data-testid="text-signal-mode">
-              <CheckCircle2 className="w-4 h-4" />
-              <span className="text-sm">Using document-derived signals and observed symptoms.</span>
+            <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400" data-testid="text-signal-mode">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-xs">Document-derived signals active.</span>
             </div>
           ) : null}
         </div>
       </Card>
 
+      {/* ── EXECUTIVE SUMMARY ──────────────────────────────────────── */}
       {analysis.summary && (
-        <Card className="p-6">
-          <div className="flex items-start gap-3">
-            <Target className="w-6 h-6 text-primary mt-0.5" />
-            <div>
-              <h2 className="font-semibold mb-2">Executive Summary</h2>
-              <p className="text-muted-foreground" data-testid="text-summary">{analysis.summary}</p>
+        <Card className="border-l-4 border-l-blue-500 bg-blue-50/40 dark:bg-blue-950/20">
+          <div className="p-6">
+            <div className="flex items-center gap-2.5 mb-3">
+              <Target className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
+                Executive Summary
+              </h2>
             </div>
+            <p className="text-sm leading-relaxed text-foreground/80 pl-7" data-testid="text-summary">
+              {analysis.summary}
+            </p>
           </div>
         </Card>
       )}
 
-      {/* CAUSAL CHAIN */}
-      <Card className="p-6" data-testid="card-causal-chain">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <ArrowRight className="w-5 h-5" />
-          Causal Chain
-        </h2>
-        {mgd?.causalChains?.length > 0 ? (
-          <div className="space-y-3">
-            {mgd.causalChains.map((c: any, i: number) => (
-              <div key={i} className="flex flex-wrap items-center gap-2">
-                {c.chain.map((step: string, j: number) => (
-                  <span key={j} className="flex items-center gap-2">
-                    <span className="px-3 py-1.5 rounded-md bg-muted text-sm font-medium">{step}</span>
-                    {j < c.chain.length - 1 && (
-                      <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                    )}
-                  </span>
-                ))}
-              </div>
-            ))}
+      {/* ── CAUSAL CHAIN ───────────────────────────────────────────── */}
+      <Card data-testid="card-causal-chain">
+        <div className="p-6">
+          <div className="flex items-center gap-2.5 mb-5">
+            <ArrowRight className="w-5 h-5 text-muted-foreground shrink-0" />
+            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
+              Causal Chain
+            </h2>
           </div>
-        ) : (
-          <p className="text-muted-foreground text-sm">No causal chain available</p>
-        )}
+          {mgd?.causalChains?.length > 0 ? (
+            <div className="space-y-4">
+              {mgd.causalChains.map((c: any, i: number) => (
+                <div key={i} className="flex flex-wrap items-center gap-2">
+                  {c.chain.map((step: string, j: number) => (
+                    <span key={j} className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-3.5 py-2 rounded-lg border border-border bg-muted/60 text-sm font-medium text-foreground shadow-sm">
+                        {step}
+                      </span>
+                      {j < c.chain.length - 1 && (
+                        <ArrowRight className="w-4 h-4 text-primary/60 shrink-0" />
+                      )}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
+                <ArrowRight className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">No causal chain available for this analysis.</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Run a Deep Diagnostic with uploaded documents to generate causal chains.</p>
+            </div>
+          )}
+        </div>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-8 h-8 text-orange-500" />
-            <div>
-              <p className="text-2xl font-bold" data-testid="text-findings-count">{findings.length}</p>
-              <p className="text-sm text-muted-foreground">Issues Found</p>
+      {/* ── SCORECARD ROW ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <Card className="relative overflow-hidden border-orange-200 dark:border-orange-800/50">
+          <div className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Issues Found</p>
+                <p className="text-5xl font-extrabold text-orange-600 dark:text-orange-400 leading-none" data-testid="text-findings-count">
+                  {findings.length}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {findings.filter(f => f.severity === "critical" || f.severity === "high").length} high / critical
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+              </div>
             </div>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <DollarSign className="w-8 h-8 text-emerald-500" />
-            <div>
-              <p className="text-2xl font-bold" data-testid="text-savings-count">{costSavings.length}</p>
-              <p className="text-sm text-muted-foreground">Saving Opportunities</p>
+
+        <Card className="relative overflow-hidden border-emerald-200 dark:border-emerald-800/50">
+          <div className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Saving Opportunities</p>
+                <p className="text-5xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none" data-testid="text-savings-count">
+                  {costSavings.length}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Identified by the analysis engine
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
             </div>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <TrendingUp className="w-8 h-8 text-blue-500" />
-            <div>
-              <p className="text-2xl font-bold" data-testid="text-predictions-count">{predictions.length}</p>
-              <p className="text-sm text-muted-foreground">Predictions</p>
+
+        <Card className="relative overflow-hidden border-blue-200 dark:border-blue-800/50">
+          <div className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Predictions</p>
+                <p className="text-5xl font-extrabold text-blue-600 dark:text-blue-400 leading-none" data-testid="text-predictions-count">
+                  {predictions.length}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Recurrence risk forecasts
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* OPERATIONAL HEALTH SCORE */}
-      <Card className="p-6" data-testid="card-health-score">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Activity className="w-5 h-5" />
-          Operational Health Score
-        </h2>
-        {mgd?.healthScore != null ? (
-          <div className="flex items-center gap-6">
-            <HealthScoreGauge score={mgd.healthScore} />
-            {mgd.narrative?.summary && (
-              <p className="text-sm text-muted-foreground flex-1">{mgd.narrative.summary}</p>
-            )}
+      {/* ── OPERATIONAL HEALTH SCORE ───────────────────────────────── */}
+      <Card data-testid="card-health-score">
+        <div className="p-6">
+          <div className="flex items-center gap-2.5 mb-6">
+            <Activity className="w-5 h-5 text-muted-foreground shrink-0" />
+            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
+              Operational Health Score
+            </h2>
           </div>
-        ) : (
-          <p className="text-muted-foreground text-sm">Not available</p>
-        )}
+          {mgd?.healthScore != null ? (
+            <div className="flex flex-col sm:flex-row items-center gap-8">
+              <div className="shrink-0">
+                <HealthScoreGauge score={mgd.healthScore} />
+              </div>
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-extrabold shrink-0"
+                    style={{
+                      background: mgd.healthScore >= 70 ? "rgb(220 252 231)" : mgd.healthScore >= 40 ? "rgb(254 243 199)" : "rgb(254 226 226)",
+                      color: mgd.healthScore >= 70 ? "rgb(22 101 52)" : mgd.healthScore >= 40 ? "rgb(120 53 15)" : "rgb(127 29 29)",
+                    }}
+                  >
+                    {mgd.healthScore}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">
+                      {mgd.healthScore >= 70 ? "Operational Stability" : mgd.healthScore >= 40 ? "At Risk" : "Critical State"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Score out of 100 · Generated by MGD engine
+                    </p>
+                  </div>
+                </div>
+                {mgd.narrative?.summary && (
+                  <p className="text-sm text-muted-foreground leading-relaxed border-l-2 border-border pl-4">
+                    {mgd.narrative.summary}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Activity className="w-7 h-7 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">Health score not available</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Run a Deep Diagnostic with uploaded documents to generate this score.</p>
+            </div>
+          )}
+        </div>
       </Card>
 
       <Card className="p-6">

@@ -1,0 +1,141 @@
+Polish the UI/UX of admin/analysis-results.tsx to make it feel like a premium consulting dashboard.
+
+Do NOT change backend logic.
+Do NOT remove any working sections.
+This is a frontend-only visual and layout improvement.
+
+==================================================
+GOAL
+====
+
+Make the top half of the results page feel:
+
+* more premium
+* more executive
+* more readable
+* more structured
+* less like a raw developer page
+
+Use the existing shadcn/ui / Tailwind design system already in the app.
+
+==================================================
+
+1. IMPROVE PAGE HEADER
+   ==================================================
+
+Upgrade the top header area visually:
+
+* Make the analysis title more prominent
+* Show client name, analysis mode, status, and confidence more cleanly
+* Group metadata into a cleaner horizontal row
+* Keep:
+
+  * View Case button
+  * Download Report button
+
+Goal:
+The header should feel like a real analysis command center, not a plain text title.
+
+==================================================
+2) UPGRADE EXECUTIVE SUMMARY CARD
+=================================
+
+Improve the "Executive Summary" card styling:
+
+* Increase spacing / padding
+* Make the heading stronger
+* Improve readability of the paragraph text
+* Add a subtle left accent border or visual indicator
+* Make it feel like a consultant summary block
+
+Do NOT change the content.
+
+==================================================
+3) TURN THE 3 STATS INTO EXECUTIVE SCORECARDS
+=============================================
+
+Upgrade these 3 cards visually:
+
+* Issues Found
+* Saving Opportunities
+* Predictions
+
+Make them look like premium dashboard stat cards:
+
+* bigger numbers
+* stronger icon hierarchy
+* better spacing
+* better alignment
+* cleaner labels
+* slightly more visual emphasis
+
+Keep the same values.
+
+==================================================
+4) UPGRADE OPERATIONAL HEALTH SCORE SECTION
+===========================================
+
+This section should become a major visual block.
+
+Improve it by:
+
+* making the title more prominent
+* adding stronger card styling
+* centering / spacing the HealthScoreGauge better
+* if score exists, make the gauge visually dominant
+* if score does NOT exist, show a cleaner fallback empty state
+
+This should feel like one of the main result highlights.
+
+==================================================
+5) UPGRADE CAUSAL CHAIN SECTION
+===============================
+
+Improve the "Causal Chain" section:
+
+* better card spacing
+* stronger title styling
+* if chain exists:
+
+  * render each step as a pill / node
+  * arrows between nodes
+  * make it look like a logic flow
+* if no chain exists:
+
+  * show a clean muted fallback state
+
+Do NOT change the actual data logic.
+
+==================================================
+6) IMPROVE SPACING BETWEEN ALL TOP SECTIONS
+===========================================
+
+Increase vertical rhythm and layout consistency between:
+
+* mode card
+* executive summary
+* causal chain
+* stat cards
+* health score
+
+The page should breathe more and feel less cramped / flat.
+
+==================================================
+7) SAFETY
+=========
+
+* frontend only
+* no API changes
+* no backend edits
+* no data structure changes
+* no removal of working sections
+
+==================================================
+8) AFTER DONE
+=============
+
+Tell me:
+
+1. exactly what visual improvements were made
+2. whether any section needed fallback styling
+3. whether the page still builds and renders cleanly
