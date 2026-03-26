@@ -1,0 +1,114 @@
+Upgrade the Run Diagnostic page UI/UX to feel like a premium guided workflow.
+
+Do NOT change backend logic.
+Do NOT break any current upload, processing, or submission behavior.
+This is a frontend UX redesign only.
+
+Target the page/component used when running a new diagnostic for a client.
+
+==================================================
+
+1. REFRAME THE PAGE AS A GUIDED WORKFLOW
+   ==================================================
+
+Restructure the page into clear sections / steps:
+
+Step 1 — Problem Context
+Step 2 — Upload Supporting Documents
+Step 3 — Choose Analysis Mode
+Step 4 — Run Diagnostic
+
+Each section should feel visually distinct and easier to follow.
+
+Do NOT make it a wizard with multiple screens.
+Keep it one page, but make it feel guided and intentional.
+
+==================================================
+2) IMPROVE THE DOCUMENT UPLOAD EXPERIENCE
+=========================================
+
+Upgrade the upload section to feel cleaner and more premium.
+
+Requirements:
+
+* Better dropzone styling
+* Clearer upload state
+* Better visual separation for uploaded files
+* Processed / Failed / Pending states should be much clearer
+* Failed files should look recoverable, not broken
+* Reduce visual clutter when many files are uploaded
+
+Optional if easy:
+
+* Show small file type badges/icons (PDF, XLSX, DOCX)
+* Show upload count summary
+
+==================================================
+3) UPGRADE ANALYSIS MODE SELECTION
+==================================
+
+The Quick Analysis vs Deep Analysis options should feel like premium choice cards.
+
+Each card should clearly show:
+
+* Title
+* One-line summary
+* Optional icon
+* Strong selected state
+* Better visual hierarchy
+
+Deep Analysis should feel like the “serious” premium option.
+
+==================================================
+4) IMPROVE THE RUN ACTION AREA
+==============================
+
+Upgrade the final action section.
+
+Requirements:
+
+* Stronger CTA button styling
+* Better spacing around the run action
+* Supporting helper text should feel cleaner and more intentional
+* The selected mode and document readiness should be easier to understand at a glance
+
+Goal:
+The user should feel confident before clicking Run Diagnostic.
+
+==================================================
+5) IMPROVE OVERALL VISUAL HIERARCHY
+===================================
+
+Across the page:
+
+* better spacing
+* better section grouping
+* cleaner card styling
+* reduce flatness
+* keep it modern, minimal, premium
+
+Do NOT over-design.
+Do NOT make it flashy.
+This should look like polished B2B software.
+
+==================================================
+6) KEEP SAFE
+============
+
+* No backend changes
+* No route changes
+* No API changes
+* No data structure changes
+* No logic changes
+* UI only
+
+==================================================
+7) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. Which file(s) were updated
+2. What changed visually
+3. Which areas improved most
+4. Whether everything still builds cleanly
