@@ -1,0 +1,134 @@
+Upgrade the Analysis Results page into a more premium, executive-grade intelligence experience.
+
+IMPORTANT:
+
+* Do NOT touch backend logic
+* Do NOT change API structures
+* Do NOT remove any sections
+* This is a targeted UI/UX refinement pass only
+
+Target file:
+Likely client/src/pages/admin/analysis-results.tsx
+(and directly related presentational components only if needed)
+
+==================================================
+GOAL
+====
+
+The page is improved, but it still feels too lightweight and too similar section-to-section.
+
+Upgrade it so it feels:
+
+* more premium
+* more authoritative
+* more executive
+* more consultant-grade
+* more impressive in a client demo
+
+This pass should focus ONLY on the highest-ROI visual upgrades.
+
+==================================================
+
+1. UPGRADE THE TOP OF THE PAGE INTO A STRONGER HERO AREA
+   ==================================================
+
+The header / top section still feels too weak.
+
+Redesign the top zone so it feels like a premium intelligence report.
+
+Improve:
+
+* title presentation
+* metadata grouping
+* badge hierarchy
+* page framing
+* visual importance of the top section
+
+Goal:
+When someone opens the page, it should immediately feel like a high-value diagnostic report.
+
+==================================================
+2) MAKE THE KPI / OVERVIEW STRIP FEEL MORE EXECUTIVE
+====================================================
+
+The KPI cards are better, but still too flat.
+
+Upgrade the KPI row so it feels more like an executive dashboard.
+
+Improve:
+
+* card weight
+* visual hierarchy
+* number prominence
+* supporting labels
+* spacing and layout rhythm
+
+Goal:
+This row should feel like a strategic snapshot, not generic stat cards.
+
+==================================================
+3) HEAVILY UPGRADE DIAGNOSTIC FINDINGS
+======================================
+
+This is still the most important section.
+
+Redesign findings so they feel like:
+
+* premium insight cards
+* consultant conclusions
+* important diagnostic outputs
+
+Improve:
+
+* spacing
+* title hierarchy
+* insight weight
+* badges / labels
+* information clarity
+* overall visual authority
+
+Goal:
+Findings should become the strongest and most convincing section on the page.
+
+==================================================
+4) IMPROVE SECTION HIERARCHY ACROSS THE PAGE
+============================================
+
+Right now too many sections feel visually equal.
+
+Create stronger hierarchy between:
+
+* primary sections
+* secondary sections
+* supporting / fallback sections
+
+Goal:
+The page should feel intentionally composed, with clearer visual priority.
+
+==================================================
+5) KEEP THE DESIGN RESTRAINED
+=============================
+
+Do NOT overdesign.
+Do NOT make it flashy.
+Do NOT clutter the page.
+
+Target feel:
+
+* premium
+* intelligent
+* executive
+* clean
+* credible
+
+==================================================
+6) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What changed in the top hero area
+2. How the KPI row was improved
+3. How Findings were upgraded
+4. How section hierarchy was improved
+5. Whether the page now feels more premium and authoritative

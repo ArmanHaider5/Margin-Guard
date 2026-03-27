@@ -292,18 +292,47 @@ export default function AnalysisResults() {
     <div className="py-8 px-4 sm:px-6 max-w-5xl mx-auto space-y-8">
 
       {/* ── HEADER ─────────────────────────────────────────────────── */}
-      <div className="flex items-start gap-3">
-        <Link href={`/admin/clients/${analysis.clientId}`}>
-          <Button variant="ghost" size="icon" className="shrink-0 mt-0.5" data-testid="button-back">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-        </Link>
+      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+        {/* Top bar: back nav + actions */}
+        <div className="px-5 py-3 border-b bg-muted/20 flex items-center justify-between gap-3">
+          <Link href={`/admin/clients/${analysis.clientId}`}>
+            <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-muted-foreground hover:text-foreground" data-testid="button-back">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back to Client
+            </Button>
+          </Link>
+          <div className="flex items-center gap-2">
+            {analysis.caseId && (
+              <Link href={`/admin/cases/${analysis.caseId}`}>
+                <Button variant="outline" size="sm" className="h-8" data-testid="button-view-case">
+                  <FolderOpen className="w-3.5 h-3.5 mr-1.5" />
+                  View Case
+                </Button>
+              </Link>
+            )}
+            <Button
+              size="sm"
+              onClick={handleDownloadReport}
+              disabled={analysis.status !== "completed" || isDownloading}
+              data-testid="button-download-report"
+              title={analysis.status !== "completed" ? "Report available once analysis is complete" : "Download PDF report"}
+              className={`h-8 gap-1.5 ${isDownloading ? "opacity-80" : ""}`}
+            >
+              {isDownloading ? (
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating…</>
+              ) : (
+                <><Download className="w-3.5 h-3.5" />Download Report</>
+              )}
+            </Button>
+          </div>
+        </div>
 
-        <div className="flex-1 min-w-0">
-          {/* Eyebrow — client name + industry */}
+        {/* Report identity block */}
+        <div className="px-6 py-5">
+          {/* Eyebrow */}
           {client && (
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                 {client.name}
               </span>
               {client.industry && (
@@ -316,75 +345,43 @@ export default function AnalysisResults() {
               )}
             </div>
           )}
-
-          {/* Primary title */}
-          <h1 className="text-2xl font-bold tracking-tight text-foreground leading-snug" data-testid="text-analysis-title">
+          <h1 className="text-[22px] font-bold tracking-tight text-foreground leading-snug mb-3" data-testid="text-analysis-title">
             {analysis.title}
           </h1>
-
-          {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-2 mt-2.5">
-            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md ${
+          {/* Status chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md border ${
               analysis.analysisType === "deep"
-                ? "bg-primary/10 text-primary"
-                : "bg-muted text-muted-foreground"
+                ? "bg-primary/10 text-primary border-primary/20"
+                : "bg-muted text-muted-foreground border-border"
             }`}>
               {analysis.analysisType === "deep" ? "Deep Diagnostic" : "Quick Analysis"}
             </span>
-
-            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md ${
+            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md border ${
               analysis.status === "completed"
-                ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
-                : "bg-muted text-muted-foreground"
+                ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                : "bg-muted text-muted-foreground border-border"
             }`} data-testid="text-mode-indicator">
               {analysis.status === "completed"
                 ? <CheckCircle2 className="w-3 h-3" />
                 : <Clock className="w-3 h-3" />}
               <span className="capitalize">{analysis.status}</span>
             </span>
-
             {analysis.isMockMode ? (
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400 font-medium" data-testid="text-mock-mode">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400 font-medium border border-amber-200/60 dark:border-amber-800/40 px-2.5 py-1 rounded-md bg-amber-50/60 dark:bg-amber-950/20" data-testid="text-mock-mode">
                 <AlertCircle className="w-3 h-3" />
-                Baseline — pattern mode
+                Baseline mode
               </span>
             ) : analysis.analysisMode === "evidence-enriched" ? (
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium" data-testid="text-signal-mode">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium border border-emerald-200/60 dark:border-emerald-800/40 px-2.5 py-1 rounded-md bg-emerald-50/60 dark:bg-emerald-950/20" data-testid="text-signal-mode">
                 <CheckCircle2 className="w-3 h-3" />
                 Signal-driven
               </span>
             ) : null}
-
-            <span className="text-[11px] text-muted-foreground ml-auto">
+            <span className="text-[11px] text-muted-foreground/60 ml-auto">
               {formatDate(analysis.completedAt || analysis.createdAt)}
             </span>
           </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 shrink-0">
-          {analysis.caseId && (
-            <Link href={`/admin/cases/${analysis.caseId}`}>
-              <Button variant="outline" size="sm" data-testid="button-view-case">
-                <FolderOpen className="w-3.5 h-3.5 mr-1.5" />
-                View Case
-              </Button>
-            </Link>
-          )}
-          <Button
-            size="sm"
-            onClick={handleDownloadReport}
-            disabled={analysis.status !== "completed" || isDownloading}
-            data-testid="button-download-report"
-            title={analysis.status !== "completed" ? "Report available once analysis is complete" : "Download PDF report"}
-            className={`gap-1.5 ${isDownloading ? "opacity-80" : ""}`}
-          >
-            {isDownloading ? (
-              <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating…</>
-            ) : (
-              <><Download className="w-3.5 h-3.5" />Download Report</>
-            )}
-          </Button>
         </div>
       </div>
 
@@ -448,51 +445,68 @@ export default function AnalysisResults() {
             <div className="hidden lg:block w-px self-stretch bg-border/50" />
 
             {/* RIGHT — KPI cards grid */}
-            <div className="flex-1 grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
+            <div className="flex-1 grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-3 w-full">
 
               {/* Total Issues */}
-              <div className="bg-background/70 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Total Issues</p>
-                <p className="text-5xl font-extrabold text-orange-600 dark:text-orange-400 leading-none" data-testid="text-findings-count">
+              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Total Issues</p>
+                </div>
+                <p className="text-5xl font-black text-orange-600 dark:text-orange-400 leading-none tabular-nums" data-testid="text-findings-count">
                   {findings.length}
                 </p>
-                <p className="text-xs text-muted-foreground">root causes identified</p>
+                <p className="text-[11px] text-muted-foreground mt-1">root causes identified</p>
               </div>
 
               {/* Critical Issues */}
-              <div className="bg-background/70 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Critical Issues</p>
-                <p className="text-5xl font-extrabold text-red-600 dark:text-red-400 leading-none">
+              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Critical</p>
+                </div>
+                <p className="text-5xl font-black text-red-600 dark:text-red-400 leading-none tabular-nums">
                   {criticalCount}
                 </p>
-                <p className="text-xs text-muted-foreground">{highCount} high severity</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{highCount} high severity</p>
               </div>
 
               {/* Saving Opportunities */}
-              <div className="bg-background/70 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Saving Opportunities</p>
-                <p className="text-5xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none" data-testid="text-savings-count">
+              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Savings Found</p>
+                </div>
+                <p className="text-5xl font-black text-emerald-600 dark:text-emerald-400 leading-none tabular-nums" data-testid="text-savings-count">
                   {costSavings.length}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {predictions.length > 0 ? `${predictions.length} risk forecast${predictions.length !== 1 ? "s" : ""}` : "see breakdown below"}
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {predictions.length > 0 ? `${predictions.length} risk forecast${predictions.length !== 1 ? "s" : ""}` : "opportunities"}
                 </p>
               </div>
 
               {/* Primary Category */}
-              <div className="bg-background/70 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Primary Category</p>
+              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className={`w-1.5 h-1.5 rounded-full ${
+                    primaryCategory === "Money" ? "bg-amber-500" :
+                    primaryCategory === "Manpower" ? "bg-blue-500" :
+                    primaryCategory === "Materials" ? "bg-purple-500" :
+                    primaryCategory === "Machinery" ? "bg-slate-500" : "bg-muted-foreground"
+                  }`} />
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Lead Category</p>
+                </div>
                 {primaryCategory ? (
                   <>
-                    <p className={`text-2xl font-extrabold leading-tight ${fourMColors[primaryCategory as FourMCategory]?.text ?? "text-foreground"}`}>
+                    <p className={`text-2xl font-black leading-tight ${fourMColors[primaryCategory as FourMCategory]?.text ?? "text-foreground"}`}>
                       {primaryCategory}
                     </p>
-                    <p className="text-xs text-muted-foreground">highest-impact 4M domain</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">highest-impact 4M domain</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-2xl font-extrabold text-muted-foreground/40 leading-tight">—</p>
-                    <p className="text-xs text-muted-foreground">no findings yet</p>
+                    <p className="text-2xl font-black text-muted-foreground/40 leading-tight">—</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">no findings yet</p>
                   </>
                 )}
               </div>
@@ -502,24 +516,29 @@ export default function AnalysisResults() {
         </div>
       </div>
 
+      {/* PRIMARY SECTION HEADER — Diagnostic Findings */}
       <div>
-        <div className="flex items-center justify-between pb-3 border-b mb-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground" />
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Root Cause Analysis</p>
             </div>
-            <h2 className="text-base font-bold text-foreground tracking-tight">Diagnostic Findings</h2>
+            <h2 className="text-xl font-bold text-foreground tracking-tight">Diagnostic Findings</h2>
           </div>
-          <span className="text-xs text-muted-foreground">{findings.length} finding{findings.length !== 1 ? "s" : ""} identified</span>
+          <div className="text-right">
+            <p className="text-2xl font-black text-foreground tabular-nums">{findings.length}</p>
+            <p className="text-[11px] text-muted-foreground">finding{findings.length !== 1 ? "s" : ""} identified</p>
+          </div>
         </div>
-        <div className="space-y-5">
+        <div className="space-y-4">
           {findings.map((finding, idx) => {
             const colors = fourMColors[finding.fourMCategory] || fourMColors.Money;
             const isIndicative = finding.collapsedNote?.includes("guided validation") || finding.title?.startsWith("[NEEDS VALIDATION]");
             const evidenceStrengthColors: Record<string, { bg: string; text: string; label: string }> = {
-              STRONG: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", label: "Strong" },
-              MODERATE: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", label: "Moderate" },
-              WEAK: { bg: isIndicative ? "bg-orange-100 dark:bg-orange-900/30" : "bg-gray-100 dark:bg-gray-800", text: isIndicative ? "text-orange-700 dark:text-orange-300" : "text-gray-600 dark:text-gray-400", label: isIndicative ? "Needs Validation" : "Weak" },
+              STRONG: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", label: "Strong evidence" },
+              MODERATE: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", label: "Moderate evidence" },
+              WEAK: { bg: isIndicative ? "bg-orange-100 dark:bg-orange-900/30" : "bg-gray-100 dark:bg-gray-800", text: isIndicative ? "text-orange-700 dark:text-orange-300" : "text-gray-600 dark:text-gray-400", label: isIndicative ? "Needs Validation" : "Weak evidence" },
             };
             const esStyle = finding.evidenceStrength ? evidenceStrengthColors[finding.evidenceStrength] : null;
             const hasSignals = finding.evidenceAnchors && finding.evidenceAnchors.length > 0;
@@ -535,9 +554,9 @@ export default function AnalysisResults() {
               finding.severity === "medium" ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300" :
               "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400";
             const severityTintBg =
-              finding.severity === "critical" ? "bg-red-50/60 dark:bg-red-950/20" :
-              finding.severity === "high" ? "bg-orange-50/60 dark:bg-orange-950/20" :
-              finding.severity === "medium" ? "bg-yellow-50/40 dark:bg-yellow-950/10" :
+              finding.severity === "critical" ? "bg-red-50/40 dark:bg-red-950/20" :
+              finding.severity === "high" ? "bg-orange-50/40 dark:bg-orange-950/20" :
+              finding.severity === "medium" ? "bg-yellow-50/30 dark:bg-yellow-950/10" :
               "bg-card";
             const evidenceCount = finding.evidenceAnchors?.length ?? 0;
             return (
@@ -546,126 +565,136 @@ export default function AnalysisResults() {
                 className={`rounded-xl border shadow-sm overflow-hidden ${severityTintBg}`}
                 style={{ borderLeftWidth: "4px", borderLeftColor: severityBorderColor }}
               >
-                <div className="p-5">
-                  <div className="flex items-start gap-2 mb-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 shrink-0">
-                          #{String(idx + 1).padStart(2, "0")}
+                {/* Card header band */}
+                <div className="px-5 pt-4 pb-3 border-b border-border/60 flex items-start gap-3">
+                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/40 pt-0.5 shrink-0 w-7 text-right">
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-[16px] leading-snug text-foreground mb-2">{finding.evidenceLedTitle || finding.title}</h3>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge className={`${colors.bg} ${colors.text} text-[11px] font-semibold`}>{finding.fourMCategory}</Badge>
+                      <Badge className={`${severityBadgeClass} text-[11px] font-semibold uppercase`}>{finding.severity}</Badge>
+                      {esStyle && (
+                        <Badge className={`${esStyle.bg} ${esStyle.text} text-[11px]`}>
+                          {esStyle.label}
+                        </Badge>
+                      )}
+                      {evidenceCount > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/80 text-[11px] text-muted-foreground font-medium">
+                          <FileText className="w-2.5 h-2.5" />
+                          {evidenceCount} evidence signal{evidenceCount !== 1 ? "s" : ""}
                         </span>
-                        <h3 className="font-bold text-[15px] leading-snug">{finding.evidenceLedTitle || finding.title}</h3>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <Badge className={`${colors.bg} ${colors.text} text-[11px]`}>{finding.fourMCategory}</Badge>
-                        <Badge className={`${severityBadgeClass} text-[11px]`}>{finding.severity}</Badge>
-                        {esStyle && (
-                          <Badge className={`${esStyle.bg} ${esStyle.text} text-[11px]`}>
-                            {esStyle.label}
-                          </Badge>
-                        )}
-                        {evidenceCount > 0 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/80 text-[11px] text-muted-foreground font-medium">
-                            <FileText className="w-2.5 h-2.5" />
-                            {evidenceCount} evidence
-                          </span>
-                        )}
-                        {(finding as any).confidence && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/80 text-[11px] text-muted-foreground font-medium">
-                            {Math.round((finding as any).confidence * 100)}% confidence
-                          </span>
-                        )}
-                      </div>
+                      )}
+                      {(finding as any).confidence && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/80 text-[11px] text-muted-foreground font-medium">
+                          {Math.round((finding as any).confidence * 100)}% confidence
+                        </span>
+                      )}
                     </div>
                   </div>
+                </div>
 
-                  <div className="space-y-3 text-sm">
-                    {hasSignals && (
-                      <div>
-                        <p className="font-medium mb-1 flex items-center gap-1">
-                          <FileText className="w-3.5 h-3.5 text-muted-foreground" /> Supporting Evidence
-                        </p>
-                        <ul className="space-y-1 ml-5">
-                          {finding.evidenceAnchors!.map((anchor: any, i: number) => (
-                            <li key={i} className="list-disc text-muted-foreground">
+                {/* Card body */}
+                <div className="px-5 py-4 space-y-3.5 text-sm">
+                  {hasSignals && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <FileText className="w-3 h-3" /> Supporting Evidence
+                      </p>
+                      <ul className="space-y-1.5 ml-4">
+                        {finding.evidenceAnchors!.map((anchor: any, i: number) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                            <span>
                               <span className="font-medium text-foreground">{anchor.signal}</span>
-                              <span className="text-xs ml-1">({anchor.documentName})</span>
+                              <span className="text-xs text-muted-foreground/60 ml-1.5">({anchor.documentName})</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {finding.insightNote && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <Target className="w-3 h-3" /> Insight
+                      </p>
+                      <p className="text-muted-foreground leading-relaxed ml-4">{finding.insightNote}</p>
+                    </div>
+                  )}
+
+                  {!finding.insightNote && finding.causes && finding.causes.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <Target className="w-3 h-3" /> Insight
+                      </p>
+                      <ul className="space-y-1 ml-4">
+                        {finding.causes.map((cause: string, i: number) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                            <span className="text-muted-foreground">{cause}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {finding.impactObserved && finding.impactObserved.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <AlertCircle className="w-3 h-3" /> Estimated Impact
+                      </p>
+                      <ul className="space-y-1 ml-4">
+                        {finding.impactObserved.map((bullet: string, i: number) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                            <span className="text-muted-foreground">{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {finding.estimatedCostImpact && (
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <DollarSign className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Estimated Impact:</span>
+                      <span className="text-sm font-semibold text-foreground">{finding.estimatedCostImpact}</span>
+                    </div>
+                  )}
+
+                    {finding.whatToValidateNext && finding.whatToValidateNext.length > 0 && (
+                      <div className="pt-2 border-t border-border/50">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-2 flex items-center gap-1.5">
+                          <ClipboardCheck className="w-3 h-3" /> What to Validate Next
+                        </p>
+                        <ul className="space-y-1 ml-4">
+                          {finding.whatToValidateNext.map((doc: string, i: number) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                              <span className="text-xs text-muted-foreground">{doc}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
 
-                    {finding.insightNote && (
-                      <div>
-                        <p className="font-medium mb-1 flex items-center gap-1">
-                          <Target className="w-3.5 h-3.5 text-muted-foreground" /> Insight
-                        </p>
-                        <p className="text-muted-foreground ml-5">{finding.insightNote}</p>
-                      </div>
-                    )}
-
-                    {!finding.insightNote && finding.causes && finding.causes.length > 0 && (
-                      <div>
-                        <p className="font-medium mb-1 flex items-center gap-1">
-                          <Target className="w-3.5 h-3.5 text-muted-foreground" /> Insight
-                        </p>
-                        <ul className="ml-5">
-                          {finding.causes.map((cause: string, i: number) => (
-                            <li key={i} className="list-disc text-muted-foreground">{cause}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {finding.impactObserved && finding.impactObserved.length > 0 && (
-                      <div>
-                        <p className="font-medium mb-1 flex items-center gap-1">
-                          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" /> Estimated Impact
-                        </p>
-                        <ul className="space-y-1 ml-5">
-                          {finding.impactObserved.map((bullet: string, i: number) => (
-                            <li key={i} className="list-disc text-muted-foreground">{bullet}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {finding.estimatedCostImpact && (
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-                        <span className="font-medium">Estimated Impact:</span>
-                        <span className="text-muted-foreground">{finding.estimatedCostImpact}</span>
-                      </div>
-                    )}
-
-                    {finding.whatToValidateNext && finding.whatToValidateNext.length > 0 && (
-                      <div className="pt-2 border-t">
-                        <p className="font-medium mb-1 flex items-center gap-1">
-                          <ClipboardCheck className="w-3.5 h-3.5 text-muted-foreground" /> What to Validate Next
-                        </p>
-                        <ul className="space-y-1 ml-5">
-                          {finding.whatToValidateNext.map((doc: string, i: number) => (
-                            <li key={i} className="list-disc text-muted-foreground text-xs">{doc}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
                     {noSignalsFallback && (
-                      <div className="pt-2 border-t">
-                        <p className="text-xs text-amber-600 dark:text-amber-400 ml-5 italic">
+                      <div className="pt-2 border-t border-border/50">
+                        <p className="text-xs text-amber-600 dark:text-amber-400 italic">
                           No concrete operational or financial signals extracted yet. Upload Ops, Finance, or Maintenance records to strengthen this finding.
                         </p>
                       </div>
                     )}
 
                     {finding.collapsedNote && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 italic ml-5">
+                      <p className="text-xs text-amber-600 dark:text-amber-400 italic">
                         {finding.collapsedNote}
                       </p>
                     )}
                   </div>
-                </div>
               </div>
             );
           })}
