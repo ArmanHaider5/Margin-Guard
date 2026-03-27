@@ -1,0 +1,172 @@
+Redesign the Analysis Results page layout so it feels like a premium consulting intelligence dashboard.
+
+IMPORTANT:
+
+* Do NOT change backend logic
+* Do NOT change API structures
+* Do NOT remove sections
+* This is a UI/UX layout redesign only
+
+Target file:
+Likely client/src/pages/admin/analysis-results.tsx
+(and any directly related presentational components if needed)
+
+==================================================
+GOAL
+====
+
+The current page is too horizontally stretched, too flat, and too “admin panel”.
+
+Redesign it so it feels:
+
+* premium
+* focused
+* insight-led
+* structured
+* client-demo ready
+
+This should feel like a serious diagnostic intelligence workspace.
+
+==================================================
+
+1. CONSTRAIN THE PAGE WIDTH
+   ==================================================
+
+This is the highest-priority fix.
+
+Wrap the results page content in a centered max-width container.
+
+Requirements:
+
+* use a strong centered layout (e.g. max-w-7xl / max-w-[1440px])
+* add proper horizontal padding
+* avoid full-width stretched content across ultra-wide screens
+
+Goal:
+The page should immediately feel more premium, readable, and intentional.
+
+==================================================
+2) REDESIGN THE PAGE INTO A TRUE DASHBOARD STRUCTURE
+====================================================
+
+Recompose the page layout so it has stronger visual structure.
+
+Suggested hierarchy:
+
+TOP:
+
+* Header / title / meta / actions
+
+ABOVE THE FOLD:
+
+* Executive Summary
+* KPI / overview strip
+* high-value overview content
+
+MAIN BODY:
+
+* Findings
+* Cost Saving Opportunities
+* Risk Predictions
+* Financial Impact
+* Causal Chain
+* Other advanced sections if available
+
+Goal:
+The page should feel like an intelligence dashboard, not stacked admin records.
+
+==================================================
+3) MAKE EXECUTIVE SUMMARY FEEL IMPORTANT
+========================================
+
+Executive Summary should feel like the “top insight block” — not just a line of text.
+
+Improve:
+
+* visual containment
+* typography
+* spacing
+* hierarchy
+
+Goal:
+This should feel like the main interpretation layer.
+
+==================================================
+4) HEAVILY UPGRADE DIAGNOSTIC FINDINGS
+======================================
+
+This is the most important content section.
+
+Redesign findings to feel like premium consultant insight cards rather than thin list rows.
+
+Improve:
+
+* card weight
+* spacing
+* title hierarchy
+* severity / category presentation
+* overall visual clarity
+
+Goal:
+Findings should feel like the core intelligence output of the platform.
+
+==================================================
+5) UPGRADE SAVINGS + RISK SECTIONS
+==================================
+
+Redesign:
+
+* Cost Saving Opportunities
+* Risk Predictions
+
+Make them feel more strategic and polished.
+
+They should look like:
+
+* advisory outputs
+* decision-support intelligence
+  not flat admin rows.
+
+==================================================
+6) ADD BETTER VISUAL RHYTHM
+===========================
+
+Improve:
+
+* vertical spacing
+* grouping
+* section containment
+* white space balance
+* visual flow from top to bottom
+
+Goal:
+The page should feel composed and premium, not stretched and sparse.
+
+==================================================
+7) KEEP IT RESTRAINED
+=====================
+
+Do NOT overdesign.
+Do NOT add unnecessary clutter.
+Do NOT add random colors or gimmicks.
+
+The target feel is:
+
+* executive
+* premium
+* modern
+* credible
+* consulting-grade
+
+==================================================
+8) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What changed in page width/layout
+2. How the dashboard structure was improved
+3. How Executive Summary was upgraded
+4. How Findings were redesigned
+5. How Savings and Risk sections were upgraded
+6. Whether the page now feels premium and focused

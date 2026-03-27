@@ -289,7 +289,7 @@ export default function AnalysisResults() {
   };
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="py-8 px-4 sm:px-6 max-w-5xl mx-auto space-y-8">
 
       {/* ── HEADER ─────────────────────────────────────────────────── */}
       <div className="flex items-start gap-3">
@@ -390,17 +390,15 @@ export default function AnalysisResults() {
 
       {/* ── EXECUTIVE SUMMARY ──────────────────────────────────────── */}
       {analysis.summary && (
-        <div className="rounded-xl border border-border/70 bg-card p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-              <Target className="w-4 h-4 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Executive Summary</p>
-              <p className="text-sm leading-relaxed text-foreground/85" data-testid="text-summary">
-                {analysis.summary}
-              </p>
-            </div>
+        <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+          <div className="px-6 py-3 border-b bg-muted/30 flex items-center gap-2">
+            <Target className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Executive Summary</p>
+          </div>
+          <div className="px-6 py-5">
+            <p className="text-[15px] leading-relaxed text-foreground/90 font-medium" data-testid="text-summary">
+              {analysis.summary}
+            </p>
           </div>
         </div>
       )}
@@ -504,47 +502,6 @@ export default function AnalysisResults() {
         </div>
       </div>
 
-      {/* ── CAUSAL CHAIN ───────────────────────────────────────────── */}
-      <Card data-testid="card-causal-chain">
-        <div className="p-6">
-          <div className="flex items-center justify-between pb-3 border-b mb-5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
-                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
-              </div>
-              <h2 className="text-base font-bold text-foreground tracking-tight">Causal Chain</h2>
-            </div>
-          </div>
-          {mgd?.causalChains?.length > 0 ? (
-            <div className="space-y-4">
-              {mgd.causalChains.map((c: any, i: number) => (
-                <div key={i} className="flex flex-wrap items-center gap-2">
-                  {c.chain.map((step: string, j: number) => (
-                    <span key={j} className="flex items-center gap-2">
-                      <span className="inline-flex items-center px-3.5 py-2 rounded-lg border border-border bg-muted/60 text-sm font-medium text-foreground shadow-sm">
-                        {step}
-                      </span>
-                      {j < c.chain.length - 1 && (
-                        <ArrowRight className="w-4 h-4 text-primary/60 shrink-0" />
-                      )}
-                    </span>
-                  ))}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
-                <ArrowRight className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <p className="text-sm text-muted-foreground">No causal chain available for this analysis.</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Run a Deep Diagnostic with uploaded documents to generate causal chains.</p>
-            </div>
-          )}
-        </div>
-      </Card>
-
-
       <div>
         <div className="flex items-center justify-between pb-3 border-b mb-6">
           <div className="flex items-center gap-2.5">
@@ -596,7 +553,7 @@ export default function AnalysisResults() {
                         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 shrink-0">
                           #{String(idx + 1).padStart(2, "0")}
                         </span>
-                        <h3 className="font-semibold text-sm leading-snug">{finding.evidenceLedTitle || finding.title}</h3>
+                        <h3 className="font-bold text-[15px] leading-snug">{finding.evidenceLedTitle || finding.title}</h3>
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <Badge className={`${colors.bg} ${colors.text} text-[11px]`}>{finding.fourMCategory}</Badge>
@@ -740,7 +697,7 @@ export default function AnalysisResults() {
                         <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
                           <Lightbulb className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                         </div>
-                        <h3 className="font-semibold text-sm leading-snug">{opp.title}</h3>
+                        <h3 className="font-bold text-[15px] leading-snug">{opp.title}</h3>
                       </div>
                       <p className="text-muted-foreground text-sm leading-relaxed mb-2.5 pl-9">{opp.description}</p>
                       <div className="flex items-center gap-2 pl-9">
@@ -764,7 +721,7 @@ export default function AnalysisResults() {
                     </div>
                     <div className="text-right shrink-0 pl-4 border-l border-border/60 ml-2">
                       <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Est. Annual Savings</p>
-                      <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none">{opp.estimatedSavings}</p>
+                      <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none">{opp.estimatedSavings}</p>
                     </div>
                   </div>
                 </div>
@@ -808,7 +765,7 @@ export default function AnalysisResults() {
                         <AlertTriangle className="w-4.5 h-4.5" style={{ width: "1.125rem", height: "1.125rem" }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm leading-snug mb-2.5">{pred.issue}</h3>
+                        <h3 className="font-bold text-[15px] leading-snug mb-2.5">{pred.issue}</h3>
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge className={`${likelihoodBadge} text-[11px] font-semibold`}>
                             {isHighRisk ? "⚠ " : ""}{pred.likelihood} likelihood
@@ -839,6 +796,46 @@ export default function AnalysisResults() {
           </div>
         </div>
       )}
+
+      {/* ── CAUSAL CHAIN ───────────────────────────────────────────── */}
+      <Card data-testid="card-causal-chain">
+        <div className="p-6">
+          <div className="flex items-center justify-between pb-3 border-b mb-5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
+              <h2 className="text-base font-bold text-foreground tracking-tight">Causal Chain</h2>
+            </div>
+          </div>
+          {mgd?.causalChains?.length > 0 ? (
+            <div className="space-y-4">
+              {mgd.causalChains.map((c: any, i: number) => (
+                <div key={i} className="flex flex-wrap items-center gap-2">
+                  {c.chain.map((step: string, j: number) => (
+                    <span key={j} className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-3.5 py-2 rounded-lg border border-border bg-muted/60 text-sm font-medium text-foreground shadow-sm">
+                        {step}
+                      </span>
+                      {j < c.chain.length - 1 && (
+                        <ArrowRight className="w-4 h-4 text-primary/60 shrink-0" />
+                      )}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
+                <ArrowRight className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">No causal chain available for this analysis.</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Run a Deep Diagnostic with uploaded documents to generate causal chains.</p>
+            </div>
+          )}
+        </div>
+      </Card>
 
       {/* FINANCIAL IMPACT */}
       <Card className="overflow-hidden" data-testid="card-financial-impact">
@@ -1106,7 +1103,7 @@ export default function AnalysisResults() {
         </Card>
       )}
 
-      <div className="text-center text-sm text-muted-foreground">
+      <div className="text-center text-sm text-muted-foreground/50 pt-2">
         Analysis completed: {formatDate(analysis.completedAt)}
       </div>
     </div>
