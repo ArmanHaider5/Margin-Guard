@@ -250,36 +250,35 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       doc.y += 30;
 
       // ── KPI boxes ─────────────────────────────────────────────────────
-      const bw  = (pw - 16) / 3;
-      const by  = doc.y;
-      const bh  = 54;
-      const bgap = 8;
+      const bw   = (pw - 18) / 3;
+      const by   = doc.y;
+      const bh   = 68;      // taller for better proportion
+      const bgap = 9;
 
-      // Box 1 — Issues Found
-      doc.rect(ml, by, bw, bh).fill(C.primary);
-      doc.fontSize(22).fillColor(C.white).font("Helvetica-Bold");
-      doc.text(String(findings.length), ml, by + 7, { width: bw, align: "center" });
-      doc.fontSize(7.5).font("Helvetica").fillColor("#94a3b8");
-      doc.text("Issues Found", ml, by + 35, { width: bw, align: "center" });
+      // Helper: draw one KPI card
+      const kpiCard = (x: number, fill: string, num: string, labelTop: string, labelBot: string, numColor: string, labelColor: string) => {
+        doc.roundedRect(x, by, bw, bh, 4).fill(fill);
+        // Number — large, centred, upper portion
+        doc.fontSize(28).fillColor(numColor).font("Helvetica-Bold");
+        doc.text(num, x, by + 10, { width: bw, align: "center" });
+        // Separator rule between number and label
+        doc.moveTo(x + bw * 0.25, by + 46).lineTo(x + bw * 0.75, by + 46)
+           .strokeColor(labelColor + "44").lineWidth(0.5).stroke();
+        // Label — two lines if needed
+        doc.fontSize(7.5).fillColor(labelColor).font("Helvetica-Bold");
+        doc.text(labelTop, x, by + 52, { width: bw, align: "center", characterSpacing: 0.3 });
+        if (labelBot) {
+          doc.fontSize(7).fillColor(labelColor).font("Helvetica");
+          doc.text(labelBot, x, by + 62, { width: bw, align: "center" });
+        }
+      };
 
-      // Box 2 — Saving Opportunities
-      const b2x = ml + bw + bgap;
-      doc.rect(b2x, by, bw, bh).fill(C.success);
-      doc.fontSize(22).fillColor(C.white).font("Helvetica-Bold");
-      doc.text(String(costSavings.length), b2x, by + 7, { width: bw, align: "center" });
-      doc.fontSize(7.5).font("Helvetica").fillColor("#d1fae5");
-      doc.text("Saving Opportunities", b2x, by + 35, { width: bw, align: "center" });
-
-      // Box 3 — Critical/High
-      const b3x = ml + (bw + bgap) * 2;
+      kpiCard(ml,             C.primary, String(findings.length),    "ISSUES",      "IDENTIFIED",        C.white,   "#94a3b8");
+      kpiCard(ml + bw + bgap, C.success, String(costSavings.length), "SAVING",      "OPPORTUNITIES",     C.white,   "#d1fae5");
       const b3c = critCount > 0 ? C.danger : C.muted;
-      doc.rect(b3x, by, bw, bh).fill(b3c);
-      doc.fontSize(22).fillColor(C.white).font("Helvetica-Bold");
-      doc.text(String(critCount), b3x, by + 7, { width: bw, align: "center" });
-      doc.fontSize(7.5).font("Helvetica").fillColor("#f1f5f9");
-      doc.text("Critical / High Issues", b3x, by + 35, { width: bw, align: "center" });
+      kpiCard(ml + (bw + bgap) * 2, b3c, String(critCount),         "CRITICAL",    "/ HIGH PRIORITY",   C.white,   "#fecaca");
 
-      doc.y = by + bh + 22;
+      doc.y = by + bh + 24;
 
       // Health score on cover (optional)
       if (typeof healthScore === "number") {
@@ -316,59 +315,92 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
               : null);
 
         if (insightText) {
-          const pdBlockH = 70;
+          const pdBlockH = 92;
           const pdY      = doc.y;
+          const pdPad    = 18; // inner horizontal padding
 
           // Outer card — navy background for premium feel
           doc.roundedRect(ml, pdY, pw, pdBlockH, 5).fill(C.primary);
 
-          // Amber top accent strip
-          doc.roundedRect(ml, pdY, pw, 4, 2).fill(C.accent);
+          // Amber top accent strip (4px tall)
+          doc.rect(ml, pdY, pw, 4).fill(C.accent);
+          // Rounded corners back on top
+          doc.roundedRect(ml, pdY, pw, 10, 5).fill(C.primary);
+          doc.rect(ml, pdY + 4, pw, 6).fill(C.primary);
 
-          // "PRIMARY DIAGNOSIS" label
+          // "PRIMARY DIAGNOSIS" eyebrow label
           doc.fontSize(7).fillColor(C.accent).font("Helvetica-Bold");
-          doc.text("PRIMARY DIAGNOSIS", ml + 14, pdY + 12, {
-            width: pw - 28, characterSpacing: 1,
+          doc.text("PRIMARY DIAGNOSIS", ml + pdPad, pdY + 14, {
+            width: pw - pdPad * 2, characterSpacing: 1.2,
           });
 
-          // Finding title (if available) or insight heading
+          // Thin amber rule under label
+          doc.moveTo(ml + pdPad, pdY + 24)
+             .lineTo(ml + pdPad + 50, pdY + 24)
+             .strokeColor(C.accent + "66").lineWidth(0.5).stroke();
+
+          // Finding title
           const diagTitle = primaryFinding
             ? String(primaryFinding.title || "Key Finding")
             : "Key Insight";
-          doc.fontSize(11).fillColor(C.white).font("Helvetica-Bold");
-          doc.text(diagTitle, ml + 14, pdY + 23, { width: pw - 28 });
+          doc.fontSize(12).fillColor(C.white).font("Helvetica-Bold");
+          doc.text(diagTitle, ml + pdPad, pdY + 30, { width: pw - pdPad * 2 });
 
-          // Insight body
-          const insightSnippet = insightText.length > 160
-            ? insightText.slice(0, 157) + "…"
+          // Insight body — more chars, better line-height
+          const insightSnippet = insightText.length > 200
+            ? insightText.slice(0, 197) + "…"
             : insightText;
-          doc.fontSize(8.5).fillColor("#cbd5e1").font("Helvetica");
-          doc.text(insightSnippet, ml + 14, pdY + 38, { width: pw - 28, lineGap: 2 });
+          doc.fontSize(9).fillColor("#94a3b8").font("Helvetica");
+          doc.text(insightSnippet, ml + pdPad, pdY + 48, {
+            width: pw - pdPad * 2, lineGap: 3,
+          });
 
-          doc.y = Math.max(doc.y, pdY + pdBlockH) + 16;
+          doc.y = Math.max(doc.y, pdY + pdBlockH) + 18;
         }
       }
 
-      // ── Cover footer ──────────────────────────────────────────────────
-      const cfY = ph - mb - 50;
+      // ── Cover footer — three-zone layout ─────────────────────────────
+      // Zone left: brand identity  |  Zone centre: confidentiality  |  Zone right: ref
+      const cfY = ph - mb - 54;
       doc.moveTo(ml, cfY).lineTo(ml + pw, cfY)
-         .strokeColor(C.border).lineWidth(0.5).stroke();
+         .strokeColor(C.border).lineWidth(0.6).stroke();
 
-      doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
-      doc.text("Prepared by",    ml, cfY + 8);
-      doc.fontSize(10).fillColor(C.text).font("Helvetica-Bold");
-      doc.text("EDX Consulting", ml, cfY + 20);
-      doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
-      doc.text("www.edx-consulting.com", ml, cfY + 34);
+      const cfZoneW = pw / 3;
+      const cfTextY = cfY + 10;
 
-      const refStr = `Ref: ${String(data.analysis.id ?? "").slice(0, 8).toUpperCase() || "N/A"}  ·  Generated ${new Date().toLocaleDateString("en-MY")}`;
-      doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
-      doc.text(refStr, ml, cfY + 8, { width: pw, align: "right" });
+      // Left zone — brand
+      doc.fontSize(9.5).fillColor(C.primary).font("Helvetica-Bold");
+      doc.text("EDX Consulting", ml, cfTextY, { width: cfZoneW });
+      doc.fontSize(7).fillColor(C.muted).font("Helvetica");
+      doc.text("Efficiency  ·  Deployment  ·  Excellence", ml, cfTextY + 14, { width: cfZoneW });
+      doc.fontSize(7).fillColor(C.muted).font("Helvetica");
+      doc.text("www.edx-consulting.com", ml, cfTextY + 25, { width: cfZoneW });
+
+      // Centre zone — confidentiality notice
+      doc.fontSize(7).fillColor(C.muted).font("Helvetica-Bold");
       doc.text(
-        "This document contains confidential information prepared exclusively for the named client.",
-        ml, cfY + 34,
-        { width: pw, align: "right" }
+        "CONFIDENTIAL & PROPRIETARY",
+        ml + cfZoneW, cfTextY,
+        { width: cfZoneW, align: "center", characterSpacing: 0.5 }
       );
+      doc.fontSize(6.5).fillColor(C.muted).font("Helvetica");
+      doc.text(
+        "Prepared exclusively for the named client.\nDo not distribute without authorisation.",
+        ml + cfZoneW, cfTextY + 12,
+        { width: cfZoneW, align: "center", lineGap: 2 }
+      );
+
+      // Right zone — reference + date
+      const refStr = `Ref: ${String(data.analysis.id ?? "").slice(0, 8).toUpperCase() || "N/A"}`;
+      const genStr = `Generated ${new Date().toLocaleDateString("en-MY")}`;
+      doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
+      doc.text(refStr, ml + cfZoneW * 2, cfTextY, { width: cfZoneW, align: "right" });
+      doc.fontSize(7).fillColor(C.muted).font("Helvetica");
+      doc.text(genStr, ml + cfZoneW * 2, cfTextY + 14, { width: cfZoneW, align: "right" });
+      doc.fontSize(7).fillColor(C.secondary).font("Helvetica-Bold");
+      doc.text("consulting@edx.com", ml + cfZoneW * 2, cfTextY + 26, {
+        width: cfZoneW, align: "right",
+      });
 
       // ═══════════════════════════════════════════════════════════════════
       // PAGE 2+ — BODY
@@ -527,21 +559,21 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
           doc.restore();
 
           // Content area — left of the two chips
-          const cx = ml + 40;
-          const cw = pw - 40 - chipW * 2 - chipGap - 8;
+          const cx = ml + 44;
+          const cw = pw - 44 - chipW * 2 - chipGap - 10;
 
-          doc.y = rowStartY + 7;
+          doc.y = rowStartY + 11; // more top breathing room
 
           // Title
           doc.fontSize(11).fillColor(C.primary).font("Helvetica-Bold");
           doc.text(String(finding.title || "Untitled Finding"), cx, doc.y, { width: cw });
 
-          // Description — more line height, slightly larger
-          doc.y += 4;
+          // Description — comfortable line height, slightly larger
+          doc.y += 6;
           const desc = String(finding.description || "").slice(0, 260)
             + (String(finding.description || "").length > 260 ? "…" : "");
           doc.fontSize(9.5).fillColor(C.text).font("Helvetica");
-          doc.text(desc, cx, doc.y, { width: pw - 48, lineGap: 3 });
+          doc.text(desc, cx, doc.y, { width: pw - 52, lineGap: 3.5 });
 
           // Meta line
           const costStr = finding.estimatedCostImpact
@@ -549,13 +581,13 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
           const evStr   = (finding as any).evidenceCount
             ? `  ·  ${(finding as any).evidenceCount} signal${(finding as any).evidenceCount !== 1 ? "s" : ""}` : "";
           if (costStr || evStr) {
-            doc.y += 4;
+            doc.y += 5;
             doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
-            doc.text(`${costStr}${evStr}`, cx, doc.y, { width: pw - 48 });
+            doc.text(`${costStr}${evStr}`, cx, doc.y, { width: pw - 52 });
           }
 
           // Advance cursor at least past minimum row height, then add gap
-          doc.y = Math.max(doc.y, rowStartY + MIN_ROW_H) + 14;
+          doc.y = Math.max(doc.y, rowStartY + MIN_ROW_H) + 16;
         });
       }
 
@@ -1084,10 +1116,78 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       }
 
       // ─────────────────────────────────────────────────────────────────
+      // CONSULTANT RECOMMENDATION BOX
+      // Deterministic action-oriented recommendation derived from findings.
+      // No AI generation — driven entirely by 4M category of top finding.
+      // ─────────────────────────────────────────────────────────────────
+      {
+        const topFinding =
+          findings.find(f => f.severity === "critical") ||
+          findings.find(f => f.severity === "high")     ||
+          findings[0];
+
+        const categoryRec: Record<FourMCategory, string> = {
+          Machinery:
+            "Schedule a preventive maintenance review on all critical assets within the next 30 days. "
+            + "Establish a recurring reliability audit to reduce unplanned downtime and extend asset lifecycle.",
+          Manpower:
+            "Prioritise workforce capability assessment, structured on-the-job training, and retention planning. "
+            + "Address identified skill gaps within the next 60 days to reduce operational dependency risk.",
+          Materials:
+            "Audit materials procurement, incoming quality inspection, and inventory buffer levels. "
+            + "Establish supplier performance metrics to prevent supply chain disruptions from recurring.",
+          Money:
+            "Implement cost control disciplines and financial monitoring processes within the next 30 days. "
+            + "Review identified cost drivers and establish accountability for corrective action on margin leakage.",
+        };
+
+        const fallbackRec =
+          "Develop a structured 30–60 day corrective action plan addressing the highest-priority findings. "
+          + "Assign accountable owners to each root cause and establish a monthly review cadence to track progress.";
+
+        const recText = topFinding && topFinding.fourMCategory
+          ? (categoryRec[topFinding.fourMCategory] || fallbackRec)
+          : fallbackRec;
+
+        const MIN_REC_H = 80;
+        ensureSpace(MIN_REC_H + 20);
+        doc.y += 20;
+        const recY = doc.y;
+
+        // Container — light secondary tint
+        doc.roundedRect(ml, recY, pw, MIN_REC_H, 5).fill(C.secondary + "09");
+        doc.roundedRect(ml, recY, pw, MIN_REC_H, 5)
+           .stroke(C.secondary + "33").lineWidth(0.6);
+        // Left accent strip
+        doc.roundedRect(ml, recY, 4, MIN_REC_H, 2).fill(C.secondary);
+
+        const rlx = ml + 18;
+        // Eyebrow
+        doc.fontSize(7).fillColor(C.secondary).font("Helvetica-Bold");
+        doc.text("CONSULTANT RECOMMENDATION", rlx, recY + 12, {
+          width: pw - 22, characterSpacing: 0.8,
+        });
+
+        // Recommendation body
+        doc.y = recY + 26;
+        doc.fontSize(9.5).fillColor(C.primary).font("Helvetica-Bold");
+        const recTitle = topFinding
+          ? `Re: ${String(topFinding.title || "Primary Finding").slice(0, 70)}`
+          : "Priority Action";
+        doc.text(recTitle, rlx, doc.y, { width: pw - 26 });
+
+        doc.y += 4;
+        doc.fontSize(9).fillColor(C.text).font("Helvetica");
+        doc.text(recText, rlx, doc.y, { width: pw - 26, lineGap: 3 });
+
+        doc.y = Math.max(doc.y, recY + MIN_REC_H) + 18;
+      }
+
+      // ─────────────────────────────────────────────────────────────────
       // CLOSING CTA
       // ─────────────────────────────────────────────────────────────────
-      ensureSpace(70);
-      doc.y += 16;
+      ensureSpace(60);
+      doc.y += 14;
       doc.moveTo(ml, doc.y).lineTo(ml + pw, doc.y)
          .strokeColor(C.border).lineWidth(0.5).stroke();
       doc.y += 12;
@@ -1099,27 +1199,45 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       doc.text(
         "Our consultants are available to support implementation, capability building, and follow-up diagnostics.",
         ml, doc.y,
-        { width: pw }
+        { width: pw, lineGap: 2 }
       );
-      doc.y += 6;
+      doc.y += 8;
       doc.fontSize(9).fillColor(C.secondary).font("Helvetica");
       doc.text("consulting@edx.com  ·  www.edx-consulting.com", ml);
 
       // ─────────────────────────────────────────────────────────────────
-      // FOOTER — every page
+      // FOOTER — every page, three-zone layout
+      // Left: brand | Centre: confidentiality | Right: page number
       // ─────────────────────────────────────────────────────────────────
       const range = doc.bufferedPageRange();
       for (let i = range.start; i < range.start + range.count; i++) {
         doc.switchToPage(i);
-        const footerY = ph - mb - 14;
-        doc.moveTo(ml, footerY - 2)
-           .lineTo(ml + pw, footerY - 2)
-           .strokeColor(C.border).lineWidth(0.4).stroke();
+        const fzW    = pw / 3;
+        const footerY = ph - mb - 20;
+
+        // Rule — slightly more breathing room above footer
+        doc.moveTo(ml, footerY - 4)
+           .lineTo(ml + pw, footerY - 4)
+           .strokeColor(C.border).lineWidth(0.5).stroke();
+
+        // Left — brand name
+        doc.fontSize(7).fillColor(C.muted).font("Helvetica-Bold");
+        doc.text("EDX Consulting", ml, footerY, { width: fzW });
+
+        // Centre — confidentiality (centred)
         doc.fontSize(6.5).fillColor(C.muted).font("Helvetica");
         doc.text(
-          `Page ${i - range.start + 1} of ${range.count}  ·  EDX Consulting — Efficiency, Deployment, Excellence  ·  Confidential`,
-          ml, footerY,
-          { width: pw, align: "center" }
+          "CONFIDENTIAL & PROPRIETARY",
+          ml + fzW, footerY,
+          { width: fzW, align: "center", characterSpacing: 0.4 }
+        );
+
+        // Right — page number (right-aligned)
+        doc.fontSize(7).fillColor(C.muted).font("Helvetica");
+        doc.text(
+          `Page ${i - range.start + 1} of ${range.count}`,
+          ml + fzW * 2, footerY,
+          { width: fzW, align: "right" }
         );
       }
 

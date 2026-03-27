@@ -1,0 +1,141 @@
+Apply one final premium polish pass to the PDF report.
+
+Do NOT change any diagnostic logic.
+Do NOT change section order.
+Do NOT remove existing content.
+This is a final presentation-quality refinement pass only.
+
+==================================================
+
+1. FIX FOOTER PROPERLY
+   ==================================================
+
+The footer is still visually weak and too cramped, especially on page 1.
+
+Improve footer layout:
+
+* increase bottom margin/padding
+* align left / center / right footer zones cleanly
+* ensure no text sits too close to the bottom edge
+* improve readability of page number / confidentiality / reference line
+* keep it minimal and elegant
+
+Goal:
+Footer should look clean, balanced, and intentional — not squeezed.
+
+==================================================
+2) REFINE KPI CARDS ON COVER PAGE
+=================================
+
+Improve the three KPI cards:
+
+* better internal padding
+* cleaner vertical alignment
+* slightly stronger label typography
+* improve spacing between number and label
+* ensure all three cards feel equally balanced visually
+
+Goal:
+Cards should feel like executive summary metrics, not dashboard leftovers.
+
+==================================================
+3) IMPROVE PRIMARY DIAGNOSIS BLOCK
+==================================
+
+Refine the Primary Diagnosis box:
+
+* increase padding slightly
+* allow more breathing room for description text
+* improve line-height
+* ensure text does not feel compressed
+* preserve current visual style and hierarchy
+
+Goal:
+Primary Diagnosis should feel premium and easy to read.
+
+==================================================
+4) ADD MORE VISUAL RHYTHM TO PAGE 2
+===================================
+
+Improve vertical breathing and section balance:
+
+* increase spacing between sections
+* create better visual separation between findings and footer
+* ensure page does not feel like one continuous stream of content
+
+Goal:
+Page should feel designed and easy to scan.
+
+==================================================
+5) UPGRADE FINDINGS CARDS
+=========================
+
+Polish each finding row/card:
+
+* improve internal padding
+* slightly refine background styling
+* improve spacing between title and description
+* ensure severity chips align cleanly on the right
+* make each finding feel like a mini insight card
+
+Goal:
+Findings should feel premium and consultant-grade.
+
+==================================================
+6) SOFTEN THE ADVISORY BOX
+==========================
+
+The advisory block should feel like a consultant note, not a warning alert.
+
+Refine it by:
+
+* softening visual intensity slightly
+* preserving readability
+* maintaining professional tone
+
+Goal:
+Advisory should guide, not alarm.
+
+==================================================
+7) ADD CONSULTANT RECOMMENDATION BOX
+====================================
+
+Add a small boxed section near the bottom of page 2, before the contact section:
+
+Title:
+Consultant Recommendation
+
+Content:
+A short, intelligent action-oriented recommendation generated from the top finding(s).
+
+Example style:
+“Prioritise preventive maintenance execution on critical assets within the next 30 days to reduce downtime recurrence and improve production reliability.”
+
+Goal:
+Make the report feel more expert-led and client-ready.
+
+==================================================
+8) FINAL QUALITY STANDARD
+=========================
+
+Ensure the report now feels:
+
+* premium
+* balanced
+* intentional
+* consultant-grade
+* suitable to show a paying corporate client
+
+==================================================
+9) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What changed in the footer
+2. What changed in KPI cards
+3. What changed in Primary Diagnosis
+4. How findings cards were improved
+5. How the advisory was softened
+6. What Consultant Recommendation now says
+7. Whether the report is now presentation-ready
