@@ -328,24 +328,28 @@ export default function AnalysisResults() {
         </div>
 
         {/* Report identity block */}
-        <div className="px-6 py-5">
+        <div className="px-6 pt-6 pb-5">
           {/* Eyebrow */}
           {client && (
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/70">
                 {client.name}
               </span>
               {client.industry && (
                 <>
-                  <span className="text-muted-foreground/30">·</span>
-                  <span className="text-[11px] text-muted-foreground capitalize">
+                  <span className="text-muted-foreground/25">·</span>
+                  <span className="text-[10px] font-medium text-muted-foreground/60 capitalize">
                     {client.industry.replace(/_/g, " ")}
                   </span>
                 </>
               )}
+              <span className="text-muted-foreground/25">·</span>
+              <span className="text-[10px] font-medium text-muted-foreground/50">
+                {formatDate(analysis.completedAt || analysis.createdAt)}
+              </span>
             </div>
           )}
-          <h1 className="text-[22px] font-bold tracking-tight text-foreground leading-snug mb-3" data-testid="text-analysis-title">
+          <h1 className="text-[26px] font-bold tracking-tight text-foreground leading-tight mb-4" data-testid="text-analysis-title">
             {analysis.title}
           </h1>
           {/* Status chips */}
@@ -378,9 +382,6 @@ export default function AnalysisResults() {
                 Signal-driven
               </span>
             ) : null}
-            <span className="text-[11px] text-muted-foreground/60 ml-auto">
-              {formatDate(analysis.completedAt || analysis.createdAt)}
-            </span>
           </div>
         </div>
       </div>
@@ -390,10 +391,10 @@ export default function AnalysisResults() {
         <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
           <div className="px-6 py-3 border-b bg-muted/30 flex items-center gap-2">
             <Target className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Executive Summary</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Executive Summary</p>
           </div>
-          <div className="px-6 py-5">
-            <p className="text-[15px] leading-relaxed text-foreground/90 font-medium" data-testid="text-summary">
+          <div className="px-6 py-6">
+            <p className="text-[15px] leading-[1.75] text-foreground/90 font-medium border-l-2 border-primary/25 pl-4" data-testid="text-summary">
               {analysis.summary}
             </p>
           </div>
@@ -448,67 +449,67 @@ export default function AnalysisResults() {
             <div className="flex-1 grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-3 w-full">
 
               {/* Total Issues */}
-              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Total Issues</p>
+              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl overflow-hidden shadow-sm flex flex-col">
+                <div className="h-0.5 bg-orange-500" />
+                <div className="p-5 flex flex-col gap-1 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-1">Total Issues</p>
+                  <p className="text-5xl font-black text-orange-600 dark:text-orange-400 leading-none tabular-nums" data-testid="text-findings-count">
+                    {findings.length}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-2">root causes identified</p>
                 </div>
-                <p className="text-5xl font-black text-orange-600 dark:text-orange-400 leading-none tabular-nums" data-testid="text-findings-count">
-                  {findings.length}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-1">root causes identified</p>
               </div>
 
               {/* Critical Issues */}
-              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Critical</p>
+              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl overflow-hidden shadow-sm flex flex-col">
+                <div className={`h-0.5 ${criticalCount > 0 ? "bg-red-500" : "bg-border"}`} />
+                <div className="p-5 flex flex-col gap-1 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-1">Critical</p>
+                  <p className={`text-5xl font-black leading-none tabular-nums ${criticalCount > 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground/40"}`}>
+                    {criticalCount}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-2">{highCount} high severity</p>
                 </div>
-                <p className="text-5xl font-black text-red-600 dark:text-red-400 leading-none tabular-nums">
-                  {criticalCount}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-1">{highCount} high severity</p>
               </div>
 
               {/* Saving Opportunities */}
-              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Savings Found</p>
+              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl overflow-hidden shadow-sm flex flex-col">
+                <div className={`h-0.5 ${costSavings.length > 0 ? "bg-emerald-500" : "bg-border"}`} />
+                <div className="p-5 flex flex-col gap-1 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-1">Savings Found</p>
+                  <p className={`text-5xl font-black leading-none tabular-nums ${costSavings.length > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/40"}`} data-testid="text-savings-count">
+                    {costSavings.length}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    {predictions.length > 0 ? `${predictions.length} risk forecast${predictions.length !== 1 ? "s" : ""}` : "opportunities"}
+                  </p>
                 </div>
-                <p className="text-5xl font-black text-emerald-600 dark:text-emerald-400 leading-none tabular-nums" data-testid="text-savings-count">
-                  {costSavings.length}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {predictions.length > 0 ? `${predictions.length} risk forecast${predictions.length !== 1 ? "s" : ""}` : "opportunities"}
-                </p>
               </div>
 
-              {/* Primary Category */}
-              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl p-4 shadow-sm flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <div className={`w-1.5 h-1.5 rounded-full ${
-                    primaryCategory === "Money" ? "bg-amber-500" :
-                    primaryCategory === "Manpower" ? "bg-blue-500" :
-                    primaryCategory === "Materials" ? "bg-purple-500" :
-                    primaryCategory === "Machinery" ? "bg-slate-500" : "bg-muted-foreground"
-                  }`} />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Lead Category</p>
+              {/* Lead Category */}
+              <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl overflow-hidden shadow-sm flex flex-col">
+                <div className={`h-0.5 ${
+                  primaryCategory === "Money" ? "bg-amber-500" :
+                  primaryCategory === "Manpower" ? "bg-blue-500" :
+                  primaryCategory === "Materials" ? "bg-purple-500" :
+                  primaryCategory === "Machinery" ? "bg-slate-500" : "bg-border"
+                }`} />
+                <div className="p-5 flex flex-col gap-1 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-1">Lead Category</p>
+                  {primaryCategory ? (
+                    <>
+                      <p className={`text-2xl font-black leading-tight ${fourMColors[primaryCategory as FourMCategory]?.text ?? "text-foreground"}`}>
+                        {primaryCategory}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-2">highest-impact 4M domain</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-black text-muted-foreground/30 leading-tight">—</p>
+                      <p className="text-[11px] text-muted-foreground mt-2">no findings yet</p>
+                    </>
+                  )}
                 </div>
-                {primaryCategory ? (
-                  <>
-                    <p className={`text-2xl font-black leading-tight ${fourMColors[primaryCategory as FourMCategory]?.text ?? "text-foreground"}`}>
-                      {primaryCategory}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-1">highest-impact 4M domain</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-2xl font-black text-muted-foreground/40 leading-tight">—</p>
-                    <p className="text-[11px] text-muted-foreground mt-1">no findings yet</p>
-                  </>
-                )}
               </div>
 
             </div>
@@ -566,7 +567,7 @@ export default function AnalysisResults() {
                 style={{ borderLeftWidth: "4px", borderLeftColor: severityBorderColor }}
               >
                 {/* Card header band */}
-                <div className="px-5 pt-4 pb-3 border-b border-border/60 flex items-start gap-3">
+                <div className="px-5 pt-4 pb-3 border-b border-border/60 bg-muted/20 flex items-start gap-3">
                   <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/40 pt-0.5 shrink-0 w-7 text-right">
                     {String(idx + 1).padStart(2, "0")}
                   </span>
@@ -855,12 +856,17 @@ export default function AnalysisResults() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
-                <ArrowRight className="w-5 h-5 text-muted-foreground" />
+            <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-6 py-8 text-center">
+              <div className="w-10 h-10 rounded-xl border border-border bg-background flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <ArrowRight className="w-4.5 h-4.5 text-muted-foreground/60" style={{ width: "1.125rem", height: "1.125rem" }} />
               </div>
-              <p className="text-sm text-muted-foreground">No causal chain available for this analysis.</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Run a Deep Diagnostic with uploaded documents to generate causal chains.</p>
+              <p className="text-sm font-semibold text-foreground mb-1">Causal Chain Not Generated</p>
+              <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                Causal chains are derived from real signal extraction across uploaded operational documents. They show how individual root causes connect and compound.
+              </p>
+              <div className="mt-4 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground/60 bg-muted/40 border border-border/50 px-3 py-1 rounded-full">
+                <span>Available with Deep Diagnostic + Document Upload</span>
+              </div>
             </div>
           )}
         </div>
@@ -946,14 +952,17 @@ export default function AnalysisResults() {
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
-              <DollarSign className="w-5 h-5 text-muted-foreground/40" />
+          <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-6 py-8 text-center">
+            <div className="w-10 h-10 rounded-xl border border-border bg-background flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <DollarSign className="w-4.5 h-4.5 text-muted-foreground/60" style={{ width: "1.125rem", height: "1.125rem" }} />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">Financial impact data unavailable</p>
-            <p className="text-xs text-muted-foreground/60 mt-1 max-w-xs leading-relaxed">
-              Run a Deep Diagnostic with uploaded financial documents to generate cost impact analysis.
+            <p className="text-sm font-semibold text-foreground mb-1">Financial Impact Not Quantified</p>
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
+              Financial impact data is generated from uploaded Finance, Maintenance, or Production records. This includes downtime losses, scrap costs, and total estimated impact.
             </p>
+            <div className="mt-4 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground/60 bg-muted/40 border border-border/50 px-3 py-1 rounded-full">
+              <span>Available with Deep Diagnostic + Financial Documents</span>
+            </div>
           </div>
         )}
         </div>

@@ -1,0 +1,154 @@
+Final UI authority pass for the Analysis Results page.
+
+IMPORTANT:
+
+* Do NOT touch backend logic
+* Do NOT change data structures
+* Do NOT remove any existing sections
+* This is the LAST focused UI polish pass before we move on
+
+Target file:
+Likely client/src/pages/admin/analysis-results.tsx
+(and only directly related presentational components if needed)
+
+==================================================
+GOAL
+====
+
+The page is now usable and much cleaner, but it still feels too light, too safe, and not authoritative enough.
+
+Upgrade it so it feels:
+
+* more premium
+* more high-trust
+* more executive
+* more expensive
+* more like a serious consulting intelligence product
+
+Do NOT redesign everything.
+Do NOT overcomplicate it.
+This should be a focused authority / trust / polish pass only.
+
+==================================================
+
+1. STRENGTHEN THE TOP SECTION
+   ==================================================
+
+The top of the page still opens too quietly.
+
+Upgrade the top report area so it feels more important and more premium.
+
+Improve:
+
+* title presence
+* metadata hierarchy
+* spacing
+* badge placement
+* overall “report header” feel
+
+Goal:
+The page should immediately feel like a serious analysis report.
+
+==================================================
+2) MAKE KPI CARDS FEEL STRONGER
+===============================
+
+The KPI cards are clean, but still too timid.
+
+Upgrade them so they feel:
+
+* more important
+* more executive
+* more decision-grade
+
+Improve:
+
+* visual weight
+* number prominence
+* label clarity
+* spacing and framing
+
+Goal:
+These should feel like strategic dashboard cards, not lightweight summary boxes.
+
+==================================================
+3) UPGRADE FINDINGS TO FEEL MORE AUTHORITATIVE
+==============================================
+
+The Findings section is still underpowered.
+
+Improve findings so they feel like:
+
+* real diagnostic conclusions
+* higher-value insight cards
+* stronger root cause outputs
+
+Improve:
+
+* title emphasis
+* card presence
+* spacing
+* hierarchy
+* severity/category labeling
+* consultant-grade readability
+
+Goal:
+Findings should become one of the strongest sections on the page.
+
+==================================================
+4) IMPROVE EMPTY STATES
+=======================
+
+Current empty states feel too dead and slightly “missing.”
+
+Improve the empty states for:
+
+* Causal Chain
+* Financial Impact
+* any other null / unavailable MGD sections
+
+Goal:
+No-data sections should still feel intentional, polished, and professional.
+
+They should communicate:
+
+* what this section is
+* why it may be unavailable
+* that the system is still functioning properly
+
+==================================================
+5) INCREASE SECTION AUTHORITY / HIERARCHY
+=========================================
+
+Improve section headers and visual hierarchy so the page feels more structured and premium.
+
+Goal:
+The page should feel more composed, more important, and more deliberate.
+
+==================================================
+6) KEEP IT RESTRAINED
+=====================
+
+Do NOT overdesign.
+Do NOT clutter.
+Do NOT make it flashy.
+
+Target feel:
+
+* premium
+* high-trust
+* polished
+* executive
+* consultant-grade
+
+==================================================
+7) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What changed in the top report area
+2. How KPI cards were strengthened
+3. How Findings were upgraded
+4. How empty states were improved
+5. Whether this is now the final polished version before moving on
