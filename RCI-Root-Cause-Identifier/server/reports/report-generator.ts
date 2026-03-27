@@ -849,7 +849,7 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
           }
 
           // Ensure cursor is past the card
-          doc.y = Math.max(doc.y, cardY + MIN_CARD_H) + 10;
+          doc.y = Math.max(doc.y, cardY + MIN_CARD_H) + 7;
         });
       }
 
@@ -1150,20 +1150,20 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
           : fallbackRec;
 
         const MIN_REC_H = 80;
-        ensureSpace(MIN_REC_H + 20);
-        doc.y += 20;
+        ensureSpace(MIN_REC_H + 16);
+        doc.y += 12;
         const recY = doc.y;
 
-        // Container — light secondary tint
-        doc.roundedRect(ml, recY, pw, MIN_REC_H, 5).fill(C.secondary + "09");
-        doc.roundedRect(ml, recY, pw, MIN_REC_H, 5)
-           .stroke(C.secondary + "33").lineWidth(0.6);
-        // Left accent strip
-        doc.roundedRect(ml, recY, 4, MIN_REC_H, 2).fill(C.secondary);
+        // Container — warm off-white, feels like premium notepaper
+        doc.roundedRect(ml, recY, pw, MIN_REC_H, 4).fill("#f8f7f4");
+        doc.roundedRect(ml, recY, pw, MIN_REC_H, 4)
+           .stroke("#ddd9d2").lineWidth(0.5);
+        // Left accent strip — muted slate, not a loud brand colour
+        doc.roundedRect(ml, recY, 4, MIN_REC_H, 2).fill(C.muted);
 
         const rlx = ml + 18;
-        // Eyebrow
-        doc.fontSize(7).fillColor(C.secondary).font("Helvetica-Bold");
+        // Eyebrow — muted slate label
+        doc.fontSize(7).fillColor(C.muted).font("Helvetica-Bold");
         doc.text("CONSULTANT RECOMMENDATION", rlx, recY + 12, {
           width: pw - 22, characterSpacing: 0.8,
         });
@@ -1186,11 +1186,11 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       // ─────────────────────────────────────────────────────────────────
       // CLOSING CTA
       // ─────────────────────────────────────────────────────────────────
-      ensureSpace(60);
-      doc.y += 14;
+      ensureSpace(55);
+      doc.y += 10;
       doc.moveTo(ml, doc.y).lineTo(ml + pw, doc.y)
          .strokeColor(C.border).lineWidth(0.5).stroke();
-      doc.y += 12;
+      doc.y += 10;
 
       doc.fontSize(11).fillColor(C.primary).font("Helvetica-Bold");
       doc.text("Contact EDX for Implementation Support", ml, doc.y);
@@ -1206,36 +1206,40 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       doc.text("consulting@edx.com  ·  www.edx-consulting.com", ml);
 
       // ─────────────────────────────────────────────────────────────────
-      // FOOTER — every page, three-zone layout
-      // Left: brand | Centre: confidentiality | Right: page number
+      // FOOTER — body pages only (cover page has its own footer above)
+      // Three zones: Left brand | Centre confidentiality | Right page num
       // ─────────────────────────────────────────────────────────────────
       const range = doc.bufferedPageRange();
-      for (let i = range.start; i < range.start + range.count; i++) {
+      const totalPages = range.count - 1; // body pages only (exclude cover)
+
+      for (let i = range.start + 1; i < range.start + range.count; i++) {
         doc.switchToPage(i);
-        const fzW    = pw / 3;
-        const footerY = ph - mb - 20;
+        const fzW     = pw / 3;
+        // Pin to a fixed distance from the page bottom edge — well clear of content
+        const footerY = ph - mb - 18;
 
-        // Rule — slightly more breathing room above footer
-        doc.moveTo(ml, footerY - 4)
-           .lineTo(ml + pw, footerY - 4)
-           .strokeColor(C.border).lineWidth(0.5).stroke();
+        // Thin rule above the footer band
+        doc.moveTo(ml, footerY - 6)
+           .lineTo(ml + pw, footerY - 6)
+           .strokeColor(C.border).lineWidth(0.4).stroke();
 
-        // Left — brand name
+        // LEFT — brand (bold) + optional website (light, same Y offset)
         doc.fontSize(7).fillColor(C.muted).font("Helvetica-Bold");
         doc.text("EDX Consulting", ml, footerY, { width: fzW });
 
-        // Centre — confidentiality (centred)
+        // CENTRE — confidentiality label only, no multi-line
         doc.fontSize(6.5).fillColor(C.muted).font("Helvetica");
         doc.text(
-          "CONFIDENTIAL & PROPRIETARY",
+          "Confidential & Proprietary",
           ml + fzW, footerY,
-          { width: fzW, align: "center", characterSpacing: 0.4 }
+          { width: fzW, align: "center" }
         );
 
-        // Right — page number (right-aligned)
-        doc.fontSize(7).fillColor(C.muted).font("Helvetica");
+        // RIGHT — Ref ID on first body page, page number on all
+        const bodyPageNum = i - range.start; // 1-based body page index
+        doc.fontSize(6.5).fillColor(C.muted).font("Helvetica");
         doc.text(
-          `Page ${i - range.start + 1} of ${range.count}`,
+          `Page ${bodyPageNum} of ${totalPages}`,
           ml + fzW * 2, footerY,
           { width: fzW, align: "right" }
         );

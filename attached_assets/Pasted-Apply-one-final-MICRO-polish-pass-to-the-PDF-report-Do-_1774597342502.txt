@@ -1,0 +1,97 @@
+Apply one final MICRO polish pass to the PDF report.
+
+Do NOT redesign the report.
+Do NOT change logic.
+Do NOT change section order.
+Do NOT touch backend diagnostics.
+This is a final presentation cleanup pass only.
+
+==================================================
+
+1. FIX FOOTER PROPERLY (FINAL)
+   ==================================================
+
+The footer is still visually broken and cluttered.
+
+Replace the current footer layout with a much cleaner three-zone structure:
+
+LEFT:
+
+* EDX Consulting
+* optional small website line if space allows
+
+CENTER:
+
+* Confidential & Proprietary
+* page number only if needed
+
+RIGHT:
+
+* Ref ID
+* Generated date
+
+Rules:
+
+* no overlapping text
+* no stacked clutter
+* no multi-line collision
+* ensure strong bottom margin so nothing sits too low
+* keep it elegant, minimal, and premium
+
+Goal:
+Footer should feel invisible, clean, and professional.
+
+==================================================
+2) SOFTEN CONSULTANT RECOMMENDATION BOX
+=======================================
+
+Keep the Consultant Recommendation section, but refine its visual tone.
+
+Adjust:
+
+* background from strong alert yellow to softer cream / pale advisory tone
+* preserve readability
+* keep title prominent
+* keep left accent if helpful, but make it elegant rather than loud
+
+Goal:
+It should feel like premium consultant guidance, not a warning notice.
+
+==================================================
+3) IMPROVE PAGE COMPRESSION / FLOW
+==================================
+
+Reduce unnecessary vertical whitespace so content uses page space more intelligently.
+
+Focus on:
+
+* spacing between savings cards
+* spacing above recommendation box
+* spacing before contact section
+* any overly large vertical gaps that cause weak page flow
+
+Goal:
+Make the report feel tighter, more intentional, and more premium without looking cramped.
+
+==================================================
+4) FINAL QUALITY CHECK
+======================
+
+After implementation, confirm:
+
+1. Footer is now fully clean with no overlap
+2. Consultant Recommendation is visually softer
+3. Page flow is tighter and more premium
+4. PDF is now presentation-ready for client-facing use
+
+==================================================
+5) DO NOT OVERDESIGN
+====================
+
+Do not add more visual noise.
+Do not add more colors.
+Do not add more boxes unless necessary.
+This is a restraint pass, not a creativity pass.
+
+The goal is:
+clean, premium, consultant-grade.
