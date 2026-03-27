@@ -289,127 +289,120 @@ export default function AnalysisResults() {
   };
 
   return (
-    <div className="p-6 space-y-10">
+    <div className="p-6 space-y-8">
 
       {/* ── HEADER ─────────────────────────────────────────────────── */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         <Link href={`/admin/clients/${analysis.clientId}`}>
-          <Button variant="ghost" size="icon" className="mt-1 shrink-0" data-testid="button-back">
-            <ArrowLeft className="w-5 h-5" />
+          <Button variant="ghost" size="icon" className="shrink-0 mt-0.5" data-testid="button-back">
+            <ArrowLeft className="w-4 h-4" />
           </Button>
         </Link>
+
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground leading-tight" data-testid="text-analysis-title">
+          {/* Eyebrow — client name + industry */}
+          {client && (
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                {client.name}
+              </span>
+              {client.industry && (
+                <>
+                  <span className="text-muted-foreground/30">·</span>
+                  <span className="text-[11px] text-muted-foreground capitalize">
+                    {client.industry.replace(/_/g, " ")}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Primary title */}
+          <h1 className="text-2xl font-bold tracking-tight text-foreground leading-snug" data-testid="text-analysis-title">
             {analysis.title}
           </h1>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2">
-            {client && (
-              <span className="text-base text-muted-foreground font-medium">{client.name}</span>
-            )}
-            <span className="text-muted-foreground/40 hidden sm:inline">·</span>
-            <Badge variant="outline" className="capitalize text-xs px-2.5 py-0.5">
+
+          {/* Meta row */}
+          <div className="flex flex-wrap items-center gap-2 mt-2.5">
+            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md ${
+              analysis.analysisType === "deep"
+                ? "bg-primary/10 text-primary"
+                : "bg-muted text-muted-foreground"
+            }`}>
               {analysis.analysisType === "deep" ? "Deep Diagnostic" : "Quick Analysis"}
-            </Badge>
-            <Badge
-              variant={analysis.status === "completed" ? "default" : "secondary"}
-              className="capitalize text-xs px-2.5 py-0.5"
-            >
-              {analysis.status}
-            </Badge>
-            {analysis.confidence && (
-              <Badge
-                variant={analysis.confidence === "preliminary" ? "secondary" : analysis.confidence === "low" ? "outline" : "default"}
-                className="text-xs px-2.5 py-0.5"
-                data-testid="badge-confidence"
-              >
-                {analysis.confidence === "preliminary" ? "Preliminary" : analysis.confidence === "low" ? "Low Confidence" : "Substantiated"}
-              </Badge>
-            )}
-            <span className="text-xs text-muted-foreground">{formatDate(analysis.createdAt)}</span>
+            </span>
+
+            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md ${
+              analysis.status === "completed"
+                ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
+                : "bg-muted text-muted-foreground"
+            }`} data-testid="text-mode-indicator">
+              {analysis.status === "completed"
+                ? <CheckCircle2 className="w-3 h-3" />
+                : <Clock className="w-3 h-3" />}
+              <span className="capitalize">{analysis.status}</span>
+            </span>
+
+            {analysis.isMockMode ? (
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400 font-medium" data-testid="text-mock-mode">
+                <AlertCircle className="w-3 h-3" />
+                Baseline — pattern mode
+              </span>
+            ) : analysis.analysisMode === "evidence-enriched" ? (
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium" data-testid="text-signal-mode">
+                <CheckCircle2 className="w-3 h-3" />
+                Signal-driven
+              </span>
+            ) : null}
+
+            <span className="text-[11px] text-muted-foreground ml-auto">
+              {formatDate(analysis.completedAt || analysis.createdAt)}
+            </span>
           </div>
         </div>
+
+        {/* Action buttons */}
         <div className="flex items-center gap-2 shrink-0">
           {analysis.caseId && (
             <Link href={`/admin/cases/${analysis.caseId}`}>
               <Button variant="outline" size="sm" data-testid="button-view-case">
-                <FolderOpen className="w-4 h-4 mr-2" />
+                <FolderOpen className="w-3.5 h-3.5 mr-1.5" />
                 View Case
               </Button>
             </Link>
           )}
           <Button
             size="sm"
-            className={`font-semibold transition-all ${
-              isDownloading ? "opacity-80" : ""
-            } ${
-              analysis.status !== "completed"
-                ? "opacity-50 cursor-not-allowed"
-                : ""
-            }`}
             onClick={handleDownloadReport}
             disabled={analysis.status !== "completed" || isDownloading}
             data-testid="button-download-report"
-            title={
-              analysis.status !== "completed"
-                ? "Report available once analysis is complete"
-                : "Download PDF report"
-            }
+            title={analysis.status !== "completed" ? "Report available once analysis is complete" : "Download PDF report"}
+            className={`gap-1.5 ${isDownloading ? "opacity-80" : ""}`}
           >
             {isDownloading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating PDF…
-              </>
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating…</>
             ) : (
-              <>
-                <Download className="w-4 h-4 mr-2" />
-                Download Report
-              </>
+              <><Download className="w-3.5 h-3.5" />Download Report</>
             )}
           </Button>
         </div>
       </div>
 
-      {/* ── MODE INDICATOR ─────────────────────────────────────────── */}
-      <Card className="border-l-4 border-l-primary bg-primary/[0.03]" data-testid="card-mode-indicator">
-        <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex items-center gap-2.5 flex-1">
-            <Shield className="w-4 h-4 text-primary shrink-0" />
-            <span className="text-sm font-semibold" data-testid="text-mode-indicator">
-              {analysis.analysisMode === "baseline"
-                ? "Baseline — Preliminary Pattern Analysis"
-                : "Deep Diagnostic — Evidence-Enriched Analysis"}
-            </span>
-          </div>
-          {analysis.isMockMode ? (
-            <div className="flex items-center gap-1.5 text-muted-foreground" data-testid="text-mock-mode">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span className="text-xs">Baseline pattern mode. Upload documents for signal-driven analysis.</span>
-            </div>
-          ) : analysis.analysisMode === "evidence-enriched" ? (
-            <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400" data-testid="text-signal-mode">
-              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-              <span className="text-xs">Document-derived signals active.</span>
-            </div>
-          ) : null}
-        </div>
-      </Card>
-
       {/* ── EXECUTIVE SUMMARY ──────────────────────────────────────── */}
       {analysis.summary && (
-        <Card className="border-l-4 border-l-blue-500 bg-blue-50/40 dark:bg-blue-950/20">
-          <div className="p-6">
-            <div className="flex items-center gap-2.5 mb-3">
-              <Target className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
-              <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
-                Executive Summary
-              </h2>
+        <div className="rounded-xl border border-border/70 bg-card p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+              <Target className="w-4 h-4 text-primary" />
             </div>
-            <p className="text-sm leading-relaxed text-foreground/80 pl-7" data-testid="text-summary">
-              {analysis.summary}
-            </p>
+            <div className="flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Executive Summary</p>
+              <p className="text-sm leading-relaxed text-foreground/85" data-testid="text-summary">
+                {analysis.summary}
+              </p>
+            </div>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* ── HERO: HEALTH + KEY METRICS ─────────────────────────────── */}
@@ -514,11 +507,13 @@ export default function AnalysisResults() {
       {/* ── CAUSAL CHAIN ───────────────────────────────────────────── */}
       <Card data-testid="card-causal-chain">
         <div className="p-6">
-          <div className="flex items-center gap-2.5 mb-5">
-            <ArrowRight className="w-5 h-5 text-muted-foreground shrink-0" />
-            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
-              Causal Chain
-            </h2>
+          <div className="flex items-center justify-between pb-3 border-b mb-5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
+              <h2 className="text-base font-bold text-foreground tracking-tight">Causal Chain</h2>
+            </div>
           </div>
           {mgd?.causalChains?.length > 0 ? (
             <div className="space-y-4">
@@ -551,12 +546,14 @@ export default function AnalysisResults() {
 
 
       <div>
-        <div className="flex items-center gap-2.5 mb-5">
-          <AlertTriangle className="w-5 h-5 text-muted-foreground shrink-0" />
-          <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
-            Diagnostic Findings
-          </h2>
-          <span className="ml-auto text-xs text-muted-foreground">{findings.length} finding{findings.length !== 1 ? "s" : ""}</span>
+        <div className="flex items-center justify-between pb-3 border-b mb-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+            <h2 className="text-base font-bold text-foreground tracking-tight">Diagnostic Findings</h2>
+          </div>
+          <span className="text-xs text-muted-foreground">{findings.length} finding{findings.length !== 1 ? "s" : ""} identified</span>
         </div>
         <div className="space-y-5">
           {findings.map((finding, idx) => {
@@ -723,12 +720,14 @@ export default function AnalysisResults() {
 
       {costSavings.length > 0 && (
         <div>
-          <div className="flex items-center gap-2.5 mb-5">
-            <DollarSign className="w-5 h-5 text-muted-foreground shrink-0" />
-            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
-              Cost Saving Opportunities
-            </h2>
-            <span className="ml-auto text-xs text-muted-foreground">{costSavings.length} identified</span>
+          <div className="flex items-center justify-between pb-3 border-b mb-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+                <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
+              <h2 className="text-base font-bold text-foreground tracking-tight">Cost Saving Opportunities</h2>
+            </div>
+            <span className="text-xs text-muted-foreground">{costSavings.length} identified</span>
           </div>
           <div className="space-y-4">
             {costSavings.map((opp, idx) => (
@@ -777,12 +776,14 @@ export default function AnalysisResults() {
 
       {predictions.length > 0 && (
         <div>
-          <div className="flex items-center gap-2.5 mb-5">
-            <TrendingUp className="w-5 h-5 text-muted-foreground shrink-0" />
-            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
-              Risk Predictions
-            </h2>
-            <span className="ml-auto text-xs text-muted-foreground" data-testid="text-predictions-count">{predictions.length} forecast{predictions.length !== 1 ? "s" : ""}</span>
+          <div className="flex items-center justify-between pb-3 border-b mb-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
+              <h2 className="text-base font-bold text-foreground tracking-tight">Risk Predictions</h2>
+            </div>
+            <span className="text-xs text-muted-foreground" data-testid="text-predictions-count">{predictions.length} forecast{predictions.length !== 1 ? "s" : ""}</span>
           </div>
           <div className="space-y-4">
             {predictions.map((pred, idx) => {
@@ -841,11 +842,15 @@ export default function AnalysisResults() {
 
       {/* FINANCIAL IMPACT */}
       <Card className="overflow-hidden" data-testid="card-financial-impact">
-        <div className="px-6 pt-6 pb-1 flex items-center gap-2.5">
-          <DollarSign className="w-5 h-5 text-muted-foreground shrink-0" />
-          <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">Financial Impact</h2>
+        <div className="px-6 pt-5 pb-3 border-b flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+              <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+            <h2 className="text-base font-bold text-foreground tracking-tight">Financial Impact</h2>
+          </div>
         </div>
-        <div className="p-6 pt-4">
+        <div className="p-6">
         {mgd?.financialImpact ? (
           <div className="space-y-4">
             {mgd.financialImpact.estimatedSeverity && (
@@ -915,7 +920,15 @@ export default function AnalysisResults() {
             )}
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm">Not available</p>
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
+              <DollarSign className="w-5 h-5 text-muted-foreground/40" />
+            </div>
+            <p className="text-sm font-medium text-muted-foreground">Financial impact data unavailable</p>
+            <p className="text-xs text-muted-foreground/60 mt-1 max-w-xs leading-relaxed">
+              Run a Deep Diagnostic with uploaded financial documents to generate cost impact analysis.
+            </p>
+          </div>
         )}
         </div>
       </Card>
@@ -923,11 +936,13 @@ export default function AnalysisResults() {
       {/* TRANSFORMATION ROADMAP */}
       {mgd?.roadmap && (
         <Card data-testid="card-roadmap">
-          <div className="px-6 pt-6 pb-1 flex items-center gap-2.5">
-            <Map className="w-5 h-5 text-muted-foreground shrink-0" />
-            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">Transformation Roadmap</h2>
+          <div className="px-6 pt-5 pb-3 border-b flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+              <Map className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+            <h2 className="text-base font-bold text-foreground tracking-tight">Transformation Roadmap</h2>
           </div>
-          <div className="p-6 pt-4">
+          <div className="p-6">
           {Array.isArray(mgd.roadmap) ? (
             <div className="space-y-3">
               {mgd.roadmap.map((step: any, i: number) => (
@@ -988,11 +1003,13 @@ export default function AnalysisResults() {
       {/* INDUSTRY BENCHMARKS */}
       {mgd?.benchmarks && (
         <Card data-testid="card-benchmarks">
-          <div className="px-6 pt-6 pb-1 flex items-center gap-2.5">
-            <BarChart2 className="w-5 h-5 text-muted-foreground shrink-0" />
-            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">Industry Benchmarks</h2>
+          <div className="px-6 pt-5 pb-3 border-b flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+              <BarChart2 className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+            <h2 className="text-base font-bold text-foreground tracking-tight">Industry Benchmarks</h2>
           </div>
-          <div className="p-6 pt-4">
+          <div className="p-6">
           {Array.isArray(mgd.benchmarks) && mgd.benchmarks.length > 0 ? (
             <div className="space-y-3">
               {mgd.benchmarks.map((bm: any, i: number) => (
@@ -1042,11 +1059,13 @@ export default function AnalysisResults() {
       {/* MGD COST SAVINGS */}
       {mgd?.savings && (
         <Card data-testid="card-mgd-savings">
-          <div className="px-6 pt-6 pb-1 flex items-center gap-2.5">
-            <Layers className="w-5 h-5 text-muted-foreground shrink-0" />
-            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">MGD Cost Savings</h2>
+          <div className="px-6 pt-5 pb-3 border-b flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+              <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+            <h2 className="text-base font-bold text-foreground tracking-tight">MGD Cost Savings</h2>
           </div>
-          <div className="p-6 pt-4">
+          <div className="p-6">
           {Array.isArray(mgd.savings) && mgd.savings.length > 0 ? (
             <div className="space-y-3">
               {mgd.savings.map((s: any, i: number) => (

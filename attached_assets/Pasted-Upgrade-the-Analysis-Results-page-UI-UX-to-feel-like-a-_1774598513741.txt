@@ -1,0 +1,146 @@
+Upgrade the Analysis Results page UI/UX to feel like a premium consulting intelligence dashboard.
+
+IMPORTANT:
+
+* Do NOT change backend logic
+* Do NOT change data structures
+* Do NOT remove any current analysis sections
+* This is a presentation / UI hierarchy upgrade only
+
+Target file:
+Likely client/src/pages/admin/analysis-results.tsx
+(and any directly related UI components if needed)
+
+==================================================
+GOAL
+====
+
+Transform the current Analysis Results page from a functional system output page into a polished, consultant-grade executive dashboard.
+
+The page should feel:
+
+* premium
+* structured
+* easy to scan
+* insight-led
+* client-demo ready
+
+==================================================
+PHASE A — STRUCTURE & HIERARCHY ONLY
+====================================
+
+Focus ONLY on layout, hierarchy, spacing, typography, and section presentation.
+
+Do NOT yet redesign charts or add new backend features.
+
+==================================================
+
+1. UPGRADE THE PAGE HEADER
+   ==================================================
+
+Improve the top section of the Analysis Results page.
+
+Refine:
+
+* report title hierarchy
+* client name / industry / mode / status presentation
+* action buttons (View Case / Download Report)
+* spacing and visual balance
+
+Goal:
+The top of the page should immediately feel premium and executive-facing.
+
+==================================================
+2) REDESIGN THE KPI / OVERVIEW STRIP
+====================================
+
+Upgrade the top metrics area into a more polished dashboard strip.
+
+Improve presentation of:
+
+* Operational Health
+* Total Issues
+* Critical Issues
+* Savings Opportunities
+* Primary Category (if available)
+
+Goal:
+These should feel like executive scorecards, not plain stat boxes.
+
+==================================================
+3) IMPROVE SECTION HIERARCHY
+============================
+
+Standardize all section headers and spacing.
+
+Apply a more premium visual system to sections like:
+
+* Executive Summary
+* Causal Chain
+* Findings
+* Cost Saving Opportunities
+* Predictions
+* Financial Impact
+* Operational Health
+* Roadmap / Benchmarks (if present)
+
+Improve:
+
+* spacing between sections
+* title treatment
+* card padding
+* rhythm and scanability
+
+Goal:
+The whole page should feel intentionally designed, not just stacked content.
+
+==================================================
+4) IMPROVE EMPTY STATES
+=======================
+
+Where data is missing (e.g. health score, causal chain, financial impact), make the empty state feel elegant and intentional.
+
+Goal:
+Missing data should feel graceful, not broken or unfinished.
+
+==================================================
+5) IMPROVE TYPOGRAPHY & VISUAL RHYTHM
+=====================================
+
+Refine:
+
+* font size hierarchy
+* line spacing
+* label vs. content distinction
+* whitespace balance
+* consistency of card and section layout
+
+Goal:
+The page should read like a premium SaaS + consulting hybrid product.
+
+==================================================
+6) KEEP IT CLEAN
+================
+
+Do NOT overdesign.
+Do NOT add visual clutter.
+Do NOT add random colors or effects.
+
+The target aesthetic is:
+
+* premium
+* modern
+* restrained
+* professional
+
+==================================================
+7) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What changed in the page header
+2. What changed in the KPI strip
+3. What changed in section hierarchy
+4. What empty states were improved
+5. Whether the page now feels structurally premium and client-demo ready
