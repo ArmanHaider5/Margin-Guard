@@ -3214,9 +3214,16 @@ async function generateManufacturingV2Result(
     healthScore
   } = unified.mgdAnalysis;
 
+  // Use the consulting narrative's summary as the displayed executive summary.
+  // For baseline (no documents), prepend a brief preliminary note so the user
+  // understands the confidence level before the assessment content.
+  const displayedSummary = isBaseline
+    ? `Initial assessment — upload operational documents to strengthen confidence. ${narrative?.summary ?? findingsPhrase}`
+    : (narrative?.summary ?? `${summaryPrefix} ${findingsPhrase}`);
+
   return {
     findings: finalFindings,
-    summary: `${summaryPrefix} ${findingsPhrase}`,
+    summary: displayedSummary,
     costSavingOpportunities,
     predictions,
     analysisMode: isBaseline ? "baseline" : "evidence-enriched",

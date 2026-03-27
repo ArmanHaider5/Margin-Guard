@@ -1,0 +1,128 @@
+Now that causal chains, health score, and financial impact engines are working, the next priority is improving OUTPUT QUALITY and CONSULTANT-GRADE CONSISTENCY.
+
+IMPORTANT:
+
+* Do NOT change UI
+* Do NOT add new features
+* Do NOT expand system scope
+* Focus only on improving the quality, clarity, and consistency of outputs
+
+==================================================
+GOAL
+====
+
+Upgrade the system from:
+"technically correct outputs"
+
+to:
+"consultant-grade, high-trust, decision-ready outputs"
+
+==================================================
+
+1. IMPROVE NARRATIVE QUALITY
+   ==================================================
+
+Upgrade:
+
+* executive summary
+* root cause descriptions
+* recommendations
+
+Make them:
+
+* more specific
+* more business-relevant
+* less generic
+* more natural
+
+Avoid:
+
+* robotic phrasing
+* repetitive sentence structures
+* vague language
+
+==================================================
+2) IMPROVE CAUSAL CHAIN READABILITY
+===================================
+
+Causal chains currently output as step sequences.
+
+Improve how they are expressed so they read like real-world cause-effect logic.
+
+Example:
+Instead of:
+"maintenance backlog → machine breakdown → downtime"
+
+Support transforming into:
+"Accumulated maintenance backlog is leading to repeated machine breakdowns, resulting in increased downtime and operational disruption."
+
+Goal:
+Chains should feel insightful, not mechanical.
+
+==================================================
+3) IMPROVE RECOMMENDATION QUALITY
+=================================
+
+Recommendations should feel:
+
+* actionable
+* specific
+* prioritised
+* realistic
+
+Avoid generic phrasing like:
+"Improve processes"
+"Enhance monitoring"
+
+Prefer:
+
+* clear actions
+* ownership hints
+* time-based suggestions (30/60/90 days)
+* operational framing
+
+==================================================
+4) ENSURE CROSS-SECTION CONSISTENCY
+===================================
+
+Ensure:
+
+* summary
+* findings
+* causal chain
+* financial impact
+
+all align into ONE coherent story.
+
+Avoid:
+
+* contradictions
+* disconnected phrasing
+* repeated generic language
+
+==================================================
+5) MAINTAIN SAFETY
+==================
+
+Do NOT:
+
+* hallucinate facts
+* invent precise numbers without evidence
+
+Prefer:
+
+* directional language
+* structured reasoning
+* clear assumptions
+
+==================================================
+6) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What was improved in narrative generation
+2. How causal chains are now expressed
+3. How recommendations were upgraded
+4. How cross-section consistency was improved
+5. Whether outputs now feel more consultant-grade

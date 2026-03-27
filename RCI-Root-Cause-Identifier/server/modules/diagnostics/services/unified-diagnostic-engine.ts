@@ -29,42 +29,42 @@ export async function runUnifiedDiagnostic({
     throw new Error("Industry model not found: " + industry);
   }
 
+  // ── Financial impact ─────────────────────────────────────────────────────
   const financialImpact = estimateFinancialImpact(signals, baseFindings);
 
-  const rootCauseTree = buildRootCauseTree(
-    baseFindings
-  );
-
+  // ── Root cause tree ──────────────────────────────────────────────────────
+  const rootCauseTree = buildRootCauseTree(baseFindings);
   const rootCauses = baseFindings;
 
+  // ── Confidence scoring ───────────────────────────────────────────────────
   const confidenceScores = calculateRootCauseConfidence(rootCauses);
 
-  const causalChains = buildCausalChains(
-    signals,
-    rootCauses
-  );
+  // ── Causal chains ────────────────────────────────────────────────────────
+  const causalChains = buildCausalChains(signals, rootCauses);
 
-  const patterns = detectRootCausePatterns(signals);
+  // ── Pattern detection ────────────────────────────────────────────────────
+  const patterns = detectRootCausePatterns(signals, rootCauses);
 
-  const benchmarks = evaluateIndustryBenchmarks(
-    kpiData,
-    industryModel.benchmarks
-  );
+  // ── Industry benchmarks ──────────────────────────────────────────────────
+  const benchmarks = evaluateIndustryBenchmarks(kpiData, industryModel.benchmarks);
 
-  const healthScore = calculateOperationalHealthScore(
-    rootCauses,
-    benchmarks.benchmarkResults
-  );
+  // ── Health score ─────────────────────────────────────────────────────────
+  const healthScore = calculateOperationalHealthScore(rootCauses, benchmarks.benchmarkResults);
 
+  // ── Cost savings ─────────────────────────────────────────────────────────
   const savings = estimateCostSavings(rootCauseTree, causalChains);
 
-  const roadmap = generateTransformationRoadmap(
-    rootCauseTree.primaryCause
-  );
+  // ── Transformation roadmap ───────────────────────────────────────────────
+  // Pass findings so the roadmap engine can use category-based fallback
+  const roadmap = generateTransformationRoadmap(rootCauseTree.primaryCause, rootCauses);
 
+  // ── Consulting narrative + executive summary ─────────────────────────────
+  // Pass findings and healthScore for richer, context-aware prose generation
   const narrative = generateConsultingNarrative(
     rootCauseTree,
-    causalChains
+    causalChains,
+    rootCauses,
+    healthScore,
   );
 
   const mgdAnalysis = {
@@ -77,18 +77,18 @@ export async function runUnifiedDiagnostic({
     roadmap,
     narrative,
     confidenceScores,
-    financialImpact
+    financialImpact,
   };
 
   logDiagnosticTrace({
     signals,
     rootCauses,
     causalChains,
-    recommendations: Array.isArray(savings) ? savings : []
+    recommendations: Array.isArray(savings) ? savings : [],
   });
 
   return {
     findings: baseFindings,
-    mgdAnalysis
+    mgdAnalysis,
   };
 }
