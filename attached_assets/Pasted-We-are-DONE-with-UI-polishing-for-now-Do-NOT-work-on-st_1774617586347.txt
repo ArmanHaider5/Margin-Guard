@@ -1,0 +1,140 @@
+We are DONE with UI polishing for now.
+
+Do NOT work on styling or visual redesign anymore.
+
+Next priority:
+Improve the actual intelligence output quality and reduce “empty-value” sections in Deep Diagnostic results.
+
+IMPORTANT:
+
+* Do NOT redesign the frontend
+* Do NOT remove existing UI sections
+* Focus only on backend output quality / diagnostic completeness
+* Goal: make Deep Diagnostic results feel more complete, intelligent, and consultant-grade
+
+==================================================
+GOAL
+====
+
+Improve the system so the following sections populate more reliably and meaningfully when enough evidence exists:
+
+* Causal Chain
+* Operational Health Score
+* Financial Impact
+* Any other MGD-derived sections that frequently return null / unavailable
+
+The current issue is not UI anymore.
+The issue is that some important result sections still feel empty or underpowered even when uploaded documents contain useful evidence.
+
+We need to improve diagnostic completeness and output usefulness.
+
+==================================================
+
+1. IMPROVE CAUSAL CHAIN GENERATION
+   ==================================================
+
+Strengthen the logic so causal chains are generated more reliably when the findings and evidence clearly imply an operational sequence.
+
+Goal:
+Instead of frequently returning “No causal chain available”, infer a reasonable causal chain whenever evidence supports one.
+
+Examples:
+
+* Maintenance backlog → machine breakdown → downtime → overtime → missed delivery
+* Material shortage → line stoppage → schedule instability → customer delay
+* Rework / scrap → throughput loss → overtime → margin erosion
+
+Requirement:
+Only generate chains when evidence is sufficient.
+Do NOT hallucinate nonsense.
+But do be more willing to build a practical business chain when the evidence clearly points to one.
+
+==================================================
+2) IMPROVE OPERATIONAL HEALTH SCORE
+===================================
+
+Health score should not frequently fall back to unavailable / 0% if enough signals exist.
+
+Improve the scoring logic so a health score can be calculated whenever there is enough signal density from:
+
+* findings
+* KPI trends
+* document evidence
+* recurrence / severity patterns
+
+Goal:
+Produce a believable 0–100 operational health score more often, with sensible narrative interpretation.
+
+Example labels:
+
+* 80–100 = Stable
+* 60–79 = Watchlist
+* 40–59 = At Risk
+* 0–39 = Critical
+
+==================================================
+3) IMPROVE FINANCIAL IMPACT GENERATION
+======================================
+
+Financial Impact should populate more often when findings clearly imply cost exposure.
+
+Improve the logic so financial impact can be estimated from:
+
+* downtime
+* overtime
+* scrap / rework
+* missed delivery
+* maintenance backlog
+* recurring breakdowns
+* inventory issues
+
+Goal:
+Return a structured, believable financial impact summary more often, even if precise RM figures are not always possible.
+
+Example useful outputs:
+
+* Severity: Medium / High / Critical
+* Cost drivers: Downtime, Overtime, Rework, Delayed Delivery
+* Affected categories: Machinery, Materials, Manpower
+* Estimated exposure band if possible
+
+==================================================
+4) IMPROVE CONSULTANT-GRADE OUTPUT QUALITY
+==========================================
+
+Improve the usefulness and specificity of generated outputs:
+
+* summaries
+* recommendations
+* root cause framing
+* business consequence wording
+
+Goal:
+Make the outputs sound less generic and more like real consulting observations.
+
+==================================================
+5) IMPORTANT SAFETY RULE
+========================
+
+Do NOT fake precision.
+Do NOT invent numbers unless the system has a valid basis.
+Prefer:
+
+* severity bands
+* exposure ranges
+* directional estimates
+* structured business impact summaries
+
+over fake exactness.
+
+==================================================
+6) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What logic was improved for causal chain generation
+2. How health score generation was strengthened
+3. How financial impact generation was improved
+4. Which outputs should now populate more often
+5. Whether Deep Diagnostic results should now feel more complete and intelligent

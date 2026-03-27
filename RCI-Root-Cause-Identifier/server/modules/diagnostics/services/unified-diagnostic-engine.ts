@@ -29,7 +29,7 @@ export async function runUnifiedDiagnostic({
     throw new Error("Industry model not found: " + industry);
   }
 
-  const financialImpact = estimateFinancialImpact(signals);
+  const financialImpact = estimateFinancialImpact(signals, baseFindings);
 
   const rootCauseTree = buildRootCauseTree(
     baseFindings

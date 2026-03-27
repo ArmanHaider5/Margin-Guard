@@ -885,17 +885,30 @@ export default function AnalysisResults() {
         <div className="p-6">
         {mgd?.financialImpact ? (
           <div className="space-y-4">
-            {mgd.financialImpact.estimatedSeverity && (
+            {/* Confidence / severity badge row */}
+            {(mgd.financialImpact.confidenceLevel || mgd.financialImpact.estimatedSeverity) && (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground w-40 shrink-0">Estimated Severity</span>
-                <Badge variant={
-                  mgd.financialImpact.estimatedSeverity === "critical" ? "destructive" :
-                  mgd.financialImpact.estimatedSeverity === "high" ? "default" : "secondary"
-                }>
-                  {mgd.financialImpact.estimatedSeverity}
-                </Badge>
+                <span className="text-sm text-muted-foreground w-40 shrink-0">Estimate Confidence</span>
+                {mgd.financialImpact.confidenceLevel ? (
+                  <Badge variant={
+                    mgd.financialImpact.confidenceLevel === "estimated"  ? "default" :
+                    mgd.financialImpact.confidenceLevel === "indicative" ? "secondary" : "outline"
+                  }>
+                    {mgd.financialImpact.confidenceLevel === "estimated"  ? "Signal-Driven Estimate" :
+                     mgd.financialImpact.confidenceLevel === "indicative" ? "Indicative Range" : "Modelled Estimate"}
+                  </Badge>
+                ) : (
+                  <Badge variant={
+                    mgd.financialImpact.estimatedSeverity === "critical" ? "destructive" :
+                    mgd.financialImpact.estimatedSeverity === "high" ? "default" : "secondary"
+                  }>
+                    {mgd.financialImpact.estimatedSeverity}
+                  </Badge>
+                )}
               </div>
             )}
+
+            {/* Legacy: affected categories */}
             {mgd.financialImpact.affectedCategories?.length > 0 && (
               <div className="flex items-start gap-3">
                 <span className="text-sm text-muted-foreground w-40 shrink-0">Affected Categories</span>
@@ -909,6 +922,8 @@ export default function AnalysisResults() {
                 </div>
               </div>
             )}
+
+            {/* Legacy: cost drivers */}
             {mgd.financialImpact.costDrivers?.length > 0 && (
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Cost Drivers</p>
@@ -922,32 +937,43 @@ export default function AnalysisResults() {
                 </ul>
               </div>
             )}
-            {mgd.financialImpact.downtimeLoss != null && (
+
+            {/* Cost breakdown grid */}
+            {(mgd.financialImpact.totalLoss != null && mgd.financialImpact.totalLoss > 0) && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t">
-                {mgd.financialImpact.downtimeLoss != null && (
+                {/* Downtime loss */}
+                {(mgd.financialImpact.downtimeLoss ?? 0) > 0 && (
                   <div className="rounded-lg bg-muted/50 p-3">
                     <p className="text-xs text-muted-foreground">Downtime Loss</p>
                     <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.downtimeLoss).toLocaleString()}</p>
                   </div>
                 )}
-                {mgd.financialImpact.scrapLoss != null && (
+                {/* Quality loss (new) or legacy scrap loss */}
+                {((mgd.financialImpact.qualityLoss ?? mgd.financialImpact.scrapLoss) ?? 0) > 0 && (
                   <div className="rounded-lg bg-muted/50 p-3">
-                    <p className="text-xs text-muted-foreground">Scrap Loss</p>
-                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.scrapLoss).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Quality / Scrap Loss</p>
+                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.qualityLoss ?? mgd.financialImpact.scrapLoss).toLocaleString()}</p>
                   </div>
                 )}
-                {mgd.financialImpact.overtimeCost != null && (
+                {/* Workforce loss (new) or legacy overtime cost */}
+                {((mgd.financialImpact.workforceLoss ?? mgd.financialImpact.overtimeCost) ?? 0) > 0 && (
                   <div className="rounded-lg bg-muted/50 p-3">
-                    <p className="text-xs text-muted-foreground">Overtime Cost</p>
-                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.overtimeCost).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Workforce / Overtime</p>
+                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.workforceLoss ?? mgd.financialImpact.overtimeCost).toLocaleString()}</p>
                   </div>
                 )}
-                {mgd.financialImpact.totalLoss != null && (
-                  <div className="rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-3">
-                    <p className="text-xs text-orange-600 dark:text-orange-400">Total Estimated Loss</p>
-                    <p className="font-bold text-sm text-orange-700 dark:text-orange-300">RM {Number(mgd.financialImpact.totalLoss).toLocaleString()}</p>
+                {/* Supply chain loss (new) */}
+                {(mgd.financialImpact.supplyChainLoss ?? 0) > 0 && (
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Supply Chain Loss</p>
+                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.supplyChainLoss).toLocaleString()}</p>
                   </div>
                 )}
+                {/* Total */}
+                <div className="rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-3">
+                  <p className="text-xs text-orange-600 dark:text-orange-400">Total Estimated Loss</p>
+                  <p className="font-bold text-sm text-orange-700 dark:text-orange-300">RM {Number(mgd.financialImpact.totalLoss).toLocaleString()}</p>
+                </div>
               </div>
             )}
           </div>
