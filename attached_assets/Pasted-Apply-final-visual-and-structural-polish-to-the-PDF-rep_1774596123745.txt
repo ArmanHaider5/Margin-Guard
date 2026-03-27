@@ -1,0 +1,118 @@
+Apply final visual and structural polish to the PDF report to elevate it to premium consulting-grade quality.
+
+Do NOT change any diagnostic logic or data.
+Do NOT change report sections.
+This is purely refinement of layout, spacing, typography, and presentation.
+
+==================================================
+
+1. IMPROVE COVER PAGE UTILISATION
+   ==================================================
+
+The cover page currently has excessive empty space below KPI cards.
+
+Add a new section below the KPI cards:
+
+Option:
+"Primary Diagnosis" or "Key Insight"
+
+Content:
+
+* short 1–2 sentence summary of the most critical issue
+* derived from findings or narrative
+
+Goal:
+Make page 1 feel complete, intentional, and valuable.
+
+==================================================
+2) STRENGTHEN SECTION HEADERS
+=============================
+
+Improve visual hierarchy of section titles:
+
+* slightly increase font size
+* increase font weight
+* add consistent spacing below headers
+* optionally add subtle divider line under each header
+
+Goal:
+Sections should feel clearly separated and easy to scan.
+
+==================================================
+3) CLEAN UP FINDINGS LAYOUT
+===========================
+
+Improve readability of diagnostic findings:
+
+* increase spacing between findings
+* slightly increase line height for descriptions
+* ensure consistent alignment of all elements
+* ensure left visual bar aligns perfectly across items
+
+Goal:
+Findings should feel structured and easy to read.
+
+==================================================
+4) STANDARDISE SEVERITY BADGES
+==============================
+
+Fix severity chip layout:
+
+* ensure consistent size and padding
+* align all chips to the same right column
+* avoid stretched or uneven widths
+* improve spacing between chip and text
+
+Goal:
+Badges should look clean, consistent, and professional.
+
+==================================================
+5) REFINE ADVISORY BANNER
+=========================
+
+Tone down the baseline advisory block:
+
+* slightly reduce background intensity
+* use softer border color
+* ensure padding and margins are balanced
+
+Goal:
+Advisory should inform, not visually dominate the page.
+
+==================================================
+6) IMPROVE TYPOGRAPHY
+=====================
+
+Refine text readability:
+
+* increase line height slightly for body text
+* ensure consistent paragraph spacing
+* avoid cramped text blocks
+* maintain clean alignment across all sections
+
+Goal:
+Document should feel calm, readable, and executive-friendly.
+
+==================================================
+7) FINAL QUALITY CHECK
+======================
+
+Ensure:
+
+* no overlapping elements
+* consistent spacing across all sections
+* alignment is visually clean
+* report feels balanced from top to bottom
+
+==================================================
+8) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What was added to the cover page
+2. What changed in section headers
+3. How findings readability improved
+4. How severity badges were standardized
+5. How advisory banner was refined
+6. Whether the report now feels visually balanced

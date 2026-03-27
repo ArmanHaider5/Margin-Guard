@@ -88,42 +88,42 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
 
       // Section divider with numbered pill + title
       // Captures startY before drawing so pill and title share the same baseline.
-      const SECTION_TOP_GAP    = 20; // space above section header
-      const SECTION_RULE_GAP   =  8; // space between rule and first content
-      const SECTION_PILL_H     = 18;
-      const SECTION_PILL_W     = 26;
+      const SECTION_TOP_GAP    = 26; // space above section header
+      const SECTION_RULE_GAP   = 12; // space between rule and first content
+      const SECTION_PILL_H     = 20;
+      const SECTION_PILL_W     = 28;
 
       const sectionHeader = (num: string, title: string) => {
-        ensureSpace(70);
+        ensureSpace(75);
         doc.y += SECTION_TOP_GAP;
         const startY = doc.y;
 
         // Filled pill
         doc.save();
         doc.roundedRect(ml, startY, SECTION_PILL_W, SECTION_PILL_H, 3).fill(C.secondary);
-        doc.fontSize(8).fillColor(C.white).font("Helvetica-Bold");
+        doc.fontSize(8.5).fillColor(C.white).font("Helvetica-Bold");
         doc.text(
           num.padStart(2, "0"),
-          ml, startY + 4,
+          ml, startY + 5,
           { width: SECTION_PILL_W, align: "center" }
         );
         doc.restore();
 
-        // Title — same Y baseline as pill
-        doc.fontSize(14).fillColor(C.primary).font("Helvetica-Bold");
-        doc.text(title, ml + SECTION_PILL_W + 8, startY + 1, {
-          width: pw - SECTION_PILL_W - 8,
+        // Title — same Y baseline as pill, slightly larger and bolder
+        doc.fontSize(15.5).fillColor(C.primary).font("Helvetica-Bold");
+        doc.text(title, ml + SECTION_PILL_W + 10, startY, {
+          width: pw - SECTION_PILL_W - 10,
         });
 
         // Advance cursor to below whichever element is taller
-        const afterY = Math.max(doc.y, startY + SECTION_PILL_H + 4);
+        const afterY = Math.max(doc.y, startY + SECTION_PILL_H + 5);
         doc.y = afterY;
 
-        // Horizontal rule
+        // Horizontal rule — slightly heavier
         doc.moveTo(ml, doc.y)
            .lineTo(ml + pw, doc.y)
            .strokeColor(C.border)
-           .lineWidth(0.5)
+           .lineWidth(0.75)
            .stroke();
 
         doc.y += SECTION_RULE_GAP;
@@ -143,9 +143,9 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
         doc.text(
           String(text ?? ""),
           ml + indentLeft, doc.y,
-          { width: pw - indentLeft, lineGap: 3, align: "justify" }
+          { width: pw - indentLeft, lineGap: 4.5, align: "justify" }
         );
-        doc.y += 10;
+        doc.y += 14;
       };
 
       // ─────────────────────────────────────────────────────────────────────
@@ -279,7 +279,7 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       doc.fontSize(7.5).font("Helvetica").fillColor("#f1f5f9");
       doc.text("Critical / High Issues", b3x, by + 35, { width: bw, align: "center" });
 
-      doc.y = by + bh + 18;
+      doc.y = by + bh + 22;
 
       // Health score on cover (optional)
       if (typeof healthScore === "number") {
@@ -289,11 +289,64 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
         doc.fontSize(8.5).fillColor(C.muted).font("Helvetica");
         doc.text("Operational Health Score", ml, doc.y, { width: pw, align: "center" });
         doc.y += 14;
-        // Score centred using two adjacent texts
         const scoreStr = `${healthScore} / 100  —  ${hslbl}`;
         doc.fontSize(20).fillColor(hsc).font("Helvetica-Bold");
         doc.text(scoreStr, ml, doc.y, { width: pw, align: "center" });
-        doc.y += 24;
+        doc.y += 26;
+      }
+
+      // ── Primary Diagnosis block ───────────────────────────────────────
+      // The single most important insight — makes the cover feel complete
+      // and immediately valuable rather than trailing off after the KPIs.
+      {
+        // Pick the most severe finding or the first finding
+        const primaryFinding =
+          findings.find(f => f.severity === "critical") ||
+          findings.find(f => f.severity === "high") ||
+          findings[0];
+
+        // Build a 1–2 line insight string
+        const insightText =
+          mgd?.narrative?.keyInsight ||
+          mgd?.narrative?.primaryDiagnosis ||
+          (primaryFinding
+            ? String(primaryFinding.description || primaryFinding.title || "").slice(0, 220)
+            : data.analysis.summary
+              ? String(data.analysis.summary).slice(0, 220)
+              : null);
+
+        if (insightText) {
+          const pdBlockH = 70;
+          const pdY      = doc.y;
+
+          // Outer card — navy background for premium feel
+          doc.roundedRect(ml, pdY, pw, pdBlockH, 5).fill(C.primary);
+
+          // Amber top accent strip
+          doc.roundedRect(ml, pdY, pw, 4, 2).fill(C.accent);
+
+          // "PRIMARY DIAGNOSIS" label
+          doc.fontSize(7).fillColor(C.accent).font("Helvetica-Bold");
+          doc.text("PRIMARY DIAGNOSIS", ml + 14, pdY + 12, {
+            width: pw - 28, characterSpacing: 1,
+          });
+
+          // Finding title (if available) or insight heading
+          const diagTitle = primaryFinding
+            ? String(primaryFinding.title || "Key Finding")
+            : "Key Insight";
+          doc.fontSize(11).fillColor(C.white).font("Helvetica-Bold");
+          doc.text(diagTitle, ml + 14, pdY + 23, { width: pw - 28 });
+
+          // Insight body
+          const insightSnippet = insightText.length > 160
+            ? insightText.slice(0, 157) + "…"
+            : insightText;
+          doc.fontSize(8.5).fillColor("#cbd5e1").font("Helvetica");
+          doc.text(insightSnippet, ml + 14, pdY + 38, { width: pw - 28, lineGap: 2 });
+
+          doc.y = Math.max(doc.y, pdY + pdBlockH) + 16;
+        }
       }
 
       // ── Cover footer ──────────────────────────────────────────────────
@@ -329,27 +382,27 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       if (isBaseline) {
         const noticeY  = doc.y;
         const noticeH  = 54;
-        // Soft amber background
-        doc.roundedRect(ml, noticeY, pw, noticeH, 4).fill("#fffbeb");
-        // Amber left strip
-        doc.roundedRect(ml, noticeY, 4, noticeH, 2).fill(C.warning);
-        // Fine border
+        // Very soft warm cream — informative, not alarming
+        doc.roundedRect(ml, noticeY, pw, noticeH, 4).fill("#fefce8");
+        // Muted amber left strip
+        doc.roundedRect(ml, noticeY, 4, noticeH, 2).fill(C.warning + "cc");
+        // Barely-there border
         doc.roundedRect(ml, noticeY, pw, noticeH, 4)
-           .stroke(C.warning + "55").lineWidth(0.5);
+           .stroke(C.warning + "30").lineWidth(0.5);
 
         const nx = ml + 14;
-        doc.fontSize(9).fillColor(C.warning).font("Helvetica-Bold");
+        doc.fontSize(8.5).fillColor(C.warning).font("Helvetica-Bold");
         doc.text("Advisory  —  Baseline Pattern Analysis", nx, noticeY + 9, {
           width: pw - 20,
         });
-        doc.fontSize(8.5).fillColor("#92400e").font("Helvetica");
+        doc.fontSize(8.5).fillColor("#78350f").font("Helvetica");
         doc.text(
           "This report was prepared using baseline pattern analysis without uploaded documents. "
           + "For evidence-enriched findings, upload operational data to enable deep signal-driven diagnostics.",
-          nx, doc.y + 3,
-          { width: pw - 22, lineGap: 2 }
+          nx, doc.y + 4,
+          { width: pw - 22, lineGap: 2.5 }
         );
-        doc.y = Math.max(doc.y, noticeY + noticeH) + 16;
+        doc.y = Math.max(doc.y, noticeY + noticeH) + 18;
       }
 
       // ─────────────────────────────────────────────────────────────────
@@ -412,76 +465,83 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
         sectionHeader(String(sNum++), "Diagnostic Findings");
 
         findings.forEach((finding, idx) => {
-          const MIN_ROW_H = 72;
-          ensureSpace(MIN_ROW_H + 16);
+          const MIN_ROW_H = 84;
+          ensureSpace(MIN_ROW_H + 18);
 
           const catColor = FOURM[finding.fourMCategory] || C.muted;
           const sevColor = SEV[String(finding.severity || "medium")] || C.muted;
           const rowStartY = doc.y;
 
-          // Left category colour bar — draw with minimum height first
+          // Subtle background for alternating rows — improves scannability
+          if (idx % 2 === 0) {
+            doc.rect(ml, rowStartY, pw, MIN_ROW_H).fill(C.light);
+          }
+
+          // Left category colour bar
           doc.rect(ml, rowStartY, 4, MIN_ROW_H).fill(catColor);
 
-          // Index circle
+          // Index circle — vertically centred
           doc.save();
-          doc.circle(ml + 20, rowStartY + 12, 9).fill(C.primary);
-          doc.fontSize(8).fillColor(C.white).font("Helvetica-Bold");
+          doc.circle(ml + 21, rowStartY + 14, 9.5).fill(C.primary);
+          doc.fontSize(7.5).fillColor(C.white).font("Helvetica-Bold");
           doc.text(
             String(idx + 1).padStart(2, "0"),
-            ml + 12, rowStartY + 7,
+            ml + 13, rowStartY + 9,
             { width: 16, align: "center" }
           );
           doc.restore();
 
-          // Chip badges — drawn at absolute position top-right before title
-          const chipW  = 54;
-          const chip1X = ml + pw - chipW * 2 - 6;
-          const chip2X = ml + pw - chipW;
-          const chipY  = rowStartY + 3;
-          const chipH  = 14;
+          // Chip badges — fixed 60px width, consistently right-aligned
+          // Both chips are identical width so column never shifts
+          const chipW  = 60;
+          const chipGap = 6;
+          const chip2X = ml + pw - chipW;                 // category chip (rightmost)
+          const chip1X = chip2X - chipW - chipGap;        // severity chip
+          const chipY  = rowStartY + 6;
+          const chipH  = 15;
 
           // Severity chip
           doc.save();
-          doc.roundedRect(chip1X, chipY, chipW, chipH, 2).fill(sevColor + "18");
+          doc.roundedRect(chip1X, chipY, chipW, chipH, 2).fill(sevColor + "15");
           doc.roundedRect(chip1X, chipY, chipW, chipH, 2)
-             .stroke(sevColor + "55").lineWidth(0.4);
+             .stroke(sevColor + "44").lineWidth(0.5);
           doc.fontSize(6.5).fillColor(sevColor).font("Helvetica-Bold");
           doc.text(
             safeUpper(finding.severity, "medium"),
-            chip1X, chipY + 4,
+            chip1X, chipY + 4.5,
             { width: chipW, align: "center" }
           );
           doc.restore();
 
           // Category chip
           doc.save();
-          doc.roundedRect(chip2X, chipY, chipW, chipH, 2).fill(catColor + "18");
+          doc.roundedRect(chip2X, chipY, chipW, chipH, 2).fill(catColor + "15");
           doc.roundedRect(chip2X, chipY, chipW, chipH, 2)
-             .stroke(catColor + "55").lineWidth(0.4);
+             .stroke(catColor + "44").lineWidth(0.5);
           doc.fontSize(6.5).fillColor(catColor).font("Helvetica-Bold");
           doc.text(
             safeUpper(finding.fourMCategory, "—"),
-            chip2X, chipY + 4,
+            chip2X, chipY + 4.5,
             { width: chipW, align: "center" }
           );
           doc.restore();
 
-          // Content area starts to the right of the left bar + index circle
-          const cx   = ml + 36;
-          const cw   = pw - 36 - chipW * 2 - 8;
+          // Content area — left of the two chips
+          const cx = ml + 40;
+          const cw = pw - 40 - chipW * 2 - chipGap - 8;
 
-          doc.y = rowStartY + 4;
+          doc.y = rowStartY + 7;
 
           // Title
           doc.fontSize(11).fillColor(C.primary).font("Helvetica-Bold");
           doc.text(String(finding.title || "Untitled Finding"), cx, doc.y, { width: cw });
 
-          // Description
-          doc.y += 3;
-          const desc = String(finding.description || "").slice(0, 240)
-            + (String(finding.description || "").length > 240 ? "…" : "");
-          doc.fontSize(9).fillColor(C.text).font("Helvetica");
-          doc.text(desc, cx, doc.y, { width: pw - 40, lineGap: 2 });
+          // Description — more line height, slightly larger
+          doc.y += 4;
+          const desc = String(finding.description || "").slice(0, 260)
+            + (String(finding.description || "").length > 260 ? "…" : "");
+          doc.fontSize(9.5).fillColor(C.text).font("Helvetica");
+          doc.text(desc, cx, doc.y, { width: pw - 48, lineGap: 3 });
 
           // Meta line
           const costStr = finding.estimatedCostImpact
@@ -489,13 +549,13 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
           const evStr   = (finding as any).evidenceCount
             ? `  ·  ${(finding as any).evidenceCount} signal${(finding as any).evidenceCount !== 1 ? "s" : ""}` : "";
           if (costStr || evStr) {
-            doc.y += 3;
+            doc.y += 4;
             doc.fontSize(7.5).fillColor(C.muted).font("Helvetica");
-            doc.text(`${costStr}${evStr}`, cx, doc.y, { width: pw - 40 });
+            doc.text(`${costStr}${evStr}`, cx, doc.y, { width: pw - 48 });
           }
 
           // Advance cursor at least past minimum row height, then add gap
-          doc.y = Math.max(doc.y, rowStartY + MIN_ROW_H) + 12;
+          doc.y = Math.max(doc.y, rowStartY + MIN_ROW_H) + 14;
         });
       }
 
