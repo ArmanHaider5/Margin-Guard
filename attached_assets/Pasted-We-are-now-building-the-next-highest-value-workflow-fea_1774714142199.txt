@@ -1,0 +1,150 @@
+We are now building the next highest-value workflow feature:
+
+# OBJECTIVE
+
+Add a **Case Notes / Consultant Notes Layer** to the diagnostic system.
+
+This is not a redesign.
+This is a workflow feature that allows consultants to add structured human notes to each diagnostic case.
+
+---
+
+# GOAL
+
+For every analysis / case, consultants should be able to add and view notes directly inside the analysis results page.
+
+These notes should support:
+
+* consultant interpretation
+* follow-up observations
+* internal comments
+* implementation progress notes
+
+This should make the platform usable as a **real consulting workspace**, not just a generated report viewer.
+
+---
+
+# PART A — BACKEND
+
+## Requirement
+
+Add a new notes field to the analysis record (or equivalent persistence model) in the simplest safe way.
+
+Each note should support:
+
+```ts
+{
+  id: string
+  content: string
+  type: "consultant" | "follow_up" | "implementation" | "internal"
+  createdAt: string
+  createdBy?: string
+}
+```
+
+You may store this as:
+
+* a JSON array on the analysis record, OR
+* a related notes table/collection if already cleaner in this codebase
+
+Choose the safest, lowest-risk option.
+
+---
+
+## API requirements
+
+### 1) GET existing notes
+
+When loading an analysis, include:
+
+```ts
+notes?: Note[]
+```
+
+### 2) POST add note
+
+Add a route to append a new note to an analysis
+
+### 3) DELETE note
+
+Allow deleting a note by note id
+
+No editing yet — create + delete only
+
+---
+
+# PART B — FRONTEND
+
+## Target
+
+Add a new section on the analysis results page:
+
+# Section title:
+
+**Consultant Notes**
+
+## Placement:
+
+Below Progress Snapshot if present.
+If no Progress Snapshot exists, place below Executive Summary and above the Health / KPI block.
+
+---
+
+## UI requirements
+
+### Display
+
+Each note card should show:
+
+* note type badge
+* timestamp
+* note content
+* optional createdBy label if available
+
+### Add note
+
+At the top of the section, include:
+
+* note type dropdown
+* multiline text area
+* “Add Note” button
+
+### Delete note
+
+Each note card should have a small delete action
+
+---
+
+# UX / VISUAL STYLE
+
+* Clean, minimal, professional
+* Should feel like a private consultant workspace
+* Not flashy
+* Must visually distinguish note types:
+
+  * consultant = blue
+  * follow_up = amber
+  * implementation = green
+  * internal = slate/gray
+
+---
+
+# SAFETY RULES
+
+* Do not redesign the whole page
+* Do not break existing analysis loading
+* Do not affect report generation
+* Do not touch diagnostic engine logic
+* Must render safely if notes is empty or undefined
+
+---
+
+# WHAT TO RETURN
+
+After implementation, return:
+
+1. Exact files changed
+2. Where notes are stored
+3. New API endpoints added
+4. Where Consultant Notes appears in the UI
+5. Whether old analyses render safely with no notes

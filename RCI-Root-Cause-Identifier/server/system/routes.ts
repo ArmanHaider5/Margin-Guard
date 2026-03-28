@@ -863,6 +863,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ── CONSULTANT NOTES ─────────────────────────────────────────────────────
+
+  // POST /api/admin/analyses/:id/notes — append a new note
+  app.post("/api/admin/analyses/:id/notes", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { content, type } = req.body ?? {};
+      const allowedTypes = ["consultant", "follow_up", "implementation", "internal"];
+      if (!content || typeof content !== "string" || content.trim().length === 0) {
+        return res.status(400).json({ error: "Note content is required" });
+      }
+      if (!allowedTypes.includes(type)) {
+        return res.status(400).json({ error: "Invalid note type" });
+      }
+      const note = {
+        id: crypto.randomUUID(),
+        content: content.trim(),
+        type,
+        createdAt: new Date().toISOString(),
+        createdBy: req.user?.claims?.email ?? req.user?.claims?.username ?? undefined,
+      };
+      const updated = await storage.addAnalysisNote(req.params.id, note);
+      if (!updated) return res.status(404).json({ error: "Analysis not found" });
+      res.json(note);
+    } catch (error) {
+      console.error("Add note error:", error);
+      res.status(500).json({ error: "Failed to add note" });
+    }
+  });
+
+  // DELETE /api/admin/analyses/:id/notes/:noteId — remove a note
+  app.delete("/api/admin/analyses/:id/notes/:noteId", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const updated = await storage.deleteAnalysisNote(req.params.id, req.params.noteId);
+      if (!updated) return res.status(404).json({ error: "Analysis not found" });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete note error:", error);
+      res.status(500).json({ error: "Failed to delete note" });
+    }
+  });
+
   // Create a new analysis
   app.post("/api/admin/clients/:clientId/analyses", isAuthenticated, isAdmin, async (req: any, res) => {
     try {

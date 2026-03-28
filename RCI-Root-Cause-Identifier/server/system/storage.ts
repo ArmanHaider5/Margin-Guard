@@ -24,6 +24,7 @@ import {
   type AnalysisFinding,
   type CostSavingOpportunity,
   type RecurrencePrediction,
+  type ConsultantNote,
   type ExtractedDocumentData,
   type FourMCategory,
   type DiagnosticCategory,
@@ -510,6 +511,7 @@ export class DatabaseStorage implements IStorage {
     confidence: ClientAnalysis["confidence"];
     isMockMode: boolean;
     completedAt: Date;
+    notes: ConsultantNote[];
   }>): Promise<ClientAnalysis | undefined> {
     const [analysis] = await db
       .update(clientAnalyses)
@@ -517,6 +519,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(clientAnalyses.id, id))
       .returning();
     return analysis;
+  }
+
+  async addAnalysisNote(id: string, note: ConsultantNote): Promise<ClientAnalysis | undefined> {
+    const current = await this.getClientAnalysis(id);
+    if (!current) return undefined;
+    const existing: ConsultantNote[] = (current as any).notes ?? [];
+    return this.updateClientAnalysis(id, { notes: [...existing, note] });
+  }
+
+  async deleteAnalysisNote(id: string, noteId: string): Promise<ClientAnalysis | undefined> {
+    const current = await this.getClientAnalysis(id);
+    if (!current) return undefined;
+    const existing: ConsultantNote[] = (current as any).notes ?? [];
+    return this.updateClientAnalysis(id, { notes: existing.filter(n => n.id !== noteId) });
   }
 
   async deleteClientAnalysis(id: string): Promise<boolean> {

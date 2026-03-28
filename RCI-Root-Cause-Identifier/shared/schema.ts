@@ -159,9 +159,20 @@ export const clientAnalyses = pgTable("client_analyses", {
   confidence: varchar("confidence").$type<ConfidenceLevel>(), // "preliminary" or "substantiated"
   isMockMode: boolean("is_mock_mode").default(false), // Flag for mock mode results
   mgdAnalysis: jsonb("mgd_analysis").$type<any>(), // MGD engine output (health score, root cause tree, roadmap)
+  notes: jsonb("notes").$type<ConsultantNote[]>(), // Consultant notes (create/delete only)
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),
 });
+
+// Consultant Note — stored as a JSON array on the analysis record
+export type NoteType = "consultant" | "follow_up" | "implementation" | "internal";
+export interface ConsultantNote {
+  id: string;
+  content: string;
+  type: NoteType;
+  createdAt: string; // ISO string
+  createdBy?: string;
+}
 
 // Evidence anchor: links a finding to a specific document signal
 export interface EvidenceAnchor {

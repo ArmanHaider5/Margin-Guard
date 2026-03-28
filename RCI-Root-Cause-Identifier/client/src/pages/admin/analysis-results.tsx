@@ -1,10 +1,12 @@
 import { useParams, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowLeft, 
@@ -28,7 +30,10 @@ import {
   BarChart2,
   Layers,
   ChevronDown,
-  ChevronRight as ChevronRightIcon
+  ChevronRight as ChevronRightIcon,
+  Trash2,
+  Plus,
+  StickyNote,
 } from "lucide-react";
 import type { ClientAnalysis, Client, FourMCategory } from "@shared/schema";
 import { DiagnosticReportView } from "@/components/diagnostic-report-view";
@@ -49,6 +54,154 @@ const severityColors: Record<string, { bg: string; text: string }> = {
   high: { bg: "bg-orange-100 dark:bg-orange-900", text: "text-orange-700 dark:text-orange-300" },
   critical: { bg: "bg-red-100 dark:bg-red-900", text: "text-red-700 dark:text-red-300" },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSULTANT NOTES SECTION
+// ─────────────────────────────────────────────────────────────────────────────
+
+const NOTE_TYPE_META: Record<string, { label: string; bg: string; text: string; border: string }> = {
+  consultant:      { label: "Consultant Note",  bg: "bg-blue-50 dark:bg-blue-950/20",   text: "text-blue-700 dark:text-blue-300",   border: "border-blue-200 dark:border-blue-800" },
+  follow_up:       { label: "Follow-Up",        bg: "bg-amber-50 dark:bg-amber-950/20", text: "text-amber-700 dark:text-amber-300", border: "border-amber-200 dark:border-amber-800" },
+  implementation:  { label: "Implementation",   bg: "bg-green-50 dark:bg-green-950/20", text: "text-green-700 dark:text-green-300", border: "border-green-200 dark:border-green-800" },
+  internal:        { label: "Internal",         bg: "bg-slate-50 dark:bg-slate-950/20", text: "text-slate-600 dark:text-slate-400", border: "border-slate-200 dark:border-slate-700" },
+};
+
+function ConsultantNotesSection({ analysisId, notes }: { analysisId: string; notes: any[] }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [content, setContent] = useState("");
+  const [noteType, setNoteType] = useState<string>("consultant");
+
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/admin/analyses/${analysisId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, type: noteType }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    onSuccess: () => {
+      setContent("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/analyses", analysisId] });
+    },
+    onError: () => toast({ title: "Failed to add note", variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (noteId: string) => {
+      const res = await fetch(`/api/admin/analyses/${analysisId}/notes/${noteId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/analyses", analysisId] });
+    },
+    onError: () => toast({ title: "Failed to delete note", variant: "destructive" }),
+  });
+
+  const sortedNotes = [...(notes ?? [])].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <div className="px-6 py-3 border-b bg-muted/30 flex items-center gap-2">
+        <StickyNote className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Consultant Notes</p>
+        {sortedNotes.length > 0 && (
+          <span className="ml-auto text-[10px] text-muted-foreground/60">{sortedNotes.length} note{sortedNotes.length !== 1 ? "s" : ""}</span>
+        )}
+      </div>
+
+      <div className="px-6 py-4 space-y-4">
+        {/* Add note form */}
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Select value={noteType} onValueChange={setNoteType}>
+              <SelectTrigger className="w-44 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="consultant">Consultant Note</SelectItem>
+                <SelectItem value="follow_up">Follow-Up</SelectItem>
+                <SelectItem value="implementation">Implementation</SelectItem>
+                <SelectItem value="internal">Internal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Textarea
+            placeholder="Add a consultant note, follow-up observation, or implementation update..."
+            className="text-xs min-h-[72px] resize-none"
+            value={content}
+            onChange={e => setContent(e.target.value)}
+          />
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              disabled={!content.trim() || addMutation.isPending}
+              onClick={() => addMutation.mutate()}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Note
+            </Button>
+          </div>
+        </div>
+
+        {/* Existing notes */}
+        {sortedNotes.length > 0 && (
+          <div className="space-y-2 border-t border-border/40 pt-4">
+            {sortedNotes.map((note: any) => {
+              const meta = NOTE_TYPE_META[note.type] ?? NOTE_TYPE_META.internal;
+              return (
+                <div
+                  key={note.id}
+                  className={`rounded-lg border p-3.5 ${meta.bg} ${meta.border}`}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge className={`text-[10px] font-semibold ${meta.bg} ${meta.text} border ${meta.border}`}>
+                        {meta.label}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(note.createdAt).toLocaleDateString("en-GB", {
+                          day: "numeric", month: "short", year: "numeric",
+                        })}{" "}
+                        {new Date(note.createdAt).toLocaleTimeString("en-GB", {
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                      </span>
+                      {note.createdBy && (
+                        <span className="text-[10px] text-muted-foreground/70">· {note.createdBy}</span>
+                      )}
+                    </div>
+                    <button
+                      className="text-muted-foreground/40 hover:text-red-500 transition-colors shrink-0 mt-0.5"
+                      onClick={() => deleteMutation.mutate(note.id)}
+                      disabled={deleteMutation.isPending}
+                      title="Delete note"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">{note.content}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {sortedNotes.length === 0 && (
+          <p className="text-[11px] text-muted-foreground/50 text-center py-2">
+            No notes yet. Add the first consultant note above.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ACTION CARD — shared across all three timeframe buckets
@@ -592,6 +745,14 @@ export default function AnalysisResults() {
           </div>
         );
       })()}
+
+      {/* ── CONSULTANT NOTES ────────────────────────────────────────── */}
+      {analysis.id && (
+        <ConsultantNotesSection
+          analysisId={analysis.id}
+          notes={(analysis as any).notes ?? []}
+        />
+      )}
 
       {/* ── HERO: HEALTH + KEY METRICS ─────────────────────────────── */}
       <div
