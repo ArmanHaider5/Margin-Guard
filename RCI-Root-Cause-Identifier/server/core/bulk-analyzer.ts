@@ -1138,7 +1138,7 @@ const CATEGORY_PREDICTION_TEMPLATES: Record<FourMCategory, string[]> = {
 // ---------------------------------------------------------------------------
 function buildExplainabilityMeta(
   category: string,
-  _title: string,
+  title: string,
   diagnosticSignals: Array<{ signalId: string; category: string }>,
   concreteSignals: Array<{ rawText: string; documentName?: string; category: string }>,
   selectedSymptoms: string[],
@@ -1172,22 +1172,96 @@ function buildExplainabilityMeta(
     keywords.some(kw => s.toLowerCase().includes(kw))
   );
 
-  // Evidence items — prefer evidence anchors (non-MFG path), fall back to concrete signals (MFG V2)
-  let evidenceItems: Array<{ source: string; snippet: string; relevance: "high" | "medium" | "low" }> = [];
+  // ---------------------------------------------------------------------------
+  // Per-finding relevance filtering for evidence items
+  // Prevents multiple findings in the same category from showing identical evidence.
+  // Keyword pairs: [word that must appear in the finding title, word that must
+  // appear in the evidence snippet]. Both must match for the item to qualify.
+  // ---------------------------------------------------------------------------
+  const RELEVANCE_PAIRS: Array<[string, string]> = [
+    ["maintenance", "maintenance"],
+    ["maintenance", "preventive"],
+    ["backlog", "overdue"],
+    ["backlog", "backlog"],
+    ["backlog", "pending"],
+    ["pm", "pm"],
+    ["pm", "overdue"],
+    ["pm", "preventive"],
+    ["breakdown", "breakdown"],
+    ["breakdown", "repair"],
+    ["breakdown", "failure"],
+    ["downtime", "downtime"],
+    ["downtime", "unplanned"],
+    ["downtime", "stoppage"],
+    ["reactive", "breakdown"],
+    ["reactive", "unplanned"],
+    ["reactive", "emergency"],
+    ["compliance", "schedule"],
+    ["compliance", "overdue"],
+    ["schedule", "schedule"],
+    ["schedule", "delay"],
+    ["quality", "quality"],
+    ["quality", "scrap"],
+    ["quality", "rework"],
+    ["quality", "defect"],
+    ["scrap", "scrap"],
+    ["rework", "rework"],
+    ["inventory", "inventory"],
+    ["inventory", "stock"],
+    ["shortage", "shortage"],
+    ["supplier", "supplier"],
+    ["supplier", "delivery"],
+    ["delivery", "delivery"],
+    ["overtime", "overtime"],
+    ["fatigue", "fatigue"],
+    ["fatigue", "shift"],
+    ["fatigue", "overwork"],
+    ["skill", "operator"],
+    ["skill", "training"],
+    ["training", "training"],
+    ["knowledge", "knowledge"],
+    ["turnover", "turnover"],
+    ["cost", "cost"],
+    ["cost", "expense"],
+    ["margin", "margin"],
+    ["cost", "wages"],
+  ];
+
+  function isEvidenceRelevantToFinding(
+    findingTitle: string,
+    snippetText: string,
+  ): boolean {
+    const ft = findingTitle.toLowerCase();
+    const st = snippetText.toLowerCase();
+    return RELEVANCE_PAIRS.some(([fKw, sKw]) => ft.includes(fKw) && st.includes(sKw));
+  }
+
+  // Build the full category-scoped evidence pool first
+  type EvidenceItem = { source: string; snippet: string; relevance: "high" | "medium" | "low" };
+  let allPoolItems: EvidenceItem[] = [];
+
   if (evidenceAnchors && evidenceAnchors.length > 0) {
-    evidenceItems = evidenceAnchors.slice(0, 5).map(a => ({
+    allPoolItems = evidenceAnchors.map(a => ({
       source: a.documentName || "Document",
       snippet: a.signal || "",
       relevance: "high" as const,
     }));
   } else {
-    const catConcrete = concreteSignals.filter(s => s.category === normCat || s.category === category).slice(0, 5);
-    evidenceItems = catConcrete.map(s => ({
+    const catConcrete = concreteSignals.filter(s => s.category === normCat || s.category === category);
+    allPoolItems = catConcrete.map(s => ({
       source: s.documentName || "Document",
       snippet: (s.rawText || "").substring(0, 150),
       relevance: "high" as const,
     }));
   }
+
+  // Filter to items relevant specifically to this finding's title
+  const relevant = allPoolItems
+    .filter(item => isEvidenceRelevantToFinding(title, item.snippet))
+    .slice(0, 3);
+
+  // Fallback: if nothing matched the relevance pairs, use top 2 generic pool items
+  const evidenceItems: EvidenceItem[] = relevant.length > 0 ? relevant : allPoolItems.slice(0, 2);
 
   const confidence: "HIGH" | "MEDIUM" | "LOW" =
     (matchedSignals.length >= 2 || evidenceItems.length >= 2) ? "HIGH" :
