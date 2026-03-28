@@ -473,6 +473,126 @@ export default function AnalysisResults() {
         </div>
       )}
 
+      {/* ── PROGRESS SNAPSHOT ───────────────────────────────────────── */}
+      {(() => {
+        const pc = (analysis as any)?.progressComparison;
+        if (!pc) return null;
+
+        const hsDelta: number | undefined = pc.healthScoreDelta;
+        const fdDelta: number | undefined = pc.findingsDelta;
+        const recurring: string[] = pc.recurringFindings ?? [];
+        const newF: string[] = pc.newFindings ?? [];
+        const prevDate: string | undefined = pc.previousAnalysisDate;
+
+        const hsDeltaPositive = hsDelta != null && hsDelta > 0;
+        const hsDeltaNegative = hsDelta != null && hsDelta < 0;
+        const fdDeltaBetter = fdDelta != null && fdDelta < 0;
+        const fdDeltaWorse = fdDelta != null && fdDelta > 0;
+
+        return (
+          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+            <div className="px-6 py-3 border-b bg-muted/30 flex items-center gap-2">
+              <TrendingUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Progress Snapshot</p>
+              {prevDate && (
+                <span className="ml-auto text-[10px] text-muted-foreground/60">
+                  vs. {new Date(prevDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+              )}
+            </div>
+
+            <div className="px-6 py-4 space-y-4">
+              {/* Delta metrics row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+                {/* Health Score Delta */}
+                <div className="rounded-lg border border-border/50 bg-background/60 p-3 flex flex-col gap-0.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Health Score</p>
+                  {hsDelta != null ? (
+                    <p className={`text-2xl font-black leading-none tabular-nums ${hsDeltaPositive ? "text-emerald-600 dark:text-emerald-400" : hsDeltaNegative ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>
+                      {hsDeltaPositive ? "+" : ""}{hsDelta}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground/50 font-medium">—</p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground/60">pts change</p>
+                </div>
+
+                {/* Findings Delta */}
+                <div className="rounded-lg border border-border/50 bg-background/60 p-3 flex flex-col gap-0.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Issues</p>
+                  {fdDelta != null ? (
+                    <p className={`text-2xl font-black leading-none tabular-nums ${fdDeltaBetter ? "text-emerald-600 dark:text-emerald-400" : fdDeltaWorse ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>
+                      {fdDeltaWorse ? "+" : ""}{fdDelta}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground/50 font-medium">—</p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground/60">issues change</p>
+                </div>
+
+                {/* Recurring */}
+                <div className="rounded-lg border border-border/50 bg-background/60 p-3 flex flex-col gap-0.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Recurring</p>
+                  <p className="text-2xl font-black leading-none tabular-nums text-amber-600 dark:text-amber-400">
+                    {recurring.length}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/60">same root causes</p>
+                </div>
+
+                {/* New */}
+                <div className="rounded-lg border border-border/50 bg-background/60 p-3 flex flex-col gap-0.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">New</p>
+                  <p className={`text-2xl font-black leading-none tabular-nums ${newF.length > 0 ? "text-orange-600 dark:text-orange-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                    {newF.length}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/60">new findings</p>
+                </div>
+              </div>
+
+              {/* Recurring + New finding lists */}
+              {(recurring.length > 0 || newF.length > 0) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {recurring.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1.5">Persisting Issues</p>
+                      <div className="space-y-1">
+                        {recurring.slice(0, 3).map((title, i) => (
+                          <div key={i} className="flex items-start gap-2 text-xs text-foreground/80">
+                            <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                            {title}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {newF.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400 mb-1.5">New Findings</p>
+                      <div className="space-y-1">
+                        {newF.slice(0, 3).map((title, i) => (
+                          <div key={i} className="flex items-start gap-2 text-xs text-foreground/80">
+                            <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                            {title}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Summary sentence */}
+              {pc.summary && (
+                <p className="text-xs text-muted-foreground leading-relaxed border-t border-border/40 pt-3">
+                  {pc.summary}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── HERO: HEALTH + KEY METRICS ─────────────────────────────── */}
       <div
         className={`rounded-2xl border-2 shadow-lg overflow-hidden ${hc ? hc.border : "border-border"}`}

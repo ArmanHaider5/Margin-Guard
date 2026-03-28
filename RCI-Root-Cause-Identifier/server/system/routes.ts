@@ -23,6 +23,93 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PROGRESS COMPARISON HELPER
+// Compares two completed analyses for the same client and produces a structured
+// delta object that powers the Progress Snapshot UI section.
+// No AI dependency — fully deterministic.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _normTitle(t: string): string {
+  return (t || "").toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+function computeProgressComparison(current: any, previous: any): object {
+  const currentHealth: number | null = current.mgdAnalysis?.healthScore?.overallScore ?? null;
+  const previousHealth: number | null = previous.mgdAnalysis?.healthScore?.overallScore ?? null;
+  const healthScoreDelta = (currentHealth != null && previousHealth != null)
+    ? Math.round(currentHealth - previousHealth)
+    : undefined;
+
+  const currentFindings: any[] = current.findings ?? [];
+  const previousFindings: any[] = previous.findings ?? [];
+
+  const currentNorm = new Set(currentFindings.map(f => _normTitle(f.title)).filter(Boolean));
+  const previousNorm = new Set(previousFindings.map(f => _normTitle(f.title)).filter(Boolean));
+
+  const findingsDelta = currentFindings.length - previousFindings.length;
+
+  const recurringFindings = currentFindings
+    .filter(f => previousNorm.has(_normTitle(f.title)))
+    .map(f => f.title as string)
+    .filter(Boolean)
+    .slice(0, 5);
+
+  const resolvedFindings = previousFindings
+    .filter(f => !currentNorm.has(_normTitle(f.title)))
+    .map(f => f.title as string)
+    .filter(Boolean)
+    .slice(0, 5);
+
+  const newFindings = currentFindings
+    .filter(f => !previousNorm.has(_normTitle(f.title)))
+    .map(f => f.title as string)
+    .filter(Boolean)
+    .slice(0, 5);
+
+  const currentCats = new Set(
+    currentFindings.map(f => (f.category || f.fourMCategory) as string).filter(Boolean)
+  );
+  const previousCats = new Set(
+    previousFindings.map(f => (f.category || f.fourMCategory) as string).filter(Boolean)
+  );
+  const recurringCategories = [...currentCats].filter(c => previousCats.has(c));
+
+  // Deterministic summary sentence
+  const improved = healthScoreDelta != null && healthScoreDelta > 0;
+  const worsened = healthScoreDelta != null && healthScoreDelta < 0;
+  const catLabel = recurringCategories.length > 0 ? recurringCategories.join("/") : "key";
+
+  let summary: string;
+  if (improved && resolvedFindings.length > 0 && recurringFindings.length === 0) {
+    summary = "Operational health has improved and previous issues appear resolved. The intervention is taking effect.";
+  } else if (improved && recurringFindings.length > 0) {
+    summary = `Operational health has improved, but ${catLabel} issues remain unresolved from the previous diagnostic.`;
+  } else if (worsened && recurringFindings.length > 0) {
+    summary = `The current diagnostic shows recurring ${catLabel}-related instability with limited structural improvement since the previous assessment.`;
+  } else if (resolvedFindings.length > 0 && newFindings.length > 0) {
+    summary = "Some previous findings appear resolved, though new execution-related issues have emerged that require attention.";
+  } else if (recurringFindings.length > 0 && resolvedFindings.length === 0) {
+    summary = "The same root causes persist from the previous diagnostic. Corrective actions may not have been implemented or sustained.";
+  } else if (resolvedFindings.length > 0 && newFindings.length === 0) {
+    summary = "Previous findings appear resolved. No significant new issues have emerged since the last diagnostic.";
+  } else {
+    summary = "The current diagnostic is broadly consistent with the previous assessment. Continued monitoring is recommended.";
+  }
+
+  return {
+    previousAnalysisId: previous.id,
+    previousAnalysisDate: (previous.completedAt ?? previous.createdAt)?.toISOString?.() ?? String(previous.completedAt ?? previous.createdAt),
+    healthScoreDelta,
+    findingsDelta,
+    recurringFindings,
+    resolvedFindings,
+    newFindings,
+    recurringCategories,
+    summary,
+  };
+}
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
@@ -756,7 +843,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!analysis) {
         return res.status(404).json({ error: "Analysis not found" });
       }
-      res.json(analysis);
+
+      // Compute progress comparison if there is a previous completed analysis for this client
+      let progressComparison: object | undefined;
+      if (analysis.status === "completed" && analysis.clientId) {
+        const allForClient = await storage.getClientAnalyses(analysis.clientId);
+        const previous = allForClient.find(
+          a => a.id !== analysis.id && a.status === "completed" && a.mgdAnalysis != null
+        );
+        if (previous) {
+          progressComparison = computeProgressComparison(analysis, previous);
+        }
+      }
+
+      res.json({ ...analysis, progressComparison });
     } catch (error) {
       console.error("Get analysis error:", error);
       res.status(500).json({ error: "Failed to retrieve analysis" });

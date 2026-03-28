@@ -1,0 +1,139 @@
+We are now building the next highest-value product layer:
+
+# OBJECTIVE
+
+Add a **Cross-Analysis Comparison / Progress Tracking Layer** so the platform can compare a client’s current diagnostic against their previous completed diagnostic(s).
+
+This is not a full dashboard redesign.
+This is a **decision-support and trend intelligence feature**.
+
+---
+
+# GOAL
+
+When a client has previous completed analyses, the current analysis results page should show a compact **Progress Snapshot** section near the top.
+
+This should answer:
+
+* Are we improving or getting worse?
+* Are the same root causes recurring?
+* Has operational health improved?
+* Are risks increasing or decreasing?
+
+---
+
+# PART A — BACKEND COMPARISON LOGIC
+
+## Requirement
+
+When loading an analysis result, also compute a comparison against the **most recent previous completed analysis for the same client** (excluding the current one).
+
+Return a new object on the analysis payload:
+
+```ts id="0c07rr"
+progressComparison?: {
+  previousAnalysisId?: number | string
+  previousAnalysisDate?: string
+  healthScoreDelta?: number
+  findingsDelta?: number
+  recurringFindings?: string[]
+  resolvedFindings?: string[]
+  newFindings?: string[]
+  recurringCategories?: string[]
+  summary?: string
+}
+```
+
+---
+
+## COMPARISON RULES
+
+### 1. healthScoreDelta
+
+Current health score minus previous health score
+
+### 2. findingsDelta
+
+Current findings count minus previous findings count
+
+### 3. recurringFindings
+
+Finding titles that appear in both current and previous analyses
+
+### 4. resolvedFindings
+
+Previous findings no longer present in current analysis
+
+### 5. newFindings
+
+Current findings not present in previous analysis
+
+### 6. recurringCategories
+
+4M categories appearing in both analyses
+
+### 7. summary
+
+Generate a short deterministic summary like:
+
+* "Operational health has improved, but key Machinery issues remain unresolved."
+* "The current diagnostic shows recurring maintenance-related instability with limited structural improvement."
+* "Some previous findings appear resolved, though new execution-related issues have emerged."
+
+Keep it deterministic. No LLM dependency.
+
+---
+
+# PART B — FRONTEND UI
+
+## Target
+
+Add a new section near the top of the results page, below Executive Summary and above the Health / Stats row.
+
+## Section title:
+
+**Progress Snapshot**
+
+## Show only if:
+
+A previous completed analysis exists for this client.
+
+## Section contents:
+
+* Health change (e.g. +12 / -8)
+* Findings change (e.g. -2 issues / +1 issue)
+* Recurring Findings (up to 3)
+* New Findings (up to 3)
+* Summary sentence
+
+---
+
+# UI GUIDELINES
+
+* Compact, high-value, consultant-style
+* Must feel like “trend intelligence”, not analytics clutter
+* Green for improvement, amber/red for deterioration
+* Keep it elegant and readable
+* Do not redesign the full page
+
+---
+
+# SAFETY RULES
+
+* Do not touch PDF generation yet
+* Do not change existing diagnostic logic
+* Do not refactor unrelated engines
+* Do not break older analyses
+* If no previous completed analysis exists, hide the section completely
+
+---
+
+# WHAT TO RETURN
+
+After implementation, return:
+
+1. Exact files changed
+2. How previous analysis is selected
+3. New progressComparison object shape
+4. Where the Progress Snapshot appears in the UI
+5. Whether analyses with no prior history still render safely
