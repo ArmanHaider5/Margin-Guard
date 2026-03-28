@@ -54,6 +54,7 @@ export default function AnalysisResults() {
   const { id } = useParams();
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [expandedFindingId, setExpandedFindingId] = useState<string | null>(null);
 
   const { data: analysis, isLoading } = useQuery<ClientAnalysis>({
     queryKey: ["/api/admin/analyses", id],
@@ -567,8 +568,15 @@ export default function AnalysisResults() {
                 className={`rounded-xl border shadow-sm overflow-hidden ${severityTintBg}`}
                 style={{ borderLeftWidth: "4px", borderLeftColor: severityBorderColor }}
               >
-                {/* Card header band */}
-                <div className="px-5 pt-4 pb-3 border-b border-border/60 bg-muted/20 flex items-start gap-3">
+                {/* Card header — clicking anywhere toggles the evidence panel */}
+                <button
+                  type="button"
+                  className="w-full text-left px-5 pt-4 pb-3 border-b border-border/60 bg-muted/20 flex items-start gap-3 hover:bg-muted/30 transition-colors"
+                  onClick={() => {
+                    const fid = finding.id || String(idx);
+                    setExpandedFindingId(prev => prev === fid ? null : fid);
+                  }}
+                >
                   <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/40 pt-0.5 shrink-0 w-7 text-right">
                     {String(idx + 1).padStart(2, "0")}
                   </span>
@@ -588,14 +596,21 @@ export default function AnalysisResults() {
                           {evidenceCount} evidence signal{evidenceCount !== 1 ? "s" : ""}
                         </span>
                       )}
-                      {(finding as any).confidence && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/80 text-[11px] text-muted-foreground font-medium">
-                          {Math.round((finding as any).confidence * 100)}% confidence
+                      {(finding as any).confidence && typeof (finding as any).confidence === "string" && (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                          (finding as any).confidence === "HIGH" ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" :
+                          (finding as any).confidence === "MEDIUM" ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300" :
+                          "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                        }`}>
+                          {(finding as any).confidence === "HIGH" ? "High" : (finding as any).confidence === "MEDIUM" ? "Medium" : "Low"} confidence
                         </span>
                       )}
                     </div>
                   </div>
-                </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-muted-foreground shrink-0 mt-1 transition-transform ${expandedFindingId === (finding.id || String(idx)) ? "rotate-180" : ""}`}
+                  />
+                </button>
 
                 {/* Card body */}
                 <div className="px-5 py-4 space-y-3.5 text-sm">
@@ -697,6 +712,99 @@ export default function AnalysisResults() {
                       </p>
                     )}
                   </div>
+
+                  {/* Evidence / Explainability Panel — shown when header is clicked */}
+                  {expandedFindingId === (finding.id || String(idx)) && (
+                    <div className="border-t border-border/60 bg-muted/10 px-5 py-4 space-y-4 text-sm">
+
+                      {/* Why this was concluded */}
+                      {(finding as any).evidenceSummary && (
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                            <Shield className="w-3 h-3" /> Why This Was Concluded
+                          </p>
+                          <p className="text-muted-foreground leading-relaxed text-[13px]">{(finding as any).evidenceSummary}</p>
+                        </div>
+                      )}
+
+                      {/* Matched Symptoms */}
+                      {(finding as any).matchedSymptoms?.length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                            <AlertCircle className="w-3 h-3" /> Matched Symptoms
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(finding as any).matchedSymptoms.map((sym: string, i: number) => (
+                              <span key={i} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                {sym}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Matched Signals */}
+                      {(finding as any).matchedSignals?.length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                            <Activity className="w-3 h-3" /> Operational Signals
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(finding as any).matchedSignals.map((sig: string, i: number) => (
+                              <span key={i} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-muted/80 text-muted-foreground border border-border/60">
+                                {sig}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Supporting Evidence Items */}
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                          <FileText className="w-3 h-3" /> Document Evidence
+                        </p>
+                        {(finding as any).evidenceItems?.length > 0 ? (
+                          <ul className="space-y-2">
+                            {(finding as any).evidenceItems.map((item: { source: string; snippet: string; relevance?: string }, i: number) => (
+                              <li key={i} className="rounded-lg border border-border/50 bg-card px-3 py-2.5">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <span className="text-[11px] font-semibold text-foreground flex items-center gap-1">
+                                    <FolderOpen className="w-3 h-3 text-muted-foreground" />
+                                    {item.source}
+                                  </span>
+                                  {item.relevance && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted/60 text-muted-foreground font-medium">{item.relevance}</span>
+                                  )}
+                                </div>
+                                {item.snippet && (
+                                  <p className="text-[12px] text-muted-foreground leading-relaxed line-clamp-3">{item.snippet}</p>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-[12px] text-muted-foreground italic">
+                            No direct document excerpt available — conclusion based on signal and symptom patterns.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Confidence */}
+                      {(finding as any).confidence && typeof (finding as any).confidence === "string" && (
+                        <div className="flex items-center gap-2 pt-1 border-t border-border/40">
+                          <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Finding Confidence:</span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                            (finding as any).confidence === "HIGH" ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" :
+                            (finding as any).confidence === "MEDIUM" ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300" :
+                            "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                          }`}>
+                            {(finding as any).confidence === "HIGH" ? "High" : (finding as any).confidence === "MEDIUM" ? "Medium" : "Low"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
               </div>
             );
           })}

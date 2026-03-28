@@ -1,0 +1,156 @@
+You are upgrading the diagnostic platform’s next highest-priority feature: **Finding Evidence / Explainability Layer**.
+
+## OBJECTIVE
+
+Each diagnostic finding must become **expandable and defensible**.
+
+The user must be able to click any finding (e.g. "Reactive maintenance culture") and see:
+
+1. Why the system concluded this finding
+2. Which symptoms contributed
+3. Which internal signals contributed
+4. Which uploaded document evidence supports it
+5. Confidence level
+
+This is **not a redesign task**. This is a **trust / explainability feature**.
+
+---
+
+## REQUIRED OUTPUT
+
+Implement this in the **main analysis results view** only (not PDF yet).
+
+---
+
+# PART A — BACKEND ENRICHMENT
+
+## Goal
+
+Enhance each finding object returned in completed analyses so it can carry structured explainability metadata.
+
+For every finding in the final analysis result, enrich it with these fields:
+
+```ts
+matchedSymptoms?: string[]
+matchedSignals?: string[]
+evidenceSummary?: string
+evidenceItems?: Array<{
+  source: string
+  snippet: string
+  relevance?: "high" | "medium" | "low"
+}>
+confidence?: "HIGH" | "MEDIUM" | "LOW"
+```
+
+## Rules
+
+* Do **not** remove or rename any existing finding fields.
+* Do **not** break current rendering.
+* If evidence cannot be found, return empty arrays instead of crashing.
+* Confidence must always be set using a fallback.
+
+## Confidence logic (simple and safe)
+
+Use a deterministic heuristic:
+
+* HIGH = finding has 2+ matched signals OR 2+ evidence items
+* MEDIUM = finding has at least 1 signal or 1 evidence item
+* LOW = fallback when inferred mostly from symptoms/title patterns
+
+## Evidence sources to use
+
+Derive evidence from already-available structured inputs only:
+
+* findings
+* matched signals
+* selected observed symptoms
+* processed document extraction output / snippets if available
+* uploaded document names if snippet extraction is unavailable
+
+Do **not** introduce any new LLM dependency or external AI call.
+
+## Evidence summary generation
+
+For each finding, create a short plain-English explanation like:
+
+* "This finding was identified based on repeated maintenance-related signals, observed equipment instability, and supporting document evidence."
+* "This finding was inferred from scheduling non-compliance patterns and supporting operational indicators."
+
+Keep it deterministic and concise.
+
+---
+
+# PART B — FRONTEND FINDING EXPANSION UI
+
+## Target
+
+Update the main diagnostic results page so each finding card becomes expandable.
+
+## Required behaviour
+
+* Findings remain collapsed by default
+* Clicking a finding expands an evidence panel below it
+* Only one finding needs to be open at a time (simple accordion is fine)
+
+## Expanded panel must show:
+
+### 1. Why this was concluded
+
+Render `evidenceSummary`
+
+### 2. Matched Symptoms
+
+Render as small chips/tags
+
+### 3. Matched Signals
+
+Render as small muted chips/tags
+
+### 4. Supporting Evidence
+
+Render each evidence item as:
+
+* source file name
+* snippet text
+* optional relevance badge
+
+### 5. Confidence
+
+Render a small badge:
+
+* High confidence
+* Medium confidence
+* Low confidence
+
+---
+
+# UI RULES
+
+* Keep the current page styling intact
+* Do not redesign the whole page
+* Make it clean, compact, and professional
+* Use existing UI primitives where possible
+* If a finding has no evidenceItems, show:
+  "No direct document excerpt available — conclusion based on signal and symptom patterns."
+
+---
+
+# SAFETY / IMPLEMENTATION RULES
+
+* Do not break current findings rendering
+* Do not touch PDF generation yet
+* Do not refactor unrelated sections
+* Do not modify cost savings / roadmap / financial impact / causal chain in this task
+* Keep this feature isolated and stable
+
+---
+
+# WHAT TO RETURN
+
+After implementation, return:
+
+1. Exact files changed
+2. New finding object shape now returned by backend
+3. How confidence is calculated
+4. Where in the UI the expansion appears
+5. Whether old analyses without these new fields still render safely

@@ -1131,6 +1131,83 @@ const CATEGORY_PREDICTION_TEMPLATES: Record<FourMCategory, string[]> = {
   ],
 };
 
+// ---------------------------------------------------------------------------
+// EXPLAINABILITY LAYER HELPER
+// Produces structured evidence metadata for a single finding.
+// Safe to call on any path — returns empty arrays/defaults when data is absent.
+// ---------------------------------------------------------------------------
+function buildExplainabilityMeta(
+  category: string,
+  _title: string,
+  diagnosticSignals: Array<{ signalId: string; category: string }>,
+  concreteSignals: Array<{ rawText: string; documentName?: string; category: string }>,
+  selectedSymptoms: string[],
+  evidenceAnchors?: Array<{ signal: string; documentName?: string }>,
+): {
+  matchedSymptoms: string[];
+  matchedSignals: string[];
+  evidenceSummary: string;
+  evidenceItems: Array<{ source: string; snippet: string; relevance: "high" | "medium" | "low" }>;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+} {
+  const SYMPTOM_KEYWORDS: Record<string, string[]> = {
+    Manpower: ["fatigue", "overtime", "turnover", "absentee", "skill", "training", "staff", "operator", "shift", "worker", "morale", "knowledge"],
+    Machinery: ["breakdown", "downtime", "maintenance", "equipment", "machine", "stoppage", "failure", "repair", "pm", "preventive"],
+    Materials: ["quality", "scrap", "rework", "supplier", "delivery", "inventory", "defect", "rejection", "shortage", "stock"],
+    Money: ["cost", "budget", "financial", "cash", "margin", "revenue", "expense", "profit", "loss", "invoice", "price"],
+  };
+
+  const normCat = ["Manpower", "Machinery", "Materials", "Money"].find(c => category.startsWith(c)) || "Operations";
+  const keywords = SYMPTOM_KEYWORDS[normCat] || [];
+
+  // Signals in this finding's category
+  const catSignals = diagnosticSignals.filter(s => {
+    const sc = s.category || "";
+    return sc === normCat || sc === category || sc.toLowerCase().includes(normCat.toLowerCase());
+  });
+  const matchedSignals = [...new Set(catSignals.map(s => s.signalId.replace(/_/g, " ")))].slice(0, 8);
+
+  // Symptoms that relate to this category
+  const matchedSymptoms = selectedSymptoms.filter(s =>
+    keywords.some(kw => s.toLowerCase().includes(kw))
+  );
+
+  // Evidence items — prefer evidence anchors (non-MFG path), fall back to concrete signals (MFG V2)
+  let evidenceItems: Array<{ source: string; snippet: string; relevance: "high" | "medium" | "low" }> = [];
+  if (evidenceAnchors && evidenceAnchors.length > 0) {
+    evidenceItems = evidenceAnchors.slice(0, 5).map(a => ({
+      source: a.documentName || "Document",
+      snippet: a.signal || "",
+      relevance: "high" as const,
+    }));
+  } else {
+    const catConcrete = concreteSignals.filter(s => s.category === normCat || s.category === category).slice(0, 5);
+    evidenceItems = catConcrete.map(s => ({
+      source: s.documentName || "Document",
+      snippet: (s.rawText || "").substring(0, 150),
+      relevance: "high" as const,
+    }));
+  }
+
+  const confidence: "HIGH" | "MEDIUM" | "LOW" =
+    (matchedSignals.length >= 2 || evidenceItems.length >= 2) ? "HIGH" :
+    (matchedSignals.length >= 1 || evidenceItems.length >= 1 || matchedSymptoms.length >= 1) ? "MEDIUM" : "LOW";
+
+  const parts: string[] = [];
+  if (matchedSignals.length > 0) parts.push(`${matchedSignals.length} extracted operational signal${matchedSignals.length !== 1 ? "s" : ""}`);
+  if (evidenceItems.length > 0) {
+    const docNames = [...new Set(evidenceItems.map(e => e.source).filter(Boolean))].join(", ");
+    parts.push(`document evidence from ${docNames}`);
+  }
+  if (matchedSymptoms.length > 0) parts.push(`${matchedSymptoms.length} observed symptom${matchedSymptoms.length !== 1 ? "s" : ""} reported during intake`);
+
+  const evidenceSummary = parts.length > 0
+    ? `This finding was identified based on ${parts.join(", ")}.`
+    : `This finding was inferred from ${normCat.toLowerCase()} pattern matching and industry knowledge.`;
+
+  return { matchedSymptoms, matchedSignals, evidenceSummary, evidenceItems, confidence };
+}
+
 function buildPredictionsFromFindings(
   enrichedFindings: AnalysisFinding[],
   prefix: string,
@@ -3190,17 +3267,25 @@ async function generateManufacturingV2Result(
   const expertTopFindings = runExpertDiagnosis(diagnosticSignals, 3);
 
   const finalFindings: any[] =
-    expertTopFindings.map(f => ({
-      id: f.id,
-      title: f.name,
-      description: f.description,
-      category: f.category,
-      // fourMCategory ensures the results page can read the dominant category correctly
-      fourMCategory: f.category,
-      // severity derived from finalScore so health score engine gets a usable value
-      severity: f.finalScore >= 120 ? "critical" : f.finalScore >= 75 ? "high" : f.finalScore >= 35 ? "medium" : "low",
-      score: f.finalScore,
-    }));
+    expertTopFindings.map(f => {
+      const expl = buildExplainabilityMeta(
+        f.category,
+        f.name,
+        diagnosticSignals,
+        concreteSignals,
+        input.selectedSymptoms || [],
+      );
+      return {
+        id: f.id,
+        title: f.name,
+        description: f.description,
+        category: f.category,
+        fourMCategory: f.category,
+        severity: f.finalScore >= 120 ? "critical" : f.finalScore >= 75 ? "high" : f.finalScore >= 35 ? "medium" : "low",
+        score: f.finalScore,
+        ...expl,
+      };
+    });
 
   const unified = await runUnifiedDiagnostic({
     industry,
@@ -3597,7 +3682,17 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
     evidenceSignals,
     industry,
     concreteSignals,
-  );
+  ).map((f: any) => {
+    const expl = buildExplainabilityMeta(
+      f.fourMCategory || f.category || "Operations",
+      f.title || "",
+      diagnosticSignals,
+      concreteSignals,
+      input.selectedSymptoms || [],
+      f.evidenceAnchors,
+    );
+    return { ...f, ...expl };
+  });
 
   const predictions: RecurrencePrediction[] = buildPredictionsFromFindings(
     enrichedFindings,
