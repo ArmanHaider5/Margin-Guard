@@ -6,6 +6,7 @@ import { calculateOperationalHealthScore } from "../engines/operational-health-s
 import { estimateCostSavings } from "../engines/cost-saving-engine";
 import { generateTransformationRoadmap } from "../engines/transformation-roadmap-engine";
 import { generateConsultingNarrative } from "../engines/consulting-narrative-engine";
+import { generateNextActions } from "../engines/next-actions-engine";
 import { industryRegistry } from "../../industries/industry-registry";
 import { logDiagnosticTrace } from "../utils/diagnostic-trace-logger";
 import { calculateRootCauseConfidence } from "../engines/root-cause-confidence-engine";
@@ -67,6 +68,17 @@ export async function runUnifiedDiagnostic({
     healthScore,
   );
 
+  // ── Recommended next actions ─────────────────────────────────────────────
+  // Translate diagnosis into a prioritised 90-day action plan
+  const nextActions = generateNextActions(
+    rootCauses,
+    causalChains,
+    financialImpact,
+    healthScore,
+    patterns,
+    roadmap,
+  );
+
   const mgdAnalysis = {
     rootCauseTree,
     causalChains,
@@ -78,6 +90,7 @@ export async function runUnifiedDiagnostic({
     narrative,
     confidenceScores,
     financialImpact,
+    nextActions,
   };
 
   logDiagnosticTrace({

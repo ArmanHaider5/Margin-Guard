@@ -1,0 +1,116 @@
+Next phase: Product usefulness and workflow completion.
+
+IMPORTANT:
+
+* Do NOT work on UI redesign
+* Do NOT improve intelligence engines further for now
+* Do NOT add cosmetic polish
+* Focus on adding practical consulting value inside the product
+
+==================================================
+GOAL
+====
+
+Add a strong "Recommended Next Actions" / "Action Plan" layer to completed diagnostic results so the software becomes more useful in real consulting workflows.
+
+Right now the system diagnoses problems well.
+
+Next it must help the consultant answer:
+"What should we actually do next with this client?"
+
+==================================================
+
+1. ADD A STRUCTURED NEXT ACTIONS OUTPUT
+   ==================================================
+
+For completed diagnostics, generate a structured “Recommended Next Actions” block based on:
+
+* findings
+* severity
+* causal chain
+* financial impact
+* roadmap (if available)
+
+This should not just repeat findings.
+
+It should translate the diagnosis into practical next-step actions.
+
+Goal:
+Help the consultant move from diagnosis → intervention.
+
+==================================================
+2) ACTIONS SHOULD BE PRIORITISED
+================================
+
+Group actions into useful categories such as:
+
+* Immediate Priorities
+* 30-Day Actions
+* 60–90 Day Actions
+* Fast Wins
+* Structural Fixes
+
+Use whichever structure best fits the existing architecture.
+
+Goal:
+Outputs should feel operationally useful, not generic.
+
+==================================================
+3) KEEP ACTIONS CONSULTANT-GRADE
+================================
+
+Actions should feel:
+
+* specific
+* practical
+* business-relevant
+* realistic for an actual client engagement
+
+Avoid vague wording like:
+
+* Improve processes
+* Enhance communication
+* Monitor performance
+
+Prefer:
+
+* Define ownership
+* Review backlog
+* Stabilise workflow
+* Validate controls
+* Prioritise intervention sequence
+
+==================================================
+4) EXPOSE THIS IN THE RESULTS EXPERIENCE
+========================================
+
+Add this new block to the completed analysis results page.
+
+IMPORTANT:
+
+* Keep it visually consistent with the current page
+* Do NOT redesign the page
+* Add it as a high-value content section in the correct place
+
+Goal:
+The product should now help consultants know what to do next after diagnosis.
+
+==================================================
+5) OPTIONAL: SUPPORT PDF EXPORT IF EASY
+=======================================
+
+If easy and clean, also include this section in the PDF report.
+
+Only do this if it fits cleanly into the current report structure.
+
+==================================================
+6) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What logic was used to generate next actions
+2. How actions are prioritised
+3. Where the new section appears in the app
+4. Whether it is included in PDF
+5. Why this improves real consulting usability

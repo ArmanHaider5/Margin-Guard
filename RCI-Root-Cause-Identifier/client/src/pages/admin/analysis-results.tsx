@@ -827,6 +827,116 @@ export default function AnalysisResults() {
         </div>
       )}
 
+      {/* ── RECOMMENDED NEXT ACTIONS ────────────────────────────────── */}
+      {mgd?.nextActions && (mgd.nextActions.immediate?.length > 0 || mgd.nextActions.thirtyDay?.length > 0) && (
+        <Card data-testid="card-next-actions">
+          <div className="px-6 pt-5 pb-3 border-b flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+                <ClipboardCheck className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
+              <h2 className="text-base font-bold text-foreground tracking-tight">Recommended Next Actions</h2>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {(mgd.nextActions.immediate?.length ?? 0) + (mgd.nextActions.thirtyDay?.length ?? 0) + (mgd.nextActions.sixtyNinetyDay?.length ?? 0)} actions across 90 days
+            </span>
+          </div>
+          <div className="p-6 space-y-6">
+            {mgd.nextActions.summary && (
+              <p className="text-sm text-muted-foreground leading-relaxed border-l-2 border-primary/25 pl-4">
+                {mgd.nextActions.summary}
+              </p>
+            )}
+
+            {/* This Week */}
+            {mgd.nextActions.immediate?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-red-600 dark:text-red-400">This Week</span>
+                  <div className="flex-1 h-px bg-red-200 dark:bg-red-900/50" />
+                  <span className="text-[10px] text-muted-foreground">{mgd.nextActions.immediate.length} action{mgd.nextActions.immediate.length !== 1 ? "s" : ""}</span>
+                </div>
+                <div className="space-y-2.5">
+                  {mgd.nextActions.immediate.map((action: any, i: number) => (
+                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-lg border border-border/60 bg-red-50/30 dark:bg-red-950/10" style={{ borderLeftWidth: "3px", borderLeftColor: action.priority === "critical" ? "#ef4444" : "#f97316" }}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                          <Badge className={`text-[10px] font-semibold ${action.priority === "critical" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300" : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300"}`}>
+                            {action.priority}
+                          </Badge>
+                          {action.category && (
+                            <Badge variant="outline" className="text-[10px]">{action.category}</Badge>
+                          )}
+                          <Badge variant="secondary" className="text-[10px] capitalize">{action.type?.replace(/-/g, " ")}</Badge>
+                        </div>
+                        <p className="font-semibold text-sm text-foreground leading-snug mb-1">{action.title}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 30-Day Actions */}
+            {mgd.nextActions.thirtyDay?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-amber-600 dark:text-amber-400">30-Day Stabilisation</span>
+                  <div className="flex-1 h-px bg-amber-200 dark:bg-amber-900/50" />
+                  <span className="text-[10px] text-muted-foreground">{mgd.nextActions.thirtyDay.length} action{mgd.nextActions.thirtyDay.length !== 1 ? "s" : ""}</span>
+                </div>
+                <div className="space-y-2.5">
+                  {mgd.nextActions.thirtyDay.map((action: any, i: number) => (
+                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-lg border border-border/60 bg-amber-50/20 dark:bg-amber-950/10" style={{ borderLeftWidth: "3px", borderLeftColor: "#f59e0b" }}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                          <Badge className="text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">high</Badge>
+                          {action.category && (
+                            <Badge variant="outline" className="text-[10px]">{action.category}</Badge>
+                          )}
+                          <Badge variant="secondary" className="text-[10px] capitalize">{action.type?.replace(/-/g, " ")}</Badge>
+                        </div>
+                        <p className="font-semibold text-sm text-foreground leading-snug mb-1">{action.title}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 60-90-Day Actions */}
+            {mgd.nextActions.sixtyNinetyDay?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-blue-600 dark:text-blue-400">60–90 Day Structural Fixes</span>
+                  <div className="flex-1 h-px bg-blue-200 dark:bg-blue-900/50" />
+                  <span className="text-[10px] text-muted-foreground">{mgd.nextActions.sixtyNinetyDay.length} action{mgd.nextActions.sixtyNinetyDay.length !== 1 ? "s" : ""}</span>
+                </div>
+                <div className="space-y-2.5">
+                  {mgd.nextActions.sixtyNinetyDay.map((action: any, i: number) => (
+                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-lg border border-border/60 bg-blue-50/20 dark:bg-blue-950/10" style={{ borderLeftWidth: "3px", borderLeftColor: "#3b82f6" }}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                          <Badge className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">medium</Badge>
+                          {action.category && (
+                            <Badge variant="outline" className="text-[10px]">{action.category}</Badge>
+                          )}
+                          <Badge variant="secondary" className="text-[10px] capitalize">{action.type?.replace(/-/g, " ")}</Badge>
+                        </div>
+                        <p className="font-semibold text-sm text-foreground leading-snug mb-1">{action.title}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* ── CAUSAL CHAIN ───────────────────────────────────────────── */}
       <Card data-testid="card-causal-chain">
         <div className="p-6">

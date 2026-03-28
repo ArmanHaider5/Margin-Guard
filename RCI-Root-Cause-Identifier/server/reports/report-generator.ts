@@ -1065,7 +1065,70 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       }
 
       // ─────────────────────────────────────────────────────────────────
-      // SECTION 10 — INDUSTRY BENCHMARKS
+      // SECTION 10 — RECOMMENDED NEXT ACTIONS
+      // ─────────────────────────────────────────────────────────────────
+      const nextActions = mgd?.nextActions;
+      if (nextActions && (
+        (nextActions.immediate?.length ?? 0) +
+        (nextActions.thirtyDay?.length ?? 0) +
+        (nextActions.sixtyNinetyDay?.length ?? 0) > 0
+      )) {
+        sectionHeader(String(sNum++), "Recommended Next Actions");
+
+        if (nextActions.summary) {
+          doc.fontSize(9).fillColor(C.text).font("Helvetica");
+          doc.text(String(nextActions.summary), ml, doc.y, {
+            width: pw, lineGap: 2,
+          });
+          doc.y += 8;
+        }
+
+        const horizons: { label: string; actions: any[]; colour: string }[] = [
+          { label: "THIS WEEK — Immediate Priorities",   actions: nextActions.immediate ?? [],       colour: C.danger   },
+          { label: "30-DAY STABILISATION",               actions: nextActions.thirtyDay ?? [],       colour: C.warning  },
+          { label: "60–90 DAY STRUCTURAL FIXES",         actions: nextActions.sixtyNinetyDay ?? [],  colour: C.secondary},
+        ];
+
+        for (const horizon of horizons) {
+          if (!horizon.actions.length) continue;
+
+          ensureSpace(20);
+          doc.y += 4;
+          doc.fontSize(7.5).fillColor(horizon.colour).font("Helvetica-Bold")
+             .text(horizon.label, ml, doc.y, { characterSpacing: 0.5 });
+          doc.y += 6;
+
+          for (const action of horizon.actions.slice(0, 4)) {
+            const MIN_ACT_H = 40;
+            ensureSpace(MIN_ACT_H + 8);
+
+            const actY = doc.y;
+            doc.roundedRect(ml, actY, pw, MIN_ACT_H, 3).fill(C.light);
+            doc.roundedRect(ml, actY, pw, MIN_ACT_H, 3)
+               .stroke(C.border).lineWidth(0.3);
+            doc.rect(ml, actY, 3, MIN_ACT_H).fill(horizon.colour);
+
+            const ax = ml + 10;
+            doc.y = actY + 6;
+
+            const title = String(action.title ?? "Action");
+            doc.fontSize(9).fillColor(C.primary).font("Helvetica-Bold");
+            doc.text(title, ax, doc.y, { width: pw - 16 });
+            doc.y += 2;
+
+            const desc = String(action.description ?? "").slice(0, 180);
+            if (desc) {
+              doc.fontSize(8).fillColor(C.text).font("Helvetica");
+              doc.text(desc, ax, doc.y, { width: pw - 16, lineGap: 1.5 });
+            }
+
+            doc.y = Math.max(doc.y, actY + MIN_ACT_H) + 6;
+          }
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // SECTION 11 — INDUSTRY BENCHMARKS
       // ─────────────────────────────────────────────────────────────────
       const benchmarks = mgd?.benchmarks;
       if (Array.isArray(benchmarks) && benchmarks.length > 0) {
