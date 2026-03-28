@@ -50,6 +50,76 @@ const severityColors: Record<string, { bg: string; text: string }> = {
   critical: { bg: "bg-red-100 dark:bg-red-900", text: "text-red-700 dark:text-red-300" },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ACTION CARD — shared across all three timeframe buckets
+// ─────────────────────────────────────────────────────────────────────────────
+
+const EFFORT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  LOW:    { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", label: "Low effort" },
+  MEDIUM: { bg: "bg-amber-100 dark:bg-amber-900/30",    text: "text-amber-700 dark:text-amber-300",    label: "Med effort" },
+  HIGH:   { bg: "bg-orange-100 dark:bg-orange-900/30",  text: "text-orange-700 dark:text-orange-300",  label: "High effort" },
+};
+
+const PRIORITY_STYLES: Record<string, { bg: string; text: string }> = {
+  critical: { bg: "bg-red-100 dark:bg-red-900/40",    text: "text-red-700 dark:text-red-300" },
+  high:     { bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-700 dark:text-orange-300" },
+  medium:   { bg: "bg-amber-100 dark:bg-amber-900/30",  text: "text-amber-700 dark:text-amber-300" },
+};
+
+function ActionCard({ action, accentColor }: { action: any; accentColor: string }) {
+  const priorityStyle = PRIORITY_STYLES[action.priority] ?? PRIORITY_STYLES.medium;
+  const effortStyle = action.effort ? (EFFORT_STYLES[action.effort] ?? null) : null;
+
+  return (
+    <div
+      className="p-3.5 rounded-lg border border-border/60 bg-card"
+      style={{ borderLeftWidth: "3px", borderLeftColor: accentColor }}
+    >
+      <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+        <Badge className={`text-[10px] font-bold px-2 py-0.5 ${priorityStyle.bg} ${priorityStyle.text}`}>
+          {action.priority?.toUpperCase()}
+        </Badge>
+        {effortStyle && (
+          <Badge className={`text-[10px] font-medium ${effortStyle.bg} ${effortStyle.text}`}>
+            {effortStyle.label}
+          </Badge>
+        )}
+        {action.category && (
+          <Badge variant="outline" className="text-[10px]">{action.category}</Badge>
+        )}
+        <Badge variant="secondary" className="text-[10px] capitalize">{action.type?.replace(/-/g, " ")}</Badge>
+      </div>
+
+      <p className="font-semibold text-sm text-foreground leading-snug mb-1">{action.title}</p>
+      <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
+
+      {(action.why || action.expectedOutcome) && (
+        <div className="mt-2.5 pt-2 border-t border-border/40 space-y-1">
+          {action.why && (
+            <div className="flex gap-1.5 text-xs">
+              <span className="shrink-0 font-semibold text-muted-foreground/70 w-14">Why</span>
+              <span className="text-muted-foreground">{action.why}</span>
+            </div>
+          )}
+          {action.expectedOutcome && (
+            <div className="flex gap-1.5 text-xs">
+              <span className="shrink-0 font-semibold text-muted-foreground/70 w-14">Outcome</span>
+              <span className="text-muted-foreground">{action.expectedOutcome}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {action.suggestedOwner && (
+        <div className="mt-2 flex items-center gap-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">Assign to</span>
+          <span className="text-[11px] font-semibold text-foreground">{action.suggestedOwner}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AnalysisResults() {
   const { id } = useParams();
   const { toast } = useToast();
@@ -967,21 +1037,7 @@ export default function AnalysisResults() {
                 </div>
                 <div className="space-y-2.5">
                   {mgd.nextActions.immediate.map((action: any, i: number) => (
-                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-lg border border-border/60 bg-red-50/30 dark:bg-red-950/10" style={{ borderLeftWidth: "3px", borderLeftColor: action.priority === "critical" ? "#ef4444" : "#f97316" }}>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                          <Badge className={`text-[10px] font-semibold ${action.priority === "critical" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300" : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300"}`}>
-                            {action.priority}
-                          </Badge>
-                          {action.category && (
-                            <Badge variant="outline" className="text-[10px]">{action.category}</Badge>
-                          )}
-                          <Badge variant="secondary" className="text-[10px] capitalize">{action.type?.replace(/-/g, " ")}</Badge>
-                        </div>
-                        <p className="font-semibold text-sm text-foreground leading-snug mb-1">{action.title}</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
-                      </div>
-                    </div>
+                    <ActionCard key={i} action={action} accentColor={action.priority === "critical" ? "#ef4444" : "#f97316"} />
                   ))}
                 </div>
               </div>
@@ -997,19 +1053,7 @@ export default function AnalysisResults() {
                 </div>
                 <div className="space-y-2.5">
                   {mgd.nextActions.thirtyDay.map((action: any, i: number) => (
-                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-lg border border-border/60 bg-amber-50/20 dark:bg-amber-950/10" style={{ borderLeftWidth: "3px", borderLeftColor: "#f59e0b" }}>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                          <Badge className="text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">high</Badge>
-                          {action.category && (
-                            <Badge variant="outline" className="text-[10px]">{action.category}</Badge>
-                          )}
-                          <Badge variant="secondary" className="text-[10px] capitalize">{action.type?.replace(/-/g, " ")}</Badge>
-                        </div>
-                        <p className="font-semibold text-sm text-foreground leading-snug mb-1">{action.title}</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
-                      </div>
-                    </div>
+                    <ActionCard key={i} action={action} accentColor="#f59e0b" />
                   ))}
                 </div>
               </div>
@@ -1025,19 +1069,7 @@ export default function AnalysisResults() {
                 </div>
                 <div className="space-y-2.5">
                   {mgd.nextActions.sixtyNinetyDay.map((action: any, i: number) => (
-                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-lg border border-border/60 bg-blue-50/20 dark:bg-blue-950/10" style={{ borderLeftWidth: "3px", borderLeftColor: "#3b82f6" }}>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                          <Badge className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">medium</Badge>
-                          {action.category && (
-                            <Badge variant="outline" className="text-[10px]">{action.category}</Badge>
-                          )}
-                          <Badge variant="secondary" className="text-[10px] capitalize">{action.type?.replace(/-/g, " ")}</Badge>
-                        </div>
-                        <p className="font-semibold text-sm text-foreground leading-snug mb-1">{action.title}</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
-                      </div>
-                    </div>
+                    <ActionCard key={i} action={action} accentColor="#3b82f6" />
                   ))}
                 </div>
               </div>

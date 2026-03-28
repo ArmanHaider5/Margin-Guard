@@ -1,0 +1,146 @@
+We are upgrading the next highest-value product layer:
+
+# OBJECTIVE
+
+Make the **Recommended Next Actions** section more practical, execution-ready, and consulting-grade.
+
+Right now the section is structurally good (This Week / 30-Day Stabilisation / 60–90 Day Structural Fixes), but each action still needs stronger business usefulness.
+
+This task is to improve the **content and structure of each action card**, not redesign the whole page.
+
+---
+
+# PART A — BACKEND ACTION ENRICHMENT
+
+## Goal
+
+Every recommended action returned by the roadmap / actions engine should now include these additional fields:
+
+```ts id="5v8pbd"
+why?: string
+expectedOutcome?: string
+suggestedOwner?: string
+priority?: "CRITICAL" | "HIGH" | "MEDIUM"
+effort?: "LOW" | "MEDIUM" | "HIGH"
+```
+
+Do not remove or rename existing fields.
+
+---
+
+## RULES
+
+### 1. why
+
+A short explanation of why this action exists.
+
+Examples:
+
+* "Addresses recurring unplanned downtime and missing loss visibility."
+* "Targets maintenance backlog accumulation and poor PM execution discipline."
+* "Improves quality loss visibility and defect containment."
+
+Must be deterministic and derived from the related finding / category / action type.
+
+---
+
+### 2. expectedOutcome
+
+A short statement of the intended business result.
+
+Examples:
+
+* "Improves visibility into daily downtime loss."
+* "Reduces hidden quality and rework cost."
+* "Stabilises PM compliance for critical assets."
+
+---
+
+### 3. suggestedOwner
+
+Assign a realistic business role based on category / action type.
+
+Allowed examples:
+
+* Maintenance Lead
+* Production Manager
+* Quality Supervisor
+* Operations Manager
+* Supply Chain Planner
+* HR / Workforce Lead
+* Finance Controller
+
+Do not use names. Role only.
+
+---
+
+### 4. priority
+
+Use deterministic logic:
+
+* CRITICAL = actions in "This Week" OR directly tied to severe operational instability
+* HIGH = actions in 30-Day Stabilisation
+* MEDIUM = actions in 60–90 Day Structural Fixes
+
+---
+
+### 5. effort
+
+Assign effort based on action complexity:
+
+* LOW = tracking, review, workshop, visibility, audit
+* MEDIUM = process rollout, planning cadence, controls, governance
+* HIGH = system redesign, structural workflow changes, multi-team intervention
+
+---
+
+# PART B — FRONTEND DISPLAY UPGRADE
+
+## Target
+
+Update the existing Recommended Next Actions cards in the results page.
+
+## Required additions inside each action card:
+
+Display these new metadata fields cleanly:
+
+* Why this action matters
+* Expected outcome
+* Suggested owner
+* Priority badge
+* Effort badge
+
+Do not redesign the whole page.
+Do not change section order.
+Keep the current layout intact and simply enrich each card.
+
+---
+
+# UI GUIDELINES
+
+* Make cards feel more “consulting intervention plan” and less “generic checklist”
+* Keep text compact and readable
+* Priority badge should visually stand out more than effort
+* Suggested owner should look like a business assignment, not a technical label
+
+---
+
+# SAFETY RULES
+
+* Do not touch PDF generation yet
+* Do not refactor unrelated engines
+* Do not change cost savings / findings / financial impact / causal chain / benchmarks
+* Keep backward compatibility safe for older analyses
+
+---
+
+# WHAT TO RETURN
+
+After implementation, return:
+
+1. Exact file(s) changed
+2. New action object shape
+3. How suggestedOwner is assigned
+4. How priority and effort are assigned
+5. Where the new fields appear in the UI
+6. Whether old analyses still render safely
