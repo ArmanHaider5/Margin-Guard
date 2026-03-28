@@ -266,7 +266,8 @@ export default function AnalysisResults() {
 
   const criticalCount = findings.filter(f => f.severity === "critical").length;
   const highCount = findings.filter(f => f.severity === "high").length;
-  const healthScore = mgd?.healthScore ?? null;
+  // mgdAnalysis.healthScore is { overallScore: number, riskLevel: string } — extract the numeric value
+  const healthScore: number | null = mgd?.healthScore?.overallScore ?? null;
   const healthStatus = healthScore == null ? null : healthScore >= 70 ? "Healthy" : healthScore >= 40 ? "At Risk" : "Critical";
   const healthStatusColors = {
     Healthy: { bg: "bg-emerald-50 dark:bg-emerald-950/40", border: "border-emerald-200 dark:border-emerald-800", score: "text-emerald-700 dark:text-emerald-300", badge: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300" },
