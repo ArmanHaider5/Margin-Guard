@@ -1370,6 +1370,9 @@ interface AnalysisResult {
   consultingNarrative?: ConsultingNarrative;
   costSavingEstimate?: CostSavingEstimate;
   industryBenchmarks?: BenchmarkEvaluation;
+  // mgdAnalysis carries all computed engine outputs consumed by the results
+  // page (health score, financial impact, causal chains, next actions, etc.)
+  mgdAnalysis?: any;
 }
 
 /**
@@ -3188,13 +3191,15 @@ async function generateManufacturingV2Result(
 
   const finalFindings: any[] =
     expertTopFindings.map(f => ({
-
       id: f.id,
       title: f.name,
       description: f.description,
       category: f.category,
-      score: f.finalScore
-
+      // fourMCategory ensures the results page can read the dominant category correctly
+      fourMCategory: f.category,
+      // severity derived from finalScore so health score engine gets a usable value
+      severity: f.finalScore >= 120 ? "critical" : f.finalScore >= 75 ? "high" : f.finalScore >= 35 ? "medium" : "low",
+      score: f.finalScore,
     }));
 
   const unified = await runUnifiedDiagnostic({
@@ -3242,6 +3247,11 @@ async function generateManufacturingV2Result(
     consultingNarrative: narrative,
     costSavingEstimate: savings,
     industryBenchmarks: benchmarks,
+    // mgdAnalysis carries all computed engine outputs (health score, financial
+    // impact, causal chains, next actions, etc.) that the results page reads
+    // from analysis?.mgdAnalysis. Without this field the page shows 0% health
+    // score and empty causal/financial/next-actions sections.
+    mgdAnalysis: unified.mgdAnalysis,
   };
 }
 
@@ -3603,6 +3613,29 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
       ? ` across ${categoryList.length} area${categoryList.length > 1 ? "s" : ""} (${categoryList.join(", ")})`
       : "";
 
+  // Run unified diagnostic engines so the results page gets health score,
+  // financial impact, causal chains, next actions, etc. via mgdAnalysis.
+  let deepMgdAnalysis: any = null;
+  try {
+    const deepUnified = await runUnifiedDiagnostic({
+      industry,
+      signals: diagnosticSignals,
+      kpiData: {},
+      baseFindings: enrichedFindings.map((f: any) => ({
+        id: f.id,
+        title: f.title,
+        description: f.description || "",
+        category: f.fourMCategory || f.category || "Operations",
+        fourMCategory: f.fourMCategory || f.category || "Operations",
+        severity: f.severity || "medium",
+        score: f.score || 0,
+      })),
+    });
+    deepMgdAnalysis = deepUnified.mgdAnalysis;
+  } catch (err) {
+    console.warn("⚠ UNIFIED DIAGNOSTIC (deep non-MFG): failed silently", err);
+  }
+
   return {
     findings: enrichedFindings,
     summary: `${summaryPrefix} Identified ${enrichedFindings.length} root cause${enrichedFindings.length > 1 ? "s" : ""}${categoryPhrase} in ${industry} operations for ${clientName}.`,
@@ -3611,6 +3644,7 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
     analysisMode: "evidence-enriched",
     confidence: "substantiated",
     isMockMode: false,
+    mgdAnalysis: deepMgdAnalysis,
   };
 }
 

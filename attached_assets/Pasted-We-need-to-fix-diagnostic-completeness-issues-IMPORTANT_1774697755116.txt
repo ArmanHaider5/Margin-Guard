@@ -1,0 +1,103 @@
+We need to fix diagnostic completeness issues.
+
+IMPORTANT:
+
+* Do NOT change UI
+* Do NOT redesign components
+* Focus only on backend data flow and engine inputs
+
+==================================================
+PROBLEMS OBSERVED
+=================
+
+1. Operational Health Score returns 0% even with valid findings
+2. Primary Category is null ("no findings yet") despite findings existing
+3. Causal Chain frequently returns empty
+4. Financial Impact frequently returns empty
+
+==================================================
+GOAL
+====
+
+Ensure that MGD engines receive correct, complete, and usable inputs so all major sections populate reliably when findings exist.
+
+==================================================
+
+1. FIX SIGNAL → ENGINE DATA FLOW
+   ==================================================
+
+Ensure signals passed into:
+
+* causal chain engine
+* financial impact engine
+
+are:
+
+* normalized
+* complete
+* include aliases
+* not empty when findings clearly exist
+
+If signal extraction is weak:
+→ supplement with finding titles and categories
+
+==================================================
+2) FIX HEALTH SCORE LOGIC
+=========================
+
+Ensure:
+
+* severity mapping is correct
+* deductions are not over-applied
+* final score reflects realistic operational condition
+
+Expected:
+3 medium findings ≠ 0%
+
+==================================================
+3) FIX PRIMARY CATEGORY DETECTION
+=================================
+
+Derive primary category from findings:
+
+* count categories across findings
+* return dominant category
+
+==================================================
+4) FALLBACK FROM FINDINGS WHEN SIGNALS ARE WEAK
+===============================================
+
+If signals insufficient:
+
+* derive causal chain seeds from findings
+* derive financial impact from findings
+
+Example:
+"maintenance backlog" → machinery → downtime → cost impact
+
+==================================================
+5) ENSURE NON-EMPTY OUTPUTS WHEN EVIDENCE EXISTS
+================================================
+
+If:
+
+* findings exist
+* categories exist
+
+Then:
+
+* causal chain should attempt generation
+* financial impact should attempt generation
+* health score should always return a value
+
+==================================================
+6) AFTER IMPLEMENTATION
+=======================
+
+Tell me:
+
+1. What was wrong in signal flow
+2. How causal chain inputs were fixed
+3. How financial impact inputs were fixed
+4. Why health score was returning 0%
+5. Whether all major sections should now populate reliably
