@@ -24,10 +24,37 @@ export async function runUnifiedDiagnostic({
   baseFindings: any[];
 }) {
 
-  const industryModel = (industryRegistry as any)[industry];
+  const INDUSTRY_KEY_MAP: Record<string, string> = {
+    event_management:     "professionalServices",
+    finance:              "professionalServices",
+    construction:         "professionalServices",
+    property_development: "professionalServices",
+    oil_gas:              "manufacturing",
+    hospitality:          "retail",
+    hotels_airbnb:        "retail",
+    fnb_full_service:     "retail",
+    fnb_qsr:              "retail",
+    fnb_fast_food:        "retail",
+    fnb_franchise:        "retail",
+    fnb_independent:      "retail",
+    fmcg:                 "retail",
+    food_beverage:        "manufacturing",
+    automotive:           "manufacturing",
+    other:                "professionalServices",
+  };
+
+  const registryKey = (industryRegistry as any)[industry]
+    ? industry
+    : INDUSTRY_KEY_MAP[industry] ?? "professionalServices";
+
+  const industryModel = (industryRegistry as any)[registryKey];
 
   if (!industryModel) {
     throw new Error("Industry model not found: " + industry);
+  }
+
+  if (registryKey !== industry) {
+    console.warn(`[UnifiedDiagnostic] No model for "${industry}" — falling back to "${registryKey}"`);
   }
 
   // ── Financial impact ─────────────────────────────────────────────────────
