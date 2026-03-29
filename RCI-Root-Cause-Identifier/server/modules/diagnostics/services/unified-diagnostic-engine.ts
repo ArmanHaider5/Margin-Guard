@@ -104,6 +104,7 @@ export async function runUnifiedDiagnostic({
     healthScore,
     patterns,
     roadmap,
+    registryKey,
   );
 
   const mgdAnalysis = {

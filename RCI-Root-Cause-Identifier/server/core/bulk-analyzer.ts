@@ -572,10 +572,20 @@ function buildEvidenceLedTitle(
   originalTitle: string,
   anchors: EvidenceAnchor[],
   category: FourMCategory,
+  industry?: string,
 ): string {
   const rootCauseCore = originalTitle
     .replace(/^\[NEEDS VALIDATION\]\s*/i, "")
     .replace(/^\[PRELIMINARY\]\s*/i, "");
+
+  // For Event Management, return the clean root cause title without
+  // manufacturing causal frames ("undermining workforce capacity" etc.)
+  if (industry === "event_management") {
+    const shortTitle = rootCauseCore.length > 55
+      ? rootCauseCore.split(/[—–,]/)[0].trim()
+      : rootCauseCore;
+    return shortTitle;
+  }
 
   const causalFrame =
     CATEGORY_CAUSAL_FRAME[category] || "contributing to operational impact";
@@ -889,6 +899,7 @@ function enrichFindingWithEvidence(
     finding.title,
     anchors,
     finding.fourMCategory,
+    industry,
   );
   const insightNote = buildInsightNote(
     finding.title,
@@ -3867,20 +3878,23 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
   const applicableArchetypes = recommendationArchetypes
     .slice(0, 5);
 
-  const costSavingOpportunities: CostSavingOpportunity[] =
-    applicableArchetypes.map((arch, idx) => ({
-      id: `opp-signal-${idx}-${arch.archetype_id}`,
-      title: arch.archetype_name,
-      description: getVariedDescription(arch, industry),
-      estimatedSavings: `RM ${(5000 + idx * 3000).toLocaleString()} annually`,
-      implementationEffort:
-        arch.consultant_required === "No"
-          ? ("low" as const)
-          : arch.consultant_required === "Sometimes"
-            ? ("medium" as const)
-            : ("high" as const),
-      relatedFindings: findings.map((f) => f.id),
-    }));
+  // For Event Management, costSavingOpportunities will be overridden below
+  // once deepMgdAnalysis is available. Generic archetype cards are NOT used for EM.
+  const costSavingOpportunities: CostSavingOpportunity[] = sdIndustry === "event_management"
+    ? []
+    : applicableArchetypes.map((arch, idx) => ({
+        id: `opp-signal-${idx}-${arch.archetype_id}`,
+        title: arch.archetype_name,
+        description: getVariedDescription(arch, industry),
+        estimatedSavings: `RM ${(5000 + idx * 3000).toLocaleString()} annually`,
+        implementationEffort:
+          arch.consultant_required === "No"
+            ? ("low" as const)
+            : arch.consultant_required === "Sometimes"
+              ? ("medium" as const)
+              : ("high" as const),
+        relatedFindings: findings.map((f) => f.id),
+      }));
 
   const contextFocusPhrase =
     diagnosticContexts && diagnosticContexts.length > 0
@@ -3961,10 +3975,27 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
     finalSummary = `${summaryPrefix} Identified ${enrichedFindings.length} root cause${enrichedFindings.length > 1 ? "s" : ""}${categoryPhrase} in ${industry} operations for ${clientName}.`;
   }
 
+  // For EM: pull EM-native savings from the unified engine output rather than
+  // generic archetypes. Map CostSavingOpportunityItem → CostSavingOpportunity shape.
+  const emEngineOpps: CostSavingOpportunity[] = sdIndustry === "event_management"
+    ? ((deepMgdAnalysis?.savings?.opportunities ?? []) as any[]).map((o: any, idx: number) => ({
+        id: `em-opp-${idx}`,
+        title: o.title ?? "",
+        description: o.description ?? "",
+        estimatedSavings: o.estimatedSavings ?? "",
+        implementationEffort: "medium" as const,
+        relatedFindings: enrichedFindings.map((f: any) => f.id),
+      }))
+    : [];
+
+  const finalCostSavingOpportunities = sdIndustry === "event_management"
+    ? emEngineOpps
+    : costSavingOpportunities;
+
   return {
     findings: enrichedFindings,
     summary: finalSummary,
-    costSavingOpportunities,
+    costSavingOpportunities: finalCostSavingOpportunities,
     predictions,
     analysisMode: "evidence-enriched",
     confidence: "substantiated",

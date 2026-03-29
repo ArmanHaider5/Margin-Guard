@@ -1,0 +1,150 @@
+Priority fixes for Event Management output quality
+1. Rewrite Executive Summary for Event Management
+
+Current output is still too system-generated and still leaks internal category language (“Machinery”, “Manpower”).
+
+Fix required:
+
+Remove all backend/system phrasing:
+“Using document-derived signals…”
+“Identified X root causes across Y areas…”
+Do not expose internal 4M labels in the summary
+Rewrite to follow:
+Business Situation
+Operational Complication
+Likely Commercial / Delivery Impact
+Most direct recovery path
+Tone must read like a consultant, not a diagnostic engine
+
+Target quality:
+A real client should be able to read it and immediately understand:
+
+what is going wrong
+why it matters
+where to focus first
+2. Improve Event Management finding titles
+
+Current finding titles are still too long and engine-like.
+
+Fix required:
+Make Event Management findings:
+
+shorter
+more punchy
+more discussion-ready
+
+Examples:
+
+“Weak event-day ownership and field supervision”
+“Incomplete rental readiness before dispatch”
+“Inconsistent pre-event pack control”
+“Crew execution depends too heavily on ad hoc coordination”
+
+Avoid sentence-style titles like:
+
+“Weak event-day supervision and role ownership undermining workforce capacity”
+3. Rebuild Event Management Cost Saving Opportunities
+
+This section is currently too generic and not tied tightly enough to event operations.
+
+Replace generic cards like:
+
+Clarify Immediate Ownership and Accountability
+Freeze Discretionary Spending
+Tighten Short-Term Controls and Oversight
+
+With event-native opportunities like:
+
+Reduce incomplete dispatch and last-minute substitutions
+Recover damaged / unreturned asset losses more consistently
+Cut overtime leakage through better crew allocation
+Reduce emergency supplier and same-day sourcing costs
+Improve job costing accuracy on underquoted event work
+Reduce post-event write-offs through structured pack reconciliation
+
+This section should feel like real operational loss reduction, not general business advice.
+
+4. Rewrite Event Management Recommended Actions
+
+Some actions are still contaminated by manufacturing / maintenance language.
+
+Fix required:
+Remove or rewrite actions like:
+
+“Define a forward PM schedule for critical assets”
+
+Replace with event-appropriate wording like:
+
+“Create a pre-event readiness schedule for critical rental items”
+“Introduce weekly readiness checks for high-dependency event assets”
+“Implement dispatch sign-off for high-risk event packs”
+
+All actions must sound like they belong to an event operations company.
+
+5. Deepen Event Management Financial Impact
+
+Current financial impact is too narrow and not commercially valuable enough.
+
+Expand EM financial buckets to estimate where evidence exists:
+
+Crew Overtime Leakage
+Emergency Purchase / Rental Cost
+Rework Labour Cost
+Asset Loss / Damage Recovery Gap
+Underquoted Margin Erosion
+Missed Billables / Untracked Scope
+Collection Delay / Credit Drag
+
+If only one bucket is supported, still render cleanly — but attempt broader commercial coverage where evidence exists.
+
+6. Fix broken MGD Cost Savings rendering
+
+This section is currently displaying raw JSON-like data instead of formatted cards.
+
+Fix required:
+Render MGD cost savings as proper UI cards with:
+
+title
+description
+estimated annual saving
+optional implementation note
+
+Do not render raw arrays or object strings in the client-facing view.
+
+7. Fix or hide Event Management Industry Benchmarks
+
+The section is still rendering placeholder output (“benchmarkResults”).
+
+Fix required:
+
+Properly render benchmark cards / rows for Event Management
+OR hide the section entirely if no usable benchmark output exists
+
+Do not show placeholder or raw field names in the UI.
+
+8. Apply Event category translation everywhere
+
+Client-facing Event Management output must never expose internal backend categories like:
+
+Machinery
+Manpower
+Materials
+Money
+
+Ensure translation is applied consistently across:
+
+Executive Summary
+Findings
+Lead Category
+Causal chain labels (if needed)
+Financial impact labels
+Recommendations
+PDF output
+
+Use client-facing domain labels such as:
+
+Assets & Equipment
+Crew & Field Execution
+Suppliers & Fulfilment
+Commercial Control
+Event Delivery Discipline

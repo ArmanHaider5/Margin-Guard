@@ -982,7 +982,7 @@ export default function AnalysisResults() {
       </div>
 
       {/* ── EXECUTIVE SUMMARY ──────────────────────────────────────── */}
-      {analysis.summary && (
+      {(analysis.summary || mgd?.narrative?.summary) && (
         <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
           <div className="px-6 py-3 border-b bg-muted/30 flex items-center gap-2">
             <Target className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -990,7 +990,9 @@ export default function AnalysisResults() {
           </div>
           <div className="px-6 py-6">
             <p className="text-[15px] leading-[1.75] text-foreground/90 font-medium border-l-2 border-primary/25 pl-4" data-testid="text-summary">
-              {analysis.summary}
+              {client?.industry === "event_management" && mgd?.narrative?.summary
+                ? mgd.narrative.summary
+                : analysis.summary}
             </p>
           </div>
         </div>
@@ -1858,7 +1860,7 @@ export default function AnalysisResults() {
                   {mgd.financialImpact.affectedCategories.map((cat: string, i: number) => {
                     const catColors = fourMColors[cat as FourMCategory] || { bg: "bg-muted", text: "text-muted-foreground", border: "" };
                     return (
-                      <Badge key={i} className={`${catColors.bg} ${catColors.text}`}>{cat}</Badge>
+                      <Badge key={i} className={`${catColors.bg} ${catColors.text}`}>{getCategoryLabel(cat, client?.industry)}</Badge>
                     );
                   })}
                 </div>
@@ -1883,35 +1885,80 @@ export default function AnalysisResults() {
             {/* Cost breakdown grid */}
             {(mgd.financialImpact.totalLoss != null && mgd.financialImpact.totalLoss > 0) && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t">
-                {/* Downtime loss */}
-                {(mgd.financialImpact.downtimeLoss ?? 0) > 0 && (
-                  <div className="rounded-lg bg-muted/50 p-3">
-                    <p className="text-xs text-muted-foreground">Downtime Loss</p>
-                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.downtimeLoss).toLocaleString()}</p>
-                  </div>
+                {client?.industry === "event_management" ? (
+                  <>
+                    {(mgd.financialImpact.overtimeLeakage ?? 0) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Crew Overtime Leakage</p>
+                        <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.overtimeLeakage).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {(mgd.financialImpact.emergencySourcingCost ?? 0) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Emergency Sourcing Cost</p>
+                        <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.emergencySourcingCost).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {(mgd.financialImpact.reworkLabourCost ?? 0) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Rework Labour Cost</p>
+                        <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.reworkLabourCost).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {((mgd.financialImpact.assetWriteOff ?? 0) + (mgd.financialImpact.unrecoveredDamage ?? 0)) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Asset Loss / Damage Gap</p>
+                        <p className="font-semibold text-sm">RM {Number((mgd.financialImpact.assetWriteOff ?? 0) + (mgd.financialImpact.unrecoveredDamage ?? 0)).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {(mgd.financialImpact.missedBillables ?? 0) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Missed Billables</p>
+                        <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.missedBillables).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {(mgd.financialImpact.underquotedMargin ?? 0) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Underquoted Margin Erosion</p>
+                        <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.underquotedMargin).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {(mgd.financialImpact.collectionDrag ?? 0) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Collection Delay / Credit Drag</p>
+                        <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.collectionDrag).toLocaleString()}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {(mgd.financialImpact.downtimeLoss ?? 0) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Downtime Loss</p>
+                        <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.downtimeLoss).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {((mgd.financialImpact.qualityLoss ?? mgd.financialImpact.scrapLoss) ?? 0) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Quality / Scrap Loss</p>
+                        <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.qualityLoss ?? mgd.financialImpact.scrapLoss).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {((mgd.financialImpact.workforceLoss ?? mgd.financialImpact.overtimeCost) ?? 0) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Workforce / Overtime</p>
+                        <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.workforceLoss ?? mgd.financialImpact.overtimeCost).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {(mgd.financialImpact.supplyChainLoss ?? 0) > 0 && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Supply Chain Loss</p>
+                        <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.supplyChainLoss).toLocaleString()}</p>
+                      </div>
+                    )}
+                  </>
                 )}
-                {/* Quality loss (new) or legacy scrap loss */}
-                {((mgd.financialImpact.qualityLoss ?? mgd.financialImpact.scrapLoss) ?? 0) > 0 && (
-                  <div className="rounded-lg bg-muted/50 p-3">
-                    <p className="text-xs text-muted-foreground">Quality / Scrap Loss</p>
-                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.qualityLoss ?? mgd.financialImpact.scrapLoss).toLocaleString()}</p>
-                  </div>
-                )}
-                {/* Workforce loss (new) or legacy overtime cost */}
-                {((mgd.financialImpact.workforceLoss ?? mgd.financialImpact.overtimeCost) ?? 0) > 0 && (
-                  <div className="rounded-lg bg-muted/50 p-3">
-                    <p className="text-xs text-muted-foreground">Workforce / Overtime</p>
-                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.workforceLoss ?? mgd.financialImpact.overtimeCost).toLocaleString()}</p>
-                  </div>
-                )}
-                {/* Supply chain loss (new) */}
-                {(mgd.financialImpact.supplyChainLoss ?? 0) > 0 && (
-                  <div className="rounded-lg bg-muted/50 p-3">
-                    <p className="text-xs text-muted-foreground">Supply Chain Loss</p>
-                    <p className="font-semibold text-sm">RM {Number(mgd.financialImpact.supplyChainLoss).toLocaleString()}</p>
-                  </div>
-                )}
-                {/* Total */}
+                {/* Total — always shown when totalLoss > 0 */}
                 <div className="rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-3">
                   <p className="text-xs text-orange-600 dark:text-orange-400">Total Estimated Loss</p>
                   <p className="font-bold text-sm text-orange-700 dark:text-orange-300">RM {Number(mgd.financialImpact.totalLoss).toLocaleString()}</p>
@@ -2004,110 +2051,99 @@ export default function AnalysisResults() {
       )}
 
       {/* INDUSTRY BENCHMARKS */}
-      {mgd?.benchmarks && (
-        <Card data-testid="card-benchmarks">
-          <div className="px-6 pt-5 pb-3 border-b flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
-              <BarChart2 className="w-3.5 h-3.5 text-muted-foreground" />
+      {(() => {
+        const benchmarkRows: any[] = Array.isArray(mgd?.benchmarks)
+          ? mgd.benchmarks
+          : Array.isArray(mgd?.benchmarks?.benchmarkResults)
+            ? mgd.benchmarks.benchmarkResults
+            : [];
+        if (!mgd?.benchmarks || benchmarkRows.length === 0) return null;
+        return (
+          <Card data-testid="card-benchmarks">
+            <div className="px-6 pt-5 pb-3 border-b flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+                <BarChart2 className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
+              <h2 className="text-base font-bold text-foreground tracking-tight">Industry Benchmarks</h2>
             </div>
-            <h2 className="text-base font-bold text-foreground tracking-tight">Industry Benchmarks</h2>
-          </div>
-          <div className="p-6">
-          {Array.isArray(mgd.benchmarks) && mgd.benchmarks.length > 0 ? (
-            <div className="space-y-3">
-              {mgd.benchmarks.map((bm: any, i: number) => (
-                <div key={i} className="flex items-center gap-4 py-2 border-b last:border-0">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{bm.kpi || bm.name || bm.metric || Object.keys(bm)[0]}</p>
-                    {bm.description && <p className="text-xs text-muted-foreground mt-0.5">{bm.description}</p>}
-                  </div>
-                  <div className="flex items-center gap-4 shrink-0">
-                    {bm.company != null && (
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Company</p>
-                        <p className="text-sm font-semibold">{bm.company}{bm.unit || ""}</p>
-                      </div>
-                    )}
-                    {bm.industry != null && (
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Industry</p>
-                        <p className="text-sm font-semibold text-primary">{bm.industry}{bm.unit || ""}</p>
-                      </div>
-                    )}
-                    {bm.gap != null && (
-                      <Badge variant={Number(bm.gap) < 0 ? "destructive" : "secondary"} className="text-xs">
-                        Gap: {bm.gap}{bm.unit || ""}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : typeof mgd.benchmarks === "object" ? (
-            <div className="space-y-2">
-              {Object.entries(mgd.benchmarks).map(([key, val]: [string, any]) => (
-                <div key={key} className="flex items-center justify-between py-1.5 border-b last:border-0">
-                  <span className="text-sm text-muted-foreground">{key}</span>
-                  <span className="text-sm font-medium">{typeof val === "object" ? JSON.stringify(val) : String(val)}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No benchmark data available</p>
-          )}
-          </div>
-        </Card>
-      )}
-
-      {/* MGD COST SAVINGS */}
-      {mgd?.savings && (
-        <Card data-testid="card-mgd-savings">
-          <div className="px-6 pt-5 pb-3 border-b flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
-              <Layers className="w-3.5 h-3.5 text-muted-foreground" />
-            </div>
-            <h2 className="text-base font-bold text-foreground tracking-tight">MGD Cost Savings</h2>
-          </div>
-          <div className="p-6">
-          {Array.isArray(mgd.savings) && mgd.savings.length > 0 ? (
-            <div className="space-y-3">
-              {mgd.savings.map((s: any, i: number) => (
-                <div key={i} className="flex items-start justify-between gap-4 p-3 rounded-lg bg-muted/40">
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{s.title || s.description || s.area || `Saving opportunity ${i + 1}`}</p>
-                    {s.description && s.title && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>
-                    )}
-                    {s.category && (
-                      <Badge variant="outline" className="mt-1 text-xs">{s.category}</Badge>
-                    )}
-                  </div>
-                  {s.estimatedSavings && (
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{s.estimatedSavings}</p>
-                      {s.implementationEffort && (
-                        <p className="text-xs text-muted-foreground">{s.implementationEffort} effort</p>
+            <div className="p-6">
+              <div className="space-y-3">
+                {benchmarkRows.map((bm: any, i: number) => (
+                  <div key={i} className="flex items-center gap-4 py-2 border-b last:border-0">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{bm.kpi || bm.name || bm.metric}</p>
+                      {bm.description && <p className="text-xs text-muted-foreground mt-0.5">{bm.description}</p>}
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0">
+                      {bm.company != null && (
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Company</p>
+                          <p className="text-sm font-semibold">{bm.company}{bm.unit || ""}</p>
+                        </div>
+                      )}
+                      {bm.industry != null && (
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Industry</p>
+                          <p className="text-sm font-semibold text-primary">{bm.industry}{bm.unit || ""}</p>
+                        </div>
+                      )}
+                      {bm.gap != null && (
+                        <Badge variant={Number(bm.gap) < 0 ? "destructive" : "secondary"} className="text-xs">
+                          Gap: {bm.gap}{bm.unit || ""}
+                        </Badge>
                       )}
                     </div>
-                  )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        );
+      })()}
+
+      {/* MGD COST SAVINGS — rendered only when opportunities array has items */}
+      {(() => {
+        const mgdOpps: any[] = Array.isArray(mgd?.savings?.opportunities) && mgd.savings.opportunities.length > 0
+          ? mgd.savings.opportunities
+          : Array.isArray(mgd?.savings) && (mgd.savings as any[]).length > 0
+            ? mgd.savings as any[]
+            : [];
+        if (mgdOpps.length === 0) return null;
+        return (
+          <Card data-testid="card-mgd-savings">
+            <div className="px-6 pt-5 pb-3 border-b flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-md bg-muted/80 flex items-center justify-center shrink-0">
+                <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
+              <h2 className="text-base font-bold text-foreground tracking-tight">Engine-Identified Savings</h2>
+            </div>
+            <div className="p-6 space-y-3">
+              {mgdOpps.map((s: any, i: number) => (
+                <div key={i} className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-emerald-400 to-emerald-600" />
+                  <div className="p-5 flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                          <Lightbulb className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <h3 className="font-bold text-[14px] leading-snug">{s.title}</h3>
+                      </div>
+                      <p className="text-muted-foreground text-sm leading-relaxed pl-8">{s.description}</p>
+                    </div>
+                    {s.estimatedSavings && (
+                      <div className="text-right shrink-0 pl-4 border-l border-border/60">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Est. Annual</p>
+                        <p className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 leading-none">{s.estimatedSavings}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
-          ) : typeof mgd.savings === "object" ? (
-            <div className="space-y-2">
-              {Object.entries(mgd.savings).map(([key, val]: [string, any]) => (
-                <div key={key} className="flex items-center justify-between py-1.5 border-b last:border-0">
-                  <span className="text-sm text-muted-foreground">{key}</span>
-                  <span className="text-sm font-medium">{typeof val === "object" ? JSON.stringify(val) : String(val)}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No savings data available</p>
-          )}
-          </div>
-        </Card>
-      )}
+          </Card>
+        );
+      })()}
 
       <div className="text-center text-sm text-muted-foreground/50 pt-2">
         Analysis completed: {formatDate(analysis.completedAt)}

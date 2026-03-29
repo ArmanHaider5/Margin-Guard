@@ -408,6 +408,170 @@ const CHAIN_BREAK_ACTIONS: Record<string, ActionTemplate> = {
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT ACTION VOCABULARY
+// Domain-native action templates — keyed by 4M category as it arrives from EM
+// root causes (Operations→Machinery, Inventory/Suppliers→Materials, etc.)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const EM_CATEGORY_ACTIONS: Record<string, Record<Severity, ActionTemplate>> = {
+  Machinery: { // EM: Operations / Assets
+    critical: {
+      title: "Audit highest-risk event assets for service readiness",
+      description: "Immediately identify which rental assets are causing the most on-site failures and setup delays. Assign a warehouse lead for a 48-hour condition audit with a readiness sign-off checklist.",
+      type: "stabilise",
+      why: "Unready assets dispatched to events create on-site failures that damage client relationships and generate emergency replacement costs.",
+      expectedOutcome: "Identifies and removes the highest-risk assets from the active dispatch pool until serviced.",
+      suggestedOwner: "Warehouse / Operations Manager",
+      effort: "HIGH",
+    },
+    high: {
+      title: "Introduce pre-dispatch readiness checks for event packs",
+      description: "Before any outbound pack leaves the warehouse, complete a checklist covering item count, condition, and booking reference. Log all shortfalls found at dispatch — not on-site.",
+      type: "implement",
+      why: "Setup delays and emergency substitutions trace back to assets leaving without readiness confirmation.",
+      expectedOutcome: "Reduces on-site shortfalls and same-day emergency sourcing costs.",
+      suggestedOwner: "Warehouse Lead",
+      effort: "MEDIUM",
+    },
+    medium: {
+      title: "Create a weekly readiness schedule for high-dependency rental items",
+      description: "Identify the top 10 most-requested rental items and establish a weekly inspection cycle. Mark items that need repair before the next booking window.",
+      type: "implement",
+      why: "High-dependency assets without a readiness cycle generate emergency hire and margin loss.",
+      expectedOutcome: "Builds proactive asset availability discipline and reduces per-event substitution costs.",
+      suggestedOwner: "Operations Manager",
+      effort: "LOW",
+    },
+    low: {
+      title: "Review asset utilisation and loss patterns per event type",
+      description: "Analyse which asset categories generate the most shortfalls, damage or write-offs across your event types. Use findings to replenish, retire or reprice accordingly.",
+      type: "monitor",
+      why: "Structural asset gaps only become visible through pattern analysis across events.",
+      expectedOutcome: "Improves long-term asset pool fit-for-purpose and reduces chronic shortfall items.",
+      suggestedOwner: "Operations Manager",
+      effort: "LOW",
+    },
+  },
+
+  Materials: { // EM: Inventory / Suppliers
+    critical: {
+      title: "Confirm all critical vendors for upcoming events immediately",
+      description: "For every event in the next 14 days, call and confirm all critical third-party suppliers. Document responses and flag any unconfirmed vendors for immediate backup activation.",
+      type: "stabilise",
+      why: "Unconfirmed vendors are the primary source of same-day delivery failures and emergency sourcing costs.",
+      expectedOutcome: "Eliminates vendor no-show risk for the immediate event window.",
+      suggestedOwner: "Event Coordinator",
+      effort: "HIGH",
+    },
+    high: {
+      title: "Implement a dispatch sign-off checklist for all outbound event packs",
+      description: "Create a per-event checklist covering item type, quantity and condition before any pack leaves the warehouse. Assign clear accountability to one named person per dispatch.",
+      type: "implement",
+      why: "Inventory shortfalls discovered on-site are consistently more costly and client-damaging than those caught at dispatch.",
+      expectedOutcome: "Reduces on-site shortfall incidents and emergency substitution costs.",
+      suggestedOwner: "Warehouse / Operations Lead",
+      effort: "MEDIUM",
+    },
+    medium: {
+      title: "Build a preferred vendor list with backup contacts for critical categories",
+      description: "For your top 5 vendor categories, identify at least one confirmed backup option per category. Document lead times, minimum order quantities and emergency contact details.",
+      type: "implement",
+      why: "Single-source vendor dependency converts supplier unreliability into event-day execution risk.",
+      expectedOutcome: "Reduces emergency sourcing response time and premium costs when primary vendors fail.",
+      suggestedOwner: "Procurement / Ops Manager",
+      effort: "MEDIUM",
+    },
+    low: {
+      title: "Review supplier reliability and lock-in process quarterly",
+      description: "Score each active vendor on delivery reliability, lead time adherence and communication responsiveness. Use results to inform preferred vendor decisions and SLA targets.",
+      type: "monitor",
+      why: "Supplier reliability can degrade gradually — structured review catches issues before they become execution failures.",
+      expectedOutcome: "Maintains a reliable, well-understood supplier ecosystem with fewer last-minute surprises.",
+      suggestedOwner: "Ops Manager",
+      effort: "LOW",
+    },
+  },
+
+  Manpower: { // EM: Crew / Field Teams
+    critical: {
+      title: "Assign a named event commander to every upcoming deployment",
+      description: "For each event in the next 14 days, name a single field commander responsible for crew coordination, setup sign-off and client escalation. Brief them on role expectations before the event.",
+      type: "stabilise",
+      why: "Events without a named command owner generate the highest incidence of setup delays, crew confusion and client-visible failures.",
+      expectedOutcome: "Reduces unresolved on-site issues and improves setup time for the immediate event window.",
+      suggestedOwner: "Operations Manager",
+      effort: "MEDIUM",
+    },
+    high: {
+      title: "Introduce structured crew briefings before every event deployment",
+      description: "Hold a 15-minute pre-event brief for all crew covering setup layout, role assignments, client contact and escalation protocol. Document attendance.",
+      type: "implement",
+      why: "Crew arriving on-site without role clarity are the leading cause of avoidable rework and setup delays.",
+      expectedOutcome: "Reduces on-site confusion, rework cycles and overtime hours from poor crew coordination.",
+      suggestedOwner: "Field Supervisor",
+      effort: "LOW",
+    },
+    medium: {
+      title: "Match crew complement to event scale before booking confirmation",
+      description: "Build a simple crew requirement model based on event type, guest count and setup complexity. Confirm crew availability before committing to the booking timeline.",
+      type: "implement",
+      why: "Crew shortfall discovered at deployment drives overtime, rushed setup and execution quality failures.",
+      expectedOutcome: "Eliminates last-minute crew scrambles and reduces structural overtime as a delivery cost.",
+      suggestedOwner: "Operations Manager",
+      effort: "MEDIUM",
+    },
+    low: {
+      title: "Track crew overtime and turnover by event type",
+      description: "Record overtime hours and crew retention patterns segmented by event format. Use this data to identify which event types systematically underprice crew deployment.",
+      type: "monitor",
+      why: "Structural overtime and crew attrition only become addressable when the pattern is documented.",
+      expectedOutcome: "Enables evidence-based crew planning and pricing adjustments that reduce overtime dependency.",
+      suggestedOwner: "Operations Manager",
+      effort: "LOW",
+    },
+  },
+
+  Money: { // EM: Commercial Control
+    critical: {
+      title: "Start logging reactive delivery costs per event immediately",
+      description: "For every event in the next 30 days, record emergency sourcing, overtime and substitution costs against the specific booking. Do not absorb these into overhead — they need to be visible at event level.",
+      type: "stabilise",
+      why: "Margin cannot be recovered from reactive costs that are invisible at event level.",
+      expectedOutcome: "Establishes the data needed to quantify commercial leakage and prioritise the highest-loss event types.",
+      suggestedOwner: "Finance / Operations Manager",
+      effort: "MEDIUM",
+    },
+    high: {
+      title: "Introduce a formal change-order process for all scope additions",
+      description: "Any work, items or time added beyond the original quote must be captured in writing and approved by the client before delivery. Establish a template and make it mandatory for all event coordinators.",
+      type: "implement",
+      why: "Untracked scope additions are among the most consistent sources of event-level margin erosion.",
+      expectedOutcome: "Converts currently absorbed scope additions into billed revenue and reduces client dispute risk.",
+      suggestedOwner: "Operations / Finance Lead",
+      effort: "MEDIUM",
+    },
+    medium: {
+      title: "Review underquoted events from the last 90 days",
+      description: "Identify your 3–5 most loss-making bookings in the last quarter. Analyse where the cost gap occurred — labour, equipment, emergency sourcing or scope additions. Use findings to update your cost model.",
+      type: "investigate",
+      why: "Systematic underquoting creates a compounding margin problem that repricing alone cannot solve without understanding the root cause.",
+      expectedOutcome: "Identifies specific pricing gaps and informs cost model updates for future bookings.",
+      suggestedOwner: "Finance / Sales Lead",
+      effort: "MEDIUM",
+    },
+    low: {
+      title: "Report event-level margin actuals vs. quoted margin monthly",
+      description: "Create a simple monthly review showing revenue, actual cost and margin per event type. Surface this at management level as a standard operational KPI.",
+      type: "monitor",
+      why: "Without event-level visibility, margin erosion accumulates invisibly until it reaches a critical threshold.",
+      expectedOutcome: "Makes margin performance a managed outcome rather than an end-of-year surprise.",
+      suggestedOwner: "Finance Manager",
+      effort: "LOW",
+    },
+  },
+};
+
 function normaliseStep(step: string): string {
   return step.toLowerCase().replace(/_/g, " ").trim();
 }
@@ -625,7 +789,10 @@ export function generateNextActions(
   healthScore: { overallScore: number; riskLevel: string },
   patterns: any[],
   roadmap: any[],
+  industry?: string,
 ): NextActionsOutput {
+
+  const isEM = industry === "event_management";
 
   const immediateRaw: NextAction[] = [];
   const thirtyDayRaw: NextAction[] = [];
@@ -639,8 +806,10 @@ export function generateNextActions(
   for (const finding of findings ?? []) {
     const category = (finding.category ?? finding.fourMCategory ?? "Operations").trim();
     const severity: Severity = (finding.severity ?? "medium").toLowerCase() as Severity;
-    const templates = CATEGORY_ACTIONS[category] ?? DEFAULT_ACTION;
-    const template = (templates as any)[severity] ?? DEFAULT_ACTION[severity];
+    // EM: use domain-native action templates keyed by 4M category
+    const actionMap = isEM ? EM_CATEGORY_ACTIONS : CATEGORY_ACTIONS;
+    const templates = actionMap[category] ?? (isEM ? EM_CATEGORY_ACTIONS["Manpower"] : DEFAULT_ACTION);
+    const template = (templates as any)[severity] ?? (isEM ? (EM_CATEGORY_ACTIONS["Manpower"] as any)["medium"] : DEFAULT_ACTION[severity]);
 
     const action: NextAction = {
       title: template.title,
@@ -764,8 +933,11 @@ export function generateNextActions(
   const totalActions = immediate.length + thirtyDay.length + sixtyNinetyDay.length;
   const criticalCount = immediate.filter((a) => a.priority === "critical").length;
 
-  const summary =
-    criticalCount > 0
+  const summary = isEM
+    ? criticalCount > 0
+      ? `${criticalCount} critical action${criticalCount > 1 ? "s" : ""} require${criticalCount === 1 ? "s" : ""} immediate attention this week. ${totalActions} event-operational improvements are sequenced across a 90-day delivery improvement window.`
+      : `${totalActions} event-operational improvements are sequenced across a 90-day delivery improvement window, beginning with field execution and commercial control priorities.`
+    : criticalCount > 0
       ? `${criticalCount} critical action${criticalCount > 1 ? "s" : ""} require${criticalCount === 1 ? "s" : ""} immediate attention this week. ${totalActions} total recommended actions are sequenced across a 90-day intervention window.`
       : `${totalActions} recommended actions are sequenced across a 90-day intervention window, beginning with stabilisation priorities for the current period.`;
 
