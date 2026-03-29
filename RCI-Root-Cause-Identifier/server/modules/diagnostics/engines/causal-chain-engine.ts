@@ -3,6 +3,66 @@ export interface CausalChain {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT — PRE-BUILT CAUSAL CHAINS
+// These are injected directly (not graph-traversed) when industry is
+// "event_management". Chains are in display-ready title case.
+// ─────────────────────────────────────────────────────────────────────────────
+export const EVENT_MANAGEMENT_CHAINS: CausalChain[] = [
+  {
+    chain: [
+      "Inventory mismatch",
+      "Incomplete dispatch pack",
+      "On-site item substitution",
+      "Delayed setup",
+      "Client-visible disruption",
+      "Margin leakage",
+    ],
+  },
+  {
+    chain: [
+      "Weak crew briefing",
+      "Role ambiguity during setup",
+      "Setup error and rework",
+      "Crew overtime",
+      "Fatigue and execution inconsistency",
+    ],
+  },
+  {
+    chain: [
+      "Late vendor confirmation",
+      "Incomplete event pack",
+      "Emergency last-minute sourcing",
+      "Premium procurement cost",
+      "Margin erosion",
+    ],
+  },
+  {
+    chain: [
+      "Underquoted event scope",
+      "Untracked scope additions",
+      "Delivery strain on crew and assets",
+      "Cost overrun",
+      "Below-plan event profitability",
+    ],
+  },
+  {
+    chain: [
+      "Poor return and damage tracking",
+      "Missing or damaged asset loss",
+      "Unrecovered client charges",
+      "Recurring margin leakage",
+    ],
+  },
+];
+
+// Signal fragments that indicate an event management context
+const EM_SIGNAL_FRAGMENTS = [
+  "crew", "event", "setup", "dispatch", "rental", "vendor",
+  "booking", "venue", "inventory mismatch", "loading", "return",
+  "on-site", "asset", "briefing", "supervisor", "event pack",
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 // CAUSAL LINK GRAPH
 // Each entry: "trigger signal" → "consequence signal"
 // Built as a directed graph — traversal stops when no further link exists.
@@ -191,8 +251,29 @@ function titleCase(s: string): string {
 
 export function buildCausalChains(
   signals: (string | Record<string, any>)[],
-  findings: any[]
+  findings: any[],
+  industry?: string,
 ): CausalChain[] {
+
+  // ── Event Management: inject pre-built EM chains ─────────────────────────
+  // When the industry is event_management, or when signal/finding content
+  // looks EM-native, return the curated EM chain set instead of manufacturing chains.
+  if (industry === "event_management") {
+    console.log("🔗 CAUSAL CHAINS: Event Management — using curated EM chain set");
+    return EVENT_MANAGEMENT_CHAINS;
+  }
+
+  // Auto-detect EM context from signals/findings when industry is not passed
+  const allTextForDetection = [
+    ...signals.map(s => typeof s === "string" ? s : JSON.stringify(s)),
+    ...findings.map(f => `${f.title ?? ""} ${f.category ?? ""}`),
+  ].join(" ").toLowerCase();
+  const emHitCount = EM_SIGNAL_FRAGMENTS.filter(frag => allTextForDetection.includes(frag)).length;
+  if (emHitCount >= 3) {
+    console.log(`🔗 CAUSAL CHAINS: EM auto-detected (${emHitCount} fragment hits) — using EM chain set`);
+    return EVENT_MANAGEMENT_CHAINS;
+  }
+
   const seedSet = new Set<string>();
 
   // ── 1. Resolve seeds from incoming signals ──────────────────────────────

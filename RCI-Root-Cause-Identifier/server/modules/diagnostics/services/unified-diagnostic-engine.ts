@@ -57,7 +57,7 @@ export async function runUnifiedDiagnostic({
   }
 
   // ── Financial impact ─────────────────────────────────────────────────────
-  const financialImpact = estimateFinancialImpact(signals, baseFindings);
+  const financialImpact = estimateFinancialImpact(signals, baseFindings, registryKey);
 
   // ── Root cause tree ──────────────────────────────────────────────────────
   const rootCauseTree = buildRootCauseTree(baseFindings);
@@ -67,7 +67,7 @@ export async function runUnifiedDiagnostic({
   const confidenceScores = calculateRootCauseConfidence(rootCauses);
 
   // ── Causal chains ────────────────────────────────────────────────────────
-  const causalChains = buildCausalChains(signals, rootCauses);
+  const causalChains = buildCausalChains(signals, rootCauses, registryKey);
 
   // ── Pattern detection ────────────────────────────────────────────────────
   const patterns = detectRootCausePatterns(signals, rootCauses);
@@ -79,19 +79,20 @@ export async function runUnifiedDiagnostic({
   const healthScore = calculateOperationalHealthScore(rootCauses, benchmarks.benchmarkResults);
 
   // ── Cost savings ─────────────────────────────────────────────────────────
-  const savings = estimateCostSavings(rootCauseTree, causalChains);
+  const savings = estimateCostSavings(rootCauseTree, causalChains, registryKey);
 
   // ── Transformation roadmap ───────────────────────────────────────────────
   // Pass findings so the roadmap engine can use category-based fallback
   const roadmap = generateTransformationRoadmap(rootCauseTree.primaryCause, rootCauses);
 
   // ── Consulting narrative + executive summary ─────────────────────────────
-  // Pass findings and healthScore for richer, context-aware prose generation
+  // Pass findings, healthScore and industry for domain-native prose generation
   const narrative = generateConsultingNarrative(
     rootCauseTree,
     causalChains,
     rootCauses,
     healthScore,
+    registryKey,
   );
 
   // ── Recommended next actions ─────────────────────────────────────────────

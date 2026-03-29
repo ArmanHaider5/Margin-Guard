@@ -10,7 +10,18 @@ The platform has two primary user types:
 
 Key capabilities include AI-powered root cause analysis governed by curated knowledge libraries (not free-form AI generation), 119 manufacturing root causes across 3 tiers (operational/process/management), support for 13+ industries with 146+ industry-specific problems, document parsing (Excel, Word, PDF, PowerPoint), PDF report generation with professional branding, and a management dashboard view.
 
-**Registered Industry Models** (in `server/modules/industries/industry-registry.ts`): Manufacturing, Healthcare, Logistics, Retail, Professional Services, Event Management. All other client industries (construction, hospitality, F&B variants, oil & gas, property development, etc.) fall back to the closest proxy model via `INDUSTRY_KEY_MAP` in the unified diagnostic engine. `event_management` is a first-class model with 21 root causes, 39 signals, 12 KPI benchmarks, and 44 signal→root-cause mappings covering: event execution, rental/equipment inventory, crew/manpower, supplier coordination, and financial/commercial leakage.
+**Registered Industry Models** (in `server/modules/industries/industry-registry.ts`): Manufacturing, Healthcare, Logistics, Retail, Professional Services, Event Management. All other client industries (construction, hospitality, F&B variants, oil & gas, property development, etc.) fall back to the closest proxy model via `INDUSTRY_KEY_MAP` in both the unified diagnostic engine and bulk-analyzer. `event_management` is a hardened first-class model with 31 root causes (EM001–EM031), 39 signals, 12 KPI benchmarks across: event execution, rental/equipment inventory (Inventory category), crew/manpower, supplier coordination (Suppliers category), and financial/commercial control (Financial category).
+
+**Event Management Domain Hardening** (Sprint 2):
+- Root causes expanded from 21 → 31 with sharper, event-native titles and descriptions
+- 5 dedicated EM causal chain families injected via `EVENT_MANAGEMENT_CHAINS` in `causal-chain-engine.ts` (auto-detected by industry param or signal content)
+- EM-specific category frames in `consulting-narrative-engine.ts` (Manpower/Inventory/Suppliers/Financial/Operations) producing event-business prose, not manufacturing language
+- EM-specific financial impact buckets: overtime leakage, emergency sourcing, rework labour, asset write-offs, unrecovered damage, missed billables, underquoted margin, collection drag
+- EM-specific cost savings cards (9 opportunity types) in `cost-saving-engine.ts`
+- EM roadmap templates for 5 EM root causes + Inventory/Suppliers/Financial category fallbacks
+- EM prediction templates keyed by EM category replacing manufacturing-flavored predictions
+- 4M → EM client-facing label mapping in `analysis-results.tsx`: Machinery→"Assets & Equipment", Materials→"Inventory & Supplier Flow", Manpower→"Crew & Field Execution", Money→"Commercial Control"
+- Industry parameter now flows through all diagnostic engines: `buildCausalChains`, `estimateFinancialImpact`, `estimateCostSavings`, `generateConsultingNarrative`, `buildPredictionsFromFindings`
 
 The main application lives in the `RCI-Root-Cause-Identifier/` directory. The root-level `package.json` contains shared utility dependencies, while `.replit_integration_files/` contains Replit-provided integration utilities (chat, audio, image, batch processing).
 

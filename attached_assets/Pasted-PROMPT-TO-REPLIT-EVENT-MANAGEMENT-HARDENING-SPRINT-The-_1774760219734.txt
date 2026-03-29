@@ -1,0 +1,330 @@
+PROMPT TO REPLIT — EVENT MANAGEMENT HARDENING SPRINT
+
+The Event Management module is now technically working, but it is not commercially or diagnostically strong enough yet.
+
+Current problem
+
+Madetill Event Management (MEM) now produces findings, but the outputs still feel:
+
+too generic
+too weak
+too close to fallback logic
+too influenced by manufacturing / generic operations language
+
+This is especially visible in:
+
+Executive Summary
+Findings phrasing
+Causal Chains
+Risk Predictions
+Financial Impact
+Transformation Roadmap
+Cost Saving Opportunities
+
+The Event Management model must now be hardened into a real first-class industry module, not just a functional fallback.
+
+OBJECTIVE
+
+Upgrade Event Management so it produces outputs that feel native to event operations, specifically for companies like:
+
+event setup / rental companies
+stage / AV / booth / furniture / event equipment operators
+field crew / setup / logistics-heavy event businesses
+project-driven event delivery teams
+
+We are not doing UI work now.
+
+We are improving domain quality, reasoning quality, and client-facing credibility.
+
+REQUIRED IMPROVEMENTS
+1) Rewrite the Event Management narrative engine
+
+Current summaries are too generic and system-like.
+
+Fix requirements:
+
+Create a dedicated Event Management narrative style that speaks like a management consultant diagnosing an event operations business.
+
+It must:
+describe the actual operating strain
+describe business consequences
+describe what is likely happening operationally
+avoid generic phrases like:
+“Using document-derived signals…”
+“Identified X root causes across Y areas…”
+New tone should sound like:
+event delivery operations
+rental / setup / dispatch / crew / site execution / margin protection
+commercially literate and operationally credible
+Build event-specific narrative libraries for:
+asset readiness
+dispatch / delivery reliability
+setup sequencing
+venue readiness
+crew supervision
+role ambiguity
+event-day execution
+supplier coordination
+margin leakage
+underquoting / commercial control
+damage / loss recovery
+emergency sourcing
+collections / overdue accounts
+Deliverable:
+
+A dedicated Event Management narrative engine / branch so Executive Summary and consultant narrative are event-native.
+
+2) Replace client-facing 4M labels for Event Management
+
+Do not show raw 4M terms like “Machinery” to event clients.
+
+Keep internal 4M if needed, but client-facing labels must map as:
+Machinery → Assets & Equipment
+Materials → Inventory & Supplier Flow
+Manpower → Crew & Field Execution
+Money → Commercial Control
+
+This must affect:
+
+Lead Category
+finding chips / badges
+report output
+any client-facing labels
+
+Do this only for Event Management (do not break Manufacturing).
+
+3) Expand and sharpen Event Management root causes
+
+The current root causes are too shallow.
+
+Add / strengthen root causes around:
+Assets & Equipment
+Rental asset readiness gaps
+Poor dispatch pack accuracy
+Weak return / turnaround discipline
+Asset maintenance / condition blind spots
+Missing / damaged item recovery weakness
+Incomplete loading verification
+Inventory & Supplier Flow
+Inventory visibility mismatch
+Supplier dependency concentration
+Last-minute vendor substitution
+Pack completeness failure
+Event-specific stock allocation errors
+Poor staging / pre-event preparation
+Crew & Field Execution
+Weak site supervision
+Role ambiguity during setup
+Poor crew briefing discipline
+Overtime dependency
+Fatigue / event burnout
+Knowledge dependency on key staff
+Inconsistent event-day escalation process
+Commercial Control
+Underquoted jobs
+Scope creep not captured
+Weak change-order control
+Delayed collections / overdue account exposure
+Emergency procurement leakage
+Margin blind spots by event type
+Damage / loss charges not recovered
+Deliverable:
+
+Upgrade the root cause library so Event findings feel sharper and more believable.
+
+4) Build Event Management-specific causal chain logic
+
+This is currently one of the weakest areas and is still contaminated by manufacturing logic.
+
+Absolutely remove event outputs like:
+PM overdue
+maintenance backlog
+machine breakdown
+unplanned downtime
+production loss
+
+These are not acceptable for Event Management.
+
+Replace with event-native chain graphs such as:
+Chain family A — Asset Readiness
+Inventory mismatch → incomplete dispatch → on-site substitution → delayed setup → client-visible disruption → margin leakage
+Chain family B — Crew Execution
+Weak briefing → role ambiguity → setup error → rework → overtime → fatigue → execution inconsistency
+Chain family C — Supplier Dependency
+Late vendor confirmation → incomplete event pack → last-minute sourcing → premium cost → margin erosion
+Chain family D — Commercial Leakage
+Underquoted scope → untracked add-ons → delivery strain → cost overrun → weak event profitability
+Chain family E — Recovery / Damage Control
+Poor return tracking → missing/damaged asset loss → unrecovered charges → recurring margin leakage
+Requirements:
+Event chains must use event-native step names
+Causal chains must be believable for a real event operator
+Narrative prose integration must also use event-native wording
+5) Rewrite Event Management risk predictions
+
+Current risks are too generic / operations-heavy.
+
+Build event-specific risk templates such as:
+recurring last-minute setup disruption
+event-day execution inconsistency
+overtime dependency becoming structural
+supplier dependency creating premium cost exposure
+rental loss / damage leakage scaling over time
+customer dissatisfaction from setup delays or substitutions
+margin erosion from undercontrolled event delivery
+burnout / attrition from reactive operating rhythm
+repeat commercial leakage from overdue account servicing
+Requirements:
+risks must be written in business language
+each should include realistic consequence framing
+each should sound like a consultant’s risk view, not a generic alert
+6) Rebuild Event Management financial impact logic
+
+This must become much more event-relevant.
+
+Add event-specific financial buckets:
+Overtime leakage
+Emergency sourcing / premium vendor cost
+Rework / reset labour cost
+Missing / damaged asset write-offs
+Unrecovered damage charges
+Missed billable add-ons / scope creep leakage
+Underquoted event margin loss
+Delivery / setup delay cost
+Cash drag from delayed collection / overdue accounts
+Requirements:
+estimate bands can remain directional, not exact
+but the buckets must feel commercially relevant to event businesses
+if multiple event cost drivers are present, show a fuller breakdown
+avoid manufacturing-style loss logic
+7) Rebuild Event Management cost-saving opportunities
+
+Current savings cards are too generic and CFO-style.
+
+Replace with event-specific opportunity types like:
+tighten dispatch accuracy and event pack readiness
+reduce same-day replacement and emergency rental spend
+reduce crew overtime from event-day confusion
+recover damage / loss charges consistently
+reduce rework through stronger setup ownership
+improve event-level profitability visibility
+reduce overdue-account servicing leakage
+improve supplier lock-in before event execution
+Requirements:
+savings titles should sound credible to an event operator
+descriptions should feel practical and commercially useful
+estimated savings can remain directional
+8) Rebuild Event Management roadmap templates
+
+Current roadmap language still sounds maintenance / manufacturing-oriented.
+
+Replace with event-native 30/60/90 templates like:
+Days 1–30 — Stabilise
+Introduce event pack sign-off
+Create dispatch readiness checklist
+Define event-day command owner
+Track all last-minute substitutions and setup delays
+Days 31–60 — Control
+Standardise crew briefing and role assignment
+Introduce supplier lock-in and pre-event confirmation
+Create asset movement / return accountability
+Implement margin review for reactive jobs
+Days 61–90 — Scale
+Build repeatable event execution playbook
+Introduce post-event operational review cadence
+Create event profitability review loop
+Formalise damage / loss recovery controls
+Requirements:
+all roadmap actions must feel relevant to event operations
+no maintenance or PM-heavy language unless explicitly supported by event rental equipment context
+9) Improve finding titles and evidence framing
+
+Current Event findings are still too broad / underpowered.
+
+Make titles sharper, e.g.:
+
+Instead of:
+
+Weak on-site supervision undermining workforce capacity
+
+Prefer:
+
+Weak event-day supervision and role ownership
+Inconsistent crew control during live setup execution
+Reactive field coordination increasing setup disruption
+
+Instead of:
+
+Rental inventory availability mismatch
+
+Prefer:
+
+Incomplete rental readiness before event dispatch
+Inventory visibility gaps causing last-minute substitutions
+Weak dispatch verification increasing setup risk
+Also improve:
+“Insight” text under each finding
+“What to validate next”
+evidence phrasing so it sounds more specific and useful
+10) Prevent manufacturing contamination in Event outputs
+
+This is critical.
+
+Add a protection layer so Event Management outputs cannot accidentally use manufacturing-native concepts unless directly relevant and explicitly supported by event rental evidence.
+
+Disallow / suppress terms like:
+production loss
+PM overdue (unless translated properly into asset servicing / readiness)
+machine breakdown
+unplanned downtime
+preventive maintenance capability
+operator fatigue / defect rate increase (unless rewritten to event context)
+
+If event rental equipment servicing is relevant, translate it into event-appropriate language such as:
+
+asset readiness
+equipment condition reliability
+turnaround discipline
+dispatch readiness
+OUTPUT REQUIRED
+
+When done, I want:
+
+1) Root summary
+what was weak in Event Management before
+what was improved
+2) Files changed
+
+Exactly which files were updated
+
+3) Examples before vs after
+
+Show:
+
+Executive Summary
+2 findings
+2 risk predictions
+1 causal chain
+1 roadmap example
+1 financial impact example
+4) MEM validation
+
+Run the MEM analysis again and confirm:
+
+the output no longer feels manufacturing-like
+findings are event-native
+causal chains are event-native
+roadmap is event-native
+financial impact is event-native
+IMPORTANT
+
+Do not work on UI styling.
+Do not work on layout.
+Do not do visual polish.
+
+This sprint is only about:
+
+domain realism
+diagnostic quality
+event-business credibility
+consultant-grade output

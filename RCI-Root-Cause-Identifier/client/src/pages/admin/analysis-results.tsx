@@ -50,6 +50,25 @@ const fourMColors: Record<FourMCategory, { bg: string; text: string; border: str
   Machinery: { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-700 dark:text-purple-300", border: "border-purple-200 dark:border-purple-800" },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT: 4M → CLIENT-FACING LABEL MAP
+// Internal 4M categories are preserved for engine logic.
+// For Event Management clients, display labels use domain-native terminology.
+// ─────────────────────────────────────────────────────────────────────────────
+const EM_4M_LABELS: Record<FourMCategory, string> = {
+  Machinery: "Assets & Equipment",
+  Materials: "Inventory & Supplier Flow",
+  Manpower:  "Crew & Field Execution",
+  Money:     "Commercial Control",
+};
+
+function getCategoryLabel(category: string, industry?: string): string {
+  if (industry === "event_management" && category in EM_4M_LABELS) {
+    return EM_4M_LABELS[category as FourMCategory];
+  }
+  return category;
+}
+
 const severityColors: Record<string, { bg: string; text: string }> = {
   low: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-700 dark:text-gray-300" },
   medium: { bg: "bg-yellow-100 dark:bg-yellow-900", text: "text-yellow-700 dark:text-yellow-300" },
@@ -1211,9 +1230,11 @@ export default function AnalysisResults() {
                   {primaryCategory ? (
                     <>
                       <p className={`text-2xl font-black leading-tight ${fourMColors[primaryCategory as FourMCategory]?.text ?? "text-foreground"}`}>
-                        {primaryCategory}
+                        {getCategoryLabel(primaryCategory, client?.industry)}
                       </p>
-                      <p className="text-[11px] text-muted-foreground mt-2">highest-impact 4M domain</p>
+                      <p className="text-[11px] text-muted-foreground mt-2">
+                        {client?.industry === "event_management" ? "primary operational risk area" : "highest-impact 4M domain"}
+                      </p>
                     </>
                   ) : (
                     <>
@@ -1293,7 +1314,7 @@ export default function AnalysisResults() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-[16px] leading-snug text-foreground mb-2">{finding.evidenceLedTitle || finding.title}</h3>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <Badge className={`${colors.bg} ${colors.text} text-[11px] font-semibold`}>{finding.fourMCategory}</Badge>
+                      <Badge className={`${colors.bg} ${colors.text} text-[11px] font-semibold`}>{getCategoryLabel(finding.fourMCategory, client?.industry)}</Badge>
                       <Badge className={`${severityBadgeClass} text-[11px] font-semibold uppercase`}>{finding.severity}</Badge>
                       {esStyle && (
                         <Badge className={`${esStyle.bg} ${esStyle.text} text-[11px]`}>

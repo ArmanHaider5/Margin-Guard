@@ -1,13 +1,13 @@
 export const eventManagementRootCauses = [
 
-  // ── OPERATIONS / EVENT EXECUTION ────────────────────────────────────────────
+  // ── OPERATIONS / EVENT EXECUTION ─────────────────────────────────────────────
 
   {
     id: "EM001",
     category: "Operations",
-    rootCause: "Weak event execution planning",
-    description: "Events proceed without structured run-sheets, role assignments or contingency plans, resulting in on-site chaos and service failures",
-    signals: ["setup_delay", "incomplete_setup", "last_minute_change", "timeline_overrun"],
+    rootCause: "Reactive event execution without structured run-sheet discipline",
+    description: "Events proceed without confirmed run-sheets, role assignments or contingency plans. Issues surface on the day with no pre-agreed resolution protocol, forcing ad-hoc responses that compound into client-visible disruption.",
+    signals: ["setup_delay", "incomplete_setup", "last_minute_change", "timeline_overrun", "event_delay"],
     kpis: ["on_time_setup", "event_readiness"],
     impactWeight: 0.93
   },
@@ -15,209 +15,309 @@ export const eventManagementRootCauses = [
   {
     id: "EM002",
     category: "Operations",
-    rootCause: "Poor event-day command structure",
-    description: "No designated event commander or escalation chain, causing unresolved issues to cascade during live events",
-    signals: ["no_supervisor", "team_miscommunication", "guest_complaint", "coordination_issue"],
+    rootCause: "No designated event-day command owner",
+    description: "Events run without a single named commander responsible for decisions and escalation. Problems during live execution circulate unresolved, each minute of ambiguity compounding setup delays and client dissatisfaction.",
+    signals: ["no_supervisor", "team_miscommunication", "guest_complaint", "coordination_issue", "escalation_failure"],
     kpis: ["event_readiness", "client_satisfaction"],
-    impactWeight: 0.88
+    impactWeight: 0.90
   },
 
   {
     id: "EM003",
     category: "Operations",
-    rootCause: "Setup sequencing breakdown",
-    description: "Setup activities executed in wrong order or without synchronisation, causing delays and incomplete readiness at event start",
-    signals: ["late_setup", "incomplete_setup", "venue_issue", "setup_delay"],
+    rootCause: "Setup sequencing failure causing readiness gaps at event start",
+    description: "Setup tasks executed in wrong order or without coordination between teams. Dependencies are missed — venue access, AV, and furniture arriving in conflicting sequences — leaving the event incomplete at the agreed ready-time.",
+    signals: ["late_setup", "incomplete_setup", "venue_issue", "setup_delay", "coordination_issue"],
     kpis: ["setup_completion", "on_time_setup"],
-    impactWeight: 0.85
+    impactWeight: 0.87
   },
 
   {
     id: "EM004",
     category: "Operations",
-    rootCause: "Venue readiness failure",
-    description: "Venue is not prepared, accessible or compatible with event requirements at handover time",
-    signals: ["venue_issue", "setup_delay", "event_delay"],
+    rootCause: "Venue readiness failure at event handover",
+    description: "Venue is not accessible, correctly configured, or compatible with event requirements at the agreed handover window. This forces reactive workarounds that cascade into setup delays and compressed execution time.",
+    signals: ["venue_issue", "setup_delay", "event_delay", "access_issue"],
     kpis: ["on_time_setup", "event_readiness"],
-    impactWeight: 0.82
+    impactWeight: 0.83
   },
 
   {
     id: "EM005",
     category: "Operations",
-    rootCause: "Last-minute change dependency",
-    description: "Operations absorb frequent late client or vendor changes without a formal change management process, creating reactive fire-fighting",
-    signals: ["last_minute_change", "timeline_overrun", "coordination_issue", "event_overtime"],
-    kpis: ["booking_lead_time", "event_readiness"],
-    impactWeight: 0.80
+    rootCause: "Uncontrolled last-minute change absorption",
+    description: "Late client or vendor changes are absorbed without a formal change process. The cost, scheduling impact and knock-on effects on crew and inventory are invisible, creating reactive firefighting that erodes both margin and execution quality.",
+    signals: ["last_minute_change", "timeline_overrun", "coordination_issue", "event_overtime", "scope_addition"],
+    kpis: ["booking_lead_time", "event_readiness", "event_margin"],
+    impactWeight: 0.82
   },
-
-  // ── INVENTORY / RENTAL / EQUIPMENT (MACHINERY + MATERIALS) ──────────────────
 
   {
     id: "EM006",
-    category: "Inventory",
-    rootCause: "Rental inventory availability mismatch",
-    description: "Stock of high-demand rental items (chairs, canopies, tableware, domes) does not match booking demand, causing shortfalls at dispatch",
-    signals: ["stock_shortage", "missing_item", "insufficient_chairs", "dome_shortage", "insufficient_tableware"],
-    kpis: ["inventory_accuracy", "equipment_utilization"],
-    impactWeight: 0.91
+    category: "Operations",
+    rootCause: "Inconsistent event-day escalation process",
+    description: "When issues arise during live events, there is no agreed escalation path — leading to delayed responses, unilateral decisions by junior crew, and recurring client-facing service failures.",
+    signals: ["escalation_failure", "guest_complaint", "coordination_issue", "service_complaint"],
+    kpis: ["client_satisfaction", "event_readiness"],
+    impactWeight: 0.78
   },
+
+  // ── ASSETS & EQUIPMENT (INVENTORY / RENTAL) ──────────────────────────────────
 
   {
     id: "EM007",
     category: "Inventory",
-    rootCause: "Weak loading and dispatch control",
-    description: "No standardised loading checklist; items are incorrectly packed or left behind, discovered only on-site",
-    signals: ["wrong_item_packed", "missing_item", "setup_delay"],
-    kpis: ["inventory_accuracy", "setup_completion"],
-    impactWeight: 0.88
+    rootCause: "Incomplete rental readiness before event dispatch",
+    description: "Assets leave the warehouse without confirmed quantities, condition verification or completeness checks. Shortfalls and damaged items are only discovered on-site, forcing emergency substitutions at premium cost and delaying event setup.",
+    signals: ["stock_shortage", "missing_item", "insufficient_chairs", "dome_shortage", "insufficient_tableware", "dispatch_error"],
+    kpis: ["inventory_accuracy", "equipment_utilization"],
+    impactWeight: 0.93
   },
 
   {
     id: "EM008",
     category: "Inventory",
-    rootCause: "Poor equipment turnaround discipline",
-    description: "Rental items returned late or unprocessed between events, blocking redeployment for subsequent bookings",
-    signals: ["return_delay", "equipment_unavailable", "rental_turnaround"],
-    kpis: ["rental_turnaround", "equipment_utilization"],
-    impactWeight: 0.85
+    rootCause: "Dispatch pack accuracy failure — wrong or missing items",
+    description: "No standardised loading checklist is used before dispatch. Items are incorrectly packed, substituted without authorisation or omitted entirely. The error is only discovered on-site, generating rework and emergency re-runs.",
+    signals: ["wrong_item_packed", "missing_item", "setup_delay", "dispatch_error", "loading_error"],
+    kpis: ["inventory_accuracy", "setup_completion"],
+    impactWeight: 0.90
   },
 
   {
     id: "EM009",
     category: "Inventory",
-    rootCause: "Asset maintenance backlog",
-    description: "Damaged or worn rental equipment not repaired promptly, reducing usable asset pool and increasing replacement costs",
-    signals: ["repair_backlog", "broken_item", "equipment_unavailable"],
-    kpis: ["equipment_utilization", "damaged_items"],
-    impactWeight: 0.82
+    rootCause: "Weak equipment turnaround between back-to-back events",
+    description: "Assets returned from one event are not processed, cleaned and restocked before the next deployment window. Redeployment gaps create availability shortfalls that force last-minute substitutions or cancellations.",
+    signals: ["return_delay", "equipment_unavailable", "rental_turnaround", "redeployment_gap"],
+    kpis: ["rental_turnaround", "equipment_utilization"],
+    impactWeight: 0.87
   },
 
   {
     id: "EM010",
     category: "Inventory",
-    rootCause: "Return and damage processing failure",
-    description: "Damaged items returned by clients are not logged, costed or recovered, creating untracked losses",
-    signals: ["damaged_return", "broken_item", "missing_item"],
-    kpis: ["damaged_items", "missing_items", "inventory_accuracy"],
-    impactWeight: 0.80
-  },
-
-  // ── MANPOWER ─────────────────────────────────────────────────────────────────
-
-  {
-    id: "EM011",
-    category: "Manpower",
-    rootCause: "Event crew capacity shortfall",
-    description: "Insufficient crew deployed for event scale, forcing remaining crew to work beyond safe capacity",
-    signals: ["crew_shortage", "insufficient_manpower", "event_overtime", "crew_overtime"],
-    kpis: ["on_time_setup", "event_readiness"],
-    impactWeight: 0.90
-  },
-
-  {
-    id: "EM012",
-    category: "Manpower",
-    rootCause: "Weak on-site supervision",
-    description: "Events proceed without experienced supervisors, leading to undetected quality failures and unresolved issues",
-    signals: ["no_supervisor", "guest_complaint", "service_complaint", "coordination_issue"],
-    kpis: ["client_satisfaction", "event_readiness"],
-    impactWeight: 0.87
-  },
-
-  {
-    id: "EM013",
-    category: "Manpower",
-    rootCause: "Role ambiguity during event execution",
-    description: "Crew members unclear on responsibilities during live events, resulting in duplicated effort and missed tasks",
-    signals: ["team_miscommunication", "no_supervisor", "coordination_issue"],
-    kpis: ["setup_completion", "event_readiness"],
-    impactWeight: 0.83
-  },
-
-  {
-    id: "EM014",
-    category: "Manpower",
-    rootCause: "Overtime-driven fatigue and service degradation",
-    description: "Recurring crew overtime degrades service quality in back-to-back events and increases attrition risk",
-    signals: ["crew_overtime", "event_fatigue", "event_overtime"],
-    kpis: ["event_readiness", "client_satisfaction"],
-    impactWeight: 0.78
-  },
-
-  // ── MATERIALS / SUPPLIERS ────────────────────────────────────────────────────
-
-  {
-    id: "EM015",
-    category: "Suppliers",
-    rootCause: "Supplier coordination instability",
-    description: "Third-party vendors (caterers, decorators, AV) unreliable or mis-scheduled, directly impacting event delivery",
-    signals: ["vendor_no_show", "supplier_delay", "last_minute_change"],
-    kpis: ["on_time_setup", "event_readiness"],
-    impactWeight: 0.87
-  },
-
-  {
-    id: "EM016",
-    category: "Suppliers",
-    rootCause: "Late third-party delivery dependency",
-    description: "Critical items or services from suppliers arrive after setup windows close, blocking event execution",
-    signals: ["supplier_delay", "late_deliveries", "setup_delay"],
-    kpis: ["on_time_setup", "booking_lead_time"],
+    rootCause: "Asset condition blind spot — no pre-dispatch serviceability check",
+    description: "Equipment leaves the warehouse without a condition assessment. Worn, damaged or functionally impaired assets reach the event site and are only identified during setup, creating rework, substitution cost and client-visible failures.",
+    signals: ["repair_backlog", "broken_item", "equipment_unavailable", "damaged_dispatch"],
+    kpis: ["equipment_utilization", "damaged_items"],
     impactWeight: 0.84
   },
 
   {
-    id: "EM017",
-    category: "Suppliers",
-    rootCause: "Event pack completeness failure",
-    description: "Supplier deliveries or internal packs missing agreed items, requiring emergency procurement at event cost",
-    signals: ["missing_item", "wrong_item_packed", "emergency_purchase"],
-    kpis: ["inventory_accuracy", "event_readiness"],
+    id: "EM011",
+    category: "Inventory",
+    rootCause: "Missing and damaged asset recovery failure",
+    description: "Assets returned by clients with damage, loss or wear are not systematically logged, photographed or costed. Recovery charges are not raised, absorbing the financial loss into operational overhead.",
+    signals: ["damaged_return", "broken_item", "missing_item", "unrecovered_loss"],
+    kpis: ["damaged_items", "missing_items", "inventory_accuracy"],
     impactWeight: 0.81
   },
 
-  // ── FINANCIAL / COMMERCIAL ───────────────────────────────────────────────────
+  {
+    id: "EM012",
+    category: "Inventory",
+    rootCause: "Inventory visibility mismatch between system and actual stock",
+    description: "Stock counts in the booking system do not reflect actual available, in-service or under-repair inventory. Overbooking and phantom availability lead to dispatch shortfalls and on-site substitutions.",
+    signals: ["stock_shortage", "overbooking", "inventory_discrepancy", "system_mismatch"],
+    kpis: ["inventory_accuracy", "equipment_utilization"],
+    impactWeight: 0.79
+  },
 
   {
-    id: "EM018",
-    category: "Financial",
-    rootCause: "Margin leakage from reactive execution",
-    description: "Unplanned overtime, emergency sourcing and last-minute fixes erode event margins that were viable at quotation stage",
-    signals: ["cost_overrun", "emergency_purchase", "overtime_charges", "low_margin"],
-    kpis: ["event_margin", "client_cancellations"],
+    id: "EM013",
+    category: "Inventory",
+    rootCause: "Event-specific stock allocation not reserved at booking",
+    description: "Rental inventory is not ring-fenced at booking confirmation. Assets are consumed by earlier events, leaving confirmed bookings under-resourced and triggering last-minute emergency sourcing.",
+    signals: ["stock_shortage", "missing_item", "emergency_purchase", "allocation_gap"],
+    kpis: ["inventory_accuracy", "event_margin"],
+    impactWeight: 0.77
+  },
+
+  // ── CREW & FIELD EXECUTION (MANPOWER) ────────────────────────────────────────
+
+  {
+    id: "EM014",
+    category: "Manpower",
+    rootCause: "Crew capacity shortfall for event scale and complexity",
+    description: "Insufficient crew is deployed relative to event size, setup complexity and time constraints. Remaining crew absorb excess work, slowing setup, increasing error rates and making overtime structural.",
+    signals: ["crew_shortage", "insufficient_manpower", "event_overtime", "crew_overtime"],
+    kpis: ["on_time_setup", "event_readiness"],
+    impactWeight: 0.92
+  },
+
+  {
+    id: "EM015",
+    category: "Manpower",
+    rootCause: "Weak event-day supervision and role ownership",
+    description: "Events proceed without experienced supervisors on-site. Quality failures go undetected, coordination breakdowns go unresolved and client-facing issues escalate because no one has clear authority to act.",
+    signals: ["no_supervisor", "guest_complaint", "service_complaint", "coordination_issue", "supervision_gap"],
+    kpis: ["client_satisfaction", "event_readiness"],
     impactWeight: 0.89
   },
 
   {
-    id: "EM019",
-    category: "Financial",
-    rootCause: "Underpricing of event packages",
-    description: "Events quoted below true cost of delivery due to incomplete cost modelling, particularly for labour and equipment wear",
-    signals: ["underquoted_event", "low_margin", "cost_overrun"],
-    kpis: ["event_margin"],
-    impactWeight: 0.86
+    id: "EM016",
+    category: "Manpower",
+    rootCause: "Role ambiguity during live event setup and execution",
+    description: "Crew members are unclear on individual responsibilities during setup and live execution. Tasks are duplicated, missed or handed off without confirmation. The cumulative effect is avoidable rework and execution delay.",
+    signals: ["team_miscommunication", "no_supervisor", "coordination_issue", "role_confusion"],
+    kpis: ["setup_completion", "event_readiness"],
+    impactWeight: 0.85
   },
 
   {
-    id: "EM020",
-    category: "Financial",
-    rootCause: "Damage and loss recovery weakness",
-    description: "Client-caused damage or unreturned items are not systematically billed, absorbing costs into operational budget",
-    signals: ["damaged_return", "missing_item", "refund_issue", "replacement_cost"],
-    kpis: ["damaged_items", "missing_items", "event_margin"],
+    id: "EM017",
+    category: "Manpower",
+    rootCause: "Poor crew briefing discipline before event deployment",
+    description: "Crew arrive at events without a clear brief — no timeline, no role assignment, no escalation contact. Setup quality is inconsistent across teams because execution relies on individual initiative rather than structured instruction.",
+    signals: ["briefing_gap", "role_confusion", "coordination_issue", "setup_error"],
+    kpis: ["setup_completion", "event_readiness"],
     impactWeight: 0.82
   },
 
   {
-    id: "EM021",
-    category: "Financial",
-    rootCause: "Cost overrun from emergency sourcing",
-    description: "Gaps in planning force last-minute procurement at premium prices, significantly exceeding planned event costs",
-    signals: ["emergency_purchase", "cost_overrun", "supplier_delay"],
-    kpis: ["event_margin"],
+    id: "EM018",
+    category: "Manpower",
+    rootCause: "Structural overtime dependency and crew fatigue",
+    description: "Overtime has become the default response to under-resourcing. Recurring overtime across multiple events drives fatigue, degrades execution quality, increases attrition risk and erodes margins through unplanned labour cost.",
+    signals: ["crew_overtime", "event_fatigue", "event_overtime", "high_turnover"],
+    kpis: ["event_readiness", "client_satisfaction", "event_margin"],
     impactWeight: 0.80
-  }
+  },
+
+  {
+    id: "EM019",
+    category: "Manpower",
+    rootCause: "Key-person dependency on critical operational knowledge",
+    description: "Event execution depends on 1–2 senior staff who carry all coordination knowledge informally. Their absence or departure triggers immediate operational disruption with no documented handover or backup capability.",
+    signals: ["skill_gap", "knowledge_dependency", "high_turnover", "coordination_issue"],
+    kpis: ["event_readiness", "client_satisfaction"],
+    impactWeight: 0.76
+  },
+
+  // ── INVENTORY & SUPPLIER FLOW (SUPPLIERS / MATERIALS) ────────────────────────
+
+  {
+    id: "EM020",
+    category: "Suppliers",
+    rootCause: "Supplier coordination instability creating event-day risk",
+    description: "Third-party vendors (caterers, AV, decorators, tentage) are unreliable, unconfirmed or mis-scheduled. Delivery windows overlap or conflict, and coordination failures surface on event day with no backup plan.",
+    signals: ["vendor_no_show", "supplier_delay", "last_minute_change", "vendor_miscommunication"],
+    kpis: ["on_time_setup", "event_readiness"],
+    impactWeight: 0.89
+  },
+
+  {
+    id: "EM021",
+    category: "Suppliers",
+    rootCause: "Late third-party delivery blocking setup windows",
+    description: "Critical items or services from suppliers arrive after setup windows close. The sequential dependency means downstream setup tasks cannot begin, compressing available time and forcing rushed or incomplete execution.",
+    signals: ["supplier_delay", "late_deliveries", "setup_delay", "delivery_window_missed"],
+    kpis: ["on_time_setup", "booking_lead_time"],
+    impactWeight: 0.86
+  },
+
+  {
+    id: "EM022",
+    category: "Suppliers",
+    rootCause: "Supplier dependency concentration — single-source event critical items",
+    description: "Core event deliverables rely on one or two suppliers with no qualified backup. Any delay or failure from these suppliers creates an immediate event execution crisis with limited recovery options.",
+    signals: ["vendor_no_show", "supplier_delay", "single_source_risk", "emergency_purchase"],
+    kpis: ["on_time_setup", "event_readiness", "event_margin"],
+    impactWeight: 0.82
+  },
+
+  {
+    id: "EM023",
+    category: "Suppliers",
+    rootCause: "Event pack incompleteness from supplier partial delivery",
+    description: "Suppliers deliver partial orders — missing quantities, wrong specifications or substitute items — without advance notice. The team discovers gaps at setup, forcing emergency procurement at premium rates.",
+    signals: ["missing_item", "wrong_item_packed", "emergency_purchase", "partial_delivery"],
+    kpis: ["inventory_accuracy", "event_readiness", "event_margin"],
+    impactWeight: 0.79
+  },
+
+  {
+    id: "EM024",
+    category: "Suppliers",
+    rootCause: "No pre-event supplier lock-in and confirmation process",
+    description: "Supplier bookings are not formally confirmed before the event window. Vendors redirect capacity to competing bookings, leaving the team without confirmed supply and scrambling for replacements at short notice.",
+    signals: ["vendor_no_show", "supplier_delay", "last_minute_change", "booking_conflict"],
+    kpis: ["on_time_setup", "event_readiness"],
+    impactWeight: 0.76
+  },
+
+  // ── COMMERCIAL CONTROL (FINANCIAL) ────────────────────────────────────────────
+
+  {
+    id: "EM025",
+    category: "Financial",
+    rootCause: "Margin leakage from reactive event execution costs",
+    description: "Unplanned overtime, emergency sourcing, on-site substitutions and last-minute fixes erode event margins that were commercially viable at quotation stage. The operational cost of firefighting is borne by margin, not captured back from clients.",
+    signals: ["cost_overrun", "emergency_purchase", "overtime_charges", "low_margin", "unplanned_cost"],
+    kpis: ["event_margin", "client_cancellations"],
+    impactWeight: 0.93
+  },
+
+  {
+    id: "EM026",
+    category: "Financial",
+    rootCause: "Underquoted event scope — incomplete cost modelling at quotation",
+    description: "Events are quoted below true cost of delivery because labour, equipment wear, setup time and contingency costs are not fully modelled. As-delivered costs consistently exceed as-quoted revenue, creating structural margin erosion.",
+    signals: ["underquoted_event", "low_margin", "cost_overrun", "pricing_gap"],
+    kpis: ["event_margin"],
+    impactWeight: 0.91
+  },
+
+  {
+    id: "EM027",
+    category: "Financial",
+    rootCause: "Scope creep absorbed without change-order capture",
+    description: "Additional client requests during event planning and execution are delivered without being billed. The team's instinct to accommodate requests erodes quotation margin with each untracked addition.",
+    signals: ["scope_addition", "untracked_add_on", "low_margin", "cost_overrun"],
+    kpis: ["event_margin"],
+    impactWeight: 0.87
+  },
+
+  {
+    id: "EM028",
+    category: "Financial",
+    rootCause: "Damage and loss charges not systematically recovered",
+    description: "Client-caused damage or unreturned rental assets are documented inconsistently and charged rarely. The financial loss is absorbed into operating costs, compounding over time into a material drag on profitability.",
+    signals: ["damaged_return", "missing_item", "refund_issue", "replacement_cost", "unrecovered_loss"],
+    kpis: ["damaged_items", "missing_items", "event_margin"],
+    impactWeight: 0.84
+  },
+
+  {
+    id: "EM029",
+    category: "Financial",
+    rootCause: "Emergency procurement cost overrun from planning gaps",
+    description: "Gaps in pre-event preparation force last-minute procurement at premium vendor rates. Emergency sourcing costs are predictable in pattern but untracked as a discrete cost category, masking the true cost of planning failures.",
+    signals: ["emergency_purchase", "cost_overrun", "supplier_delay", "premium_cost"],
+    kpis: ["event_margin"],
+    impactWeight: 0.81
+  },
+
+  {
+    id: "EM030",
+    category: "Financial",
+    rootCause: "Delayed collection and overdue account exposure",
+    description: "Post-event invoicing is slow and follow-up on overdue accounts is inconsistent. Cash drag from collections creates working capital strain that limits the business's ability to fund upcoming event commitments.",
+    signals: ["overdue_account", "delayed_invoice", "collection_gap", "cash_flow_issue"],
+    kpis: ["collection_days", "event_margin"],
+    impactWeight: 0.78
+  },
+
+  {
+    id: "EM031",
+    category: "Financial",
+    rootCause: "No event-level profitability visibility by job type",
+    description: "Margin is tracked at company level, not per event or event type. High-margin and loss-making event formats are indistinguishable. Pricing decisions are made without feedback on which jobs generate or destroy commercial value.",
+    signals: ["low_margin", "pricing_gap", "no_job_costing", "margin_blind_spot"],
+    kpis: ["event_margin"],
+    impactWeight: 0.75
+  },
 
 ];

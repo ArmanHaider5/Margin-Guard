@@ -27,6 +27,15 @@ export interface FinancialImpact {
   supplyChainLoss:  number;
   totalLoss:        number;
   confidenceLevel:  "estimated" | "indicative" | "modelled";
+  // Event Management specific buckets (present only for event_management industry)
+  overtimeLeakage?:       number;
+  emergencySourcingCost?: number;
+  reworkLabourCost?:      number;
+  assetWriteOff?:         number;
+  unrecoveredDamage?:     number;
+  missedBillables?:       number;
+  underquotedMargin?:     number;
+  collectionDrag?:        number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -118,10 +127,141 @@ function intensityBand(
 // MAIN EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT FINANCIAL IMPACT
+// Signal patterns mapped to EM-specific cost buckets.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const EM_OVERTIME_PATTERNS = [
+  "crew_overtime", "event_overtime", "event_fatigue", "crew_shortage",
+  "insufficient_manpower", "overtime", "extended_shift", "overtime_charges",
+];
+
+const EM_EMERGENCY_SOURCING_PATTERNS = [
+  "emergency_purchase", "last_minute_change", "supplier_delay",
+  "vendor_no_show", "premium_cost", "emergency sourcing", "last-minute sourcing",
+];
+
+const EM_REWORK_PATTERNS = [
+  "setup_delay", "incomplete_setup", "rework", "late_setup",
+  "setup_error", "dispatch_error", "loading_error",
+];
+
+const EM_ASSET_WRITEOFF_PATTERNS = [
+  "damaged_return", "broken_item", "repair_backlog",
+  "missing_item", "equipment_unavailable", "damaged_dispatch",
+];
+
+const EM_UNRECOVERED_DAMAGE_PATTERNS = [
+  "damaged_return", "missing_item", "unrecovered_loss",
+  "replacement_cost", "refund_issue",
+];
+
+const EM_MISSED_BILLABLES_PATTERNS = [
+  "scope_addition", "untracked_add_on", "low_margin",
+  "underquoted_event", "pricing_gap",
+];
+
+const EM_UNDERQUOTED_PATTERNS = [
+  "underquoted_event", "low_margin", "cost_overrun", "pricing_gap", "margin_blind_spot",
+];
+
+const EM_COLLECTION_DRAG_PATTERNS = [
+  "overdue_account", "delayed_invoice", "collection_gap", "cash_flow_issue",
+];
+
+const EM_COST_BANDS = {
+  overtime:         { low: 24_000, mid: 60_000,  high: 120_000 },
+  emergencySourcing:{ low: 18_000, mid: 48_000,  high: 96_000  },
+  rework:           { low: 12_000, mid: 30_000,  high: 60_000  },
+  assetWriteOff:    { low: 8_000,  mid: 22_000,  high: 48_000  },
+  unrecoveredDamage:{ low: 6_000,  mid: 18_000,  high: 40_000  },
+  missedBillables:  { low: 15_000, mid: 40_000,  high: 80_000  },
+  underquoted:      { low: 30_000, mid: 72_000,  high: 150_000 },
+  collectionDrag:   { low: 10_000, mid: 28_000,  high: 60_000  },
+};
+
+function estimateEventFinancialImpact(signals: string[], findings?: any[]): FinancialImpact {
+  const allSignals = [
+    ...(signals ?? []),
+    ...(findings ?? []).map((f) => (f.title ?? f.name ?? "").toLowerCase()),
+    ...(findings ?? []).map((f) => (f.category ?? "").toLowerCase()),
+  ];
+
+  const get = (patterns: string[]) => countMatches(allSignals, patterns);
+
+  const overtimeMatches         = get(EM_OVERTIME_PATTERNS);
+  const emergencyMatches        = get(EM_EMERGENCY_SOURCING_PATTERNS);
+  const reworkMatches           = get(EM_REWORK_PATTERNS);
+  const assetMatches            = get(EM_ASSET_WRITEOFF_PATTERNS);
+  const unrecoveredMatches      = get(EM_UNRECOVERED_DAMAGE_PATTERNS);
+  const missedBillablesMatches  = get(EM_MISSED_BILLABLES_PATTERNS);
+  const underquotedMatches      = get(EM_UNDERQUOTED_PATTERNS);
+  const collectionMatches       = get(EM_COLLECTION_DRAG_PATTERNS);
+
+  const overtimeLeakage       = overtimeMatches        > 0 ? intensityBand(overtimeMatches,        EM_COST_BANDS.overtime)          : 0;
+  const emergencySourcingCost = emergencyMatches        > 0 ? intensityBand(emergencyMatches,        EM_COST_BANDS.emergencySourcing) : 0;
+  const reworkLabourCost      = reworkMatches           > 0 ? intensityBand(reworkMatches,           EM_COST_BANDS.rework)            : 0;
+  const assetWriteOff         = assetMatches            > 0 ? intensityBand(assetMatches,            EM_COST_BANDS.assetWriteOff)     : 0;
+  const unrecoveredDamage     = unrecoveredMatches      > 0 ? intensityBand(unrecoveredMatches,      EM_COST_BANDS.unrecoveredDamage) : 0;
+  const missedBillables       = missedBillablesMatches  > 0 ? intensityBand(missedBillablesMatches,  EM_COST_BANDS.missedBillables)   : 0;
+  const underquotedMargin     = underquotedMatches      > 0 ? intensityBand(underquotedMatches,      EM_COST_BANDS.underquoted)       : 0;
+  const collectionDrag        = collectionMatches       > 0 ? intensityBand(collectionMatches,       EM_COST_BANDS.collectionDrag)    : 0;
+
+  const matchedGroups = [
+    overtimeMatches, emergencyMatches, reworkMatches, assetMatches,
+    unrecoveredMatches, missedBillablesMatches, underquotedMatches, collectionMatches,
+  ].filter(m => m > 0).length;
+
+  const confidenceLevel: FinancialImpact["confidenceLevel"] =
+    matchedGroups >= 4 ? "estimated" :
+    matchedGroups >= 1 ? "indicative" : "modelled";
+
+  const totalLoss =
+    overtimeLeakage + emergencySourcingCost + reworkLabourCost + assetWriteOff +
+    unrecoveredDamage + missedBillables + underquotedMargin + collectionDrag;
+
+  // Modelled fallback — at least show directional loss from findings
+  const modelled = totalLoss === 0 && (findings ?? []).length > 0
+    ? EM_COST_BANDS.overtime.low + EM_COST_BANDS.emergencySourcing.low
+    : 0;
+
+  const finalTotal = totalLoss > 0 ? totalLoss : modelled;
+
+  console.log(
+    `💰 EM FINANCIAL IMPACT: total=${finalTotal.toLocaleString()} | confidence=${confidenceLevel}`,
+    `| groups: overtime=${overtimeMatches}, emergency=${emergencyMatches},`,
+    `rework=${reworkMatches}, asset=${assetMatches}, unrecovered=${unrecoveredMatches}`,
+  );
+
+  return {
+    downtimeLoss: reworkLabourCost,
+    qualityLoss: assetWriteOff + unrecoveredDamage,
+    workforceLoss: overtimeLeakage,
+    supplyChainLoss: emergencySourcingCost,
+    totalLoss: finalTotal,
+    confidenceLevel,
+    overtimeLeakage,
+    emergencySourcingCost,
+    reworkLabourCost,
+    assetWriteOff,
+    unrecoveredDamage,
+    missedBillables,
+    underquotedMargin,
+    collectionDrag,
+  };
+}
+
 export function estimateFinancialImpact(
   signals: string[],
-  findings?: any[]
+  findings?: any[],
+  industry?: string,
 ): FinancialImpact {
+
+  if (industry === "event_management") {
+    return estimateEventFinancialImpact(signals, findings);
+  }
+
 
   const allSignals = [
     ...(signals ?? []),

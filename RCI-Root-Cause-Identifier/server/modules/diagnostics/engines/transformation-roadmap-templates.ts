@@ -356,6 +356,188 @@ export const transformationRoadmapTemplates: Record<string, RoadmapTemplate> = {
     },
   ],
 
+  // ── EVENT MANAGEMENT ───────────────────────────────────────────────────────
+
+  "Reactive event execution without structured run-sheet discipline": [
+    {
+      phase: "Days 1–30: Stabilise",
+      title: "Establish Event Run-Sheet and Command Structure",
+      description: "Stop events running on informal coordination. Introduce a basic run-sheet and a named event commander for every deployment.",
+      actions: [
+        "Create a standard event run-sheet template covering timeline, role assignments and escalation contacts",
+        "Name a single event commander for each upcoming booking — responsible for all on-day decisions",
+        "Brief all crew on their roles and the escalation path before each event",
+        "Track all last-minute changes and on-site issues in a simple post-event log",
+      ],
+    },
+    {
+      phase: "Days 31–60: Control",
+      title: "Standardise Pre-Event Readiness Sign-Off",
+      description: "Build a formal readiness gate before every event deployment.",
+      actions: [
+        "Introduce a 48-hour pre-event readiness sign-off covering crew, inventory and supplier confirmation",
+        "Create a standardised crew briefing checklist covering roles, timeline and escalation",
+        "Define a formal change-request process — no same-day client changes absorbed without sign-off",
+        "Debrief every event within 24 hours and log all deviations from the run-sheet",
+      ],
+    },
+    {
+      phase: "Days 61–90: Scale",
+      title: "Build a Repeatable Event Execution Playbook",
+      description: "Convert the best practices into a living playbook the whole team can follow.",
+      actions: [
+        "Document the event execution playbook covering all event types the business operates",
+        "Introduce a post-event operational review cadence — monthly, using debrief data",
+        "Use recurring issue patterns to update run-sheet templates before the next cycle",
+        "Measure on-time setup rate and client satisfaction per event and review weekly",
+      ],
+    },
+  ],
+
+  "Incomplete rental readiness before event dispatch": [
+    {
+      phase: "Days 1–30: Stabilise",
+      title: "Introduce Dispatch Pack Sign-Off",
+      description: "Stop assets leaving the warehouse without a verified checklist.",
+      actions: [
+        "Create a per-event dispatch checklist covering item type, quantity and condition",
+        "Assign a warehouse lead responsible for signing off every outbound pack",
+        "Log all on-site shortfalls and emergency substitutions immediately after each event",
+        "Ring-fence confirmed bookings' inventory in the tracking system at booking stage",
+      ],
+    },
+    {
+      phase: "Days 31–60: Control",
+      title: "Build Asset Readiness and Turnaround Discipline",
+      description: "Close the gap between assets returned and assets redeployed.",
+      actions: [
+        "Introduce a post-event return process: condition check, repair tagging, restock confirmation",
+        "Set a turnaround target for all rental assets between events (e.g. 24 hours)",
+        "Add a pre-dispatch condition check to the warehouse sign-off checklist",
+        "Track emergency substitution rate per event week as a warehouse performance metric",
+      ],
+    },
+    {
+      phase: "Days 61–90: Scale",
+      title: "Formalise Damage and Loss Recovery Controls",
+      description: "Convert asset losses into recoverable charges and close the write-off cycle.",
+      actions: [
+        "Implement a post-event damage log with photographic evidence and client attribution",
+        "Create a standard damage recovery billing process — raised within 48 hours of event close",
+        "Review asset pool utilisation monthly and identify chronic shortfall items for top-up",
+        "Build an event profitability review that includes asset wear and loss costs per booking",
+      ],
+    },
+  ],
+
+  "Crew capacity shortfall for event scale and complexity": [
+    {
+      phase: "Days 1–30: Stabilise",
+      title: "Match Crew to Event Scale at Booking Stage",
+      description: "Stop under-resourcing events at the planning stage.",
+      actions: [
+        "Create a crew sizing guide by event type and scale (e.g. 1 crew per 50 pax setup)",
+        "Review all upcoming bookings against the guide and flag resource gaps",
+        "Assign a crew lead (supervisor) for every upcoming event — not just on the day",
+        "Track overtime hours per event for the next 30 days as a baseline",
+      ],
+    },
+    {
+      phase: "Days 31–60: Control",
+      title: "Reduce Structural Overtime and Fatigue",
+      description: "Replace reactive overtime with proactive crew planning.",
+      actions: [
+        "Set a crew overtime threshold per event — escalate for approval if exceeded",
+        "Build a casual crew roster to cover surge periods without permanent overhead",
+        "Standardise crew briefings — roles, timelines and the escalation contact before every deployment",
+        "Review post-event fatigue and execution quality correlation in the debrief log",
+      ],
+    },
+    {
+      phase: "Days 61–90: Scale",
+      title: "Build Execution Consistency and Knowledge Depth",
+      description: "Remove key-person dependency and develop a crew capable of consistent delivery.",
+      actions: [
+        "Document crew roles and best practices into a field operations handbook",
+        "Introduce a junior-to-senior crew pairing system for knowledge transfer",
+        "Create an event-day execution scorecard reviewed monthly with crew leads",
+        "Build a post-event operational review cadence that feeds crew development priorities",
+      ],
+    },
+  ],
+
+  "Margin leakage from reactive event execution costs": [
+    {
+      phase: "Days 1–30: Stabilise",
+      title: "Track Every Reactive Cost by Event",
+      description: "Make the financial cost of firefighting visible before fixing it.",
+      actions: [
+        "Start recording emergency sourcing, overtime and substitution costs per event",
+        "Log all unplanned costs against the specific booking — not into overhead",
+        "Identify the 3 events with the highest reactive cost in the last 90 days",
+        "Brief the operations team on why margin visibility matters commercially",
+      ],
+    },
+    {
+      phase: "Days 31–60: Control",
+      title: "Close the Commercial Leakage Points",
+      description: "Address the specific patterns causing margin erosion.",
+      actions: [
+        "Introduce a formal change-order process — any scope addition requires client sign-off before delivery",
+        "Build a damage recovery billing workflow — raised within 48 hours of event close",
+        "Review all underquoted events from the last 6 months to identify pricing gaps",
+        "Set a target margin per event type and review actuals at monthly management meetings",
+      ],
+    },
+    {
+      phase: "Days 61–90: Scale",
+      title: "Build Event-Level Profitability Discipline",
+      description: "Make per-event margin a standard management metric.",
+      actions: [
+        "Implement job costing at event level — revenue vs. actual delivery cost per booking",
+        "Create a monthly event profitability review loop with management",
+        "Formalise damage and loss recovery controls as part of the post-event close process",
+        "Use profitability data to reprice chronic loss-making event formats",
+      ],
+    },
+  ],
+
+  "Supplier coordination instability creating event-day risk": [
+    {
+      phase: "Days 1–30: Stabilise",
+      title: "Confirm All Critical Vendors Before Event Windows",
+      description: "Stop vendor no-shows and delivery surprises from becoming event-day crises.",
+      actions: [
+        "Introduce a 72-hour vendor confirmation call for all critical third-party suppliers",
+        "Identify at least one qualified backup for each critical vendor category",
+        "Log all late deliveries and vendor no-shows immediately for pattern tracking",
+        "Define what a 'critical vendor' means for your event type — and who confirms them",
+      ],
+    },
+    {
+      phase: "Days 31–60: Control",
+      title: "Formalise Supplier Lock-In and Confirmation Milestones",
+      description: "Create a structured pre-event supplier management process.",
+      actions: [
+        "Define confirmation milestones: 7 days out, 48 hours out, morning of event",
+        "Create a preferred vendor list with confirmed capacity, reliability rating and backup contacts",
+        "Introduce delivery window agreements with all critical vendors — not just verbal commitments",
+        "Track supplier reliability score per vendor monthly and use it to update preferred vendor rankings",
+      ],
+    },
+    {
+      phase: "Days 61–90: Scale",
+      title: "Build a Resilient Supplier Ecosystem",
+      description: "Reduce single-source dependency and create a vendor base that scales with the business.",
+      actions: [
+        "Qualify and onboard backup vendors for the top 3 single-source supplier categories",
+        "Introduce supplier performance reviews quarterly — sharing reliability data and setting SLAs",
+        "Build a supplier playbook covering confirmation, delivery and escalation procedures",
+        "Review emergency sourcing costs quarterly and set a target reduction percentage",
+      ],
+    },
+  ],
+
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -506,6 +688,118 @@ export const categoryFallbackTemplates: Record<string, RoadmapTemplate> = {
         "Conduct a monthly cost review at management level",
         "Set 12-month cost reduction targets tied to specific operational improvements",
         "Benchmark key cost ratios against industry norms",
+      ],
+    },
+  ],
+
+  // ── Event Management category fallbacks ─────────────────────────────────────
+  // Used when no exact EM root cause title match is found but the industry is
+  // event_management. Keyed by EM root cause category names.
+
+  Inventory: [
+    {
+      phase: "Days 1–30: Stabilise",
+      title: "Introduce Dispatch Sign-Off and Asset Tracking",
+      description: "Stop assets leaving without verification and stop shortfalls being discovered on-site.",
+      actions: [
+        "Create a per-event dispatch checklist: item type, quantity, condition",
+        "Assign warehouse lead accountability for every outbound pack",
+        "Log all on-site shortfalls and emergency substitutions post-event",
+        "Ring-fence inventory for confirmed bookings in the tracking system",
+      ],
+    },
+    {
+      phase: "Days 31–60: Control",
+      title: "Build Turnaround Discipline and Condition Standards",
+      description: "Ensure assets returned from events are ready for redeployment within a defined window.",
+      actions: [
+        "Introduce a post-return process: condition check, repair tag, restock confirmation",
+        "Set a turnaround target for all rental assets (e.g. 24 hours from return to ready)",
+        "Add pre-dispatch condition check to the warehouse sign-off routine",
+        "Track same-day substitution rate per week as a dispatch quality KPI",
+      ],
+    },
+    {
+      phase: "Days 61–90: Scale",
+      title: "Formalise Loss Recovery and Asset Lifecycle Visibility",
+      description: "Convert untracked losses into recoverable charges and maintain a clean asset register.",
+      actions: [
+        "Implement post-event damage log with photographic evidence and client attribution",
+        "Raise damage recovery billing within 48 hours of event close",
+        "Review asset pool utilisation monthly and identify chronic shortfall items for replenishment",
+        "Build an event profitability review that includes asset wear and loss costs per booking",
+      ],
+    },
+  ],
+
+  Suppliers: [
+    {
+      phase: "Days 1–30: Stabilise",
+      title: "Confirm All Critical Vendors Before Every Event Window",
+      description: "Eliminate vendor surprises on event day.",
+      actions: [
+        "Introduce a 72-hour vendor confirmation call for all critical third-party suppliers",
+        "Identify at least one backup for each critical vendor category",
+        "Log all late deliveries and no-shows immediately for pattern tracking",
+        "Define which vendors are 'critical' for each event type your business runs",
+      ],
+    },
+    {
+      phase: "Days 31–60: Control",
+      title: "Formalise Supplier Confirmation Milestones",
+      description: "Create a structured pre-event supplier management process.",
+      actions: [
+        "Define confirmation milestones: 7 days out, 48 hours, morning of event",
+        "Create a preferred vendor list with capacity, reliability rating and backup contacts",
+        "Introduce delivery window agreements — not just verbal commitments",
+        "Track supplier reliability score per vendor and update quarterly",
+      ],
+    },
+    {
+      phase: "Days 61–90: Scale",
+      title: "Build a Resilient Supplier Ecosystem",
+      description: "Reduce single-source dependency across all critical supply categories.",
+      actions: [
+        "Qualify and onboard backup vendors for top 3 single-source categories",
+        "Introduce quarterly supplier performance reviews with shared SLAs",
+        "Build a supplier playbook covering confirmation, delivery and escalation",
+        "Review emergency sourcing costs quarterly and set a target reduction",
+      ],
+    },
+  ],
+
+  Financial: [
+    {
+      phase: "Days 1–30: Stabilise",
+      title: "Make Reactive Cost Visible Per Event",
+      description: "Understand the financial cost of firefighting before trying to fix it.",
+      actions: [
+        "Record emergency sourcing, overtime and substitution costs per event",
+        "Log all unplanned costs against specific bookings — not into overhead",
+        "Identify the 3 events with highest reactive cost in the last 90 days",
+        "Start tracking event-level margin actuals vs. quoted margin",
+      ],
+    },
+    {
+      phase: "Days 31–60: Control",
+      title: "Close Commercial Leakage Points",
+      description: "Address the specific patterns causing margin erosion.",
+      actions: [
+        "Introduce a formal change-order process — any scope addition requires client sign-off before delivery",
+        "Build a damage recovery billing workflow — raised within 48 hours of event close",
+        "Review all underquoted events from the last 6 months to identify pricing gaps",
+        "Set a target margin per event type and review actuals monthly",
+      ],
+    },
+    {
+      phase: "Days 61–90: Scale",
+      title: "Build Event-Level Profitability Discipline",
+      description: "Make per-event margin a standard management reporting metric.",
+      actions: [
+        "Implement job costing at event level — revenue vs. actual delivery cost per booking",
+        "Create a monthly event profitability review with management",
+        "Formalise damage and loss recovery controls as part of the post-event close process",
+        "Use profitability data to reprice chronic loss-making event formats",
       ],
     },
   ],

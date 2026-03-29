@@ -1132,6 +1132,34 @@ const CATEGORY_PREDICTION_TEMPLATES: Record<FourMCategory, string[]> = {
   ],
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT PREDICTION TEMPLATES
+// Domain-specific risk predictions for event operations — keyed by EM root
+// cause category. Used when industry = "event_management".
+// ─────────────────────────────────────────────────────────────────────────────
+const EM_PREDICTION_TEMPLATES: Record<string, string[]> = {
+  Manpower: [
+    "Recurring crew overtime is becoming structural — without crew planning discipline, fatigue-driven execution failures and attrition will increase as event volume grows",
+    "Event-day supervision gaps are likely to generate repeat client complaints and delivery inconsistencies that compound as the business scales",
+  ],
+  Inventory: [
+    "Dispatch readiness failures will continue to produce last-minute substitutions and on-site shortfalls, driving emergency sourcing costs and margin erosion on every repeat event",
+    "Untracked asset damage and loss is likely to compound into a material write-off exposure that is invisible until it accumulates on the balance sheet",
+  ],
+  Suppliers: [
+    "Supplier dependency concentration creates recurring event-day risk — without qualified backup vendors, a single no-show creates an immediate delivery crisis with no recovery option",
+    "Late delivery patterns from unconfirmed vendors are likely to escalate emergency sourcing frequency, increasing premium cost exposure as event pipeline grows",
+  ],
+  Financial: [
+    "Systematic underquoting and untracked scope additions are eroding event margin at source — without pricing discipline, commercial exposure will widen as delivery complexity increases",
+    "Unrecovered damage and loss charges represent a growing liability — without a formal recovery process, this cost will continue to be absorbed into operating overhead",
+  ],
+  Operations: [
+    "Reactive event execution without structured command and run-sheet discipline will generate recurring client-visible failures as event volume and complexity increase",
+    "Absence of a formal post-event review cadence means recurring operational failures repeat — pattern recognition and prevention remain below the threshold needed for a scalable operation",
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // EXPLAINABILITY LAYER HELPER
 // Produces structured evidence metadata for a single finding.
@@ -1286,6 +1314,7 @@ function buildExplainabilityMeta(
 function buildPredictionsFromFindings(
   enrichedFindings: AnalysisFinding[],
   prefix: string,
+  industry?: string,
 ): RecurrencePrediction[] {
   const severityRank: Record<string, number> = {
     critical: 4,
@@ -1312,13 +1341,26 @@ function buildPredictionsFromFindings(
   const topFindings = ranked.slice(0, 2);
 
   return topFindings.map((finding, idx) => {
-    const category =
-      finding.fourMCategory &&
-      CATEGORY_PREDICTION_TEMPLATES[finding.fourMCategory]
-        ? finding.fourMCategory
-        : "Money";
-    const templates = CATEGORY_PREDICTION_TEMPLATES[category];
-    const issue = templates[idx % templates.length];
+    let issue: string;
+
+    if (industry === "event_management") {
+      // Use EM-specific prediction templates, keyed by EM category
+      // Try: finding's original category (EM), then its 4M category, then "Operations"
+      const emCat = (finding as any).originalCategory
+        ?? finding.fourMCategory
+        ?? "Operations";
+      const emTemplates = EM_PREDICTION_TEMPLATES[emCat]
+        ?? EM_PREDICTION_TEMPLATES["Operations"];
+      issue = emTemplates[idx % emTemplates.length];
+    } else {
+      const category =
+        finding.fourMCategory &&
+        CATEGORY_PREDICTION_TEMPLATES[finding.fourMCategory]
+          ? finding.fourMCategory
+          : "Money";
+      const templates = CATEGORY_PREDICTION_TEMPLATES[category];
+      issue = templates[idx % templates.length];
+    }
 
     const sev = finding.severity;
     const strength = finding.evidenceStrength || "WEAK";
@@ -3767,6 +3809,7 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
         title: rc.rootCause,
         description: rc.description,
         category: rc.category,
+        originalCategory: rc.category,
         score: Math.round((rc.impactWeight ?? 0.7) * 80),
       }));
 
@@ -3871,6 +3914,7 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
   const predictions: RecurrencePrediction[] = buildPredictionsFromFindings(
     enrichedFindings,
     "signal",
+    sdIndustry,
   );
 
   const categoriesRepresented = new Set(
@@ -3887,7 +3931,7 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
   let deepMgdAnalysis: any = null;
   try {
     const deepUnified = await runUnifiedDiagnostic({
-      industry,
+      industry: sdIndustry,
       signals: diagnosticSignals,
       kpiData: {},
       baseFindings: enrichedFindings.map((f: any) => ({
@@ -3905,9 +3949,21 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
     console.warn("⚠ UNIFIED DIAGNOSTIC (deep non-MFG): failed silently", err);
   }
 
+  // ── Summary text — EM gets event-native framing ───────────────────────────
+  let finalSummary: string;
+  if (sdIndustry === "event_management") {
+    const emCatPhrase =
+      categoryList.length > 0
+        ? ` — spanning ${categoryList.join(" and ")} —`
+        : "";
+    finalSummary = `This diagnostic identified ${enrichedFindings.length} root cause${enrichedFindings.length > 1 ? "s" : ""}${emCatPhrase} from evidence extracted across the uploaded operational documents. The findings are grounded in signal patterns detected in crew records, dispatch logs, booking data and financial indicators specific to ${clientName}'s event operation.`;
+  } else {
+    finalSummary = `${summaryPrefix} Identified ${enrichedFindings.length} root cause${enrichedFindings.length > 1 ? "s" : ""}${categoryPhrase} in ${industry} operations for ${clientName}.`;
+  }
+
   return {
     findings: enrichedFindings,
-    summary: `${summaryPrefix} Identified ${enrichedFindings.length} root cause${enrichedFindings.length > 1 ? "s" : ""}${categoryPhrase} in ${industry} operations for ${clientName}.`,
+    summary: finalSummary,
     costSavingOpportunities,
     predictions,
     analysisMode: "evidence-enriched",
