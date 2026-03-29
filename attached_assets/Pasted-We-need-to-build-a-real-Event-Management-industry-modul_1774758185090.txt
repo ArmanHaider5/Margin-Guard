@@ -1,0 +1,288 @@
+We need to build a **real Event Management industry module** for MGD.
+
+This is now a priority because "Event Management" is a valid client industry in the system and is about to be used on a real client (Madetill Event Management / MEM).
+
+The current fallback:
+Event Management → Professional Services
+
+…is only a temporary crash-prevention patch.
+It is **not operationally accurate enough** and must now be replaced with a proper dedicated industry model.
+
+---
+
+# OBJECTIVE
+
+Create a dedicated **event_management** diagnostic model so MGD can correctly analyze event operations businesses like MEM.
+
+This must cover the real operational structure of businesses like:
+
+* event management companies
+* wedding / banquet operators
+* corporate event coordinators
+* event equipment rental businesses
+* venue / package operators
+* event support / setup businesses
+
+MEM is the reference shape:
+
+* complete event management
+* catering equipment rental
+* wedding venue packages
+* corporate events
+* repair / asset support
+
+---
+
+# PART A — ADD NEW INDUSTRY PROFILE
+
+Create a dedicated:
+
+* industry profile
+* KPI vocabulary
+* signal vocabulary
+* 4M mappings
+* root cause library entries
+* recommendation / roadmap relevance
+* narrative language compatibility
+
+Industry key:
+
+```ts id="s59vks"
+event_management
+```
+
+Industry label:
+
+```ts id="9v5gsi"
+Event Management
+```
+
+---
+
+# PART B — EVENT MANAGEMENT KPI MODEL
+
+Add KPI detection support for terms like:
+
+```ts id="j9u9x1"
+on-time setup
+event readiness
+equipment utilization
+rental turnaround
+damaged items
+missing items
+late deliveries
+event overtime
+crew overtime
+supplier delay
+inventory accuracy
+booking lead time
+setup completion
+event margin
+complaints
+client cancellations
+return delays
+```
+
+These should work similarly to other industry KPI vocabularies.
+
+---
+
+# PART C — EVENT MANAGEMENT SIGNAL VOCABULARY
+
+Add event-specific signal phrases and normalized signal IDs.
+
+## Operations / event execution
+
+```ts id="jjlwm0"
+setup delay
+late setup
+incomplete setup
+event delay
+timeline overrun
+coordination issue
+last-minute change
+vendor no-show
+venue issue
+guest complaint
+service complaint
+```
+
+## Rental / equipment / readiness
+
+```ts id="e63yc9"
+missing item
+broken item
+damaged return
+stock shortage
+wrong item packed
+insufficient chairs
+insufficient tableware
+dome shortage
+canopy issue
+return delay
+repair backlog
+equipment unavailable
+```
+
+## Manpower / crew
+
+```ts id="7yivzx"
+crew shortage
+insufficient manpower
+event fatigue
+crew overtime
+team miscommunication
+setup team late
+no supervisor
+```
+
+## Commercial / cost / money
+
+```ts id="y1d4a3"
+overtime charges
+refund issue
+deposit refund
+replacement cost
+emergency purchase
+underquoted event
+low margin
+cost overrun
+```
+
+These must flow into signal normalization and evidence extraction like the existing industries.
+
+---
+
+# PART D — ROOT CAUSE LIBRARY
+
+Add a proper Event Management root cause library.
+
+At minimum include root causes like:
+
+## Operations
+
+* Weak event execution planning
+* Last-minute schedule change dependency
+* Poor event-day command structure
+* Venue readiness failure
+* Setup sequencing breakdown
+
+## Inventory / rental / machinery
+
+* Rental inventory availability mismatch
+* Weak loading and dispatch control
+* Poor equipment turnaround discipline
+* Asset maintenance backlog
+* Return and damage processing failure
+
+## Manpower
+
+* Event crew capacity shortfall
+* Weak on-site supervision
+* Role ambiguity during event execution
+* Overtime-driven fatigue and service degradation
+
+## Materials / suppliers
+
+* Supplier coordination instability
+* Late third-party delivery dependency
+* Event pack completeness failure
+
+## Financial
+
+* Margin leakage from reactive execution
+* Damage/loss recovery weakness
+* Underpricing of event packages
+* Cost overrun from emergency sourcing
+
+Each root cause should have:
+
+* id
+* title
+* category
+* trigger phrases / signals
+* likely business impact
+* action relevance
+
+Use the same structure already used by other industries.
+
+---
+
+# PART E — NARRATIVE / CONSULTING LANGUAGE
+
+Ensure the narrative engine can naturally describe event businesses using domain-correct language such as:
+
+```ts id="r5v1pd"
+event readiness
+execution reliability
+rental turnaround
+client delivery consistency
+event-day coordination
+asset availability
+service recovery
+commercial leakage
+```
+
+Avoid generic filler like "service delivery inefficiency" if more event-specific phrasing is available.
+
+---
+
+# PART F — RECOMMENDATIONS / ROADMAP FIT
+
+Ensure recommendations and transformation roadmap generation can meaningfully fit Event Management findings.
+
+Examples of appropriate actions:
+
+* Build pre-event readiness checklist by event type
+* Introduce dispatch / return control sheet
+* Track damaged / missing rental assets weekly
+* Implement event-day role allocation and escalation matrix
+* Standardize loading checklist before dispatch
+* Introduce supplier confirmation cut-off timeline
+* Separate high-turnover rental items into fast-access inventory
+* Create event post-mortem issue log
+
+No need to overbuild UI yet — focus on the model accuracy first.
+
+---
+
+# PART G — INDUSTRY REGISTRATION
+
+Replace the current fallback behavior for:
+
+```ts id="zvjlwm"
+"Event Management"
+```
+
+So that it uses:
+
+```ts id="r0qv5g"
+event_management
+```
+
+—not Professional Services.
+
+Do NOT remove the existing fallback safety for other unmapped industries.
+Just ensure Event Management is now fully supported as a first-class model.
+
+---
+
+# SAFETY RULES
+
+* Do not break existing industries
+* Do not change report generation yet
+* Do not refactor unrelated code
+* Keep changes isolated and deterministic
+* No silent fallback for Event Management after this — it should use its own real model
+
+---
+
+# WHAT TO RETURN
+
+After implementation, return:
+
+1. Exact files changed
+2. Where the new event_management model was added
+3. What KPIs/signals/root causes were introduced
+4. How Event Management clients now route through the engine
+5. Whether MEM should now produce meaningful findings instead of zero

@@ -10,6 +10,8 @@ The platform has two primary user types:
 
 Key capabilities include AI-powered root cause analysis governed by curated knowledge libraries (not free-form AI generation), 119 manufacturing root causes across 3 tiers (operational/process/management), support for 13+ industries with 146+ industry-specific problems, document parsing (Excel, Word, PDF, PowerPoint), PDF report generation with professional branding, and a management dashboard view.
 
+**Registered Industry Models** (in `server/modules/industries/industry-registry.ts`): Manufacturing, Healthcare, Logistics, Retail, Professional Services, Event Management. All other client industries (construction, hospitality, F&B variants, oil & gas, property development, etc.) fall back to the closest proxy model via `INDUSTRY_KEY_MAP` in the unified diagnostic engine. `event_management` is a first-class model with 21 root causes, 39 signals, 12 KPI benchmarks, and 44 signal→root-cause mappings covering: event execution, rental/equipment inventory, crew/manpower, supplier coordination, and financial/commercial leakage.
+
 The main application lives in the `RCI-Root-Cause-Identifier/` directory. The root-level `package.json` contains shared utility dependencies, while `.replit_integration_files/` contains Replit-provided integration utilities (chat, audio, image, batch processing).
 
 ## User Preferences

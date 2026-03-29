@@ -19,6 +19,10 @@ import { professionalServicesRootCauses } from "./professional-services/professi
 import { professionalServicesSignals } from "./professional-services/professional-services-signals";
 import { professionalServicesBenchmarks } from "./professional-services/professional-services-benchmarks";
 import { professionalServicesMappings } from "./professional-services/professional-services-mappings";
+import { eventManagementRootCauses } from "./event-management/event-management-root-causes";
+import { eventManagementSignals } from "./event-management/event-management-signals";
+import { eventManagementBenchmarks } from "./event-management/event-management-benchmarks";
+import { eventManagementMappings } from "./event-management/event-management-mappings";
 
 export const industryRegistry = {
 
@@ -56,6 +60,13 @@ export const industryRegistry = {
     signals: professionalServicesSignals,
     benchmarks: professionalServicesBenchmarks,
     mappings: professionalServicesMappings
+  },
+
+  event_management: {
+    rootCauses: eventManagementRootCauses,
+    signals: eventManagementSignals,
+    benchmarks: eventManagementBenchmarks,
+    mappings: eventManagementMappings
   }
 
 };

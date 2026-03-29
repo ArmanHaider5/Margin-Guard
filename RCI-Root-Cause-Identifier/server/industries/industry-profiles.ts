@@ -68,6 +68,30 @@ export const industryProfiles: Record<string, { kpis: string[] }> = {
       "burn rate"
     ]
 
+  },
+
+  event_management: {
+
+    kpis: [
+      "on-time setup",
+      "event readiness",
+      "equipment utilization",
+      "rental turnaround",
+      "damaged items",
+      "missing items",
+      "late deliveries",
+      "event overtime",
+      "crew overtime",
+      "supplier delay",
+      "inventory accuracy",
+      "booking lead time",
+      "setup completion",
+      "event margin",
+      "complaints",
+      "client cancellations",
+      "return delays"
+    ]
+
   }
 
 };

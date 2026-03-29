@@ -25,7 +25,6 @@ export async function runUnifiedDiagnostic({
 }) {
 
   const INDUSTRY_KEY_MAP: Record<string, string> = {
-    event_management:     "professionalServices",
     finance:              "professionalServices",
     construction:         "professionalServices",
     property_development: "professionalServices",

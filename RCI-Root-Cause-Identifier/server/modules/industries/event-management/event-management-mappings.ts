@@ -1,0 +1,50 @@
+export const eventManagementMappings = {
+
+  setup_delay:           ["EM001", "EM003", "EM011"],
+  late_setup:            ["EM003", "EM011"],
+  incomplete_setup:      ["EM001", "EM003"],
+  event_delay:           ["EM001", "EM004"],
+  timeline_overrun:      ["EM001", "EM005"],
+  coordination_issue:    ["EM002", "EM013"],
+  last_minute_change:    ["EM005", "EM015"],
+  venue_issue:           ["EM004"],
+  guest_complaint:       ["EM002", "EM012"],
+  service_complaint:     ["EM002", "EM012"],
+
+  missing_item:          ["EM006", "EM007", "EM017", "EM020"],
+  broken_item:           ["EM009", "EM010"],
+  damaged_return:        ["EM010", "EM020"],
+  stock_shortage:        ["EM006"],
+  wrong_item_packed:     ["EM007", "EM017"],
+  insufficient_chairs:   ["EM006", "EM007"],
+  insufficient_tableware:["EM006", "EM007"],
+  dome_shortage:         ["EM006"],
+  canopy_issue:          ["EM006", "EM009"],
+  return_delay:          ["EM008"],
+  repair_backlog:        ["EM009"],
+  equipment_unavailable: ["EM008", "EM009"],
+  rental_turnaround:     ["EM008"],
+
+  crew_shortage:         ["EM011"],
+  insufficient_manpower: ["EM011"],
+  event_fatigue:         ["EM014"],
+  crew_overtime:         ["EM014", "EM018"],
+  event_overtime:        ["EM005", "EM014", "EM018"],
+  team_miscommunication: ["EM002", "EM013"],
+  setup_team_late:       ["EM003", "EM011"],
+  no_supervisor:         ["EM002", "EM012", "EM013"],
+
+  vendor_no_show:        ["EM015"],
+  supplier_delay:        ["EM015", "EM016", "EM021"],
+  late_deliveries:       ["EM016"],
+
+  overtime_charges:      ["EM018"],
+  refund_issue:          ["EM020"],
+  deposit_refund:        ["EM020"],
+  replacement_cost:      ["EM020"],
+  emergency_purchase:    ["EM017", "EM018", "EM021"],
+  underquoted_event:     ["EM019"],
+  low_margin:            ["EM018", "EM019"],
+  cost_overrun:          ["EM018", "EM021"]
+
+};
