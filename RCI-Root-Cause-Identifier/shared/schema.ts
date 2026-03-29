@@ -160,9 +160,21 @@ export const clientAnalyses = pgTable("client_analyses", {
   isMockMode: boolean("is_mock_mode").default(false), // Flag for mock mode results
   mgdAnalysis: jsonb("mgd_analysis").$type<any>(), // MGD engine output (health score, root cause tree, roadmap)
   notes: jsonb("notes").$type<ConsultantNote[]>(), // Consultant notes (create/delete only)
+  actionStates: jsonb("action_states").$type<Record<string, ActionState>>(), // Action tracking states keyed by "{timeframe}-{index}"
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),
 });
+
+// Action Tracking State — stored as a Record<actionKey, ActionState> on the analysis
+// actionKey format: "{timeframe}-{index}", e.g. "this-week-0", "30-days-2"
+export type ActionStatus = "not_started" | "in_progress" | "completed";
+export interface ActionState {
+  status?: ActionStatus;
+  progressNotes?: string[];
+  updatedAt?: string;
+  completedAt?: string;
+  ownerOverride?: string;
+}
 
 // Consultant Note — stored as a JSON array on the analysis record
 export type NoteType = "consultant" | "follow_up" | "implementation" | "internal";

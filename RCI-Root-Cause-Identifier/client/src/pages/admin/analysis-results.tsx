@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -30,6 +31,7 @@ import {
   BarChart2,
   Layers,
   ChevronDown,
+  ChevronUp,
   ChevronRight as ChevronRightIcon,
   Trash2,
   Plus,
@@ -219,54 +221,224 @@ const PRIORITY_STYLES: Record<string, { bg: string; text: string }> = {
   medium:   { bg: "bg-amber-100 dark:bg-amber-900/30",  text: "text-amber-700 dark:text-amber-300" },
 };
 
-function ActionCard({ action, accentColor }: { action: any; accentColor: string }) {
+// Status visual config
+const STATUS_META = {
+  not_started: { label: "Not Started", badgeBg: "bg-slate-100 dark:bg-slate-800", badgeText: "text-slate-600 dark:text-slate-400", borderColor: null },
+  in_progress:  { label: "In Progress",  badgeBg: "bg-amber-100 dark:bg-amber-900/40",  badgeText: "text-amber-700 dark:text-amber-300",  borderColor: "#f59e0b" },
+  completed:    { label: "Completed",    badgeBg: "bg-emerald-100 dark:bg-emerald-900/30", badgeText: "text-emerald-700 dark:text-emerald-300", borderColor: "#10b981" },
+};
+
+interface ActionCardProps {
+  action: any;
+  accentColor: string;
+  actionKey: string;
+  analysisId: string;
+  actionState?: {
+    status?: "not_started" | "in_progress" | "completed";
+    progressNotes?: string[];
+    updatedAt?: string;
+    completedAt?: string;
+    ownerOverride?: string;
+  };
+}
+
+function ActionCard({ action, accentColor, actionKey, analysisId, actionState }: ActionCardProps) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [trackOpen, setTrackOpen] = useState(false);
+  const [noteInput, setNoteInput] = useState("");
+  const [ownerInput, setOwnerInput] = useState(actionState?.ownerOverride ?? action.suggestedOwner ?? "");
+
+  const status = actionState?.status ?? "not_started";
+  const statusMeta = STATUS_META[status];
+  const effectiveBorderColor = statusMeta.borderColor ?? accentColor;
+
   const priorityStyle = PRIORITY_STYLES[action.priority] ?? PRIORITY_STYLES.medium;
   const effortStyle = action.effort ? (EFFORT_STYLES[action.effort] ?? null) : null;
 
+  const patchMutation = useMutation({
+    mutationFn: async (body: Record<string, unknown>) => {
+      const res = await fetch(`/api/admin/analyses/${analysisId}/actions/${encodeURIComponent(actionKey)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update action");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/analyses", analysisId] });
+    },
+    onError: () => {
+      toast({ title: "Update failed", description: "Could not save action change.", variant: "destructive" });
+    },
+  });
+
+  const handleStatusChange = (newStatus: string) => {
+    patchMutation.mutate({ status: newStatus });
+  };
+
+  const handleAddNote = () => {
+    if (!noteInput.trim()) return;
+    patchMutation.mutate({ progressNote: noteInput.trim() });
+    setNoteInput("");
+  };
+
+  const handleOwnerBlur = () => {
+    const trimmed = ownerInput.trim();
+    if (trimmed !== (actionState?.ownerOverride ?? action.suggestedOwner ?? "")) {
+      patchMutation.mutate({ ownerOverride: trimmed });
+    }
+  };
+
+  const displayOwner = actionState?.ownerOverride ?? action.suggestedOwner;
+
   return (
     <div
-      className="p-3.5 rounded-lg border border-border/60 bg-card"
-      style={{ borderLeftWidth: "3px", borderLeftColor: accentColor }}
+      className={`rounded-lg border border-border/60 bg-card overflow-hidden transition-all ${status === "completed" ? "opacity-80" : ""}`}
+      style={{ borderLeftWidth: "3px", borderLeftColor: effectiveBorderColor }}
     >
-      <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-        <Badge className={`text-[10px] font-bold px-2 py-0.5 ${priorityStyle.bg} ${priorityStyle.text}`}>
-          {action.priority?.toUpperCase()}
-        </Badge>
-        {effortStyle && (
-          <Badge className={`text-[10px] font-medium ${effortStyle.bg} ${effortStyle.text}`}>
-            {effortStyle.label}
+      {/* ── Main content ── */}
+      <div className="p-3.5">
+        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+          <Badge className={`text-[10px] font-bold px-2 py-0.5 ${priorityStyle.bg} ${priorityStyle.text}`}>
+            {action.priority?.toUpperCase()}
           </Badge>
+          {effortStyle && (
+            <Badge className={`text-[10px] font-medium ${effortStyle.bg} ${effortStyle.text}`}>
+              {effortStyle.label}
+            </Badge>
+          )}
+          {action.category && (
+            <Badge variant="outline" className="text-[10px]">{action.category}</Badge>
+          )}
+          <Badge variant="secondary" className="text-[10px] capitalize">{action.type?.replace(/-/g, " ")}</Badge>
+          {/* Status badge — always visible */}
+          <Badge className={`text-[10px] font-semibold ml-auto ${statusMeta.badgeBg} ${statusMeta.badgeText}`}>
+            {statusMeta.label}
+          </Badge>
+        </div>
+
+        <p className={`font-semibold text-sm leading-snug mb-1 ${status === "completed" ? "line-through text-muted-foreground" : "text-foreground"}`}>
+          {action.title}
+        </p>
+        <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
+
+        {(action.why || action.expectedOutcome) && (
+          <div className="mt-2.5 pt-2 border-t border-border/40 space-y-1">
+            {action.why && (
+              <div className="flex gap-1.5 text-xs">
+                <span className="shrink-0 font-semibold text-muted-foreground/70 w-14">Why</span>
+                <span className="text-muted-foreground">{action.why}</span>
+              </div>
+            )}
+            {action.expectedOutcome && (
+              <div className="flex gap-1.5 text-xs">
+                <span className="shrink-0 font-semibold text-muted-foreground/70 w-14">Outcome</span>
+                <span className="text-muted-foreground">{action.expectedOutcome}</span>
+              </div>
+            )}
+          </div>
         )}
-        {action.category && (
-          <Badge variant="outline" className="text-[10px]">{action.category}</Badge>
+
+        {/* Owner row */}
+        {displayOwner && !trackOpen && (
+          <div className="mt-2 flex items-center gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">Assign to</span>
+            <span className="text-[11px] font-semibold text-foreground">{displayOwner}</span>
+          </div>
         )}
-        <Badge variant="secondary" className="text-[10px] capitalize">{action.type?.replace(/-/g, " ")}</Badge>
+
+        {/* Track toggle */}
+        <button
+          onClick={() => setTrackOpen(o => !o)}
+          className="mt-2.5 flex items-center gap-1 text-[10px] font-semibold text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+        >
+          {trackOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          {trackOpen ? "Hide tracking" : "Track progress"}
+        </button>
       </div>
 
-      <p className="font-semibold text-sm text-foreground leading-snug mb-1">{action.title}</p>
-      <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
+      {/* ── Tracking panel ── */}
+      {trackOpen && (
+        <div className="border-t border-border/40 bg-muted/30 p-3.5 space-y-3">
+          {/* Status selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 w-14 shrink-0">Status</span>
+            <Select value={status} onValueChange={handleStatusChange} disabled={patchMutation.isPending}>
+              <SelectTrigger className="h-7 text-xs flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="not_started" className="text-xs">Not Started</SelectItem>
+                <SelectItem value="in_progress" className="text-xs">In Progress</SelectItem>
+                <SelectItem value="completed" className="text-xs">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-      {(action.why || action.expectedOutcome) && (
-        <div className="mt-2.5 pt-2 border-t border-border/40 space-y-1">
-          {action.why && (
-            <div className="flex gap-1.5 text-xs">
-              <span className="shrink-0 font-semibold text-muted-foreground/70 w-14">Why</span>
-              <span className="text-muted-foreground">{action.why}</span>
+          {/* Owner override */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 w-14 shrink-0">Owner</span>
+            <Input
+              className="h-7 text-xs flex-1"
+              value={ownerInput}
+              onChange={e => setOwnerInput(e.target.value)}
+              onBlur={handleOwnerBlur}
+              placeholder={action.suggestedOwner ?? "Assign owner…"}
+              disabled={patchMutation.isPending}
+            />
+          </div>
+
+          {/* Progress notes */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Progress Notes</span>
+            {(actionState?.progressNotes ?? []).length > 0 && (
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {(actionState?.progressNotes ?? []).map((n, idx) => (
+                  <p key={idx} className="text-[11px] text-muted-foreground bg-background rounded px-2 py-1 border border-border/40 leading-relaxed">
+                    {n}
+                  </p>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1.5">
+              <Input
+                className="h-7 text-xs flex-1"
+                value={noteInput}
+                onChange={e => setNoteInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleAddNote()}
+                placeholder="Add a progress note…"
+                disabled={patchMutation.isPending}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2.5 text-xs"
+                onClick={handleAddNote}
+                disabled={!noteInput.trim() || patchMutation.isPending}
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+
+          {/* Timestamps */}
+          {(actionState?.updatedAt || actionState?.completedAt) && (
+            <div className="space-y-0.5">
+              {actionState.completedAt && (
+                <p className="text-[10px] text-muted-foreground/50">
+                  Completed: {new Date(actionState.completedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+              )}
+              {actionState.updatedAt && !actionState.completedAt && (
+                <p className="text-[10px] text-muted-foreground/50">
+                  Updated: {new Date(actionState.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+              )}
             </div>
           )}
-          {action.expectedOutcome && (
-            <div className="flex gap-1.5 text-xs">
-              <span className="shrink-0 font-semibold text-muted-foreground/70 w-14">Outcome</span>
-              <span className="text-muted-foreground">{action.expectedOutcome}</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {action.suggestedOwner && (
-        <div className="mt-2 flex items-center gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">Assign to</span>
-          <span className="text-[11px] font-semibold text-foreground">{action.suggestedOwner}</span>
         </div>
       )}
     </div>
@@ -1317,9 +1489,19 @@ export default function AnalysisResults() {
                   <span className="text-[10px] text-muted-foreground">{mgd.nextActions.immediate.length} action{mgd.nextActions.immediate.length !== 1 ? "s" : ""}</span>
                 </div>
                 <div className="space-y-2.5">
-                  {mgd.nextActions.immediate.map((action: any, i: number) => (
-                    <ActionCard key={i} action={action} accentColor={action.priority === "critical" ? "#ef4444" : "#f97316"} />
-                  ))}
+                  {mgd.nextActions.immediate.map((action: any, i: number) => {
+                    const aKey = `this-week-${i}`;
+                    return (
+                      <ActionCard
+                        key={aKey}
+                        action={action}
+                        accentColor={action.priority === "critical" ? "#ef4444" : "#f97316"}
+                        actionKey={aKey}
+                        analysisId={id!}
+                        actionState={((analysis as any).actionStates ?? {})[aKey]}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1333,9 +1515,19 @@ export default function AnalysisResults() {
                   <span className="text-[10px] text-muted-foreground">{mgd.nextActions.thirtyDay.length} action{mgd.nextActions.thirtyDay.length !== 1 ? "s" : ""}</span>
                 </div>
                 <div className="space-y-2.5">
-                  {mgd.nextActions.thirtyDay.map((action: any, i: number) => (
-                    <ActionCard key={i} action={action} accentColor="#f59e0b" />
-                  ))}
+                  {mgd.nextActions.thirtyDay.map((action: any, i: number) => {
+                    const aKey = `30-days-${i}`;
+                    return (
+                      <ActionCard
+                        key={aKey}
+                        action={action}
+                        accentColor="#f59e0b"
+                        actionKey={aKey}
+                        analysisId={id!}
+                        actionState={((analysis as any).actionStates ?? {})[aKey]}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1349,9 +1541,19 @@ export default function AnalysisResults() {
                   <span className="text-[10px] text-muted-foreground">{mgd.nextActions.sixtyNinetyDay.length} action{mgd.nextActions.sixtyNinetyDay.length !== 1 ? "s" : ""}</span>
                 </div>
                 <div className="space-y-2.5">
-                  {mgd.nextActions.sixtyNinetyDay.map((action: any, i: number) => (
-                    <ActionCard key={i} action={action} accentColor="#3b82f6" />
-                  ))}
+                  {mgd.nextActions.sixtyNinetyDay.map((action: any, i: number) => {
+                    const aKey = `60-90-days-${i}`;
+                    return (
+                      <ActionCard
+                        key={aKey}
+                        action={action}
+                        accentColor="#3b82f6"
+                        actionKey={aKey}
+                        analysisId={id!}
+                        actionState={((analysis as any).actionStates ?? {})[aKey]}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             )}

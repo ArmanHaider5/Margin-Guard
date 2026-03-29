@@ -25,6 +25,7 @@ import {
   type CostSavingOpportunity,
   type RecurrencePrediction,
   type ConsultantNote,
+  type ActionState,
   type ExtractedDocumentData,
   type FourMCategory,
   type DiagnosticCategory,
@@ -533,6 +534,36 @@ export class DatabaseStorage implements IStorage {
     if (!current) return undefined;
     const existing: ConsultantNote[] = (current as any).notes ?? [];
     return this.updateClientAnalysis(id, { notes: existing.filter(n => n.id !== noteId) });
+  }
+
+  async updateActionState(
+    id: string,
+    actionKey: string,
+    patch: { status?: string; progressNote?: string; ownerOverride?: string }
+  ): Promise<ClientAnalysis | undefined> {
+    const current = await this.getClientAnalysis(id);
+    if (!current) return undefined;
+    const existing: Record<string, ActionState> = (current as any).actionStates ?? {};
+    const prev: ActionState = existing[actionKey] ?? {};
+    const now = new Date().toISOString();
+    const updated: ActionState = {
+      ...prev,
+      updatedAt: now,
+    };
+    if (patch.status !== undefined) {
+      updated.status = patch.status as ActionState["status"];
+      if (patch.status === "completed") updated.completedAt = now;
+      else updated.completedAt = prev.completedAt; // preserve if reverting
+    }
+    if (patch.progressNote !== undefined && patch.progressNote.trim() !== "") {
+      updated.progressNotes = [...(prev.progressNotes ?? []), patch.progressNote.trim()];
+    }
+    if (patch.ownerOverride !== undefined) {
+      updated.ownerOverride = patch.ownerOverride;
+    }
+    return this.updateClientAnalysis(id, {
+      actionStates: { ...existing, [actionKey]: updated },
+    });
   }
 
   async deleteClientAnalysis(id: string): Promise<boolean> {
