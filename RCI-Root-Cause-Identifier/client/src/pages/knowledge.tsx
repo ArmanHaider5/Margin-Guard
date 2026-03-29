@@ -146,7 +146,7 @@ export default function Knowledge() {
                 Knowledge Base
               </h1>
               <p className="text-sm text-muted-foreground">
-                Browse the RCI problem library and manage your custom knowledge
+                Browse the Margin Guard problem library and manage your custom knowledge
               </p>
             </div>
             <Link href="/">
@@ -161,7 +161,7 @@ export default function Knowledge() {
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="catalog" className="flex items-center gap-2" data-testid="tab-catalog">
                 <BookOpen className="w-4 h-4" />
-                <span className="hidden sm:inline">RCI Catalog</span>
+                <span className="hidden sm:inline">Margin Guard Catalog</span>
                 <span className="sm:hidden">Catalog</span>
               </TabsTrigger>
               <TabsTrigger value="industry" className="flex items-center gap-2" data-testid="tab-industry">
@@ -255,7 +255,7 @@ export default function Knowledge() {
               {!catalogLoading && filteredCatalog && filteredCatalog.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Showing {filteredCatalog.length} of {catalog?.length} problems in the RCI catalog
+                    Showing {filteredCatalog.length} of {catalog?.length} problems in the Margin Guard catalog
                   </p>
                   <Accordion type="single" collapsible className="space-y-2">
                     {filteredCatalog.map((problem) => {
@@ -636,7 +636,7 @@ export default function Knowledge() {
                           </div>
                           <div>
                             <p className="text-2xl font-bold" data-testid="text-catalog-count">{catalog?.length || 80}</p>
-                            <p className="text-sm text-muted-foreground">RCI Catalog</p>
+                            <p className="text-sm text-muted-foreground">Margin Guard Catalog</p>
                           </div>
                         </div>
                       </CardContent>

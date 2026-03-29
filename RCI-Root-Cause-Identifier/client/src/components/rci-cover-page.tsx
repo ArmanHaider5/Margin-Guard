@@ -113,7 +113,7 @@ export function createCoverPageData(options: {
     engagementSubtitle: options.engagementSubtitle,
     assessmentDate: dateStr,
     preparedBy: {
-      firmName: options.firmName || "EDX Consulting",
+      firmName: options.firmName || "Scope Optix",
       consultantName: options.consultantName,
     },
     confidentialityNotice: options.confidentialityNotice || defaultConfidentialityNotice,

@@ -65,7 +65,7 @@ export function generateDiagnosticExport(data: DiagnosticExportData): Promise<Bu
         margins: { top: 60, bottom: 60, left: 60, right: 60 },
         info: {
           Title: `Diagnostic Export - ${data.clientName}`,
-          Author: "RCI Diagnostic System",
+          Author: "Margin Guard",
           Subject: "Institutional Diagnostic Report",
         },
       });
@@ -413,7 +413,7 @@ function renderFooter(doc: PDFKit.PDFDocument) {
     
     doc.fontSize(8).fillColor(PERNAS_COLORS.muted).font("Helvetica");
     doc.text(
-      `Page ${i + 1} of ${pages.count} | Internal Document | RCI Diagnostic System`,
+      `Page ${i + 1} of ${pages.count} | Internal Document | Margin Guard`,
       60,
       doc.page.height - 40,
       { align: "center", width: doc.page.width - 120 }

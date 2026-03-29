@@ -37,7 +37,7 @@ export default function Onboarding() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
-        title: "Welcome to RCI!",
+        title: "Welcome to Margin Guard!",
         description: "Your profile has been set up. Let's start diagnosing.",
       });
     },
@@ -70,7 +70,7 @@ export default function Onboarding() {
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl" data-testid="text-onboarding-title">
-            Welcome to RCI
+            Welcome to Margin Guard
           </CardTitle>
           <CardDescription data-testid="text-onboarding-description">
             Tell us about your business so we can tailor our diagnosis to your industry

@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * RCI BRAIN - KNOWLEDGE-GOVERNED ANALYSIS ENGINE
+ * MARGIN GUARD BRAIN - KNOWLEDGE-GOVERNED ANALYSIS ENGINE
  * ============================================================================
  *
  * GOVERNANCE RULES (MUST NOT BE VIOLATED):
@@ -27,7 +27,7 @@
  *    - Generate advice outside archetype boundaries
  *
  * This ensures institutional consistency, professional accountability,
- * and audit trail integrity across all RCI diagnostics.
+ * and audit trail integrity across all Margin Guard diagnostics.
  * ============================================================================
  */
 
@@ -1712,7 +1712,7 @@ async function runQuickAnalysis(input: AnalysisInput): Promise<AnalysisResult> {
   const relevantProblems = getRelevantProblems(industry);
 
   // GOVERNANCE: System prompt enforces library-only selection
-  const systemPrompt = `You are the RCI Brain - a KNOWLEDGE-GOVERNED diagnostic engine for EDX consulting.
+  const systemPrompt = `You are the Margin Guard Brain - a KNOWLEDGE-GOVERNED diagnostic engine for Scope Optix consulting.
 
 CRITICAL GOVERNANCE RULES:
 1. You may ONLY select root causes from the provided ROOT CAUSE LIBRARY
@@ -1980,7 +1980,7 @@ async function runBaselineAnalysis(
   const relevantProblems = getRelevantProblems(industry);
 
   // GOVERNANCE: System prompt enforces library-only selection
-  const systemPrompt = `You are the RCI Brain - a KNOWLEDGE-GOVERNED diagnostic engine for EDX consulting.
+  const systemPrompt = `You are the Margin Guard Brain - a KNOWLEDGE-GOVERNED diagnostic engine for Scope Optix consulting.
 
 CRITICAL GOVERNANCE RULES:
 1. You may ONLY select root causes from the provided ROOT CAUSE LIBRARY
@@ -2204,7 +2204,7 @@ async function runDeepAnalysis(input: AnalysisInput): Promise<AnalysisResult> {
   const relevantProblems = getRelevantProblems(industry);
 
   // GOVERNANCE: Enforce strict library-only selection
-  const systemPrompt = `You are the RCI Brain - a KNOWLEDGE-GOVERNED diagnostic engine for EDX consulting.
+  const systemPrompt = `You are the Margin Guard Brain - a KNOWLEDGE-GOVERNED diagnostic engine for Scope Optix consulting.
 
 CRITICAL GOVERNANCE RULES - VIOLATION IS NOT PERMITTED:
 

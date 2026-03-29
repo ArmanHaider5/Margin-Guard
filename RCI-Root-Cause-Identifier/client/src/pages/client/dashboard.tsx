@@ -67,11 +67,11 @@ export default function ClientDashboard() {
         <Card className="p-8 text-center max-w-lg mx-auto">
           <Building2 className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
           <h2 className="text-xl font-semibold mb-2">
-            {isNotLinked ? "Welcome to EDX" : "Unable to Load Dashboard"}
+            {isNotLinked ? "Welcome to Scope Optix" : "Unable to Load Dashboard"}
           </h2>
           <p className="text-muted-foreground mb-6">
             {isNotLinked 
-              ? "Your account is not yet linked to a client organization. Please contact your EDX consultant to get access to your company's operational insights."
+              ? "Your account is not yet linked to a client organization. Please contact your Scope Optix consultant to get access to your company's operational insights."
               : "Please contact your administrator for assistance."}
           </p>
           {isNotLinked && (

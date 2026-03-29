@@ -63,7 +63,7 @@ export default function Landing() {
             <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
               <Target className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-lg" data-testid="text-logo">RCI</span>
+            <span className="font-semibold text-lg" data-testid="text-logo">Margin Guard</span>
           </div>
           <Button onClick={handleLogin} data-testid="button-login">
             Log In
@@ -76,13 +76,13 @@ export default function Landing() {
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
               <Badge variant="secondary" className="mb-4" data-testid="badge-tagline">
-                Root Cause Identifier for SMEs
+                Margin Guard for SMEs
               </Badge>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6" data-testid="text-headline">
                 Stop Solving the Same Problems Over and Over
               </h1>
               <p className="text-xl text-muted-foreground mb-8" data-testid="text-subheadline">
-                RCI helps SME owners identify the real root causes of operational problems 
+                Margin Guard helps SME owners identify the real root causes of operational problems 
                 and implement solutions that prevent them from recurring.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -123,7 +123,7 @@ export default function Landing() {
         <section className="py-16">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-10" data-testid="text-benefits-title">
-              Why SME Owners Choose RCI
+              Why SME Owners Choose Margin Guard
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {benefits.map((benefit) => (
@@ -145,7 +145,7 @@ export default function Landing() {
               Ready to Find Your Root Causes?
             </h2>
             <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">
-              Join hundreds of SME owners who are already using RCI to solve problems 
+              Join hundreds of SME owners who are already using Margin Guard to solve problems 
               and prevent them from happening again.
             </p>
             <Button 

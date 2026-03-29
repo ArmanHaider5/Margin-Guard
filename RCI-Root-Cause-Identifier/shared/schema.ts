@@ -1,11 +1,11 @@
 /**
- * RCI (Root Cause Identifier) - Institutional Diagnostic System
+ * Margin Guard - Institutional Diagnostic System
  * 
- * RCI is an institutional diagnostic and governance system designed to standardise
+ * Margin Guard is an institutional diagnostic and governance system designed to standardise
  * root cause identification and intervention logic while preserving professional judgement.
  * 
  * ARCHITECTURAL RULE: All diagnostics MUST belong to a Client.
- * There is NO global "Ask RCI" or free-floating analysis.
+ * There is NO global "Ask Margin Guard" or free-floating analysis.
  * Diagnostics cannot exist without a Client context.
  * 
  * This ensures:
@@ -549,7 +549,7 @@ export const diagnosticCases = pgTable("diagnostic_cases", {
   consultingScope: jsonb("consulting_scope").$type<ConsultingScopeData>(),
   consultantNotes: text("consultant_notes"),
   status: varchar("status").$type<CaseStatus>().default("draft"),
-  // RCI Brain v2: Optional link to a root cause pattern from the knowledge library
+  // Margin Guard Brain v2: Optional link to a root cause pattern from the knowledge library
   // Used by "Use in Case" workflow — snapshot is frozen at time of attachment
   rootCausePatternId: varchar("root_cause_pattern_id"),
   rootCauseSnapshot: jsonb("root_cause_snapshot").$type<RootCausePatternSnapshot>(),
@@ -570,7 +570,7 @@ export interface DiagnosticOutputSnapshot {
   analysisDate?: string;
 }
 
-// RCI Brain v2: Snapshot of a root cause pattern attached to a case
+// Margin Guard Brain v2: Snapshot of a root cause pattern attached to a case
 // Frozen at time of attachment — does NOT mutate the source RootCauseEntry
 export interface RootCausePatternSnapshot {
   patternName: string;

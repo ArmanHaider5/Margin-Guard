@@ -134,7 +134,7 @@ export function RCIExportEngine({
           <div className="flex items-center gap-3">
             <Download className="w-5 h-5 text-muted-foreground" />
             <div>
-              <CardTitle className="text-lg font-semibold">RCI Export Engine</CardTitle>
+              <CardTitle className="text-lg font-semibold">Margin Guard Export Engine</CardTitle>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Generate client-facing deliverables
               </p>
@@ -273,7 +273,7 @@ export function RCIExportEngine({
         </div>
 
         <div className="pt-2 text-xs text-muted-foreground">
-          All exports use EDX branding and consultant-owned language. PDF generation available after structure review.
+          All exports use Scope Optix branding and consultant-owned language. PDF generation available after structure review.
         </div>
       </CardContent>
     </Card>

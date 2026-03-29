@@ -1,6 +1,6 @@
 import type { ProblemLibraryEntry, DiagnosticCategory, FourMCategory, ManagementIndicator } from "./schema";
 
-// RCI Problem Library - Comprehensive operational problems organized by 8 Diagnostic Categories
+// Margin Guard Problem Library - Comprehensive operational problems organized by 8 Diagnostic Categories
 // Based on decades of Redhawk Consulting experience helping SMEs
 
 export const problemLibrary: ProblemLibraryEntry[] = [

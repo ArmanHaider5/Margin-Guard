@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // KNOWLEDGE MANAGEMENT ROUTES
   // ============================================
 
-  // Get RCI Catalog (pre-loaded problem library)
+  // Get Margin Guard Catalog (pre-loaded problem library)
   app.get("/api/knowledge/catalog", async (req, res) => {
     try {
       const { category } = req.query;
@@ -1404,7 +1404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // RCI Brain v2: Attach a root cause pattern to a case
+  // Margin Guard Brain v2: Attach a root cause pattern to a case
   // Snapshots the pattern's current fields — does NOT mutate the source RootCauseEntry
   app.post("/api/admin/cases/:id/attach-pattern", isAuthenticated, isAdmin, async (req: any, res) => {
     try {

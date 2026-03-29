@@ -70,7 +70,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="space-y-2">
                 <h1 className="text-2xl font-semibold text-foreground" data-testid="text-title">
-                  {user ? `Welcome back, ${user.firstName || 'there'}` : 'RCI Dashboard'}
+                  {user ? `Welcome back, ${user.firstName || 'there'}` : 'Margin Guard Dashboard'}
                 </h1>
                 {user?.companyName && (
                   <div className="flex items-center gap-2 text-muted-foreground">

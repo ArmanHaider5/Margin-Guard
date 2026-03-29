@@ -32,7 +32,7 @@ export function AuthHeader() {
                 <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
                   <Target className="w-4 h-4 text-primary-foreground" />
                 </div>
-                <span className="font-semibold text-foreground">RCI</span>
+                <span className="font-semibold text-foreground">Margin Guard</span>
               </div>
             </Link>
             

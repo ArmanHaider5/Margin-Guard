@@ -1,5 +1,5 @@
 /**
- * RCI Intervention Assessment Component
+ * Margin Guard Assessment Component
  * 
  * Assesses whether consultant intervention is required based on
  * issue severity, business impact, and client internal capability.
@@ -73,15 +73,15 @@ export function RCIInterventionAssessment({
         : "Our consultant evaluation indicates these areas can be addressed with internal resources, supported by professional guidance documentation.";
     }
     return requiresIntervention
-      ? "RCI assessment indicates that professional intervention is required for sustainable resolution."
-      : "RCI assessment indicates this issue may be addressed internally with guidance.";
+      ? "Margin Guard assessment indicates that professional intervention is required for sustainable resolution."
+      : "Margin Guard assessment indicates this issue may be addressed internally with guidance.";
   };
 
   return (
     <Card data-testid="rci-intervention-assessment">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-medium">
-          {clientMode ? "Professional Diagnostic Review" : "RCI Intervention Assessment"}
+          {clientMode ? "Professional Diagnostic Review" : "Margin Guard Assessment"}
         </CardTitle>
       </CardHeader>
       <CardContent>

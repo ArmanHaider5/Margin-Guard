@@ -101,7 +101,7 @@ export default function AdminKnowledge() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-xl font-semibold" data-testid="text-page-title">RCI Brain</h1>
+              <h1 className="text-xl font-semibold" data-testid="text-page-title">Margin Guard Brain</h1>
               <p className="text-sm text-muted-foreground">Reference patterns, solutions, and frameworks</p>
             </div>
           </div>

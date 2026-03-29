@@ -82,7 +82,7 @@ export const defaultConfidentialityNotice =
   "The contents herein are intended for decision-support purposes and should be validated against authoritative sources.";
 
 export const defaultPreparedBy = {
-  firmName: "EDX Consulting",
+  firmName: "Scope Optix",
 };
 
 export type EngagementType = 

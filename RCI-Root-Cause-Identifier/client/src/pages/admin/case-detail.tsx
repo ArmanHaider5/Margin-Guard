@@ -463,7 +463,7 @@ export default function CaseDetailPage() {
               </CardContent>
             </Card>
 
-            {/* RCI Brain v2: Display attached root cause pattern snapshot */}
+            {/* Margin Guard Brain v2: Display attached root cause pattern snapshot */}
             {diagnosticCase.rootCauseSnapshot && (() => {
               const snap = diagnosticCase.rootCauseSnapshot as RootCausePatternSnapshot;
               return (

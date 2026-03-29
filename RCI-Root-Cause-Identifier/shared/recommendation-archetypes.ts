@@ -1,9 +1,9 @@
 /**
  * ============================================================================
- * RCI RECOMMENDATION ARCHETYPES - INSTITUTIONAL INTERVENTION PATTERNS
+ * Margin Guard RECOMMENDATION ARCHETYPES - INSTITUTIONAL INTERVENTION PATTERNS
  * ============================================================================
  * 
- * This is the AUTHORITATIVE source of recommendations for RCI diagnostics.
+ * This is the AUTHORITATIVE source of recommendations for Margin Guard diagnostics.
  * 
  * GOVERNANCE RULES:
  * 
@@ -101,7 +101,7 @@ export interface RecommendationArchetype {
 
 export const recommendationArchetypes: RecommendationArchetype[] = [
   // ============================================
-  // RCI RECOMMENDATION ARCHETYPES
+  // Margin Guard RECOMMENDATION ARCHETYPES
   // ============================================
   {
     archetype_id: "RCI-REC-01",

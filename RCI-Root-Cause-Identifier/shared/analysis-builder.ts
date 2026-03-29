@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * RCI ANALYSIS BUILDER - KNOWLEDGE-GOVERNED OUTPUT ASSEMBLY
+ * Margin Guard ANALYSIS BUILDER - KNOWLEDGE-GOVERNED OUTPUT ASSEMBLY
  * ============================================================================
  * 
  * This module assembles diagnostic outputs from APPROVED KNOWLEDGE SOURCES ONLY.

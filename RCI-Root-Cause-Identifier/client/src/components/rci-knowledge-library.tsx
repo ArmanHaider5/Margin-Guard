@@ -182,7 +182,7 @@ function RCIBrainLitePanel({
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-primary" />
-          <CardTitle className="text-base font-medium">RCI Brain Lite</CardTitle>
+          <CardTitle className="text-base font-medium">Margin Guard Lite</CardTitle>
           <Badge variant="secondary" className="text-xs">Quick Diagnosis</Badge>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
@@ -676,7 +676,7 @@ export function RCIKnowledgeLibrary({
         <Card data-testid="rci-knowledge-library">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <CardTitle className="text-base font-medium">RCI Knowledge Library</CardTitle>
+              <CardTitle className="text-base font-medium">Margin Guard Knowledge Library</CardTitle>
               <Badge variant="secondary" className="text-xs">Proprietary Knowledge</Badge>
             </div>
           </CardHeader>

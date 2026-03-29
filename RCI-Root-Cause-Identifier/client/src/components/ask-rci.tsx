@@ -1,5 +1,5 @@
 /**
- * Ask RCI Component
+ * Ask Margin Guard Component
  * 
  * The primary AI diagnostic entry point for RCI.
  * Consultants describe client problems here to initiate root cause analysis.
@@ -80,7 +80,7 @@ export function AskRCI({ onAnalyze }: AskRCIProps) {
     <div className="w-full max-w-3xl mx-auto" data-testid="ask-rci-container">
       <div className="flex items-center gap-3 mb-6">
         <Brain className="w-8 h-8 text-foreground" />
-        <h2 className="text-2xl font-semibold tracking-tight">Ask RCI</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Ask Margin Guard</h2>
       </div>
 
       <div className="space-y-6">
@@ -149,7 +149,7 @@ export function AskRCI({ onAnalyze }: AskRCIProps) {
             data-testid="button-analyze"
           >
             <Brain className="w-5 h-5 mr-2" />
-            Analyze with RCI Brain
+            Analyze with Margin Guard Brain
           </Button>
         </div>
       </div>

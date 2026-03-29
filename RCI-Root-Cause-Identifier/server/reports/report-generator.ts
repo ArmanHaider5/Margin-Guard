@@ -58,8 +58,8 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
         bufferPages: true,
         info: {
           Title: `${data.client.name} — Operational Diagnostic Report`,
-          Author: "EDX Consulting — Efficiency, Deployment, Excellence",
-          Subject: data.analysis.title || "RCI Diagnostic Report",
+          Author: "Scope Optix",
+          Subject: data.analysis.title || "Margin Guard Diagnostic Report",
         },
       });
 
@@ -181,9 +181,9 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       // Full-width header band (absolute, never moves cursor)
       doc.rect(0, 0, doc.page.width, 175).fill(C.primary);
 
-      // EDX wordmark
+      // Scope Optix wordmark
       doc.fontSize(30).fillColor(C.white).font("Helvetica-Bold");
-      doc.text("EDX", ml, 36, { width: pw, align: "center" });
+      doc.text("Scope Optix", ml, 36, { width: pw, align: "center" });
 
       doc.fontSize(9).fillColor("#94a3b8").font("Helvetica");
       doc.text(
@@ -370,7 +370,7 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
 
       // Left zone — brand
       doc.fontSize(9.5).fillColor(C.primary).font("Helvetica-Bold");
-      doc.text("EDX Consulting", ml, cfTextY, { width: cfZoneW });
+      doc.text("Scope Optix", ml, cfTextY, { width: cfZoneW });
       doc.fontSize(7).fillColor(C.muted).font("Helvetica");
       doc.text("Efficiency  ·  Deployment  ·  Excellence", ml, cfTextY + 14, { width: cfZoneW });
       doc.fontSize(7).fillColor(C.muted).font("Helvetica");
@@ -1256,7 +1256,7 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
       doc.y += 10;
 
       doc.fontSize(11).fillColor(C.primary).font("Helvetica-Bold");
-      doc.text("Contact EDX for Implementation Support", ml, doc.y);
+      doc.text("Contact Scope Optix for Implementation Support", ml, doc.y);
       doc.y += 6;
       doc.fontSize(9).fillColor(C.text).font("Helvetica");
       doc.text(
@@ -1288,7 +1288,7 @@ export function generateAnalysisReport(data: ReportData): Promise<Buffer> {
 
         // LEFT — brand (bold) + optional website (light, same Y offset)
         doc.fontSize(7).fillColor(C.muted).font("Helvetica-Bold");
-        doc.text("EDX Consulting", ml, footerY, { width: fzW });
+        doc.text("Scope Optix", ml, footerY, { width: fzW });
 
         // CENTRE — confidentiality label only, no multi-line
         doc.fontSize(6.5).fillColor(C.muted).font("Helvetica");

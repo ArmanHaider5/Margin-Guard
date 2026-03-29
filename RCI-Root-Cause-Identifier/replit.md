@@ -1,13 +1,13 @@
-# RCI (Root Cause Identifier) - EDX Consulting Platform
+# Margin Guard - Scope Optix Platform
 
 ## Overview
-RCI (Root Cause Identifier) is an AI-powered consulting platform branded under EDX (Efficiency, Deployment, Excellence). It serves as a tool for consultants to win and manage client contracts by analyzing operational data and identifying root causes using the 4M framework (Money, Materials, Manpower, Machinery).
+Margin Guard is an AI-powered consulting platform branded under Scope Optix. It serves as a tool for consultants to win and manage client contracts by analyzing operational data and identifying root causes using the 4M framework (Money, Materials, Manpower, Machinery).
 
 **Two User Types:**
 - **Admin (Consultant)**: Manages knowledge base, client organizations, uploads documents, runs AI analyses, and generates PDF reports
 - **Clients (Paying Companies)**: View their issues, diagnoses, and solutions through a dedicated portal
 
-The platform supports 13 industries with 146+ industry-specific problems, features demo mode for pitching potential clients, and includes comprehensive PDF report generation with EDX branding.
+The platform supports 13 industries with 146+ industry-specific problems, features demo mode for pitching potential clients, and includes comprehensive PDF report generation with Scope Optix branding.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -26,7 +26,7 @@ Target users: Malaysian SME owners (non-technical)
 ### Key Pages
 
 **Counsellor View (Full Access):**
-- Admin Dashboard: Overview of all clients and analyses, Ask RCI input
+- Admin Dashboard: Overview of all clients and analyses, Ask Margin Guard input
 - Client Management: Create/edit client organizations
 - Client Detail: View client info, upload documents, manage analyses, Case Memory
 - **Diagnostic Setup** (`/clients/:clientId/diagnostics/new`): Single canonical route for starting diagnostics
@@ -183,7 +183,7 @@ Guardrails:
 Returns: findings with 4M category, severity, causes, estimated cost impact, plus mode indicators
 
 ### PDF Report Generator (`server/report-generator.ts`)
-Generates professional PDF reports with EDX branding:
+Generates professional PDF reports with Scope Optix branding:
 - Cover page with statistics
 - Executive summary
 - 4M distribution charts

@@ -1,11 +1,11 @@
 /**
  * ============================================================================
- * RCI ROOT CAUSE LIBRARY - INSTITUTIONAL KNOWLEDGE BASE
+ * Margin Guard ROOT CAUSE LIBRARY - INSTITUTIONAL KNOWLEDGE BASE
  * ============================================================================
  *
- * This is the AUTHORITATIVE source of root causes for RCI diagnostics.
+ * This is the AUTHORITATIVE source of root causes for Margin Guard diagnostics.
  *
- * RCI language must sound institutional, not advisory.
+ * Margin Guard language must sound institutional, not advisory.
  *
  * LANGUAGE RULES:
  * 1. Root Cause text: Max 1 sentence, no hedging words ("may", "could", "often")
@@ -52,14 +52,14 @@ export type InterventionType =
   | "advisory"
   | "consultant-required";
 
-// RCI Brain v2: Case outcome tracking for pattern card references
+// Margin Guard Brain v2: Case outcome tracking for pattern card references
 export type CaseOutcome = "worked" | "partial" | "failed";
 export interface CaseReference {
   caseId: string;
   outcome: CaseOutcome;
 }
 
-// RCI Brain v2: Standardised symptom taxonomy for symptom → root cause mapping
+// Margin Guard Brain v2: Standardised symptom taxonomy for symptom → root cause mapping
 // Used by getLikelyRootCauses() to score and rank root causes from observed symptoms
 export const SYMPTOM_TAGS = [
   "MISSED_DEADLINES",
@@ -134,7 +134,7 @@ export interface RootCauseEntry {
   whyItMatters: string;
   interventionDirection: string;
 
-  // RCI Brain v2 — Pattern Card extensions (optional for backward compatibility)
+  // Margin Guard Brain v2 — Pattern Card extensions (optional for backward compatibility)
   // Used in future diagnostic workflow for validation and prevention guidance
   signalTriggers?: string[];
   validationChecklist?: string[];
@@ -143,7 +143,7 @@ export interface RootCauseEntry {
   preventionStrategy?: string;
   caseReferences?: CaseReference[];
 
-  // RCI Brain v2 — Symptom taxonomy tags for symptom → root cause mapping
+  // Margin Guard Brain v2 — Symptom taxonomy tags for symptom → root cause mapping
   // Used by getLikelyRootCauses() to score matches from observed symptoms
   symptomTags?: SymptomTag[];
 }
@@ -184,7 +184,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Delayed billing approvals extend the cash conversion cycle and strain working capital.",
     interventionDirection:
       "Billing submission discipline and approval tracking protocols.",
-    // RCI Brain v2 pattern card fields
+    // Margin Guard Brain v2 pattern card fields
     validationChecklist: [
       "Average days from work completion to billing submission",
       "Percentage of progress claims submitted on time",
@@ -229,7 +229,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Weak credit enforcement allows receivables to age beyond recovery thresholds.",
     interventionDirection:
       "Credit control procedures with escalation timelines.",
-    // RCI Brain v2 pattern card fields
+    // Margin Guard Brain v2 pattern card fields
     validationChecklist: [
       "Receivables aging report reviewed weekly",
       "Credit terms formally documented per customer",
@@ -540,7 +540,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Untrained staff execute tasks inconsistently, increasing errors and rework.",
     interventionDirection:
       "Training programmes aligned to current procedures with regular updates.",
-    // RCI Brain v2 pattern card fields
+    // Margin Guard Brain v2 pattern card fields
     validationChecklist: [
       "Training records exist for all current procedures",
       "Staff can demonstrate competency on updated processes",
@@ -585,7 +585,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Supervisor turnover disrupts team continuity and operational knowledge.",
     interventionDirection:
       "Retention factors and succession planning for key roles.",
-    // RCI Brain v2 pattern card fields
+    // Margin Guard Brain v2 pattern card fields
     validationChecklist: [
       "Supervisor tenure tracked and trended over 12 months",
       "Exit interview data analysed for systemic causes",
@@ -801,7 +801,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Inaccurate inventory data leads to unreliable ordering and allocation decisions.",
     interventionDirection:
       "Stock tracking accuracy through systematic counting and recording.",
-    // RCI Brain v2 pattern card fields
+    // Margin Guard Brain v2 pattern card fields
     validationChecklist: [
       "Physical stock count matches system records within 2% tolerance",
       "Stock movements recorded in real time at point of transaction",
@@ -846,7 +846,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Unreliable suppliers disrupt production schedules and customer commitments.",
     interventionDirection:
       "Supplier performance metrics with escalation mechanisms.",
-    // RCI Brain v2 pattern card fields
+    // Margin Guard Brain v2 pattern card fields
     validationChecklist: [
       "On-time delivery rate tracked per supplier per month",
       "Supplier performance review conducted quarterly",
@@ -1028,7 +1028,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
       "Deferred maintenance accelerates equipment wear and increases failure probability.",
     interventionDirection:
       "Preventive maintenance scheduling with compliance tracking.",
-    // RCI Brain v2 pattern card fields
+    // Margin Guard Brain v2 pattern card fields
     validationChecklist: [
       "Preventive maintenance schedule exists and is current",
       "PM completion rate exceeds 90% per month",
@@ -1071,7 +1071,7 @@ export const rootCauseLibrary: RootCauseEntry[] = [
     whyItMatters:
       "Obsolete equipment lacks manufacturer support and reliable spare parts supply.",
     interventionDirection: "Asset lifecycle review and replacement planning.",
-    // RCI Brain v2 pattern card fields
+    // Margin Guard Brain v2 pattern card fields
     validationChecklist: [
       "Asset age and remaining useful life documented",
       "Spare parts availability confirmed with suppliers",
@@ -1902,7 +1902,7 @@ export function getCausesByIndustry(industry: string): RootCauseEntry[] {
   });
 }
 // ======================================================
-// RCI Brain v2: SYMPTOM → ROOT CAUSE MAPPING ENGINE
+// Margin Guard Brain v2: SYMPTOM → ROOT CAUSE MAPPING ENGINE
 // ======================================================
 // Scores root causes by symptom tag overlap, with optional industry/category boosting.
 // Returns ranked results for use in future diagnostic workflow UI.

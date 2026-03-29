@@ -72,7 +72,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <h1 className="text-base font-bold tracking-tight text-foreground leading-tight" data-testid="text-admin-title">
-                  RCI Diagnostic Console
+                  Margin Guard Console
                 </h1>
                 <p className="text-xs text-muted-foreground">
                   {isConsultant ? "Consultant View · Full Access" : "Client View"}
@@ -297,7 +297,7 @@ export default function AdminDashboard() {
                         <Brain className="w-4.5 h-4.5 text-primary" style={{ width: "1.125rem", height: "1.125rem" }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground leading-tight">RCI Brain</p>
+                        <p className="text-sm font-semibold text-foreground leading-tight">Margin Guard Brain</p>
                         <p className="text-xs text-muted-foreground">Knowledge base & root causes</p>
                       </div>
                       <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0" />
