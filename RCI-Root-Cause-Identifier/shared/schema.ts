@@ -161,9 +161,21 @@ export const clientAnalyses = pgTable("client_analyses", {
   mgdAnalysis: jsonb("mgd_analysis").$type<any>(), // MGD engine output (health score, root cause tree, roadmap)
   notes: jsonb("notes").$type<ConsultantNote[]>(), // Consultant notes (create/delete only)
   actionStates: jsonb("action_states").$type<Record<string, ActionState>>(), // Action tracking states keyed by "{timeframe}-{index}"
+  caseWorkflow: jsonb("case_workflow").$type<CaseWorkflow>(), // Case lifecycle / workflow state
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),
 });
+
+// Case Workflow — stored as a jsonb column on clientAnalyses
+export type CaseWorkflowStatus = "new" | "under_review" | "action_plan_created" | "implementation_in_progress" | "monitoring" | "closed";
+export type CaseWorkflowPriority = "low" | "medium" | "high" | "critical";
+export interface CaseWorkflow {
+  status?: CaseWorkflowStatus;
+  priority?: CaseWorkflowPriority;
+  assignedOwner?: string;
+  targetReviewDate?: string; // ISO date string "YYYY-MM-DD"
+  updatedAt?: string;
+}
 
 // Action Tracking State — stored as a Record<actionKey, ActionState> on the analysis
 // actionKey format: "{timeframe}-{index}", e.g. "this-week-0", "30-days-2"

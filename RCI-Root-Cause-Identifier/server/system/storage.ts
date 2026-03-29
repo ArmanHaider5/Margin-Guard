@@ -26,6 +26,7 @@ import {
   type RecurrencePrediction,
   type ConsultantNote,
   type ActionState,
+  type CaseWorkflow,
   type ExtractedDocumentData,
   type FourMCategory,
   type DiagnosticCategory,
@@ -564,6 +565,21 @@ export class DatabaseStorage implements IStorage {
     return this.updateClientAnalysis(id, {
       actionStates: { ...existing, [actionKey]: updated },
     });
+  }
+
+  async updateCaseWorkflow(
+    id: string,
+    patch: Partial<Pick<CaseWorkflow, "status" | "priority" | "assignedOwner" | "targetReviewDate">>
+  ): Promise<ClientAnalysis | undefined> {
+    const current = await this.getClientAnalysis(id);
+    if (!current) return undefined;
+    const prev: CaseWorkflow = (current as any).caseWorkflow ?? {};
+    const updated: CaseWorkflow = {
+      ...prev,
+      ...Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)),
+      updatedAt: new Date().toISOString(),
+    };
+    return this.updateClientAnalysis(id, { caseWorkflow: updated });
   }
 
   async deleteClientAnalysis(id: string): Promise<boolean> {

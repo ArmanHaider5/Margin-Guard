@@ -925,6 +925,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH /api/admin/analyses/:id/workflow — update case workflow state
+  app.patch("/api/admin/analyses/:id/workflow", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const VALID_STATUSES = ["new", "under_review", "action_plan_created", "implementation_in_progress", "monitoring", "closed"];
+      const VALID_PRIORITIES = ["low", "medium", "high", "critical"];
+      const { status, priority, assignedOwner, targetReviewDate } = req.body ?? {};
+      if (status !== undefined && !VALID_STATUSES.includes(status)) {
+        return res.status(400).json({ error: "Invalid status value" });
+      }
+      if (priority !== undefined && !VALID_PRIORITIES.includes(priority)) {
+        return res.status(400).json({ error: "Invalid priority value" });
+      }
+      const updated = await storage.updateCaseWorkflow(req.params.id, {
+        ...(status !== undefined && { status }),
+        ...(priority !== undefined && { priority }),
+        ...(assignedOwner !== undefined && { assignedOwner }),
+        ...(targetReviewDate !== undefined && { targetReviewDate }),
+      });
+      if (!updated) return res.status(404).json({ error: "Analysis not found" });
+      res.json({ success: true, caseWorkflow: (updated as any).caseWorkflow ?? {} });
+    } catch (error) {
+      console.error("Update case workflow error:", error);
+      res.status(500).json({ error: "Failed to update case workflow" });
+    }
+  });
+
   // Create a new analysis
   app.post("/api/admin/clients/:clientId/analyses", isAuthenticated, isAdmin, async (req: any, res) => {
     try {

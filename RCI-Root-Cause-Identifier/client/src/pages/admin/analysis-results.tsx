@@ -206,6 +206,185 @@ function ConsultantNotesSection({ analysisId, notes }: { analysisId: string; not
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CASE WORKFLOW SECTION
+// ─────────────────────────────────────────────────────────────────────────────
+
+const WORKFLOW_STATUS_META: Record<string, { label: string; bg: string; text: string; dot: string }> = {
+  new:                       { label: "New",                      bg: "bg-slate-100 dark:bg-slate-800",         text: "text-slate-700 dark:text-slate-300",    dot: "bg-slate-400" },
+  under_review:              { label: "Under Review",             bg: "bg-blue-100 dark:bg-blue-900/40",        text: "text-blue-700 dark:text-blue-300",      dot: "bg-blue-500" },
+  action_plan_created:       { label: "Action Plan Created",      bg: "bg-amber-100 dark:bg-amber-900/40",      text: "text-amber-700 dark:text-amber-300",    dot: "bg-amber-500" },
+  implementation_in_progress:{ label: "Implementation In Progress", bg: "bg-orange-100 dark:bg-orange-900/40", text: "text-orange-700 dark:text-orange-300",  dot: "bg-orange-500" },
+  monitoring:                { label: "Monitoring",               bg: "bg-purple-100 dark:bg-purple-900/40",    text: "text-purple-700 dark:text-purple-300",  dot: "bg-purple-500" },
+  closed:                    { label: "Closed",                   bg: "bg-emerald-100 dark:bg-emerald-900/30",  text: "text-emerald-700 dark:text-emerald-300", dot: "bg-emerald-500" },
+};
+
+const WORKFLOW_PRIORITY_META: Record<string, { label: string; bg: string; text: string }> = {
+  low:      { label: "Low",      bg: "bg-slate-100 dark:bg-slate-800",       text: "text-slate-600 dark:text-slate-400" },
+  medium:   { label: "Medium",   bg: "bg-amber-100 dark:bg-amber-900/40",    text: "text-amber-700 dark:text-amber-300" },
+  high:     { label: "High",     bg: "bg-orange-100 dark:bg-orange-900/40",  text: "text-orange-700 dark:text-orange-300" },
+  critical: { label: "Critical", bg: "bg-red-100 dark:bg-red-900/40",        text: "text-red-700 dark:text-red-300" },
+};
+
+function CaseWorkflowSection({ analysisId, caseWorkflow }: { analysisId: string; caseWorkflow?: any }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const wf = caseWorkflow ?? {};
+  const status: string = wf.status ?? "new";
+  const priority: string = wf.priority ?? "medium";
+
+  const [ownerInput, setOwnerInput] = useState<string>(wf.assignedOwner ?? "");
+  const [dateInput, setDateInput] = useState<string>(wf.targetReviewDate ?? "");
+
+  const statusMeta = WORKFLOW_STATUS_META[status] ?? WORKFLOW_STATUS_META.new;
+  const priorityMeta = WORKFLOW_PRIORITY_META[priority] ?? WORKFLOW_PRIORITY_META.medium;
+
+  const patchMutation = useMutation({
+    mutationFn: async (body: Record<string, unknown>) => {
+      const res = await fetch(`/api/admin/analyses/${analysisId}/workflow`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update workflow");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/analyses", analysisId] });
+    },
+    onError: () => {
+      toast({ title: "Update failed", description: "Could not save workflow change.", variant: "destructive" });
+    },
+  });
+
+  const handleOwnerBlur = () => {
+    const trimmed = ownerInput.trim();
+    if (trimmed !== (wf.assignedOwner ?? "")) {
+      patchMutation.mutate({ assignedOwner: trimmed });
+    }
+  };
+
+  const handleDateBlur = () => {
+    if (dateInput !== (wf.targetReviewDate ?? "")) {
+      patchMutation.mutate({ targetReviewDate: dateInput || undefined });
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <div className="px-6 py-3 border-b bg-muted/30 flex items-center gap-2">
+        <ClipboardCheck className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Case Workflow</p>
+        {wf.updatedAt && (
+          <span className="ml-auto text-[10px] text-muted-foreground/50">
+            Updated {new Date(wf.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+          </span>
+        )}
+      </div>
+
+      <div className="px-6 py-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+          {/* Status */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Status</span>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusMeta.bg} ${statusMeta.text}`}>
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusMeta.dot}`} />
+                {statusMeta.label}
+              </span>
+            </div>
+            <Select
+              value={status}
+              onValueChange={(v) => patchMutation.mutate({ status: v })}
+              disabled={patchMutation.isPending}
+            >
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(WORKFLOW_STATUS_META).map(([v, m]) => (
+                  <SelectItem key={v} value={v} className="text-xs">{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Priority */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Priority</span>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Badge className={`text-[11px] font-bold px-2 py-0.5 ${priorityMeta.bg} ${priorityMeta.text}`}>
+                {priorityMeta.label}
+              </Badge>
+            </div>
+            <Select
+              value={priority}
+              onValueChange={(v) => patchMutation.mutate({ priority: v })}
+              disabled={patchMutation.isPending}
+            >
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(WORKFLOW_PRIORITY_META).map(([v, m]) => (
+                  <SelectItem key={v} value={v} className="text-xs">{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Assigned Owner */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Assigned To</span>
+            <div className="flex items-center gap-1.5 mb-1 min-h-[22px]">
+              {wf.assignedOwner ? (
+                <span className="text-[11px] font-semibold text-foreground truncate">{wf.assignedOwner}</span>
+              ) : (
+                <span className="text-[11px] text-muted-foreground/40 italic">Unassigned</span>
+              )}
+            </div>
+            <Input
+              className="h-7 text-xs"
+              value={ownerInput}
+              onChange={(e) => setOwnerInput(e.target.value)}
+              onBlur={handleOwnerBlur}
+              onKeyDown={(e) => e.key === "Enter" && (e.currentTarget as HTMLInputElement).blur()}
+              placeholder="Assign owner…"
+              disabled={patchMutation.isPending}
+            />
+          </div>
+
+          {/* Target Review Date */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Review Date</span>
+            <div className="flex items-center gap-1.5 mb-1 min-h-[22px]">
+              {wf.targetReviewDate ? (
+                <span className="text-[11px] font-semibold text-foreground">
+                  {new Date(wf.targetReviewDate + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+              ) : (
+                <span className="text-[11px] text-muted-foreground/40 italic">Not set</span>
+              )}
+            </div>
+            <Input
+              type="date"
+              className="h-7 text-xs"
+              value={dateInput}
+              onChange={(e) => setDateInput(e.target.value)}
+              onBlur={handleDateBlur}
+              disabled={patchMutation.isPending}
+            />
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ACTION CARD — shared across all three timeframe buckets
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -796,6 +975,14 @@ export default function AnalysisResults() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* ── CASE WORKFLOW ───────────────────────────────────────────── */}
+      {analysis.id && (
+        <CaseWorkflowSection
+          analysisId={analysis.id}
+          caseWorkflow={(analysis as any).caseWorkflow ?? null}
+        />
       )}
 
       {/* ── PROGRESS SNAPSHOT ───────────────────────────────────────── */}

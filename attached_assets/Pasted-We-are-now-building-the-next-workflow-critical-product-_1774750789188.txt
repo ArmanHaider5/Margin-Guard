@@ -1,0 +1,138 @@
+We are now building the next workflow-critical product layer:
+
+# OBJECTIVE
+
+Add **Case Status / Client Workflow Management** to each analysis.
+
+The platform already diagnoses issues and tracks actions.
+Now we need to track the **overall case lifecycle**.
+
+This should make the platform feel like a real consulting / operational case management system.
+
+---
+
+# GOAL
+
+Each analysis should support an editable **case workflow state** visible near the top of the results page.
+
+---
+
+# PART A — BACKEND
+
+## Add a new case workflow object to each analysis
+
+Store:
+
+```ts id="x6tf8n"
+caseWorkflow?: {
+  status?: "new" | "under_review" | "action_plan_created" | "implementation_in_progress" | "monitoring" | "closed"
+  priority?: "low" | "medium" | "high" | "critical"
+  assignedOwner?: string
+  targetReviewDate?: string
+  updatedAt?: string
+}
+```
+
+Safest storage pattern:
+
+* jsonb column on clientAnalyses (same pattern as notes / action_states)
+
+---
+
+## API
+
+Add:
+
+### PATCH /api/admin/analyses/:id/workflow
+
+Body may include any of:
+
+* status
+* priority
+* assignedOwner
+* targetReviewDate
+
+Update only supplied fields.
+Always refresh updatedAt.
+
+---
+
+# PART B — FRONTEND
+
+## Add a new section / control block near the top of the results page
+
+## Placement:
+
+Above Progress Snapshot if present.
+If no Progress Snapshot exists, place below Executive Summary and above Consultant Notes.
+
+## Section title:
+
+**Case Workflow**
+
+---
+
+## UI must include:
+
+### 1. Status selector
+
+Dropdown with:
+
+* New
+* Under Review
+* Action Plan Created
+* Implementation In Progress
+* Monitoring
+* Closed
+
+### 2. Priority selector
+
+Dropdown with:
+
+* Low
+* Medium
+* High
+* Critical
+
+### 3. Assigned owner
+
+Editable input
+
+### 4. Target review date
+
+Date picker input
+
+### 5. Last updated
+
+Small muted timestamp
+
+---
+
+# UI / UX RULES
+
+* Compact and executive-looking
+* Should feel like case management, not admin clutter
+* Status and priority should be visually prominent
+* Keep it aligned and clean
+* Changes should save immediately or on blur/select (no large form submit flow)
+
+---
+
+# SAFETY RULES
+
+* Do not redesign the whole page
+* Do not affect report generation
+* Do not touch diagnostic engines
+* Old analyses must render safely if caseWorkflow is null
+
+---
+
+# WHAT TO RETURN
+
+After implementation, return:
+
+1. Exact files changed
+2. Where caseWorkflow is stored
+3. API route added
+4. Where Case Workflow appears in the UI
+5. Whether old analyses still render safely
