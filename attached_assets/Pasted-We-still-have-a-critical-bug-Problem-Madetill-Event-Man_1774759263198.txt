@@ -1,0 +1,233 @@
+We still have a critical bug.
+
+Problem
+
+Madetill Event Management (MEM) analysis still returns:
+
+"No diagnostic findings"
+
+This means the new event_management industry model is not yet working end-to-end.
+
+This is not a UI issue.
+
+I need a full root-cause debug and permanent fix for why Event Management analyses are producing zero findings.
+
+TASK
+
+Trace the full analysis pipeline for a MEM run and identify exactly where findings are being lost.
+
+You must debug the full path:
+
+client industry value saved in DB
+industry normalization / mapping
+industry model selection in unified engine
+signal extraction from uploaded docs
+signal → root cause matching
+matched root causes → final findings generation
+findings persistence to analysis result
+results page rendering
+REQUIRED OUTPUT
+
+I want you to instrument and verify all of the following with real logs for MEM:
+
+1) Confirm the exact industry value in DB
+
+Log the actual stored industry string for MEM.
+
+Example:
+
+console.log("[MGD DEBUG] MEM industry from DB:", client.industry)
+
+I need to know whether it is:
+
+"Event Management"
+"event_management"
+"event management"
+or something else
+2) Confirm normalization result
+
+Wherever industry is normalized / mapped, log:
+
+raw value
+normalized value
+selected model key
+
+Example:
+
+console.log("[MGD DEBUG] Industry routing:", {
+  rawIndustry,
+  normalizedIndustry,
+  selectedModel
+})
+
+I need proof that MEM is actually routing to:
+
+event_management
+
+and not falling back to professional services.
+
+3) Confirm Event Management model loads correctly
+
+When the model is selected, log:
+
+number of root causes loaded
+number of signals loaded
+number of mappings loaded
+number of benchmarks loaded
+
+Example:
+
+console.log("[MGD DEBUG] Event model loaded:", {
+  rootCauses: model.rootCauses?.length,
+  signals: model.signals?.length,
+  mappings: model.mappings?.length,
+  benchmarks: model.benchmarks?.length,
+})
+
+If any of these are 0 or undefined, that is the bug.
+
+4) Confirm uploaded docs are actually being parsed
+
+For the MEM analysis run, log:
+
+number of uploaded docs received
+filenames processed
+parse success/failure
+total extracted text length
+
+Example:
+
+console.log("[MGD DEBUG] Docs parsed:", {
+  count: documents.length,
+  filenames: documents.map(d => d.name),
+  totalTextLength
+})
+
+If docs are not actually being passed into the event engine, that is the bug.
+
+5) Confirm event-specific signals are being detected
+
+After signal extraction, log:
+
+all extracted signals
+count by category
+top matched terms/snippets
+
+Example:
+
+console.log("[MGD DEBUG] Extracted event signals:", extractedSignals)
+
+I need to know whether the engine is detecting things like:
+
+subcontractor delay
+stock not aligned
+delayed claims
+emergency restocking
+claim approval
+staff turnover
+cash shortfalls
+supplier issues
+setup delays
+crew fatigue
+
+If extractedSignals is empty or near-empty, the issue is in signal detection.
+
+6) Confirm signal → root cause scoring
+
+For the Event Management model, log:
+
+each matched root cause
+which signals matched it
+final score per root cause
+why it passed or failed threshold
+
+Example:
+
+console.log("[MGD DEBUG] Root cause scoring:", scoredRootCauses)
+
+I want to see whether:
+
+nothing is matching
+or matches exist but are being filtered out
+7) Confirm final findings array before save
+
+Right before the analysis is saved / returned, log:
+
+findings.length
+finding titles
+categories
+severity
+
+Example:
+
+console.log("[MGD DEBUG] Final findings before save:", finalFindings)
+
+If this is empty, the bug is upstream.
+If this has findings, but UI still says no findings, then the bug is in persistence or retrieval.
+
+8) Confirm what is saved to DB and returned to frontend
+
+Log the final analysis payload for MEM:
+
+findings count
+findings titles
+mgdAnalysis presence
+industry used
+
+Example:
+
+console.log("[MGD DEBUG] Final analysis payload:", {
+  industry,
+  findingsCount: findings?.length,
+  findingsTitles: findings?.map(f => f.title),
+  hasMgdAnalysis: !!mgdAnalysis
+})
+REQUIRED FIXES
+
+After finding the root cause, fix it permanently.
+
+I need:
+MEM / event_management to produce findings reliably
+no silent failures
+no empty findings when docs and signals exist
+meaningful fallback if signal confidence is weak
+SAFETY REQUIREMENT
+
+If Event Management docs are sparse or matching is weak, the engine must still produce a best-effort baseline diagnosis rather than returning zero findings.
+
+Implement this rule:
+
+If:
+uploaded documents exist
+parsed text exists
+but no high-confidence event signals match
+Then:
+
+generate 2–4 low-confidence baseline findings from the Event Management root cause library using:
+
+intake problem statement
+observed symptoms
+detected generic business signals
+event-specific keyword partial matches
+
+This is far better than returning:
+
+“No diagnostic findings”
+
+IMPORTANT
+
+Do not just “patch” the UI or bypass the issue.
+
+I need:
+
+the exact root cause,
+the exact code path that failed,
+the exact permanent fix,
+confirmation that MEM now returns real findings.
+
+When complete, show me:
+
+the root cause summary
+files changed
+logs proving the pipeline works
+screenshot or JSON proof that MEM findings now appear

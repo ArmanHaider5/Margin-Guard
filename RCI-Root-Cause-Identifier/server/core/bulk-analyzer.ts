@@ -89,6 +89,7 @@ import { runUnifiedDiagnostic } from "../modules/diagnostics/services/unified-di
 import { aggregateSignals } from "../modules/signals/signal-aggregator";
 import { detectCategoryDominance } from "../modules/signals/category-dominance";
 import { industryProfiles } from "../industries/industry-profiles";
+import { industryRegistry } from "../modules/industries/industry-registry";
 import { manufacturingVocabulary } from "../modules/industries/manufacturing/manufacturing-signals";
 import { manufacturingKpis } from "../industries/manufacturing-kpis";
 import { detectIndustryFromDocuments } from "../industries/industryDetection";
@@ -3701,15 +3702,114 @@ async function runSignalDrivenDeepAnalysis(input: AnalysisInput): Promise<Analys
     };
   }
 
-  const findings: AnalysisFinding[] = expertFindings.slice(0, 6).map((item, idx) => {
+  // ── INDUSTRY MODEL FALLBACK ──────────────────────────────────────────────────
+  // The expert engine only scores against manufacturingRootCauseLibrary.
+  // For non-manufacturing industries (e.g. event_management) it will always
+  // return 0 results. When that happens AND signals exist, generate baseline
+  // findings from the industry's own root cause library.
+  // ─────────────────────────────────────────────────────────────────────────────
+  const INDUSTRY_REGISTRY_FALLBACK: Record<string, string> = {
+    finance:              "professionalServices",
+    construction:         "professionalServices",
+    property_development: "professionalServices",
+    oil_gas:              "manufacturing",
+    hospitality:          "retail",
+    hotels_airbnb:        "retail",
+    fnb_full_service:     "retail",
+    fnb_qsr:              "retail",
+    fnb_fast_food:        "retail",
+    fnb_franchise:        "retail",
+    fnb_independent:      "retail",
+    fmcg:                 "retail",
+    food_beverage:        "manufacturing",
+    automotive:           "manufacturing",
+    other:                "professionalServices",
+  };
+
+  const EVIDENCE_CAT_TO_RC_CAT: Record<string, string[]> = {
+    Money:     ["Financial", "Money"],
+    Manpower:  ["Manpower"],
+    Materials: ["Suppliers", "Inventory", "Materials"],
+    Machinery: ["Operations", "Inventory", "Machinery"],
+  };
+
+  let resolvedFindingSources: { id: string; title: string; description: string; category: string; score: number }[] = expertFindings.slice(0, 6);
+
+  if (resolvedFindingSources.length === 0) {
+    const registryKey: string = (industryRegistry as any)[sdIndustry]
+      ? sdIndustry
+      : (INDUSTRY_REGISTRY_FALLBACK[sdIndustry] ?? "professionalServices");
+
+    const industryModel = (industryRegistry as any)[registryKey];
+
+    if (industryModel?.rootCauses?.length > 0) {
+      const evidenceCategories = new Set(
+        evidenceSignals.flatMap(s => EVIDENCE_CAT_TO_RC_CAT[s.category] ?? [])
+      );
+
+      // Also pull category clues from concrete signals
+      for (const cs of concreteSignals) {
+        const csCategory = cs.category as string;
+        for (const mapped of (EVIDENCE_CAT_TO_RC_CAT[csCategory] ?? [])) {
+          evidenceCategories.add(mapped);
+        }
+      }
+
+      const sortedRCs = [...industryModel.rootCauses].sort((a: any, b: any) => {
+        const aMatch = evidenceCategories.has(a.category) ? 1 : 0;
+        const bMatch = evidenceCategories.has(b.category) ? 1 : 0;
+        if (bMatch !== aMatch) return bMatch - aMatch;
+        return (b.impactWeight ?? 0) - (a.impactWeight ?? 0);
+      });
+
+      resolvedFindingSources = sortedRCs.slice(0, 4).map((rc: any) => ({
+        id: rc.id,
+        title: rc.rootCause,
+        description: rc.description,
+        category: rc.category,
+        score: Math.round((rc.impactWeight ?? 0.7) * 80),
+      }));
+
+      console.log(
+        `[MGD] Expert engine returned 0 findings for "${sdIndustry}". Generated ${resolvedFindingSources.length} baseline findings from "${registryKey}" model (categories detected: ${Array.from(evidenceCategories).join(", ")})`
+      );
+    } else {
+      console.log(`[MGD] No industry model found for "${sdIndustry}" — returning empty findings`);
+    }
+  }
+
+  // Map EM/industry root cause categories to 4M equivalents for rendering
+  const RC_CAT_TO_FOURM: Record<string, FourMCategory> = {
+    Financial:   "Money",
+    Money:       "Money",
+    Manpower:    "Manpower",
+    Suppliers:   "Materials",
+    Inventory:   "Machinery",
+    Operations:  "Machinery",
+    Machinery:   "Machinery",
+    Materials:   "Materials",
+    Utilization: "Manpower",
+    Workload:    "Manpower",
+    "Project Management": "Materials",
+    "Client Management":  "Materials",
+    Pricing:     "Money",
+    Sales:       "Money",
+    "Resource Allocation": "Manpower",
+    "Knowledge Management": "Manpower",
+    "Client Demand": "Materials",
+    "Staff Retention": "Manpower",
+  };
+
+  const findings: AnalysisFinding[] = resolvedFindingSources.map((item, idx) => {
     const severity = (["high", "medium", "critical"] as const)[idx % 3];
+    const fourM: FourMCategory = RC_CAT_TO_FOURM[item.category] ?? "Materials";
 
     return {
       id: `finding-expert-${idx}-${item.id}`,
       title: item.title,
       description: `Root Cause:\n${item.title}\n\nDescription:\n${item.description}\n\nCategory: ${item.category}\n\nExpert Score: ${item.score}`,
-      fourMCategory: item.category as FourMCategory,
-      indicator: categoryToIndicator[item.category as FourMCategory],
+      fourMCategory: fourM,
+      indicator: categoryToIndicator[fourM],
       severity,
       frequency: idx + 1,
       causes: [item.title],
