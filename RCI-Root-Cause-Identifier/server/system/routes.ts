@@ -18,6 +18,7 @@ import { generateDiagnosticExport } from "../diagnostics/diagnostic-export";
 import executionRoutes from "../../src/modules/execution/routes/execution.routes";
 import { diagnosticHandler } from "../api/diagnostic-route";
 import { runCilPipeline } from "../cil/cil-pipeline";
+import { validateCIL } from "../cil/cil-validator";
 import { db } from "./db";
 import { cilTransactions } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -888,6 +889,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("[CIL] Get client transactions error:", error);
       res.status(500).json({ error: "Failed to retrieve CIL transactions" });
+    }
+  });
+
+  // GET /api/admin/documents/:id/cil-validate
+  // Runs the 6-check validation suite against a processed document.
+  // Returns healthScore (0–100), per-check results, issues list, and samples.
+  app.get("/api/admin/documents/:id/cil-validate", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const doc = await storage.getClientDocument(req.params.id);
+      if (!doc) return res.status(404).json({ error: "Document not found" });
+
+      if (!doc.extractedData) {
+        return res.status(400).json({
+          error:   "Document has not been processed yet",
+          status:  "FAIL",
+          healthScore: 0,
+          issues:  ["Document has no extracted data — run document processing first"],
+        });
+      }
+
+      const report = await validateCIL(req.params.id, {
+        fileName:      doc.fileName,
+        extractedData: doc.extractedData,
+      });
+
+      res.json(report);
+    } catch (error) {
+      console.error("[CIL] Validate error:", error);
+      res.status(500).json({ error: "Failed to validate CIL transactions" });
     }
   });
 
