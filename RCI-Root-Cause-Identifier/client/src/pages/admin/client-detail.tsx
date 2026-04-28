@@ -601,10 +601,15 @@ export default function ClientDetail() {
               const sc = docStatusConfig[doc.status || "uploaded"] ?? docStatusConfig.uploaded;
               const StatusIcon = sc.icon;
               const isError = doc.status === "error";
+              const isClickable = doc.status === "processed";
               return (
                 <div
                   key={doc.id}
-                  className={`flex items-center gap-3.5 px-6 py-4 ${isError ? "border-l-2 border-l-amber-300 dark:border-l-amber-600" : ""}`}
+                  onClick={() => isClickable && navigate(`/admin/documents/${doc.id}`)}
+                  className={`flex items-center gap-3.5 px-6 py-4 transition-colors group
+                    ${isError ? "border-l-2 border-l-amber-300 dark:border-l-amber-600" : ""}
+                    ${isClickable ? "cursor-pointer hover:bg-muted/30" : ""}
+                  `}
                   data-testid={`row-document-${doc.id}`}
                 >
                   <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${ftLabel.color}`}>
@@ -621,6 +626,9 @@ export default function ClientDetail() {
                     {StatusIcon && <StatusIcon className={`w-3 h-3 ${doc.status === "processing" ? "animate-spin" : ""}`} />}
                     {sc.label}
                   </span>
+                  {isClickable && (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 transition-colors" />
+                  )}
                 </div>
               );
             })}

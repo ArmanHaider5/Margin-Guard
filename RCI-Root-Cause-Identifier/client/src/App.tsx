@@ -21,6 +21,7 @@ import AnalysisResults from "@/pages/admin/analysis-results";
 import AdminKnowledge from "@/pages/admin/knowledge";
 import CasesPage from "@/pages/admin/cases";
 import CaseDetailPage from "@/pages/admin/case-detail";
+import DocumentDetail from "@/pages/admin/document-detail";
 import ManagementDashboard from "@/pages/management/dashboard";
 import ManagementClientDetail from "@/pages/management/client-detail";
 import ManagementCaseDetail from "@/pages/management/case-detail";
@@ -77,6 +78,7 @@ function Router() {
         <Route path="/admin/knowledge" component={AdminKnowledge} />
         <Route path="/admin/cases" component={CasesPage} />
         <Route path="/admin/cases/:id" component={CaseDetailPage} />
+        <Route path="/admin/documents/:id" component={DocumentDetail} />
         <Route path="/mgd" component={MGDDashboard} />
         
         {/* Management View (read-only summary) */}
