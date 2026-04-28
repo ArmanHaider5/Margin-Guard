@@ -13,6 +13,13 @@
 import type { ColumnMap } from "./column-mapper";
 import type { CilEntityType, CilTxType, CilDocClass } from "@shared/schema";
 
+// ── Safe string helper ────────────────────────────────────────────────────────
+// Converts any value to a lowercase trimmed string. Never throws on null/undefined.
+function safeString(value: any): string {
+  if (value === null || value === undefined) return "";
+  return String(value).toLowerCase().trim();
+}
+
 export interface ParsedTransaction {
   entityType:           CilEntityType;
   entityName:           string | null;
@@ -48,7 +55,7 @@ function detectEntityType(name: string | null, colMap: ColumnMap, hasDriver: boo
   if (hasDriver) return "staff";
   if (hasVehicle) return "vehicle";
   if (!name) return "unknown";
-  const lower = name.toLowerCase();
+  const lower = safeString(name);
   if (/^[a-z\s]+$/.test(lower) && lower.split(" ").length <= 3) {
     // Likely a person's name
     if (/sdn|bhd|trading|enterprise|holdings|corp|pvt|ltd/.test(lower)) return "customer";
@@ -76,7 +83,7 @@ function autoRef(entityName: string | null, date: string | null, docClass: CilDo
   const parts = [
     entityName?.slice(0, 20).replace(/\s+/g, "_") ?? "UNK",
     date ?? "NODATE",
-    docClass.slice(0, 4).toUpperCase(),
+    String(docClass ?? "").slice(0, 4).toUpperCase(),
   ].filter(Boolean);
   return parts.join("-");
 }

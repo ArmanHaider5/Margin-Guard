@@ -21,6 +21,13 @@
 
 import type { CilDocClass } from "@shared/schema";
 
+// ── Safe string helper ────────────────────────────────────────────────────────
+// Converts any value to a lowercase trimmed string. Never throws on null/undefined.
+function safeString(value: any): string {
+  if (value === null || value === undefined) return "";
+  return String(value).toLowerCase().trim();
+}
+
 // ── Tier 2: keyword rules (unchanged logic) ───────────────────────────────────
 
 interface ClassifierRule {
@@ -234,8 +241,8 @@ function countMoneyHeaders(headers: string[]): number {
 
 // ── Normalise ─────────────────────────────────────────────────────────────────
 
-function normalizeHeader(h: string): string {
-  return h.toLowerCase().trim().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+function normalizeHeader(h: any): string {
+  return safeString(h).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -271,7 +278,7 @@ export function classifyDocument(
   // ── Tier 2: keyword scan ───────────────────────────────────────────────
   // Probe = first 8 000 chars of rawText + all headers joined
   const probe = [
-    rawText.toLowerCase().slice(0, 8000),
+    safeString(rawText).slice(0, 8000),
     ...normHeaders,
   ].join(" ");
 

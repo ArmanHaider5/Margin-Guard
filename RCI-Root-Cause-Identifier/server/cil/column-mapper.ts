@@ -8,6 +8,13 @@
 // column index found in this document.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── Safe string helper ────────────────────────────────────────────────────────
+// Converts any value to a lowercase trimmed string. Never throws on null/undefined.
+function safeString(value: any): string {
+  if (value === null || value === undefined) return "";
+  return String(value).toLowerCase().trim();
+}
+
 export interface ColumnMap {
   entityName?:    number;
   customer?:      number;
@@ -78,8 +85,8 @@ const SYNONYM_TABLE: [StandardKey, string[]][] = [
   ]],
 ];
 
-function normaliseHeader(h: string): string {
-  return h.toLowerCase().trim().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+function normaliseHeader(h: any): string {
+  return safeString(h).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 export function mapColumns(headers: string[]): {
@@ -118,11 +125,13 @@ export function mapColumns(headers: string[]): {
       if (bestScore === 100) break;
     }
 
+    // Use safeString as trace key so null/undefined headers never crash object access
+    const headerLabel = safeString(headers[i]) || `col_${i}`;
     if (bestKey && bestScore > 0) {
       (columnMap as any)[bestKey] = i;
-      mappingTrace[headers[i]] = `→ ${bestKey} (col ${i}, score ${bestScore})`;
+      mappingTrace[headerLabel] = `→ ${bestKey} (col ${i}, score ${bestScore})`;
     } else {
-      mappingTrace[headers[i]] = null;
+      mappingTrace[headerLabel] = null;
     }
   }
 

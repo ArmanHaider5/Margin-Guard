@@ -48,6 +48,13 @@ const UNIT_IN_STOCK_PATTERNS = [
   /current\s*stock/i,
 ];
 
+// ── Safe string helper ────────────────────────────────────────────────────────
+// Converts any value to a lowercase trimmed string. Never throws on null/undefined.
+function safeString(value: any): string {
+  if (value === null || value === undefined) return "";
+  return String(value).toLowerCase().trim();
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function norm(v: any): string {
@@ -69,8 +76,9 @@ function isNumericOrDate(s: string): boolean {
   return false;
 }
 
-function isKnownHeaderKeyword(s: string): boolean {
-  const lower = s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim();
+function isKnownHeaderKeyword(s: any): boolean {
+  const lower = safeString(s).replace(/[^a-z0-9 ]/g, " ").trim();
+  if (!lower) return false;
   if (COLUMN_KEYWORDS.has(lower)) return true;
   for (const kw of COLUMN_KEYWORDS) {
     if (lower.includes(kw)) return true;
