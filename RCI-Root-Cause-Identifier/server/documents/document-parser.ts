@@ -28,6 +28,9 @@ export async function parseExcelFile(filePath: string): Promise<ExtractedDocumen
   const fileBuffer = fs.readFileSync(filePath);
   const workbook = XLSX.read(fileBuffer, { type: "buffer" });
   const tables: ExtractedDocumentData['tables'] = [];
+  // CIL-specific: one entry per worksheet, raw rows with native XLSX types,
+  // no header/data pre-split. Row 0 is always the physical first sheet row.
+  const sheets: Array<{ name: string; rows: any[][] }> = [];
   const allText: string[] = [];
   const amounts: ExtractedDocumentData['amounts'] = [];
   const dates: string[] = [];
@@ -39,6 +42,10 @@ export async function parseExcelFile(filePath: string): Promise<ExtractedDocumen
     
     if (jsonData.length === 0) continue;
 
+    // ── CIL path: store raw rows with native types (no pre-split) ─────────
+    sheets.push({ name: sheetName, rows: jsonData as any[][] });
+
+    // ── Legacy path: stringified headers + rows for AI analysis pipeline ──
     const headers = (jsonData[0] as any[]).map(h => String(h || ''));
     const rows = jsonData.slice(1).map(row => 
       (row as any[]).map(cell => String(cell || ''))
@@ -48,9 +55,7 @@ export async function parseExcelFile(filePath: string): Promise<ExtractedDocumen
       name: sheetName,
       headers,
       rows,
-      // Preserve the full raw XLSX 2-D array.  Row 0 is always the physical
-      // first sheet row (no pre-split).  Native cell types (numbers, date
-      // serials, booleans) are kept intact for the CIL pipeline.
+      // Also keep rawRows for backward compat with any code that reads tables
       rawRows: jsonData as any[][],
     });
 
@@ -120,6 +125,7 @@ export async function parseExcelFile(filePath: string): Promise<ExtractedDocumen
   return {
     rawText,
     tables,
+    sheets,  // CIL-structured Excel data: raw rows, native types, no pre-split
     keyFindings: extractKeyFindings(allText),
     dates: Array.from(new Set(dates)).slice(0, 50),
     amounts: amounts.slice(0, 100),

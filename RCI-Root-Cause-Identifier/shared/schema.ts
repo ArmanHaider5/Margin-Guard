@@ -114,6 +114,15 @@ export interface ExtractedDocumentData {
     // Used by the CIL pipeline for block detection and column mapping.
     rawRows?: any[][];
   }>;
+  // Structured Excel sheets for the CIL pipeline.
+  // Each entry is one worksheet; rows[i][j] is a native XLSX cell value
+  // (number, string, boolean, undefined — NO pre-split, row 0 is always
+  // the physical first row of the sheet).
+  // When present, the CIL pipeline processes this instead of tables/rawText.
+  sheets?: Array<{
+    name: string;
+    rows: any[][];
+  }>;
   keyFindings?: string[];
   dates?: string[];
   amounts?: Array<{ value: number; context: string }>;
