@@ -108,6 +108,11 @@ export interface ExtractedDocumentData {
     name?: string;
     headers: string[];
     rows: string[][];
+    // Raw 2-D array from XLSX (header: 1) — preserves native cell types
+    // (numbers, date serials, blanks).  Row 0 is always the physical first
+    // row of the sheet; there is NO pre-split into header vs data rows.
+    // Used by the CIL pipeline for block detection and column mapping.
+    rawRows?: any[][];
   }>;
   keyFindings?: string[];
   dates?: string[];

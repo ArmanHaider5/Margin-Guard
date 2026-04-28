@@ -91,10 +91,18 @@ export async function runCilPipeline(
     if (headers.length === 0) continue;
 
     // ── Try block detection ─────────────────────────────────────────────────
-    // Pass ALL rows (including the header row as index 0 — the detector ignores
-    // rows that look like header rows within a block, so passing the sheet
-    // header first is harmless).
-    const allSheetRows: string[][] = [headers, ...table.rows];
+    // Prefer rawRows (native XLSX cell types, full 2-D array starting from
+    // physical row 0 with no pre-split) when available.  Fall back to
+    // re-concatenating headers + rows for PDFs and Word docs whose tables
+    // come from the PDF pseudo-table builder (no rawRows).
+    //
+    // Using rawRows means:
+    //   - Numbers stay as numbers   → isNumericOrDate detects them precisely
+    //   - Date serials stay numeric → parseDate handles them correctly
+    //   - Blank cells are undefined  → norm() maps them to ""
+    //   - No artificial header/data split — the block detector sees the
+    //     entire sheet and decides its own structure boundaries.
+    const allSheetRows: any[][] = table.rawRows ?? [headers, ...table.rows];
     const blockResult = detectBlocks(allSheetRows);
 
     if (blockResult.mode === "block" && blockResult.blocks.length > 0) {

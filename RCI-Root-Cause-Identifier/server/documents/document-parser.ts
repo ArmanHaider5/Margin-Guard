@@ -48,6 +48,10 @@ export async function parseExcelFile(filePath: string): Promise<ExtractedDocumen
       name: sheetName,
       headers,
       rows,
+      // Preserve the full raw XLSX 2-D array.  Row 0 is always the physical
+      // first sheet row (no pre-split).  Native cell types (numbers, date
+      // serials, booleans) are kept intact for the CIL pipeline.
+      rawRows: jsonData as any[][],
     });
 
     allText.push(`Sheet: ${sheetName}`);
