@@ -18,6 +18,7 @@ import type { ExtractedDocumentData } from "@shared/schema";
 import { classifyDocument } from "./document-classifier";
 import { mapColumns } from "./column-mapper";
 import { parseRow } from "./row-parser";
+import { detectBlocks } from "./block-detector";
 
 export interface CilPipelineResult {
   documentId:     string;
@@ -56,62 +57,136 @@ export async function runCilPipeline(
   let skippedRows = 0;
 
   // ── Step 2–4: For each table sheet, map columns + parse rows ───────────────
+  // Per-sheet, attempt block detection first. If the sheet has ≥1 item block,
+  // use block mode (each block gets its own column map + entity name override).
+  // Otherwise fall back to flat mode (existing behaviour, unchanged).
+
   for (const table of tables) {
-    const headers = table.headers;
+    const sheetName = table.name ?? "unnamed";
+    const headers   = table.headers;
     if (headers.length === 0) continue;
 
-    const { columnMap, mappingTrace } = mapColumns(headers);
+    // ── Try block detection ─────────────────────────────────────────────────
+    // Pass ALL rows (including the header row as index 0 — the detector ignores
+    // rows that look like header rows within a block, so passing the sheet
+    // header first is harmless).
+    const allSheetRows: string[][] = [headers, ...table.rows];
+    const blockResult = detectBlocks(allSheetRows);
 
-    console.log(`[CIL] Sheet "${table.name ?? "unnamed"}" — column mapping:`, mappingTrace);
+    if (blockResult.mode === "block" && blockResult.blocks.length > 0) {
+      // ── BLOCK MODE ────────────────────────────────────────────────────────
+      console.log(
+        `[CIL] Sheet "${sheetName}" → BLOCK MODE: ` +
+        `${blockResult.blockCount} blocks, ${blockResult.totalDataRows} data rows`,
+      );
 
-    const hasMeaningfulColumns =
-      columnMap.entityName !== undefined ||
-      columnMap.quantityOut !== undefined ||
-      columnMap.quantityIn !== undefined ||
-      columnMap.value !== undefined ||
-      columnMap.balance !== undefined;
+      for (const block of blockResult.blocks) {
+        const { columnMap, mappingTrace } = mapColumns(block.headers);
 
-    if (!hasMeaningfulColumns) {
-      console.log(`[CIL] Sheet "${table.name}" — no meaningful columns found, skipping`);
-      skippedRows += table.rows.length;
-      continue;
-    }
+        console.log(
+          `[CIL]   Block "${block.itemName}" ` +
+          `(stock:${block.unitInStock ?? "?"}, rows:${block.rows.length})`,
+          mappingTrace,
+        );
 
-    for (const row of table.rows) {
-      totalRows++;
+        // If block headers have no meaningful columns, skip block
+        const hasMeaningful =
+          columnMap.quantityOut !== undefined ||
+          columnMap.quantityIn  !== undefined ||
+          columnMap.value       !== undefined ||
+          columnMap.balance     !== undefined;
 
-      // Skip completely empty rows
-      const nonEmpty = row.filter(cell => cell !== null && String(cell).trim() !== "");
-      if (nonEmpty.length === 0) {
-        skippedRows++;
+        if (!hasMeaningful) {
+          skippedRows += block.rows.length;
+          continue;
+        }
+
+        for (const row of block.rows) {
+          totalRows++;
+
+          const nonEmpty = row.filter(c => c !== null && String(c).trim() !== "");
+          if (nonEmpty.length === 0) { skippedRows++; continue; }
+
+          const parsedTxs = parseRow(
+            row, block.headers, columnMap, docClass,
+            block.itemName,   // ← override entity name from block header
+          );
+
+          if (parsedTxs.length === 0) { skippedRows++; continue; }
+
+          for (const tx of parsedTxs) {
+            allTransactions.push({
+              clientId, documentId,
+              entityType:             "item" as const,
+              entityName:             block.itemName,
+              transactionType:        tx.transactionType,
+              quantity:               tx.quantity        ?? null,
+              value:                  tx.value           ?? null,
+              date:                   tx.date            ?? null,
+              documentClassification: tx.documentClassification,
+              referenceId:            tx.referenceId     ?? null,
+              sourceFile,
+              rawText:                tx.rawText,
+              netQuantity:            tx.netQuantity     ?? null,
+              netValue:               tx.netValue        ?? null,
+              debugTrace: {
+                ...tx.debugTrace,
+                blockItemName:    block.itemName,
+                blockUnitInStock: block.unitInStock,
+                blockHeaders:     block.headers,
+              },
+            });
+          }
+        }
+      }
+
+    } else {
+      // ── FLAT MODE (existing behaviour) ────────────────────────────────────
+      const { columnMap, mappingTrace } = mapColumns(headers);
+
+      console.log(`[CIL] Sheet "${sheetName}" → FLAT MODE — column mapping:`, mappingTrace);
+
+      const hasMeaningfulColumns =
+        columnMap.entityName  !== undefined ||
+        columnMap.quantityOut !== undefined ||
+        columnMap.quantityIn  !== undefined ||
+        columnMap.value       !== undefined ||
+        columnMap.balance     !== undefined;
+
+      if (!hasMeaningfulColumns) {
+        console.log(`[CIL] Sheet "${sheetName}" — no meaningful columns found, skipping`);
+        skippedRows += table.rows.length;
         continue;
       }
 
-      const parsedTxs = parseRow(row, headers, columnMap, docClass);
+      for (const row of table.rows) {
+        totalRows++;
 
-      if (parsedTxs.length === 0) {
-        skippedRows++;
-        continue;
-      }
+        const nonEmpty = row.filter(cell => cell !== null && String(cell).trim() !== "");
+        if (nonEmpty.length === 0) { skippedRows++; continue; }
 
-      for (const tx of parsedTxs) {
-        allTransactions.push({
-          clientId,
-          documentId,
-          entityType:             tx.entityType,
-          entityName:             tx.entityName ?? null,
-          transactionType:        tx.transactionType,
-          quantity:               tx.quantity ?? null,
-          value:                  tx.value ?? null,
-          date:                   tx.date ?? null,
-          documentClassification: tx.documentClassification,
-          referenceId:            tx.referenceId ?? null,
-          sourceFile,
-          rawText:                tx.rawText,
-          netQuantity:            tx.netQuantity ?? null,
-          netValue:               tx.netValue ?? null,
-          debugTrace:             tx.debugTrace,
-        });
+        const parsedTxs = parseRow(row, headers, columnMap, docClass);
+
+        if (parsedTxs.length === 0) { skippedRows++; continue; }
+
+        for (const tx of parsedTxs) {
+          allTransactions.push({
+            clientId, documentId,
+            entityType:             tx.entityType,
+            entityName:             tx.entityName ?? null,
+            transactionType:        tx.transactionType,
+            quantity:               tx.quantity        ?? null,
+            value:                  tx.value           ?? null,
+            date:                   tx.date            ?? null,
+            documentClassification: tx.documentClassification,
+            referenceId:            tx.referenceId     ?? null,
+            sourceFile,
+            rawText:                tx.rawText,
+            netQuantity:            tx.netQuantity     ?? null,
+            netValue:               tx.netValue        ?? null,
+            debugTrace:             tx.debugTrace,
+          });
+        }
       }
     }
   }

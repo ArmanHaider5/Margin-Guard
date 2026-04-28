@@ -86,6 +86,7 @@ export function parseRow(
   headers: string[],
   colMap: ColumnMap,
   docClass: CilDocClass,
+  overrideEntityName?: string,   // supplied by block mode — overrides column-derived name
 ): ParsedTransaction[] {
 
   const cell = (idx: number | undefined): string | null =>
@@ -105,7 +106,8 @@ export function parseRow(
   const value    = toNum(cell(colMap.value));
   const refund   = toNum(cell(colMap.refund));
 
-  const resolvedName  = entityName ?? customer ?? null;
+  // Block mode supplies the item name directly — it takes precedence over column-derived values
+  const resolvedName  = overrideEntityName ?? entityName ?? customer ?? null;
   const entityType    = detectEntityType(resolvedName, colMap, hasDriver, hasVehicle);
 
   // Auto-generate reference if none found
