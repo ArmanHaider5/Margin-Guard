@@ -19,6 +19,7 @@ import { classifyDocument } from "./document-classifier";
 import { mapColumns } from "./column-mapper";
 import { parseRow } from "./row-parser";
 import { detectBlocks } from "./block-detector";
+import { extractPdfLineItems } from "./pdf-extractor";
 
 export interface CilPipelineResult {
   documentId:     string;
@@ -40,17 +41,40 @@ export async function runCilPipeline(
   extractedData: ExtractedDocumentData,
 ): Promise<CilPipelineResult> {
 
-  const tables = extractedData.tables ?? [];
+  // Working copy — may be augmented by PDF extraction below
+  const workingTables: Array<{ name?: string; headers: string[]; rows: string[][] }> =
+    [...(extractedData.tables ?? [])];
   const rawText = extractedData.rawText ?? "";
 
   // ── Step 1: Classify the document ─────────────────────────────────────────
-  const allHeaders = tables.flatMap(t => t.headers);
+  const allHeaders = workingTables.flatMap(t => t.headers);
   const { docClass, confidence: classifierScore, scores: classifierScores } =
     classifyDocument(rawText, allHeaders);
 
   console.log(`[CIL] Document: ${sourceFile}`);
   console.log(`[CIL] Classified as: ${docClass} (confidence: ${classifierScore}%)`);
   console.log(`[CIL] Scores:`, classifierScores);
+
+  // ── Step 1b: PDF extraction — runs when tables are empty (PDF/Word) ────────
+  // Converts raw text into a pseudo-table of line items so the rest of the
+  // pipeline can process it identically to structured Excel data.
+  if (workingTables.length === 0 && rawText.length > 100) {
+    console.log(`[CIL] No structured tables — attempting PDF line-item extraction`);
+    const pdfResult = extractPdfLineItems(rawText);
+
+    if (pdfResult.pseudoTable) {
+      console.log(
+        `[CIL:PDF] Extracted ${pdfResult.parsedItems} line items ` +
+        `(ref: ${pdfResult.invoiceRef ?? "none"}, ` +
+        `date: ${pdfResult.invoiceDate ?? "none"})`,
+      );
+      workingTables.push(pdfResult.pseudoTable);
+    } else {
+      console.log(
+        `[CIL:PDF] No line items found (${pdfResult.lineCount} lines scanned)`,
+      );
+    }
+  }
 
   const allTransactions: any[] = [];
   let totalRows = 0;
@@ -61,7 +85,7 @@ export async function runCilPipeline(
   // use block mode (each block gets its own column map + entity name override).
   // Otherwise fall back to flat mode (existing behaviour, unchanged).
 
-  for (const table of tables) {
+  for (const table of workingTables) {
     const sheetName = table.name ?? "unnamed";
     const headers   = table.headers;
     if (headers.length === 0) continue;
