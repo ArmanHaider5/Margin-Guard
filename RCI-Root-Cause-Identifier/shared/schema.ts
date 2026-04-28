@@ -15,7 +15,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb, index, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, jsonb, index, boolean, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -610,3 +610,46 @@ export const insertDiagnosticCaseSchema = createInsertSchema(diagnosticCases).om
 
 export type InsertDiagnosticCase = z.infer<typeof insertDiagnosticCaseSchema>;
 export type DiagnosticCase = typeof diagnosticCases.$inferSelect;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CORE INTELLIGENCE LAYER (CIL) — Transaction Model
+//
+// Stores structured economic activity extracted from uploaded documents.
+// All uploaded business documents (inventory sheets, invoices, sales records,
+// logistics schedules) are normalised into this single transaction model.
+//
+// Architectural rule: CIL transactions are ADDITIVE — they do not replace
+// existing document processing. They add a structured economic layer on top.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type CilEntityType    = "item" | "customer" | "vehicle" | "staff" | "unknown";
+export type CilTxType        = "outgoing" | "incoming" | "sale" | "loss" | "refund" | "adjustment";
+export type CilDocClass      = "inventory_record" | "movement_log" | "sales_sheet" | "invoice" | "quotation" | "logistics_schedule" | "loss_record" | "unknown";
+
+export const cilTransactions = pgTable("cil_transactions", {
+  id:                   varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId:             varchar("client_id").notNull(),
+  documentId:           varchar("document_id"),               // FK → client_documents.id
+  entityType:           varchar("entity_type").$type<CilEntityType>().default("unknown"),
+  entityName:           varchar("entity_name", { length: 512 }),
+  transactionType:      varchar("transaction_type").$type<CilTxType>().notNull(),
+  quantity:             real("quantity"),
+  value:                real("value"),                        // monetary value in RM
+  date:                 varchar("date", { length: 64 }),
+  documentClassification: varchar("document_classification").$type<CilDocClass>().default("unknown"),
+  referenceId:          varchar("reference_id", { length: 255 }),
+  sourceFile:           varchar("source_file", { length: 512 }),
+  rawText:              text("raw_text"),                     // original extracted row
+  netQuantity:          real("net_quantity"),                 // outgoing - incoming
+  netValue:             real("net_value"),                    // value - refund
+  debugTrace:           jsonb("debug_trace"),                 // mapping trace for debug view
+  createdAt:            timestamp("created_at").defaultNow(),
+});
+
+export const insertCilTransactionSchema = createInsertSchema(cilTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCilTransaction = z.infer<typeof insertCilTransactionSchema>;
+export type CilTransaction = typeof cilTransactions.$inferSelect;

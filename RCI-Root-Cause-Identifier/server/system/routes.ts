@@ -17,6 +17,10 @@ import { generateExportPDF } from "../reports/export-pdf-generator";
 import { generateDiagnosticExport } from "../diagnostics/diagnostic-export";
 import executionRoutes from "../../src/modules/execution/routes/execution.routes";
 import { diagnosticHandler } from "../api/diagnostic-route";
+import { runCilPipeline } from "../cil/cil-pipeline";
+import { db } from "./db";
+import { cilTransactions } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -691,6 +695,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         processedAt: new Date(),
       });
       console.log(`AUTO-PROCESS: Document ${doc.fileName} processed successfully (${textLen} chars)`);
+
+      // ── CIL Pipeline: classify + extract transactions ─────────────────────
+      try {
+        const cilResult = await runCilPipeline(
+          doc.id,
+          doc.clientId,
+          doc.fileName,
+          extractedData,
+        );
+        console.log(
+          `[CIL] ${doc.fileName}: ${cilResult.parsedTxCount} transactions parsed, ` +
+          `${cilResult.storedTxCount} stored, class=${cilResult.docClass} ` +
+          `(${cilResult.classifierScore}% conf), rows=${cilResult.totalRows}, ` +
+          `skipped=${cilResult.skippedRows}`,
+        );
+      } catch (cilErr) {
+        console.error(`[CIL] Pipeline error for ${doc.fileName}:`, cilErr);
+        // CIL errors are non-fatal — document is already marked processed
+      }
     } catch (err) {
       console.error(`AUTO-PROCESS: Document ${docId} failed:`, err);
       await storage.updateClientDocument(docId, {
@@ -800,6 +823,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get document error:", error);
       res.status(500).json({ error: "Failed to retrieve document" });
+    }
+  });
+
+  // ============================================
+  // CIL — CORE INTELLIGENCE LAYER DEBUG ROUTES
+  // ============================================
+
+  // GET /api/admin/documents/:id/cil-transactions
+  // Returns all CIL transactions extracted from a specific document,
+  // including the full debug trace (original row, mapped fields, tx count).
+  app.get("/api/admin/documents/:id/cil-transactions", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const doc = await storage.getClientDocument(req.params.id);
+      if (!doc) return res.status(404).json({ error: "Document not found" });
+
+      const rows = await db
+        .select()
+        .from(cilTransactions)
+        .where(eq(cilTransactions.documentId, req.params.id));
+
+      res.json({
+        documentId:   req.params.id,
+        fileName:     doc.fileName,
+        txCount:      rows.length,
+        transactions: rows,
+      });
+    } catch (error) {
+      console.error("[CIL] Get transactions error:", error);
+      res.status(500).json({ error: "Failed to retrieve CIL transactions" });
+    }
+  });
+
+  // GET /api/admin/clients/:clientId/cil-transactions
+  // Returns all CIL transactions across all documents for a client.
+  app.get("/api/admin/clients/:clientId/cil-transactions", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const rows = await db
+        .select()
+        .from(cilTransactions)
+        .where(eq(cilTransactions.clientId, req.params.clientId));
+
+      // Group by document + docClass for a summary
+      const byDoc: Record<string, any> = {};
+      for (const row of rows) {
+        const key = row.documentId ?? "unknown";
+        if (!byDoc[key]) {
+          byDoc[key] = {
+            documentId:             row.documentId,
+            sourceFile:             row.sourceFile,
+            documentClassification: row.documentClassification,
+            txCount:                0,
+          };
+        }
+        byDoc[key].txCount++;
+      }
+
+      res.json({
+        clientId:     req.params.clientId,
+        totalTxCount: rows.length,
+        byDocument:   Object.values(byDoc),
+        transactions: rows,
+      });
+    } catch (error) {
+      console.error("[CIL] Get client transactions error:", error);
+      res.status(500).json({ error: "Failed to retrieve CIL transactions" });
+    }
+  });
+
+  // POST /api/admin/documents/:id/cil-reprocess
+  // Re-runs the CIL pipeline on an already-processed document.
+  // Deletes existing CIL transactions for this document first, then re-runs.
+  app.post("/api/admin/documents/:id/cil-reprocess", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const doc = await storage.getClientDocument(req.params.id);
+      if (!doc) return res.status(404).json({ error: "Document not found" });
+      if (!doc.extractedData) {
+        return res.status(400).json({ error: "Document has not been processed yet" });
+      }
+
+      // Delete existing CIL rows for this document
+      await db.delete(cilTransactions).where(eq(cilTransactions.documentId, doc.id));
+
+      const result = await runCilPipeline(
+        doc.id,
+        doc.clientId,
+        doc.fileName,
+        doc.extractedData,
+      );
+
+      res.json({
+        message:       "CIL reprocessing complete",
+        documentId:    doc.id,
+        fileName:      doc.fileName,
+        docClass:      result.docClass,
+        confidence:    result.classifierScore,
+        totalRows:     result.totalRows,
+        parsedTxCount: result.parsedTxCount,
+        skippedRows:   result.skippedRows,
+        storedTxCount: result.storedTxCount,
+        transactions:  result.transactions,
+      });
+    } catch (error) {
+      console.error("[CIL] Reprocess error:", error);
+      res.status(500).json({ error: "Failed to reprocess CIL transactions" });
     }
   });
 

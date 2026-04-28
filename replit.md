@@ -37,6 +37,7 @@ Preferred communication style: Simple, everyday language.
     - `server/documents/`: Document parsing.
     - `server/reports/`: Report generation.
     - `server/system/`: Core system components (routes, DB, auth).
+    - `server/cil/`: **Core Intelligence Layer** — modular pipeline that classifies uploaded documents, maps columns, parses rows into standardised `CilTransaction` objects, and stores them. Files: `document-classifier.ts`, `column-mapper.ts`, `row-parser.ts`, `cil-pipeline.ts`.
 
 ### AI Integration
 - **Provider**: OpenAI API (via Replit AI Integrations proxy)

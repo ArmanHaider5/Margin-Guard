@@ -1,0 +1,191 @@
+Build a modular data pipeline layer called **Core Intelligence Layer (CIL)** inside the existing MGD system. Do NOT change UI or existing upload features. This layer processes uploaded documents into structured transaction data for analysis.
+
+---
+
+# 🎯 OBJECTIVE
+
+Convert messy uploaded files (Excel, PDF, images) into a **standardized transaction model**, then store and prepare for analysis.
+
+---
+
+# 🧱 STEP 1 — CREATE UNIFIED DATA MODEL
+
+Create a central schema called `Transaction`.
+
+Fields:
+
+* id (auto)
+* entity_type (customer / item / vehicle / staff)
+* entity_name (string)
+* transaction_type (outgoing / incoming / sale / loss / refund / adjustment)
+* quantity (number)
+* value (number, RM)
+* date (date)
+* document_type (inventory / sales / invoice / quotation / logistics / loss)
+* reference_id (invoice no / job id if available)
+* source_file (filename)
+* raw_text (original extracted row for traceability)
+
+---
+
+# 🧩 STEP 2 — DOCUMENT CLASSIFIER
+
+When a file is uploaded, automatically classify it into:
+
+* inventory_record
+* movement_log
+* sales_sheet
+* invoice
+* quotation
+* logistics_schedule
+* loss_record
+
+Use keyword detection:
+
+Examples:
+
+* “OUTGOING / INCOMING / BALANCE” → movement_log
+* “INVOICE NO / AMOUNT / TAX” → invoice
+* “QUOTATION / PRICE / QTY” → quotation
+* “TOTAL INV / REFUND / NETT” → sales_sheet
+* “DRIVER / LORRY / DELIVERY” → logistics_schedule
+
+---
+
+# 🔄 STEP 3 — COLUMN MAPPING ENGINE
+
+Build a flexible mapper that identifies meaning of columns even if names differ.
+
+Map synonyms:
+
+* outgoing → dispatch / out / issued
+* incoming → return / in
+* balance → stock
+* refund → deduction / rebate
+* amount → total / value
+
+Return standardized keys:
+
+* quantity_out
+* quantity_in
+* balance
+* value
+* refund
+
+---
+
+# 🔧 STEP 4 — ROW PARSER
+
+For each row in a document:
+
+Extract:
+
+* item name
+* customer (if exists)
+* quantities
+* dates
+* values
+* remarks
+
+Then convert into multiple transactions:
+
+Example:
+If row has:
+Outgoing = 50, Incoming = 40
+
+Create:
+
+* transaction_type: outgoing, qty: 50
+* transaction_type: incoming, qty: 40
+
+---
+
+# 🔗 STEP 5 — REFERENCE LINKING
+
+If document contains:
+
+* invoice no
+* customer name
+* job reference
+
+Attach it to `reference_id`
+
+If missing:
+
+* auto-generate reference using:
+  customer + date
+
+---
+
+# 🧠 STEP 6 — STORE TRANSACTIONS
+
+Store all parsed transactions in a central collection:
+
+`transactions[]`
+
+Ensure:
+
+* all documents feed into the SAME structure
+* no data is lost
+
+---
+
+# 🔍 STEP 7 — BASIC RECON PREP
+
+Add computed fields:
+
+* net_quantity = outgoing - incoming
+* net_value = value - refund
+
+---
+
+# 🧪 STEP 8 — DEBUG VIEW
+
+Create a simple debug output:
+
+Show:
+
+* original row
+* mapped fields
+* resulting transactions
+
+This is CRITICAL for validation.
+
+---
+
+# ⚙️ RULES
+
+* Do NOT hardcode for MEM format
+* Must work for unknown formats
+* Be tolerant to missing data
+* Prioritize flexibility over perfection
+
+---
+
+# ✅ OUTPUT
+
+After upload + processing:
+
+System should produce structured transaction objects like:
+
+{
+entity_name: "Banquet Chair",
+transaction_type: "outgoing",
+quantity: 50,
+date: "2025-04-24",
+document_type: "movement_log"
+}
+
+---
+
+# 🚀 GOAL
+
+This layer should allow ANY uploaded business document to be converted into structured economic activity data.
+
+Do not build analysis yet. Only focus on:
+
+* classification
+* extraction
+* structuring
+
+---
