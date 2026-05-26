@@ -1,0 +1,43 @@
+export interface ExecutiveNarrativeSection {
+  id: string; title: string; content: string; priority?: number;
+}
+export interface ExecutiveNarrativeReport {
+  executiveOverview:  ExecutiveNarrativeSection;  // priority 1
+  keyFindings:        ExecutiveNarrativeSection;  // priority 2
+  rootCauseSummary:   ExecutiveNarrativeSection;  // priority 3
+  operationalHealth:  ExecutiveNarrativeSection;  // priority 4
+  priorityActions:    ExecutiveNarrativeSection;  // priority 5
+  strategicDirection: ExecutiveNarrativeSection;  // priority 6
+  finalConclusion:    ExecutiveNarrativeSection;  // priority 7
+  metadata: {
+    generatedAt: string; industry?: string;
+    findingsCount: number; rootCauseCount: number;
+    recommendationCount: number; operationalHealthScore?: number;
+  };
+}
+export function generateExecutiveNarrative(params: NarrativeParams): ExecutiveNarrativeReport
+// Helpers (also exported for testing/reuse)
+export function safeJoin(items: string[], fallback?: string): string
+export function pickTopFindings(findings: OperationalFinding[], max?: number): OperationalFinding[]
+export function pickTopRecommendations(recs: OperationalRecommendation[], max?: number): OperationalRecommendation[]
+
+Seven section generators and what drives each one
+
+Section	Key inputs used	Health-gate
+Executive Overview	All findings, RC counts, rec counts, health label	Identifies leakage / logistics+inv misalignment / manpower risk / scalability ceiling from live data
+Key Findings	Top 6 by severity+confidence, grouped CRITICAL → HIGH → Medium	—
+Root Cause Summary	Top 5 RCs by confidence, operational impact preview	CRITICAL count highlighted
+Operational Health	Health score, domain distribution	4-band classification (80+ / 65-79 / 50-64 / <50)
+Priority Actions	HIGH/CRITICAL recs, grouped: Immediate / Visibility / Workflow / Scalability	CRITICAL immediates flagged explicitly
+Strategic Direction	Scalability, inventory/logistics, long-horizon recs	Adds predictive planning language when applicable
+Final Conclusion	Demand vs complexity framing, rec counts	Closes constructively — tone always action-oriented not alarming
+Narrative variation mechanism
+
+A deterministic seed (findings.length × 3 + rootCauses.length × 7) % 5 selects from template pools of 3–5 variations per paragraph. Same data always produces identical output (tested); different data shape produces different phrasing. No randomness.
+
+Defensive guarantees
+
+Each of the 7 section generators is individually try/catch wrapped — one broken section falls back gracefully, the remaining 6 are unaffected
+Top-level generateExecutiveNarrative never throws
+Null inputs, null array elements, missing health score — all handled with fallback text
+metadata.generatedAt is always a valid ISO 8601 string
