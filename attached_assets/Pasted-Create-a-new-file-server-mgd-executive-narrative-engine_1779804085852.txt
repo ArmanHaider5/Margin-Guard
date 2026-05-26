@@ -1,0 +1,176 @@
+Create a new file:
+
+server/mgd/executive-narrative-engine.ts
+
+Purpose:
+Convert operational findings, root causes, recommendations, and operational health metrics into structured MGD executive narrative sections suitable for client-facing operational diagnostic reports.
+
+Imports:
+
+OperationalFinding
+from:
+server/mgd/findings-engine.ts
+
+RootCause
+from:
+server/mgd/root-cause-engine.ts
+
+OperationalRecommendation
+from:
+server/mgd/recommendation-engine.ts
+
+Export interfaces:
+
+export interface ExecutiveNarrativeSection {
+  id: string;
+  title: string;
+  content: string;
+  priority?: number;
+}
+
+export interface ExecutiveNarrativeReport {
+  executiveOverview: ExecutiveNarrativeSection;
+  keyFindings: ExecutiveNarrativeSection;
+  rootCauseSummary: ExecutiveNarrativeSection;
+  operationalHealth: ExecutiveNarrativeSection;
+  priorityActions: ExecutiveNarrativeSection;
+  strategicDirection: ExecutiveNarrativeSection;
+  finalConclusion: ExecutiveNarrativeSection;
+
+  metadata: {
+    generatedAt: string;
+    industry?: string;
+    findingsCount: number;
+    rootCauseCount: number;
+    recommendationCount: number;
+    operationalHealthScore?: number;
+  };
+}
+
+Export:
+
+export function generateExecutiveNarrative(params: {
+  findings: OperationalFinding[];
+  rootCauses: RootCause[];
+  recommendations: OperationalRecommendation[];
+  operationalHealthScore?: number;
+  industry?: string;
+}): ExecutiveNarrativeReport
+
+Requirements:
+
+1. NO AI/LLM usage.
+Use deterministic narrative synthesis only.
+
+2. Build narrative sections dynamically using:
+- findings
+- root causes
+- recommendation priorities
+- operational health score
+- industry context
+
+3. Narrative style:
+- executive-level
+- operational intelligence tone
+- concise but strategic
+- MGD-branded language
+- consulting-grade readability
+
+4. DO NOT:
+- generate generic AI paragraphs
+- hallucinate metrics
+- invent operational facts
+- repeat the same sentence patterns excessively
+
+5. Build helper generators:
+
+- generateExecutiveOverview()
+- generateKeyFindingsNarrative()
+- generateRootCauseNarrative()
+- generateOperationalHealthNarrative()
+- generatePriorityActionsNarrative()
+- generateStrategicDirectionNarrative()
+- generateFinalConclusionNarrative()
+
+6. Executive Overview should:
+- summarize operational state
+- identify major operational themes
+- mention strain/scalability if present
+- mention profitability leakage if detected
+- mention logistics/inventory issues if detected
+
+7. Key Findings section should:
+- summarize top 3–6 strongest findings
+- ordered by severity/confidence
+- grouped naturally
+
+8. Root Cause Summary should:
+- synthesize systemic causes
+- explain operational relationships
+- avoid technical jargon overload
+
+9. Operational Health section should:
+- interpret operationalHealthScore
+- classify:
+  80+ = stable
+  65–79 = moderate strain
+  50–64 = elevated strain
+  below 50 = critical instability
+
+10. Priority Actions should:
+- use only HIGH/CRITICAL recommendations
+- organize into:
+  Immediate Stabilization
+  Operational Visibility
+  Workflow Improvements
+  Scalability Improvements
+
+11. Strategic Direction should:
+- discuss future operational maturity
+- mention operational integration
+- mention predictive visibility if applicable
+- mention scalability readiness
+
+12. Final Conclusion should:
+- reinforce:
+  demand vs operational complexity distinction
+- end positively but realistically
+- sound executive and strategic
+
+13. Add narrative variation:
+Use multiple sentence templates to avoid robotic repetition.
+
+14. Add helper:
+safeJoin()
+
+15. Add helper:
+pickTopFindings()
+
+16. Add helper:
+pickTopRecommendations()
+
+17. Add extensive logging:
+[MGD][NARRATIVE]
+
+Log:
+- selected findings
+- selected root causes
+- selected recommendations
+- generated sections
+
+18. Defensive guarantees:
+- never throw
+- gracefully degrade missing sections
+- fallback summaries if insufficient data
+
+19. Generate concise narrative.
+Avoid excessively long paragraphs.
+
+20. Keep architecture extensible for future:
+- PDF reports
+- benchmarking sections
+- industry-specific narrative packs
+- multilingual support
+
+Goal:
+Allow MGD to automatically generate executive-level operational diagnostic narratives from deterministic operational intelligence layers.
