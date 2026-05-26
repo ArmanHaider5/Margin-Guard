@@ -1,0 +1,209 @@
+Create a new file:
+
+server/mgd/recommendation-engine.ts
+
+Purpose:
+Convert operational findings and root causes into structured operational recommendations, stabilization actions, and transformation roadmap outputs.
+
+Imports:
+
+OperationalFinding
+from:
+server/mgd/findings-engine.ts
+
+RootCause
+from:
+server/mgd/root-cause-engine.ts
+
+Export interfaces:
+
+export interface OperationalRecommendation {
+  id: string;
+  title: string;
+  summary: string;
+
+  priority:
+    | "LOW"
+    | "MEDIUM"
+    | "HIGH"
+    | "CRITICAL";
+
+  timeframe:
+    | "IMMEDIATE"
+    | "30_DAYS"
+    | "90_DAYS"
+    | "LONG_TERM";
+
+  implementationDifficulty:
+    | "LOW"
+    | "MEDIUM"
+    | "HIGH";
+
+  category: string;
+
+  relatedRootCauses: string[];
+  relatedFindings: string[];
+
+  expectedOperationalImpact: string[];
+
+  actionItems: string[];
+
+  confidence: number;
+}
+
+Export:
+
+export function generateOperationalRecommendations(params: {
+  findings: OperationalFinding[];
+  rootCauses: RootCause[];
+  industry?: string;
+}): OperationalRecommendation[]
+
+Requirements:
+
+1. Deterministic rule-based logic only.
+NO AI/LLM usage.
+
+2. Recommendations must be generated primarily from:
+- root causes
+SECONDARILY from:
+- findings
+
+3. Build recommendation detectors:
+
+- detectCoordinationStabilization()
+- detectInventoryControlImprovements()
+- detectLogisticsOptimization()
+- detectWorkflowIntegration()
+- detectScalabilityImprovements()
+- detectOperationalVisibilityNeeds()
+- detectWarehouseStabilization()
+- detectFinancialLeakageControls()
+
+4. Example recommendation mappings:
+
+IF root cause:
+"Reactive Operational Coordination Model"
+
+THEN generate:
+- Centralized Operational Dashboard
+- Dispatch Readiness Checkpoints
+- Preventive Reconciliation Workflow
+
+IF root cause:
+"Operational Scalability Mismatch"
+
+THEN generate:
+- Workflow Redesign Initiative
+- Operational Capacity Review
+- Department Synchronization Framework
+
+IF root cause:
+"Inventory Visibility Weakness"
+
+THEN generate:
+- Inventory Checkpoint Controls
+- Return Verification Process
+- Inventory Audit Scheduling
+
+5. Each recommendation must include:
+- executive-level title
+- concise operational summary
+- action items
+- operational impact expectations
+- priority
+- timeframe
+- implementation difficulty
+- confidence score
+
+6. Add recommendation categories:
+- operational_visibility
+- logistics_optimization
+- inventory_control
+- workflow_redesign
+- manpower_coordination
+- warehouse_operations
+- profitability_protection
+- operational_scalability
+
+7. Confidence scoring logic:
+
+Base:
++25 if linked to HIGH root cause
++35 if linked to CRITICAL root cause
++10 per corroborating finding
++5 if multiple departments affected
+
+Cap at 100.
+
+Suppress recommendations below confidence 30.
+
+8. Priority logic:
+
+CRITICAL:
+- operational instability
+- severe logistics pressure
+- high financial leakage
+
+HIGH:
+- scalability risks
+- delayed reconciliation
+- visibility weaknesses
+
+MEDIUM:
+- optimization opportunities
+
+LOW:
+- long-term enhancements
+
+9. Timeframe logic:
+
+IMMEDIATE:
+stabilization controls
+
+30_DAYS:
+workflow/process changes
+
+90_DAYS:
+cross-functional redesign
+
+LONG_TERM:
+system transformation initiatives
+
+10. Add helper:
+hashRecommendation(title)
+
+Use deterministic DJB2 hash.
+
+11. Add extensive logging:
+[MGD][RECOMMENDATIONS]
+
+Log:
+- linked root causes
+- generated recommendations
+- confidence scores
+- suppressed outputs
+
+12. Defensive guarantees:
+- detector-level try/catch
+- top-level try/catch
+- null guards everywhere
+- gracefully continue on malformed data
+
+13. Deduplicate by ID.
+
+14. Sort by:
+priority DESC
+then confidence DESC.
+
+15. Keep architecture extensible for:
+- manufacturing
+- healthcare
+- logistics
+- construction
+- retail
+- hospitality
+future industry packs.
+
+Goal:
+Allow MGD to automatically generate operational consulting recommendations and phased stabilization actions from operational findings and root causes.
