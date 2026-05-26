@@ -1,0 +1,109 @@
+Create a new file:
+
+server/mgd/root-cause-engine.ts
+
+Purpose:
+Convert operational findings into higher-level operational root causes and causal operational intelligence.
+
+Import:
+OperationalFinding
+from:
+server/mgd/findings-engine.ts
+
+Export interfaces:
+
+export interface RootCause {
+  id: string;
+  title: string;
+  summary: string;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  confidence: number;
+  contributingFindings: string[];
+  operationalImpact: string[];
+  recommendations?: string[];
+}
+
+Export:
+
+export function generateRootCauses(params: {
+  findings: OperationalFinding[];
+  industry?: string;
+}): RootCause[]
+
+Requirements:
+
+1. Use deterministic rule-based logic only.
+NO AI/LLM usage.
+
+2. Analyze combinations of findings.
+
+3. Identify operational patterns such as:
+- reactive operational coordination
+- fragmented workflow synchronization
+- delayed inventory certainty
+- operational scalability mismatch
+- centralized coordination dependency
+- warehouse readiness instability
+- logistics compression risk
+- operational visibility weakness
+
+4. Root causes should emerge from:
+multiple findings together,
+NOT isolated findings alone.
+
+5. Example mappings:
+
+IF:
+- logistics_coordination
+- inventory_visibility
+- manpower_dependency
+
+THEN:
+generate:
+"Reactive Operational Coordination Model"
+
+IF:
+- workflow_scalability
+- warehouse_operations
+- manual_dependency
+
+THEN:
+generate:
+"Operational Scalability Mismatch"
+
+6. Root causes must include:
+- executive-level title
+- operational summary
+- contributing findings
+- operational impacts
+- confidence score
+- optional recommendations
+
+7. Add helper functions:
+- detectReactiveOperations()
+- detectScalabilityMismatch()
+- detectInventoryVisibilityWeakness()
+- detectCoordinationDependency()
+- detectOperationalFragmentation()
+
+8. Add confidence accumulation logic:
+- more corroborating findings
+- higher finding severities
+- higher detector confidence
+= stronger root cause confidence
+
+9. Suppress root causes below confidence 25.
+
+10. Add deterministic IDs:
+hash(title)
+
+11. Add extensive logging:
+[MGD][ROOT_CAUSE]
+
+12. Never throw errors.
+Gracefully continue if a detector fails.
+
+13. Output should be sorted by confidence descending.
+
+Goal:
+Allow MGD to automatically identify executive-level operational root causes from operational findings.
