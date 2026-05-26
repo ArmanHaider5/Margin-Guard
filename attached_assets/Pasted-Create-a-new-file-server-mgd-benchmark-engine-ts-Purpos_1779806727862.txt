@@ -1,0 +1,184 @@
+Create a new file:
+
+server/mgd/benchmark-engine.ts
+
+Purpose:
+Provide deterministic benchmark intelligence, operational threshold analysis, and industry-relative performance interpretation for MGD operational diagnostics.
+
+Exports:
+
+export interface BenchmarkResult {
+  id: string;
+
+  metric: string;
+
+  category: string;
+
+  actualValue: number;
+
+  benchmarkRange: {
+    low: number;
+    medium: number;
+    high: number;
+  };
+
+  status:
+    | "HEALTHY"
+    | "WATCHLIST"
+    | "ELEVATED"
+    | "CRITICAL";
+
+  interpretation: string;
+
+  operationalRisk?: string;
+
+  recommendedAction?: string;
+
+  confidence: number;
+}
+
+export interface BenchmarkContext {
+  inventoryLossRate?: number;
+  refundRate?: number;
+  logisticsUtilization?: number;
+  rejectedJobsRate?: number;
+  operationalHealthScore?: number;
+  reconciliationDelayRate?: number;
+  manualWorkflowDependency?: number;
+  inventoryDiscrepancyRate?: number;
+  manpowerDependencyRate?: number;
+  overtimeExposureRate?: number;
+}
+
+Export:
+
+export function generateBenchmarkResults(params: {
+  metrics: BenchmarkContext;
+  industry?: string;
+}): BenchmarkResult[]
+
+Requirements:
+
+1. NO AI/LLM usage.
+Deterministic benchmark interpretation only.
+
+2. Create benchmark detectors:
+
+- benchmarkInventoryLoss()
+- benchmarkRefundLeakage()
+- benchmarkLogisticsCapacity()
+- benchmarkOperationalHealth()
+- benchmarkReconciliationDelays()
+- benchmarkManualDependency()
+- benchmarkInventoryDiscrepancy()
+- benchmarkManpowerDependency()
+- benchmarkOvertimeExposure()
+
+3. Each benchmark detector must:
+- compare actual value against threshold bands
+- determine status
+- generate executive interpretation
+- identify operational risk
+- recommend corrective action
+
+4. Status logic:
+
+HEALTHY:
+within sustainable operational norms
+
+WATCHLIST:
+slightly elevated operational pressure
+
+ELEVATED:
+material operational strain
+
+CRITICAL:
+unsustainable operational condition
+
+5. Example benchmark ranges:
+
+Inventory Loss Rate:
+0–2% HEALTHY
+2–4% WATCHLIST
+4–7% ELEVATED
+7%+ CRITICAL
+
+Refund Leakage:
+0–3% HEALTHY
+3–5% WATCHLIST
+5–8% ELEVATED
+8%+ CRITICAL
+
+Rejected Jobs:
+0–5% HEALTHY
+5–10% WATCHLIST
+10–20% ELEVATED
+20%+ CRITICAL
+
+Operational Health:
+80+ HEALTHY
+65–79 WATCHLIST
+50–64 ELEVATED
+below 50 CRITICAL
+
+6. Add helper:
+
+classifyBenchmarkStatus()
+
+7. Add helper:
+
+buildBenchmarkInterpretation()
+
+8. Add helper:
+
+buildOperationalRisk()
+
+9. Add helper:
+
+buildCorrectiveAction()
+
+10. Use industry-aware language:
+If industry === "event_management":
+use event operations terminology.
+
+11. Add deterministic IDs:
+hash(metric)
+
+12. Confidence logic:
+- stronger confidence for direct metrics
+- lower confidence for inferred metrics
+
+Range:
+60–95.
+
+13. Suppress results if metric undefined/null.
+
+14. Add extensive logging:
+[MGD][BENCHMARK]
+
+Log:
+- evaluated metrics
+- thresholds
+- classifications
+- suppressed metrics
+
+15. Defensive guarantees:
+- detector-level try/catch
+- top-level try/catch
+- never throw
+- malformed metrics safely ignored
+
+16. Output sorted:
+CRITICAL
+→ ELEVATED
+→ WATCHLIST
+→ HEALTHY
+
+17. Keep architecture extensible for:
+- manufacturing benchmark packs
+- healthcare benchmark packs
+- logistics benchmark packs
+- retail benchmark packs
+
+Goal:
+Allow MGD to compare operational performance against deterministic industry benchmarks and generate executive-grade operational benchmark intelligence.
