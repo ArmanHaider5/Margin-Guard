@@ -43,8 +43,8 @@ export interface CilPipelineResult {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Convert a raw XLSX cell value to a plain string. */
-function cellStr(v: any): string { return String(v ?? ""); }
+/** Convert a raw XLSX cell value to a plain trimmed string. */
+function cellStr(v: any): string { return String(v ?? "").trim(); }
 
 /** Build a push-ready transaction record. */
 function makeTx(
@@ -119,22 +119,33 @@ export async function runCilPipeline(
       }
 
       // ── Block detection on the full raw 2-D array ──────────────────────
-      const blockResult = detectBlocks(rawRows);
+      // detectBlocks returns DetectedBlock[] — each block carries absolute
+      // row indices (headerRow, startRow, endRow) into rawRows.
+      const blocks = detectBlocks(rawRows);
 
-      if (blockResult.mode === "block" && blockResult.blocks.length > 0) {
+      if (blocks.length > 0) {
         // ── BLOCK MODE ─────────────────────────────────────────────────────
         console.log(
-          `[CIL] Sheet "${sheetName}" → BLOCK MODE: ${blockResult.blockCount} blocks detected`,
+          `[CIL] Sheet "${sheetName}" → BLOCK MODE: ${blocks.length} blocks detected`,
         );
 
         let sheetTxCount = 0;
 
-        for (const block of blockResult.blocks) {
+        for (const block of blocks) {
+          const entityName = block.entityName ?? "unknown";
+
+          // Extract the block's data rows from the original rawRows array
+          // using the absolute indices returned by the detector.
+          const blockDataRows: string[][] = rawRows
+            .slice(block.startRow, block.endRow + 1)
+            .map((r: any[]) => (Array.isArray(r) ? r : []).map(cellStr));
+
           const { columnMap, mappingTrace } = mapColumns(block.headers);
 
           console.log(
-            `[CIL]   Block "${block.itemName}" ` +
-            `(stock: ${block.unitInStock ?? "?"}, rows: ${block.rows.length})`,
+            `[CIL]   Block "${entityName}" ` +
+            `[${block.blockType}] ` +
+            `(stock: ${block.unitInStock ?? "?"}, rows: ${blockDataRows.length})`,
             mappingTrace,
           );
 
@@ -145,29 +156,30 @@ export async function runCilPipeline(
             columnMap.balance     !== undefined;
 
           if (!hasMeaningful) {
-            console.log(`[CIL]   Block "${block.itemName}" — no meaningful columns, skipping`);
-            skippedRows += block.rows.length;
+            console.log(`[CIL]   Block "${entityName}" — no meaningful columns, skipping`);
+            skippedRows += blockDataRows.length;
             continue;
           }
 
-          for (const row of block.rows) {
+          for (const row of blockDataRows) {
             totalRows++;
 
-            const nonEmpty = row.filter(c => cellStr(c).trim() !== "");
+            const nonEmpty = row.filter(c => c.trim() !== "");
             if (nonEmpty.length === 0) { skippedRows++; continue; }
 
             const parsedTxs = parseRow(
               row, block.headers, columnMap, docClass,
-              block.itemName,  // entity name from block header
+              entityName,  // entity name from block header
             );
 
             if (parsedTxs.length === 0) { skippedRows++; continue; }
 
             for (const tx of parsedTxs) {
               allTransactions.push(makeTx(base, tx, {
-                blockItemName:    block.itemName,
+                blockEntityName:  entityName,
                 blockUnitInStock: block.unitInStock,
                 blockHeaders:     block.headers,
+                blockType:        block.blockType,
               }));
               sheetTxCount++;
             }
@@ -178,9 +190,11 @@ export async function runCilPipeline(
 
       } else {
         // ── FLAT MODE ──────────────────────────────────────────────────────
-        // Row 0 is the column-header row; rows 1+ are data rows.
+        // No blocks found — treat row 0 as column headers, rows 1+ as data.
         const headers  = rawRows[0].map(cellStr);
-        const dataRows = rawRows.slice(1).map((r: any[]) => r.map(cellStr));
+        const dataRows = rawRows.slice(1).map((r: any[]) =>
+          (Array.isArray(r) ? r : []).map(cellStr),
+        );
 
         const { columnMap, mappingTrace } = mapColumns(headers);
 
@@ -206,7 +220,7 @@ export async function runCilPipeline(
         for (const row of dataRows) {
           totalRows++;
 
-          const nonEmpty = row.filter(c => cellStr(c).trim() !== "");
+          const nonEmpty = row.filter(c => c.trim() !== "");
           if (nonEmpty.length === 0) { skippedRows++; continue; }
 
           const parsedTxs = parseRow(row, headers, columnMap, docClass);
@@ -229,8 +243,12 @@ export async function runCilPipeline(
   //   May invoke the PDF line-item extractor to build a pseudo-table.
   // ─────────────────────────────────────────────────────────────────────────
   } else {
-    const workingTables: Array<{ name?: string; headers: string[]; rows: string[][], rawRows?: any[][] }> =
-      [...(extractedData.tables ?? [])];
+    const workingTables: Array<{
+      name?:    string;
+      headers:  string[];
+      rows:     string[][];
+      rawRows?: any[][];
+    }> = [...(extractedData.tables ?? [])];
 
     // ── Step 1b: PDF extraction — runs when tables are empty ──────────────
     if (workingTables.length === 0 && rawText.length > 100) {
@@ -254,24 +272,32 @@ export async function runCilPipeline(
       const headers   = table.headers;
       if (headers.length === 0) continue;
 
-      // ── Block detection on rawRows (if present) or reconstructed array ──
+      // ── Block detection ─────────────────────────────────────────────────
+      // Prefer rawRows (native types) when present; fall back to
+      // reconstructing from stringified headers + rows.
       const allSheetRows: any[][] = table.rawRows ?? [headers, ...table.rows];
-      const blockResult = detectBlocks(allSheetRows);
+      const blocks = detectBlocks(allSheetRows);
 
-      if (blockResult.mode === "block" && blockResult.blocks.length > 0) {
+      if (blocks.length > 0) {
         console.log(
-          `[CIL] Sheet "${sheetName}" → BLOCK MODE: ` +
-          `${blockResult.blockCount} blocks, ${blockResult.totalDataRows} data rows`,
+          `[CIL] Sheet "${sheetName}" → BLOCK MODE: ${blocks.length} blocks detected`,
         );
 
         let sheetTxCount = 0;
 
-        for (const block of blockResult.blocks) {
+        for (const block of blocks) {
+          const entityName = block.entityName ?? "unknown";
+
+          const blockDataRows: string[][] = allSheetRows
+            .slice(block.startRow, block.endRow + 1)
+            .map((r: any[]) => (Array.isArray(r) ? r : []).map(cellStr));
+
           const { columnMap, mappingTrace } = mapColumns(block.headers);
 
           console.log(
-            `[CIL]   Block "${block.itemName}" ` +
-            `(stock: ${block.unitInStock ?? "?"}, rows: ${block.rows.length})`,
+            `[CIL]   Block "${entityName}" ` +
+            `[${block.blockType}] ` +
+            `(stock: ${block.unitInStock ?? "?"}, rows: ${blockDataRows.length})`,
             mappingTrace,
           );
 
@@ -282,28 +308,29 @@ export async function runCilPipeline(
             columnMap.balance     !== undefined;
 
           if (!hasMeaningful) {
-            skippedRows += block.rows.length;
+            skippedRows += blockDataRows.length;
             continue;
           }
 
-          for (const row of block.rows) {
+          for (const row of blockDataRows) {
             totalRows++;
 
-            const nonEmpty = row.filter(c => cellStr(c).trim() !== "");
+            const nonEmpty = row.filter(c => c.trim() !== "");
             if (nonEmpty.length === 0) { skippedRows++; continue; }
 
             const parsedTxs = parseRow(
               row, block.headers, columnMap, docClass,
-              block.itemName,
+              entityName,
             );
 
             if (parsedTxs.length === 0) { skippedRows++; continue; }
 
             for (const tx of parsedTxs) {
               allTransactions.push(makeTx(base, tx, {
-                blockItemName:    block.itemName,
+                blockEntityName:  entityName,
                 blockUnitInStock: block.unitInStock,
                 blockHeaders:     block.headers,
+                blockType:        block.blockType,
               }));
               sheetTxCount++;
             }
@@ -326,7 +353,7 @@ export async function runCilPipeline(
           columnMap.balance     !== undefined;
 
         if (!hasMeaningfulColumns) {
-          console.log(`[CIL] Sheet "${sheetName}" — no meaningful columns found, skipping`);
+          console.log(`[CIL] Sheet "${sheetName}" — no meaningful columns, skipping`);
           skippedRows += table.rows.length;
           continue;
         }
@@ -336,7 +363,7 @@ export async function runCilPipeline(
         for (const row of table.rows) {
           totalRows++;
 
-          const nonEmpty = row.filter(c => cellStr(c).trim() !== "");
+          const nonEmpty = row.filter(c => c.trim() !== "");
           if (nonEmpty.length === 0) { skippedRows++; continue; }
 
           const parsedTxs = parseRow(row, headers, columnMap, docClass);
@@ -376,7 +403,6 @@ export async function runCilPipeline(
     console.log(`[CIL] Stored ${storedTxCount} transactions for ${sourceFile}`);
   } catch (err) {
     console.error("[CIL] DB insert error:", err);
-    // Return parsed results even if storage failed
   }
 
   return {
