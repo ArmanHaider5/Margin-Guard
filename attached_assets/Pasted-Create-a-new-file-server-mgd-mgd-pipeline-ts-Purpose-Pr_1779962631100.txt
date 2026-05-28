@@ -1,0 +1,126 @@
+Create a new file:
+
+server/mgd/mgd-pipeline.ts
+
+Purpose:
+Provide the unified orchestration layer for all MGD operational intelligence modules.
+
+Imports:
+
+generateOperationalFindings
+from:
+server/mgd/findings-engine.ts
+
+generateRootCauses
+from:
+server/mgd/root-cause-engine.ts
+
+generateOperationalRecommendations
+from:
+server/mgd/recommendation-engine.ts
+
+generateBenchmarkResults
+from:
+server/mgd/benchmark-engine.ts
+
+generateExecutiveNarrative
+from:
+server/mgd/executive-narrative-engine.ts
+
+composeMGDReport
+from:
+server/mgd/report-composer.ts
+
+Export interfaces:
+
+export interface MGDRunParams {
+  clientName?: string;
+  industry?: string;
+
+  transactions: any[];
+  documents?: any[];
+
+  metrics?: {
+    inventoryLossRate?: number;
+    refundRate?: number;
+    logisticsUtilization?: number;
+    rejectedJobsRate?: number;
+    operationalHealthScore?: number;
+    reconciliationDelayRate?: number;
+    manualWorkflowDependency?: number;
+    inventoryDiscrepancyRate?: number;
+    manpowerDependencyRate?: number;
+    overtimeExposureRate?: number;
+  };
+}
+
+Export:
+
+export async function runMGDPipeline(
+  params: MGDRunParams
+)
+
+Requirements:
+
+1. Orchestrate all MGD engines in sequence.
+
+2. Pipeline order:
+
+STEP 1:
+generateOperationalFindings()
+
+STEP 2:
+generateRootCauses()
+
+STEP 3:
+generateOperationalRecommendations()
+
+STEP 4:
+generateBenchmarkResults()
+
+STEP 5:
+generateExecutiveNarrative()
+
+STEP 6:
+composeMGDReport()
+
+3. Build operational health score fallback:
+If no operationalHealthScore provided:
+estimate using:
+- critical findings
+- critical benchmarks
+- root-cause severity
+
+4. Add helper:
+estimateOperationalHealth()
+
+5. Add helper:
+countCriticalFindings()
+
+6. Add helper:
+countCriticalBenchmarks()
+
+7. Add extensive logging:
+[MGD][PIPELINE]
+
+Log:
+- findings count
+- root cause count
+- recommendation count
+- benchmark count
+- estimated health score
+- total pipeline runtime
+
+8. Defensive guarantees:
+- top-level try/catch
+- partial fallback support
+- pipeline never crashes completely
+- malformed arrays filtered safely
+
+9. Return final composed MGDReport.
+
+10. Add runtime measurement:
+const startedAt = Date.now()
+
+11. Goal:
+Create the master orchestration runtime powering all MGD operational diagnostics execution.
