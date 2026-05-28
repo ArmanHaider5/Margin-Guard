@@ -1,0 +1,211 @@
+Create a new file:
+
+server/routes/mgd-routes.ts
+
+Purpose:
+Expose the full MGD operational intelligence pipeline through stable API endpoints for frontend rendering, executive reports, dashboards, and exports.
+
+Imports:
+
+express
+
+runMGDPipeline
+from:
+server/mgd/mgd-pipeline.ts
+
+Export:
+
+export function registerMGDRoutes(app: Express)
+
+Requirements:
+
+1. Create all routes under:
+
+/api/mgd
+
+2. Add route:
+
+POST /api/mgd/run
+
+Purpose:
+Run the full MGD pipeline.
+
+Accept body:
+
+{
+  clientName?: string;
+  industry?: string;
+
+  transactions?: any[];
+  documents?: any[];
+
+  metrics?: {
+    inventoryLossRate?: number;
+    refundRate?: number;
+    logisticsUtilization?: number;
+    rejectedJobsRate?: number;
+    operationalHealthScore?: number;
+    reconciliationDelayRate?: number;
+    manualWorkflowDependency?: number;
+    inventoryDiscrepancyRate?: number;
+    manpowerDependencyRate?: number;
+    overtimeExposureRate?: number;
+  };
+}
+
+3. Route behaviour:
+
+- validate request safely
+- call runMGDPipeline()
+- return:
+{
+  success: true,
+  report: result.report,
+  runtimeMs: result.runtimeMs,
+  steps: result.steps
+}
+
+4. Add route:
+
+GET /api/mgd/health
+
+Return:
+
+{
+  success: true,
+  system: "MGD",
+  version: "MGD-V1",
+  status: "operational"
+}
+
+5. Add route:
+
+POST /api/mgd/estimate-health
+
+Accept:
+{
+  findings: [],
+  rootCauses: [],
+  benchmarks: []
+}
+
+Return:
+{
+  success: true,
+  estimatedHealthScore: number
+}
+
+Use:
+estimateOperationalHealth()
+
+6. Add route:
+
+POST /api/mgd/benchmarks
+
+Accept:
+{
+  metrics: {},
+  industry?: string
+}
+
+Return:
+benchmark results only.
+
+7. Add route:
+
+POST /api/mgd/narrative
+
+Accept:
+{
+  findings: [],
+  rootCauses: [],
+  recommendations: [],
+  operationalHealthScore?: number,
+  industry?: string
+}
+
+Return:
+executive narrative only.
+
+8. Add route:
+
+POST /api/mgd/recommendations
+
+Accept:
+{
+  findings: [],
+  rootCauses: [],
+  industry?: string
+}
+
+Return:
+recommendations only.
+
+9. Add route:
+
+POST /api/mgd/root-causes
+
+Accept:
+{
+  findings: [],
+  industry?: string
+}
+
+Return:
+root causes only.
+
+10. Add route:
+
+POST /api/mgd/findings
+
+Accept:
+{
+  transactions: [],
+  documents?: [],
+  industry?: string
+}
+
+Return:
+findings only.
+
+11. Add request validation:
+- arrays default to []
+- malformed input handled safely
+- never crash routes
+
+12. Add extensive logging:
+
+[MGD][API]
+
+Log:
+- route called
+- runtime
+- counts returned
+- pipeline completion
+
+13. Add defensive guarantees:
+- every route wrapped in try/catch
+- always return valid JSON
+- HTTP 500 only on catastrophic failures
+
+14. Response format:
+
+Success:
+{
+  success: true,
+  ...
+}
+
+Failure:
+{
+  success: false,
+  error: "message"
+}
+
+15. Goal:
+Create stable enterprise-grade API endpoints powering:
+- executive dashboards
+- report rendering
+- PDF exports
+- client portals
+- frontend intelligence views

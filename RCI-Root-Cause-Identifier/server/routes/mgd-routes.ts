@@ -1,0 +1,244 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// MGD ROUTES — API Endpoints for Margin Guard Diagnostics
+//
+// Exposes the full MGD operational intelligence pipeline through stable REST
+// endpoints for frontend rendering, executive reports, dashboards, and exports.
+//
+// All routes are under /api/mgd
+// All routes are wrapped in try/catch — never crash the process.
+// All responses are valid JSON with { success: true|false, ... }.
+//
+// No auth guard applied at this layer — attach isAuthenticated in registerRoutes
+// if you need it per-route.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import type { Express, Request, Response } from "express";
+import {
+  runMGDPipeline,
+  estimateOperationalHealth,
+} from "../mgd/mgd-pipeline";
+import { generateOperationalFindings } from "../mgd/findings-engine";
+import { generateRootCauses }          from "../mgd/root-cause-engine";
+import { generateOperationalRecommendations } from "../mgd/recommendation-engine";
+import { generateBenchmarkResults }    from "../mgd/benchmark-engine";
+import { generateExecutiveNarrative }  from "../mgd/executive-narrative-engine";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function safeArray(v: unknown): any[] {
+  return Array.isArray(v) ? v.filter(x => x != null) : [];
+}
+
+function safeMetrics(v: unknown): Record<string, number> {
+  if (v != null && typeof v === "object" && !Array.isArray(v)) {
+    return v as Record<string, number>;
+  }
+  return {};
+}
+
+function ok(res: Response, payload: object): void {
+  res.json({ success: true, ...payload });
+}
+
+function fail(res: Response, status: number, message: string): void {
+  res.status(status).json({ success: false, error: message });
+}
+
+// ── Route registration ────────────────────────────────────────────────────────
+
+export function registerMGDRoutes(app: Express): void {
+
+  // ── GET /api/mgd/health ─────────────────────────────────────────────────────
+  // Health probe — no pipeline invocation, returns immediately.
+  app.get("/api/mgd/health", (_req: Request, res: Response) => {
+    console.log("[MGD][API] GET /api/mgd/health");
+    ok(res, {
+      system:  "MGD",
+      version: "MGD-V1",
+      status:  "operational",
+    });
+  });
+
+  // ── POST /api/mgd/run ───────────────────────────────────────────────────────
+  // Full pipeline: findings → root causes → recommendations → benchmarks →
+  // narrative → composed report.
+  app.post("/api/mgd/run", async (req: Request, res: Response) => {
+    const t0 = Date.now();
+    console.log("[MGD][API] POST /api/mgd/run — start");
+    try {
+      const body = req.body ?? {};
+      const result = await runMGDPipeline({
+        clientName:   body.clientName   ?? undefined,
+        industry:     body.industry     ?? undefined,
+        transactions: safeArray(body.transactions),
+        documents:    safeArray(body.documents),
+        metrics:      safeMetrics(body.metrics),
+      });
+      console.log(
+        `[MGD][API] POST /api/mgd/run — ` +
+        `findings=${result.steps.findingsCount}, ` +
+        `rootCauses=${result.steps.rootCauseCount}, ` +
+        `recs=${result.steps.recommendationCount}, ` +
+        `benchmarks=${result.steps.benchmarkCount}, ` +
+        `health=${result.steps.healthScore} (${result.steps.healthScoreSource}), ` +
+        `pipelineMs=${result.runtimeMs}, totalMs=${Date.now() - t0}`,
+      );
+      ok(res, {
+        report:    result.report,
+        runtimeMs: result.runtimeMs,
+        steps:     result.steps,
+      });
+    } catch (err) {
+      console.error("[MGD][API] POST /api/mgd/run — FATAL:", err);
+      fail(res, 500, "Pipeline execution failed");
+    }
+  });
+
+  // ── POST /api/mgd/estimate-health ──────────────────────────────────────────
+  // Estimate operational health score from findings, root causes, benchmarks.
+  app.post("/api/mgd/estimate-health", (req: Request, res: Response) => {
+    const t0 = Date.now();
+    console.log("[MGD][API] POST /api/mgd/estimate-health — start");
+    try {
+      const body = req.body ?? {};
+      const findings    = safeArray(body.findings);
+      const rootCauses  = safeArray(body.rootCauses);
+      const benchmarks  = safeArray(body.benchmarks);
+      const score = estimateOperationalHealth(findings, rootCauses, benchmarks);
+      console.log(
+        `[MGD][API] POST /api/mgd/estimate-health — ` +
+        `score=${score}, ` +
+        `findings=${findings.length}, rootCauses=${rootCauses.length}, benchmarks=${benchmarks.length}, ` +
+        `ms=${Date.now() - t0}`,
+      );
+      ok(res, { estimatedHealthScore: score });
+    } catch (err) {
+      console.error("[MGD][API] POST /api/mgd/estimate-health — error:", err);
+      fail(res, 500, "Health estimation failed");
+    }
+  });
+
+  // ── POST /api/mgd/findings ──────────────────────────────────────────────────
+  // Generate operational findings from transaction data.
+  app.post("/api/mgd/findings", (req: Request, res: Response) => {
+    const t0 = Date.now();
+    console.log("[MGD][API] POST /api/mgd/findings — start");
+    try {
+      const body = req.body ?? {};
+      const transactions = safeArray(body.transactions);
+      const documents    = safeArray(body.documents);
+      const industry     = typeof body.industry === "string" ? body.industry : undefined;
+      const findings = generateOperationalFindings({ transactions, documents, industry });
+      console.log(
+        `[MGD][API] POST /api/mgd/findings — ` +
+        `count=${findings.length}, ms=${Date.now() - t0}`,
+      );
+      ok(res, { findings, count: findings.length });
+    } catch (err) {
+      console.error("[MGD][API] POST /api/mgd/findings — error:", err);
+      fail(res, 500, "Findings generation failed");
+    }
+  });
+
+  // ── POST /api/mgd/root-causes ───────────────────────────────────────────────
+  // Map findings to systemic root causes.
+  app.post("/api/mgd/root-causes", (req: Request, res: Response) => {
+    const t0 = Date.now();
+    console.log("[MGD][API] POST /api/mgd/root-causes — start");
+    try {
+      const body     = req.body ?? {};
+      const findings = safeArray(body.findings);
+      const industry = typeof body.industry === "string" ? body.industry : undefined;
+      const rootCauses = generateRootCauses({ findings, industry });
+      console.log(
+        `[MGD][API] POST /api/mgd/root-causes — ` +
+        `count=${rootCauses.length}, ms=${Date.now() - t0}`,
+      );
+      ok(res, { rootCauses, count: rootCauses.length });
+    } catch (err) {
+      console.error("[MGD][API] POST /api/mgd/root-causes — error:", err);
+      fail(res, 500, "Root cause generation failed");
+    }
+  });
+
+  // ── POST /api/mgd/recommendations ──────────────────────────────────────────
+  // Generate prioritised corrective recommendations.
+  app.post("/api/mgd/recommendations", (req: Request, res: Response) => {
+    const t0 = Date.now();
+    console.log("[MGD][API] POST /api/mgd/recommendations — start");
+    try {
+      const body      = req.body ?? {};
+      const findings  = safeArray(body.findings);
+      const rootCauses = safeArray(body.rootCauses);
+      const industry  = typeof body.industry === "string" ? body.industry : undefined;
+      const recommendations = generateOperationalRecommendations({ findings, rootCauses, industry });
+      console.log(
+        `[MGD][API] POST /api/mgd/recommendations — ` +
+        `count=${recommendations.length}, ms=${Date.now() - t0}`,
+      );
+      ok(res, { recommendations, count: recommendations.length });
+    } catch (err) {
+      console.error("[MGD][API] POST /api/mgd/recommendations — error:", err);
+      fail(res, 500, "Recommendations generation failed");
+    }
+  });
+
+  // ── POST /api/mgd/benchmarks ────────────────────────────────────────────────
+  // Compare operational metrics against industry benchmarks.
+  app.post("/api/mgd/benchmarks", (req: Request, res: Response) => {
+    const t0 = Date.now();
+    console.log("[MGD][API] POST /api/mgd/benchmarks — start");
+    try {
+      const body     = req.body ?? {};
+      const metrics  = safeMetrics(body.metrics);
+      const industry = typeof body.industry === "string" ? body.industry : undefined;
+      const benchmarks = generateBenchmarkResults({ metrics, industry });
+      console.log(
+        `[MGD][API] POST /api/mgd/benchmarks — ` +
+        `count=${benchmarks.length}, ms=${Date.now() - t0}`,
+      );
+      ok(res, { benchmarks, count: benchmarks.length });
+    } catch (err) {
+      console.error("[MGD][API] POST /api/mgd/benchmarks — error:", err);
+      fail(res, 500, "Benchmark generation failed");
+    }
+  });
+
+  // ── POST /api/mgd/narrative ─────────────────────────────────────────────────
+  // Generate a 7-section executive narrative from pipeline outputs.
+  app.post("/api/mgd/narrative", (req: Request, res: Response) => {
+    const t0 = Date.now();
+    console.log("[MGD][API] POST /api/mgd/narrative — start");
+    try {
+      const body            = req.body ?? {};
+      const findings        = safeArray(body.findings);
+      const rootCauses      = safeArray(body.rootCauses);
+      const recommendations = safeArray(body.recommendations);
+      const industry        = typeof body.industry === "string" ? body.industry : undefined;
+      const operationalHealthScore =
+        typeof body.operationalHealthScore === "number" &&
+        isFinite(body.operationalHealthScore)
+          ? body.operationalHealthScore
+          : undefined;
+      const narrative = generateExecutiveNarrative({
+        findings,
+        rootCauses,
+        recommendations,
+        operationalHealthScore,
+        industry,
+      });
+      console.log(
+        `[MGD][API] POST /api/mgd/narrative — ` +
+        `7 sections generated, ` +
+        `findings=${findings.length}, rootCauses=${rootCauses.length}, ` +
+        `recs=${recommendations.length}, ms=${Date.now() - t0}`,
+      );
+      ok(res, { narrative });
+    } catch (err) {
+      console.error("[MGD][API] POST /api/mgd/narrative — error:", err);
+      fail(res, 500, "Narrative generation failed");
+    }
+  });
+
+  console.log("[MGD][API] Routes registered: GET /api/mgd/health, POST /api/mgd/{run,estimate-health,findings,root-causes,recommendations,benchmarks,narrative}");
+}

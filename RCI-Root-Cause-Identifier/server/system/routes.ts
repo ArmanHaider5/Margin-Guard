@@ -17,6 +17,7 @@ import { generateExportPDF } from "../reports/export-pdf-generator";
 import { generateDiagnosticExport } from "../diagnostics/diagnostic-export";
 import executionRoutes from "../../src/modules/execution/routes/execution.routes";
 import { diagnosticHandler } from "../api/diagnostic-route";
+import { registerMGDRoutes } from "../routes/mgd-routes";
 import { runCilPipeline } from "../cil/cil-pipeline";
 import { validateCIL } from "../cil/cil-validator";
 import { db } from "./db";
@@ -141,6 +142,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mount execution routes
   app.use("/api/execution", executionRoutes);
+
+  // Mount MGD routes
+  registerMGDRoutes(app);
 
   // Auth routes - returns null for unauthenticated users (not 401)
   app.get('/api/auth/user', async (req: any, res) => {
