@@ -1,0 +1,145 @@
+Create a new React page:
+
+client/src/pages/mgd-runner-page.tsx
+
+Purpose:
+Provide the live execution workflow for generating MGD operational diagnostic reports from uploaded operational data.
+
+Requirements:
+
+1. Use React + Tailwind.
+
+2. Page purpose:
+Allow users to:
+- upload/select operational data
+- run the MGD pipeline
+- generate executive reports
+- render reports live
+
+3. Layout sections:
+
+SECTION 1:
+MGD Runner Header
+
+Display:
+- title
+- subtitle
+- operational intelligence branding
+
+Professional enterprise styling.
+
+4. SECTION 2:
+Pipeline Execution Panel
+
+Display:
+- Run MGD Report button
+- Selected client name
+- Industry selector
+- Pipeline status
+
+5. SECTION 3:
+Execution Progress UI
+
+Display:
+- Findings Engine
+- Root Cause Engine
+- Recommendation Engine
+- Benchmark Engine
+- Narrative Engine
+- Report Composer
+
+Show:
+- pending
+- running
+- completed
+- failed
+
+Use animated progress indicators.
+
+6. SECTION 4:
+Pipeline Metrics
+
+Display:
+- runtimeMs
+- findings count
+- root cause count
+- recommendation count
+- benchmark count
+- health score
+
+7. SECTION 5:
+Live Report Rendering
+
+Render:
+<MGDReportPage />
+
+Pass:
+report={report}
+
+8. Add API integration:
+
+POST:
+/api/mgd/run
+
+9. Build helper:
+runMGDReport()
+
+10. Request payload:
+
+{
+  clientName,
+  industry,
+  transactions,
+  documents,
+  metrics
+}
+
+11. Add loading states:
+- idle
+- running
+- completed
+- failed
+
+12. Add graceful error handling.
+
+13. Add mock transactions fallback temporarily if no uploaded data exists.
+
+14. Add:
+- retry button
+- clear report button
+
+15. Add:
+- professional loading animation
+- executive-grade UX
+
+16. Add:
+- sticky execution sidebar OR top progress ribbon
+
+17. Add:
+- report generation timestamp
+- pipeline runtime indicator
+
+18. Use:
+- premium whitespace
+- executive typography
+- subtle gradients
+- soft shadows
+- boardroom visual style
+
+19. IMPORTANT:
+This page should feel like:
+- enterprise operational diagnostics software
+NOT:
+- admin dashboard
+- developer tool
+- analytics prototype
+
+20. Future-ready support for:
+- PDF export
+- saved reports
+- historical comparisons
+- presentation mode
+- client report archive
+
+Goal:
+Create the live end-to-end operational intelligence execution experience for MGD.
