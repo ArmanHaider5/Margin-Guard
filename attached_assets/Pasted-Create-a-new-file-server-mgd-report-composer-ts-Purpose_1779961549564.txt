@@ -1,0 +1,147 @@
+Create a new file:
+
+server/mgd/report-composer.ts
+
+Purpose:
+Compose all MGD operational intelligence outputs into a unified executive report structure for rendering and export.
+
+Imports:
+
+OperationalFinding
+from:
+server/mgd/findings-engine.ts
+
+RootCause
+from:
+server/mgd/root-cause-engine.ts
+
+OperationalRecommendation
+from:
+server/mgd/recommendation-engine.ts
+
+BenchmarkResult
+from:
+server/mgd/benchmark-engine.ts
+
+ExecutiveNarrativeReport
+from:
+server/mgd/executive-narrative-engine.ts
+
+Export interfaces:
+
+export interface MGDReport {
+  metadata: {
+    generatedAt: string;
+    clientName?: string;
+    industry?: string;
+    operationalHealthScore?: number;
+    reportVersion: string;
+  };
+
+  summary: {
+    criticalFindings: number;
+    highFindings: number;
+    criticalRootCauses: number;
+    highPriorityRecommendations: number;
+    benchmarkAlerts: number;
+  };
+
+  narrative: ExecutiveNarrativeReport;
+
+  findings: OperationalFinding[];
+
+  rootCauses: RootCause[];
+
+  recommendations: OperationalRecommendation[];
+
+  benchmarks: BenchmarkResult[];
+
+  visualMetrics: {
+    operationalHealthLabel: string;
+    operationalRiskLevel: string;
+    benchmarkStatusBreakdown: {
+      healthy: number;
+      watchlist: number;
+      elevated: number;
+      critical: number;
+    };
+  };
+}
+
+Export:
+
+export function composeMGDReport(params: {
+  clientName?: string;
+  industry?: string;
+
+  findings: OperationalFinding[];
+  rootCauses: RootCause[];
+  recommendations: OperationalRecommendation[];
+  benchmarks: BenchmarkResult[];
+  narrative: ExecutiveNarrativeReport;
+
+  operationalHealthScore?: number;
+}): MGDReport
+
+Requirements:
+
+1. NO AI/LLM usage.
+
+2. Compose a single normalized report object.
+
+3. Build helper:
+buildSummaryMetrics()
+
+4. Build helper:
+buildVisualMetrics()
+
+5. Operational health labels:
+
+80+:
+"Operationally Stable"
+
+65–79:
+"Moderate Operational Strain"
+
+50–64:
+"Elevated Operational Strain"
+
+Below 50:
+"Critical Operational Instability"
+
+6. Operational risk levels:
+
+0–1 critical findings:
+"Controlled"
+
+2–3 critical findings:
+"Elevated"
+
+4+ critical findings:
+"High Risk"
+
+7. Benchmark breakdown counts:
+- healthy
+- watchlist
+- elevated
+- critical
+
+8. Sort:
+- findings by severity/confidence
+- root causes by confidence
+- recommendations by priority/confidence
+- benchmarks by status/confidence
+
+9. Add extensive logging:
+[MGD][REPORT]
+
+10. Defensive guarantees:
+- never throw
+- empty arrays fallback safely
+- malformed objects ignored
+
+11. reportVersion:
+"MGD-V1"
+
+12. Goal:
+Create a single enterprise-grade report payload for UI rendering, export generation, and executive presentation layers.
