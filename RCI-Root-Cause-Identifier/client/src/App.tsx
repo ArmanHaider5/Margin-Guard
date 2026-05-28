@@ -30,6 +30,7 @@ import ClientDashboard from "@/pages/client/dashboard";
 import ClientIssues from "@/pages/client/issues";
 import ClientAnalysisDetail from "@/pages/client/analysis-detail";
 import MGDDashboard from "../../server/frontend/mgd/mgd-dashboard";
+import MGDReportPage from "@/pages/mgd-report-page";
 import { Loader2 } from "lucide-react";
 
 function Router() {
@@ -80,6 +81,7 @@ function Router() {
         <Route path="/admin/cases/:id" component={CaseDetailPage} />
         <Route path="/admin/documents/:id" component={DocumentDetail} />
         <Route path="/mgd" component={MGDDashboard} />
+        <Route path="/mgd/report" component={MGDReportPage} />
         
         {/* Management View (read-only summary) */}
         <Route path="/management" component={ManagementDashboard} />
