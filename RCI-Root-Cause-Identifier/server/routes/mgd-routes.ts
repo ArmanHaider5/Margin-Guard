@@ -17,6 +17,7 @@ import {
   runMGDPipeline,
   estimateOperationalHealth,
 } from "../mgd/mgd-pipeline";
+import { generateMGDPdfReport } from "../mgd/pdf-export";
 import { generateOperationalFindings } from "../mgd/findings-engine";
 import { generateRootCauses }          from "../mgd/root-cause-engine";
 import { generateOperationalRecommendations } from "../mgd/recommendation-engine";
@@ -240,5 +241,45 @@ export function registerMGDRoutes(app: Express): void {
     }
   });
 
-  console.log("[MGD][API] Routes registered: GET /api/mgd/health, POST /api/mgd/{run,estimate-health,findings,root-causes,recommendations,benchmarks,narrative}");
+  // ── POST /api/mgd/export-pdf ────────────────────────────────────────────────
+  // Run the full pipeline then generate and stream a PDF report.
+  app.post("/api/mgd/export-pdf", async (req: Request, res: Response) => {
+    const t0 = Date.now();
+    console.log("[MGD][API] POST /api/mgd/export-pdf — start");
+    try {
+      const body = req.body ?? {};
+
+      // Run the pipeline first to get a fully composed MGDReport
+      const result = await runMGDPipeline({
+        clientName:   body.clientName   ?? undefined,
+        industry:     body.industry     ?? undefined,
+        transactions: safeArray(body.transactions),
+        documents:    safeArray(body.documents),
+        metrics:      safeMetrics(body.metrics),
+      });
+
+      // Generate PDF from the composed report
+      const pdfBuffer = await generateMGDPdfReport(result.report);
+
+      const safeName = (body.clientName ?? "mgd-report")
+        .replace(/[^a-z0-9]/gi, "-").toLowerCase().replace(/-+/g, "-").slice(0, 40);
+      const filename = `${safeName}-mgd-report.pdf`;
+
+      console.log(
+        `[MGD][API] POST /api/mgd/export-pdf — ` +
+        `pdf=${pdfBuffer.length} bytes, pipelineMs=${result.runtimeMs}, totalMs=${Date.now() - t0}`,
+      );
+
+      res
+        .set("Content-Type",        "application/pdf")
+        .set("Content-Disposition", `attachment; filename="${filename}"`)
+        .set("Content-Length",      String(pdfBuffer.length))
+        .send(pdfBuffer);
+    } catch (err) {
+      console.error("[MGD][API] POST /api/mgd/export-pdf — FATAL:", err);
+      fail(res, 500, "PDF export failed");
+    }
+  });
+
+  console.log("[MGD][API] Routes registered: GET /api/mgd/health, POST /api/mgd/{run,estimate-health,findings,root-causes,recommendations,benchmarks,narrative,export-pdf}");
 }
