@@ -1,0 +1,150 @@
+Refactor the MGD homepage/dashboard into a premium executive operational intelligence command center.
+
+Goal:
+Transform the current dashboard from a generic admin layout into a cinematic enterprise operational intelligence experience.
+
+Requirements:
+
+1. Overall visual direction:
+- dark executive theme
+- operational command center feel
+- premium whitespace
+- cinematic gradients
+- glassmorphism
+- subtle glow effects
+- executive typography
+
+2. Replace current layout hierarchy with:
+
+SECTION 1:
+Executive Hero Strip
+
+Display:
+- "MGD Operational Intelligence"
+- subtitle
+- live operational pulse indicator
+- total clients
+- active diagnostics
+- reports generated
+- documents processed
+
+Use:
+- large typography
+- animated ambient gradient background
+- premium stat cards
+
+3. SECTION 2:
+Launch Intelligence Run
+
+This becomes the primary focal section.
+
+Display:
+- selected client
+- industry
+- launch diagnostic CTA
+- last execution status
+- recent runtime
+- pipeline readiness
+
+Large cinematic card.
+
+4. SECTION 3:
+Active Clients Grid
+
+Replace simple rows with premium cards.
+
+Each card:
+- client name
+- industry pill
+- operational health label
+- risk level
+- last analysis timestamp
+- total reports
+
+Use:
+- hover elevation
+- subtle glow
+- executive styling
+
+5. SECTION 4:
+Operational Attention Queue
+
+Rename from:
+"Awaiting Review"
+
+Display:
+- severity indicators
+- operational alerts
+- pending reviews
+- benchmark breaches
+
+Colour hierarchy:
+- CRITICAL red
+- ELEVATED orange
+- WATCHLIST amber
+
+6. SECTION 5:
+Operational Intelligence Activity Feed
+
+Display recent:
+- reports generated
+- diagnostics run
+- uploads
+- benchmark alerts
+- pipeline completions
+
+Timeline-style layout.
+
+7. SECTION 6:
+Quick Actions Dock
+
+Actions:
+- Run Diagnostic
+- Presentation Mode
+- Export PDF
+- Compare Reports
+
+Compact premium dock.
+
+8. Add:
+- animated stat counters
+- hover transitions
+- soft shadow depth
+- radial ambient backgrounds
+- executive motion hierarchy
+
+9. Use:
+- dark navy base colors
+- glass cards
+- subtle border glow
+- premium spacing
+
+10. Add helper components:
+- ExecutiveStatCard
+- ClientHealthCard
+- ActivityTimeline
+- OperationalAlertCard
+- IntelligenceRunPanel
+
+11. Add responsive behaviour:
+- desktop command center
+- tablet optimization
+- mobile stacked layout
+
+12. IMPORTANT:
+This should feel like:
+- enterprise operational intelligence software
+NOT:
+- admin dashboard
+- CRM
+- project management tool
+
+13. Future-ready support:
+- live operational monitoring
+- realtime alerts
+- longitudinal tracking
+- report persistence
+- intelligence notifications
+
+Goal:
+Create a premium operational intelligence command center homepage for MGD.
