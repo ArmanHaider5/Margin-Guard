@@ -1,0 +1,153 @@
+Create a new page:
+
+client/src/pages/mgd-presentation-mode.tsx
+
+Purpose:
+Provide fullscreen executive presentation mode for MGD operational diagnostic reports.
+
+Requirements:
+
+1. Use React + Tailwind.
+
+2. Fullscreen presentation experience.
+
+3. Presentation layout:
+- dark executive theme
+- cinematic spacing
+- large typography
+- boardroom-ready visuals
+- premium transitions
+
+4. Slides structure:
+
+SLIDE 1:
+Executive Health Overview
+
+Display:
+- client name
+- health score ring
+- health label
+- operational risk level
+- generated timestamp
+
+Large hero layout.
+
+5. SLIDE 2:
+Benchmark Risk Overview
+
+Display:
+- benchmark severity distribution
+- CRITICAL / ELEVATED / WATCHLIST / HEALTHY
+- animated severity bars
+- top benchmark alerts
+
+6. SLIDE 3:
+Key Operational Findings
+
+Display:
+- findings cards
+- severity badges
+- confidence bars
+- operational impacts
+
+Animate cards progressively.
+
+7. SLIDE 4:
+Root Cause Intelligence
+
+Display:
+- root cause panels
+- causal relationships
+- contributing findings
+- operational impacts
+
+Use executive timeline / flow layout.
+
+8. SLIDE 5:
+Priority Recommendations
+
+Grouped by:
+- Immediate
+- 30 Days
+- 90 Days
+- Long-Term
+
+Use roadmap-style visual flow.
+
+9. SLIDE 6:
+Strategic Direction
+
+Display:
+- operational maturity narrative
+- scalability readiness
+- operational visibility direction
+- future-state positioning
+
+10. SLIDE 7:
+Final Conclusion
+
+Display:
+- executive conclusion
+- operational outlook
+- closing summary
+- MGD branding
+
+11. Add keyboard controls:
+- ← previous slide
+- → next slide
+- ESC exit presentation mode
+
+12. Add presentation progress indicator.
+
+13. Add animated transitions:
+- fade
+- slide-up
+- staggered card animations
+
+14. Add fullscreen responsiveness.
+
+15. Add:
+- presentation timer
+- slide counter
+- optional auto-advance mode
+
+16. Add helper components:
+- PresentationSlide
+- SlideTransition
+- PresentationHeader
+- SeverityPill
+- ExecutiveMetric
+
+17. Add:
+- loading state
+- empty report fallback
+
+18. Add:
+- subtle gradients
+- glassmorphism panels
+- soft glows
+- executive shadows
+
+19. IMPORTANT:
+This should feel like:
+- enterprise executive intelligence software
+NOT:
+- a website slideshow.
+
+20. Future-ready support:
+- presentation export
+- presenter notes
+- laser-pointer mode
+- live benchmark updates
+- multi-screen support
+
+21. Accept props:
+{
+  report?: MGDReport;
+  useMock?: boolean;
+}
+
+22. Include rich mock data fallback.
+
+Goal:
+Create the premium boardroom operational diagnostics presentation experience for MGD.

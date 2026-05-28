@@ -32,6 +32,7 @@ import ClientAnalysisDetail from "@/pages/client/analysis-detail";
 import MGDDashboard from "../../server/frontend/mgd/mgd-dashboard";
 import MGDReportPage from "@/pages/mgd-report-page";
 import MGDRunnerPage from "@/pages/mgd-runner-page";
+import MGDPresentationMode from "@/pages/mgd-presentation-mode";
 import { Loader2 } from "lucide-react";
 
 function Router() {
@@ -84,6 +85,7 @@ function Router() {
         <Route path="/mgd" component={MGDDashboard} />
         <Route path="/mgd/report" component={MGDReportPage} />
         <Route path="/mgd/run" component={MGDRunnerPage} />
+        <Route path="/mgd/present" component={MGDPresentationMode} />
         
         {/* Management View (read-only summary) */}
         <Route path="/management" component={ManagementDashboard} />
