@@ -1,5 +1,136 @@
 [
   {
+    "traceId": "fda1d2f1-5a29-4119-9849-359127f01b67",
+    "createdAt": "2026-06-05T12:37:16.083Z",
+    "steps": [
+      {
+        "step": "Document Processing",
+        "startedAt": "2026-06-05T12:37:16.085Z",
+        "completedAt": "2026-06-05T12:37:16.085Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "documents": 0,
+          "transactions": 0,
+          "clientName": "Madetill Event Management (MEM) Sdn. Bhd. (TEST) ",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Transaction Extraction",
+        "startedAt": "2026-06-05T12:37:16.085Z",
+        "completedAt": "2026-06-05T12:37:16.085Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "transactions": 0
+        }
+      },
+      {
+        "step": "Findings Generation",
+        "startedAt": "2026-06-05T12:37:16.085Z",
+        "completedAt": "2026-06-05T12:37:16.085Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "findings": 0,
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Root Cause Generation",
+        "startedAt": "2026-06-05T12:37:16.085Z",
+        "completedAt": "2026-06-05T12:37:16.085Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "rootCauses": 0,
+          "critical": 0,
+          "high": 0
+        }
+      },
+      {
+        "step": "Recommendation Generation",
+        "startedAt": "2026-06-05T12:37:16.085Z",
+        "completedAt": "2026-06-05T12:37:16.085Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "recommendations": 0,
+          "immediate": 0,
+          "thirtyDays": 0,
+          "ninetyDays": 0,
+          "longTerm": 0
+        }
+      },
+      {
+        "step": "Benchmark Generation",
+        "startedAt": "2026-06-05T12:37:16.085Z",
+        "completedAt": "2026-06-05T12:37:16.086Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "benchmarks": 0,
+          "critical": 0,
+          "elevated": 0,
+          "watchlist": 0,
+          "healthy": 0
+        }
+      },
+      {
+        "step": "Narrative Generation",
+        "startedAt": "2026-06-05T12:37:16.086Z",
+        "completedAt": "2026-06-05T12:37:16.087Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 7,
+        "metadata": {
+          "sections": 7,
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Report Composition",
+        "startedAt": "2026-06-05T12:37:16.087Z",
+        "completedAt": "2026-06-05T12:37:16.087Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 1,
+        "metadata": {
+          "reportVersion": "MGD-V1",
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "documents": 0,
+          "transactions": 0,
+          "findings": 0,
+          "rootCauses": 0,
+          "recommendations": 0,
+          "benchmarks": 0
+        }
+      }
+    ]
+  },
+  {
     "traceId": "0b25b00c-bb95-4d03-abd2-3fc60dc5f11e",
     "createdAt": "2026-06-05T12:29:44.343Z",
     "steps": [
