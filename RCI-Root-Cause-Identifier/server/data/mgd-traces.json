@@ -1,0 +1,20 @@
+[
+  {
+    "traceId": "1afa22ff-3438-468f-a2e7-317b54f2385d",
+    "createdAt": "2026-06-05T11:33:50.449Z",
+    "steps": [
+      {
+        "step": "Findings Generation",
+        "startedAt": "2026-06-05T11:33:50.457Z",
+        "completedAt": "2026-06-05T11:33:50.463Z",
+        "durationMs": 6,
+        "status": "completed",
+        "inputCount": 3,
+        "outputCount": 2,
+        "metadata": {
+          "industry": "event_management"
+        }
+      }
+    ]
+  }
+]
