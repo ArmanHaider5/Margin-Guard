@@ -1,5 +1,461 @@
 [
   {
+    "id": "a58830c0-d125-4771-9a41-ffbb5c155ab7",
+    "clientName": "Madetill Event Management (MEM)",
+    "industry": "event_management",
+    "createdAt": "2026-06-05T12:03:34.822Z",
+    "report": {
+      "metadata": {
+        "generatedAt": "2026-06-05T12:03:34.822Z",
+        "clientName": "Madetill Event Management (MEM)",
+        "industry": "event_management",
+        "operationalHealthScore": 51,
+        "reportVersion": "MGD-V1"
+      },
+      "summary": {
+        "criticalFindings": 0,
+        "highFindings": 0,
+        "criticalRootCauses": 0,
+        "highPriorityRecommendations": 0,
+        "benchmarkAlerts": 6
+      },
+      "narrative": {
+        "executiveOverview": {
+          "id": "executive-overview",
+          "title": "Executive Overview",
+          "content": "This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework. The operational health assessment returned a classification of Elevated Operational Strain, indicating that the operation is absorbing significant inefficiencies that expose it to service disruptions during peak demand.",
+          "priority": 1
+        },
+        "keyFindings": {
+          "id": "key-findings",
+          "title": "Key Operational Findings",
+          "content": "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
+          "priority": 2
+        },
+        "rootCauseSummary": {
+          "id": "root-cause-summary",
+          "title": "Root Cause Analysis",
+          "content": "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
+          "priority": 3
+        },
+        "operationalHealth": {
+          "id": "operational-health",
+          "title": "Operational Health Assessment",
+          "content": "Operational Health Classification: Elevated Operational Strain.  The composite operational health score of 51/100 reflects an operation absorbing significant structural inefficiency — a condition that will deteriorate under increased demand. Under these conditions, the risk of service disruption increases with each demand peak. Immediate stabilisation action is the priority before optimisation can begin.",
+          "priority": 4
+        },
+        "priorityActions": {
+          "id": "priority-actions",
+          "title": "Priority Actions",
+          "content": "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
+          "priority": 5
+        },
+        "strategicDirection": {
+          "id": "strategic-direction",
+          "title": "Strategic Direction",
+          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. As operational controls mature, the business will develop predictive visibility into demand cycles, allowing for proactive resource allocation rather than reactive scrambling.",
+          "priority": 6
+        },
+        "finalConclusion": {
+          "id": "final-conclusion",
+          "title": "Conclusion",
+          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. The recommendations in this report are practical, sequenced, and designed to generate visible operational improvement within 30 to 90 days. The management team has the knowledge and resources to execute the stabilisation phase — what is required is structured commitment to the process. With structured implementation of the recommended actions, the business is well-positioned to convert current operational strain into a durable competitive advantage — an operation that grows reliably, serves clients consistently, and retains value at scale.",
+          "priority": 7
+        },
+        "metadata": {
+          "generatedAt": "2026-06-05T12:03:34.821Z",
+          "industry": "event_management",
+          "findingsCount": 0,
+          "rootCauseCount": 0,
+          "recommendationCount": 0,
+          "operationalHealthScore": 51
+        }
+      },
+      "findings": [],
+      "rootCauses": [],
+      "recommendations": [],
+      "benchmarks": [
+        {
+          "id": "mgd-bm-b615b4a9",
+          "metric": "Refund Leakage Rate",
+          "category": "financial_leakage",
+          "actualValue": 14.2,
+          "benchmarkRange": {
+            "low": 3,
+            "medium": 5,
+            "high": 8
+          },
+          "status": "CRITICAL",
+          "interpretation": "Refund Leakage Rate of 14.2% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
+          "operationalRisk": "Refund rates at this level indicate a systemic event delivery breakdown. Client confidence is at risk and revenue recovery is being offset by refund obligations.",
+          "recommendedAction": "Suspend the highest-risk service lines pending a full process review. Introduce mandatory pre-delivery sign-off and post-service feedback capture.",
+          "confidence": 88
+        },
+        {
+          "id": "mgd-bm-f20fea03",
+          "metric": "Manual Workflow Dependency",
+          "category": "workflow_scalability",
+          "actualValue": 78,
+          "benchmarkRange": {
+            "low": 30,
+            "medium": 50,
+            "high": 70
+          },
+          "status": "CRITICAL",
+          "interpretation": "Manual Workflow Dependency of 78.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
+          "operationalRisk": "Manual dependency at this level means event operations cannot scale. Every additional event compounds the coordination and execution burden disproportionately.",
+          "recommendedAction": "Immediate workflow redesign is required. Map all manual processes, prioritise the top 10 by operational risk, and implement structured replacements within 30 days.",
+          "confidence": 78
+        },
+        {
+          "id": "mgd-bm-3c92ee35",
+          "metric": "Manpower Dependency Rate",
+          "category": "manpower_dependency",
+          "actualValue": 62,
+          "benchmarkRange": {
+            "low": 20,
+            "medium": 35,
+            "high": 55
+          },
+          "status": "CRITICAL",
+          "interpretation": "Manpower Dependency Rate of 62.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
+          "operationalRisk": "The event operation is critically dependent on a single decision-maker or a very small team. Any absence or concurrent demand will halt or severely compromise event delivery.",
+          "recommendedAction": "Immediately initiate a cross-training and knowledge distribution programme. Assign backup decision-makers for all critical operational roles and document all undocumented processes.",
+          "confidence": 75
+        },
+        {
+          "id": "mgd-bm-506c85af",
+          "metric": "Overtime Exposure Rate",
+          "category": "manpower_dependency",
+          "actualValue": 34,
+          "benchmarkRange": {
+            "low": 10,
+            "medium": 20,
+            "high": 30
+          },
+          "status": "CRITICAL",
+          "interpretation": "Overtime Exposure Rate of 34.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
+          "operationalRisk": "Overtime at this level is unsustainable and is compromising event delivery quality and staff wellbeing. This will manifest as execution errors, attrition, and client complaints.",
+          "recommendedAction": "Immediate staffing model review is required. Introduce shift rotation protocols, consider temporary capacity augmentation, and audit the processes generating the highest overtime burden.",
+          "confidence": 72
+        },
+        {
+          "id": "mgd-bm-37cbbe8e",
+          "metric": "Inventory Loss Rate",
+          "category": "inventory_control",
+          "actualValue": 5.8,
+          "benchmarkRange": {
+            "low": 2,
+            "medium": 4,
+            "high": 7
+          },
+          "status": "ELEVATED",
+          "interpretation": "Inventory Loss Rate of 5.8% reflects material strain in event operational performance, indicating structural inefficiency that requires targeted corrective action.",
+          "operationalRisk": "Inventory loss at this rate is generating measurable financial leakage and signals a breakdown in stock accountability controls.",
+          "recommendedAction": "Implement mandatory closing-balance verification at each stock movement event and conduct an immediate audit of the highest-loss SKUs.",
+          "confidence": 90
+        },
+        {
+          "id": "mgd-bm-d0075ee2",
+          "metric": "Inventory Discrepancy Rate",
+          "category": "inventory_control",
+          "actualValue": 11.8,
+          "benchmarkRange": {
+            "low": 5,
+            "medium": 10,
+            "high": 20
+          },
+          "status": "ELEVATED",
+          "interpretation": "Inventory Discrepancy Rate of 11.8% reflects material strain in event operational performance, indicating structural inefficiency that requires targeted corrective action.",
+          "operationalRisk": "At this discrepancy rate, inventory records cannot be relied upon for operational decision-making — replenishment, allocation, and dispatch decisions are all compromised.",
+          "recommendedAction": "Conduct a full inventory audit. Implement mandatory reconciliation after each stock movement and introduce dual-verification for high-value items.",
+          "confidence": 85
+        },
+        {
+          "id": "mgd-bm-3550bbfd",
+          "metric": "Rejected Jobs Rate",
+          "category": "logistics_coordination",
+          "actualValue": 3.2,
+          "benchmarkRange": {
+            "low": 5,
+            "medium": 10,
+            "high": 20
+          },
+          "status": "HEALTHY",
+          "interpretation": "Rejected Jobs Rate of 3.2% is within sustainable operational norms — no corrective intervention is required at this time.",
+          "confidence": 83
+        },
+        {
+          "id": "mgd-bm-6c4b2643",
+          "metric": "Logistics Capacity Utilisation",
+          "category": "logistics_coordination",
+          "actualValue": 0.81,
+          "benchmarkRange": {
+            "low": 75,
+            "medium": 85,
+            "high": 95
+          },
+          "status": "HEALTHY",
+          "interpretation": "Logistics Capacity Utilisation of 0.8% is within sustainable operational norms — no corrective intervention is required at this time.",
+          "confidence": 82
+        },
+        {
+          "id": "mgd-bm-06944bd5",
+          "metric": "Reconciliation Delay Rate",
+          "category": "workflow_scalability",
+          "actualValue": 2.4,
+          "benchmarkRange": {
+            "low": 10,
+            "medium": 20,
+            "high": 35
+          },
+          "status": "HEALTHY",
+          "interpretation": "Reconciliation Delay Rate of 2.4% is within sustainable operational norms — no corrective intervention is required at this time.",
+          "confidence": 80
+        }
+      ],
+      "visualMetrics": {
+        "operationalHealthLabel": "Elevated Operational Strain",
+        "operationalRiskLevel": "Controlled",
+        "benchmarkStatusBreakdown": {
+          "healthy": 3,
+          "watchlist": 0,
+          "elevated": 2,
+          "critical": 4
+        }
+      }
+    },
+    "runtimeMs": 5
+  },
+  {
+    "id": "24dc2c78-04c1-47f9-bf99-a3f794df8a2b",
+    "clientName": "Madetill Event Management (MEM)",
+    "industry": "event_management",
+    "createdAt": "2026-06-05T12:03:12.532Z",
+    "report": {
+      "metadata": {
+        "generatedAt": "2026-06-05T12:03:12.530Z",
+        "clientName": "Madetill Event Management (MEM)",
+        "industry": "event_management",
+        "operationalHealthScore": 51,
+        "reportVersion": "MGD-V1"
+      },
+      "summary": {
+        "criticalFindings": 0,
+        "highFindings": 0,
+        "criticalRootCauses": 0,
+        "highPriorityRecommendations": 0,
+        "benchmarkAlerts": 6
+      },
+      "narrative": {
+        "executiveOverview": {
+          "id": "executive-overview",
+          "title": "Executive Overview",
+          "content": "This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework. The operational health assessment returned a classification of Elevated Operational Strain, indicating that the operation is absorbing significant inefficiencies that expose it to service disruptions during peak demand.",
+          "priority": 1
+        },
+        "keyFindings": {
+          "id": "key-findings",
+          "title": "Key Operational Findings",
+          "content": "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
+          "priority": 2
+        },
+        "rootCauseSummary": {
+          "id": "root-cause-summary",
+          "title": "Root Cause Analysis",
+          "content": "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
+          "priority": 3
+        },
+        "operationalHealth": {
+          "id": "operational-health",
+          "title": "Operational Health Assessment",
+          "content": "Operational Health Classification: Elevated Operational Strain.  The composite operational health score of 51/100 reflects an operation absorbing significant structural inefficiency — a condition that will deteriorate under increased demand. Under these conditions, the risk of service disruption increases with each demand peak. Immediate stabilisation action is the priority before optimisation can begin.",
+          "priority": 4
+        },
+        "priorityActions": {
+          "id": "priority-actions",
+          "title": "Priority Actions",
+          "content": "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
+          "priority": 5
+        },
+        "strategicDirection": {
+          "id": "strategic-direction",
+          "title": "Strategic Direction",
+          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. As operational controls mature, the business will develop predictive visibility into demand cycles, allowing for proactive resource allocation rather than reactive scrambling.",
+          "priority": 6
+        },
+        "finalConclusion": {
+          "id": "final-conclusion",
+          "title": "Conclusion",
+          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. The recommendations in this report are practical, sequenced, and designed to generate visible operational improvement within 30 to 90 days. The management team has the knowledge and resources to execute the stabilisation phase — what is required is structured commitment to the process. With structured implementation of the recommended actions, the business is well-positioned to convert current operational strain into a durable competitive advantage — an operation that grows reliably, serves clients consistently, and retains value at scale.",
+          "priority": 7
+        },
+        "metadata": {
+          "generatedAt": "2026-06-05T12:03:12.530Z",
+          "industry": "event_management",
+          "findingsCount": 0,
+          "rootCauseCount": 0,
+          "recommendationCount": 0,
+          "operationalHealthScore": 51
+        }
+      },
+      "findings": [],
+      "rootCauses": [],
+      "recommendations": [],
+      "benchmarks": [
+        {
+          "id": "mgd-bm-b615b4a9",
+          "metric": "Refund Leakage Rate",
+          "category": "financial_leakage",
+          "actualValue": 14.2,
+          "benchmarkRange": {
+            "low": 3,
+            "medium": 5,
+            "high": 8
+          },
+          "status": "CRITICAL",
+          "interpretation": "Refund Leakage Rate of 14.2% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
+          "operationalRisk": "Refund rates at this level indicate a systemic event delivery breakdown. Client confidence is at risk and revenue recovery is being offset by refund obligations.",
+          "recommendedAction": "Suspend the highest-risk service lines pending a full process review. Introduce mandatory pre-delivery sign-off and post-service feedback capture.",
+          "confidence": 88
+        },
+        {
+          "id": "mgd-bm-f20fea03",
+          "metric": "Manual Workflow Dependency",
+          "category": "workflow_scalability",
+          "actualValue": 78,
+          "benchmarkRange": {
+            "low": 30,
+            "medium": 50,
+            "high": 70
+          },
+          "status": "CRITICAL",
+          "interpretation": "Manual Workflow Dependency of 78.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
+          "operationalRisk": "Manual dependency at this level means event operations cannot scale. Every additional event compounds the coordination and execution burden disproportionately.",
+          "recommendedAction": "Immediate workflow redesign is required. Map all manual processes, prioritise the top 10 by operational risk, and implement structured replacements within 30 days.",
+          "confidence": 78
+        },
+        {
+          "id": "mgd-bm-3c92ee35",
+          "metric": "Manpower Dependency Rate",
+          "category": "manpower_dependency",
+          "actualValue": 62,
+          "benchmarkRange": {
+            "low": 20,
+            "medium": 35,
+            "high": 55
+          },
+          "status": "CRITICAL",
+          "interpretation": "Manpower Dependency Rate of 62.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
+          "operationalRisk": "The event operation is critically dependent on a single decision-maker or a very small team. Any absence or concurrent demand will halt or severely compromise event delivery.",
+          "recommendedAction": "Immediately initiate a cross-training and knowledge distribution programme. Assign backup decision-makers for all critical operational roles and document all undocumented processes.",
+          "confidence": 75
+        },
+        {
+          "id": "mgd-bm-506c85af",
+          "metric": "Overtime Exposure Rate",
+          "category": "manpower_dependency",
+          "actualValue": 34,
+          "benchmarkRange": {
+            "low": 10,
+            "medium": 20,
+            "high": 30
+          },
+          "status": "CRITICAL",
+          "interpretation": "Overtime Exposure Rate of 34.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
+          "operationalRisk": "Overtime at this level is unsustainable and is compromising event delivery quality and staff wellbeing. This will manifest as execution errors, attrition, and client complaints.",
+          "recommendedAction": "Immediate staffing model review is required. Introduce shift rotation protocols, consider temporary capacity augmentation, and audit the processes generating the highest overtime burden.",
+          "confidence": 72
+        },
+        {
+          "id": "mgd-bm-37cbbe8e",
+          "metric": "Inventory Loss Rate",
+          "category": "inventory_control",
+          "actualValue": 5.8,
+          "benchmarkRange": {
+            "low": 2,
+            "medium": 4,
+            "high": 7
+          },
+          "status": "ELEVATED",
+          "interpretation": "Inventory Loss Rate of 5.8% reflects material strain in event operational performance, indicating structural inefficiency that requires targeted corrective action.",
+          "operationalRisk": "Inventory loss at this rate is generating measurable financial leakage and signals a breakdown in stock accountability controls.",
+          "recommendedAction": "Implement mandatory closing-balance verification at each stock movement event and conduct an immediate audit of the highest-loss SKUs.",
+          "confidence": 90
+        },
+        {
+          "id": "mgd-bm-d0075ee2",
+          "metric": "Inventory Discrepancy Rate",
+          "category": "inventory_control",
+          "actualValue": 11.8,
+          "benchmarkRange": {
+            "low": 5,
+            "medium": 10,
+            "high": 20
+          },
+          "status": "ELEVATED",
+          "interpretation": "Inventory Discrepancy Rate of 11.8% reflects material strain in event operational performance, indicating structural inefficiency that requires targeted corrective action.",
+          "operationalRisk": "At this discrepancy rate, inventory records cannot be relied upon for operational decision-making — replenishment, allocation, and dispatch decisions are all compromised.",
+          "recommendedAction": "Conduct a full inventory audit. Implement mandatory reconciliation after each stock movement and introduce dual-verification for high-value items.",
+          "confidence": 85
+        },
+        {
+          "id": "mgd-bm-3550bbfd",
+          "metric": "Rejected Jobs Rate",
+          "category": "logistics_coordination",
+          "actualValue": 3.2,
+          "benchmarkRange": {
+            "low": 5,
+            "medium": 10,
+            "high": 20
+          },
+          "status": "HEALTHY",
+          "interpretation": "Rejected Jobs Rate of 3.2% is within sustainable operational norms — no corrective intervention is required at this time.",
+          "confidence": 83
+        },
+        {
+          "id": "mgd-bm-6c4b2643",
+          "metric": "Logistics Capacity Utilisation",
+          "category": "logistics_coordination",
+          "actualValue": 0.81,
+          "benchmarkRange": {
+            "low": 75,
+            "medium": 85,
+            "high": 95
+          },
+          "status": "HEALTHY",
+          "interpretation": "Logistics Capacity Utilisation of 0.8% is within sustainable operational norms — no corrective intervention is required at this time.",
+          "confidence": 82
+        },
+        {
+          "id": "mgd-bm-06944bd5",
+          "metric": "Reconciliation Delay Rate",
+          "category": "workflow_scalability",
+          "actualValue": 2.4,
+          "benchmarkRange": {
+            "low": 10,
+            "medium": 20,
+            "high": 35
+          },
+          "status": "HEALTHY",
+          "interpretation": "Reconciliation Delay Rate of 2.4% is within sustainable operational norms — no corrective intervention is required at this time.",
+          "confidence": 80
+        }
+      ],
+      "visualMetrics": {
+        "operationalHealthLabel": "Elevated Operational Strain",
+        "operationalRiskLevel": "Controlled",
+        "benchmarkStatusBreakdown": {
+          "healthy": 3,
+          "watchlist": 0,
+          "elevated": 2,
+          "critical": 4
+        }
+      }
+    },
+    "runtimeMs": 11
+  },
+  {
     "id": "2b508d38-78d8-4028-90fc-a17f7a9be466",
     "clientName": "Trace Test Co",
     "industry": "event_management",

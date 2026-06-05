@@ -35,6 +35,7 @@ import MGDReportViewer from "@/pages/mgd-report-viewer";
 import MGDRunnerPage from "@/pages/mgd-runner-page";
 import MGDPresentationMode from "@/pages/mgd-presentation-mode";
 import MGDReportArchive from "@/pages/mgd-report-archive";
+import MGDDiagnosticWizard from "@/pages/mgd-diagnostic-wizard";
 import { Loader2 } from "lucide-react";
 
 function Router() {
@@ -87,6 +88,7 @@ function Router() {
         <Route path="/mgd" component={MGDDashboard} />
         <Route path="/mgd/reports" component={MGDReportArchive} />
         <Route path="/mgd/report" component={MGDReportViewer} />
+        <Route path="/mgd/diagnostic" component={MGDDiagnosticWizard} />
         <Route path="/mgd/run" component={MGDRunnerPage} />
         <Route path="/mgd/present" component={MGDPresentationMode} />
         
