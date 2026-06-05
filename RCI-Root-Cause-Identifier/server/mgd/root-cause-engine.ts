@@ -99,21 +99,39 @@ function byCategory(findings: OperationalFinding[], ...cats: string[]): Operatio
 /**
  * Accumulate confidence from a list of corroborating findings.
  *
- * Formula:
- *   base       = 20 points per corroborating finding (presence signal)
- *   severity   = SEVERITY_SCORE per finding (quality signal)
- *   avg_conf   = average individual confidence of the contributing findings
- *                scaled to add up to 20 more points at 100% average
+ * Formula (severity-weighted confidence):
+ *   Each finding contributes: SEVERITY_SCORE[severity] × (confidence / 100)
+ *     CRITICAL finding at 80%  → 20 × 0.80 = 16.0
+ *     HIGH finding at 70%      → 15 × 0.70 = 10.5
+ *     MEDIUM finding at 50%    → 10 × 0.50 =  5.0
+ *     LOW finding at 30%       →  5 × 0.30 =  1.5
  *
- * Result is capped at 100.
+ *   Raw score is scaled × 3.5 so that two HIGH findings at ~70% ≈ 74 (HIGH root cause).
+ *
+ *   Diversity bonus: +2 per finding beyond the first, capped at +6.
+ *   This rewards corroboration from multiple independent signals without
+ *   letting a large pile of LOW findings fake high confidence.
+ *
+ *   Result is capped at 100.
+ *
+ * Why this replaces the old formula:
+ *   The old `base = n × 20` formula reached 100 with just 5 findings regardless
+ *   of their quality, making root cause confidence misleadingly high when all
+ *   contributing findings were LOW severity with weak confidence.
  */
 function accumulateConfidence(contributing: OperationalFinding[]): number {
   if (contributing.length === 0) return 0;
-  const base     = contributing.length * 20;
-  const severity = contributing.reduce((s, f) => s + (SEVERITY_SCORE[f.severity] ?? 5), 0);
-  const avgConf  = contributing.reduce((s, f) => s + f.confidence, 0) / contributing.length;
-  const confBonus = Math.round((avgConf / 100) * 20);
-  return cap(base + severity + confBonus);
+
+  let raw = 0;
+  for (const f of contributing) {
+    const sw = SEVERITY_SCORE[f.severity] ?? 5;
+    raw += sw * (f.confidence / 100);
+  }
+
+  // Diversity bonus: extra evidence sources strengthen the pattern
+  const diversityBonus = Math.min(contributing.length - 1, 3) * 2;
+
+  return cap(Math.round(raw * 3.5 + diversityBonus));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

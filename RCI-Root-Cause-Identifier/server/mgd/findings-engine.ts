@@ -85,11 +85,24 @@ function safeNum(v: any): number {
   return isNaN(n) ? NaN : n;
 }
 
-/** Severity from a confidence score. */
+/**
+ * Map a confidence score (0–100) to a finding severity.
+ *
+ * Thresholds are set so that a detector firing on moderate evidence (score 30–49)
+ * produces MEDIUM rather than LOW.  Previous thresholds (40/65/85) caused most
+ * findings to land at LOW when quantity-based signals were weak, which then
+ * cascaded into misleadingly low health scores and confusing reports.
+ *
+ * Revised scale:
+ *   CRITICAL  ≥ 70  — strong multi-signal evidence, high certainty
+ *   HIGH      ≥ 50  — clear evidence from multiple signals
+ *   MEDIUM    ≥ 30  — partial evidence, warrants monitoring
+ *   LOW       < 30  — weak or single-signal evidence
+ */
 function severityFrom(confidence: number): OperationalFinding["severity"] {
-  if (confidence >= 85) return "CRITICAL";
-  if (confidence >= 65) return "HIGH";
-  if (confidence >= 40) return "MEDIUM";
+  if (confidence >= 70) return "CRITICAL";
+  if (confidence >= 50) return "HIGH";
+  if (confidence >= 30) return "MEDIUM";
   return "LOW";
 }
 
@@ -170,20 +183,26 @@ function buildStats(transactions: any[]): TxStats {
     const trace = tx.debugTrace ?? {};
 
     // Transaction type counts
-    if      (type === "inbound")    stats.inbound++;
-    else if (type === "outbound")   stats.outbound++;
+    // CIL uses "incoming"/"outgoing"/"sale"/"loss"/"dispatch_event"/"inventory_loss"
+    // which must be mapped to the stat buckets.
+    const isInbound  = type === "inbound"  || type === "incoming" || type === "refund";
+    const isOutbound = type === "outbound" || type === "outgoing" || type === "sale"
+                    || type === "loss"     || type === "dispatch_event" || type === "inventory_loss";
+
+    if      (isInbound)          stats.inbound++;
+    else if (isOutbound)         stats.outbound++;
     else if (type === "adjustment") stats.adjustments++;
     else if (type === "balance")    stats.balance++;
     else                            stats.unknown++;
 
     // Quantity / value aggregation
     if (!isNaN(qty)) {
-      if (type === "inbound")  stats.totalQtyIn  += qty;
-      if (type === "outbound") stats.totalQtyOut += qty;
+      if (isInbound)  stats.totalQtyIn  += qty;
+      if (isOutbound) stats.totalQtyOut += qty;
     }
     if (!isNaN(val)) {
-      if (type === "inbound")  stats.totalValueIn  += val;
-      if (type === "outbound") stats.totalValueOut += val;
+      if (isInbound)  stats.totalValueIn  += val;
+      if (isOutbound) stats.totalValueOut += val;
     }
 
     // Cardinality
@@ -201,9 +220,9 @@ function buildStats(transactions: any[]): TxStats {
     if (!stats.byEntity.has(eName)) stats.byEntity.set(eName, { in: 0, out: 0, adj: 0, txCount: 0 });
     const ent = stats.byEntity.get(eName)!;
     ent.txCount++;
-    if (type === "inbound")    ent.in++;
-    if (type === "outbound")   ent.out++;
-    if (type === "adjustment") ent.adj++;
+    if (isInbound)               ent.in++;
+    if (isOutbound)              ent.out++;
+    if (type === "adjustment")   ent.adj++;
 
     // Per-date count
     if (date) {

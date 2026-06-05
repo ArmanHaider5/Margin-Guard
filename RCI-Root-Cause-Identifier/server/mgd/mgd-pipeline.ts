@@ -194,8 +194,10 @@ function calibrateFindingSeverities(
         severity = "MEDIUM";
       }
 
-      // Rule C: unhealthy operation → no LOW allowed above confidence floor
-      if (estimatedHealth < 65 && severity === "LOW" && f.confidence >= 40) {
+      // Rule C: unhealthy operation → no LOW allowed above minimum confidence
+      // Floor is the minimum emit threshold (25) — any finding strong enough
+      // to be emitted in a low-health operation should be at least MEDIUM.
+      if (estimatedHealth < 65 && severity === "LOW" && f.confidence >= 25) {
         severity = "MEDIUM";
       }
 
