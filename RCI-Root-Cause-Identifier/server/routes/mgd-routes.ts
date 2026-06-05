@@ -88,11 +88,13 @@ export function registerMGDRoutes(app: Express): void {
         `recs=${result.steps.recommendationCount}, ` +
         `benchmarks=${result.steps.benchmarkCount}, ` +
         `health=${result.steps.healthScore} (${result.steps.healthScoreSource}), ` +
+        `traceId=${result.traceId}, ` +
         `pipelineMs=${result.runtimeMs}, totalMs=${Date.now() - t0}`,
       );
       ok(res, {
         report:    result.report,
         runtimeMs: result.runtimeMs,
+        traceId:   result.traceId,
         steps:     result.steps,
       });
 

@@ -1,5 +1,398 @@
 [
   {
+    "traceId": "e5bf8486-3540-4e42-8e1f-f3311ce9e216",
+    "createdAt": "2026-06-05T11:37:52.784Z",
+    "steps": [
+      {
+        "step": "Document Processing",
+        "startedAt": "2026-06-05T11:37:52.788Z",
+        "completedAt": "2026-06-05T11:37:52.788Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "documents": 0,
+          "transactions": 2,
+          "clientName": "Trace Test Co",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Transaction Extraction",
+        "startedAt": "2026-06-05T11:37:52.788Z",
+        "completedAt": "2026-06-05T11:37:52.788Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 2,
+        "metadata": {
+          "transactions": 2
+        }
+      },
+      {
+        "step": "Findings Generation",
+        "startedAt": "2026-06-05T11:37:52.788Z",
+        "completedAt": "2026-06-05T11:37:52.792Z",
+        "durationMs": 4,
+        "status": "completed",
+        "inputCount": 2,
+        "outputCount": 0,
+        "metadata": {
+          "findings": 0,
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Root Cause Generation",
+        "startedAt": "2026-06-05T11:37:52.792Z",
+        "completedAt": "2026-06-05T11:37:52.792Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "rootCauses": 0,
+          "critical": 0,
+          "high": 0
+        }
+      },
+      {
+        "step": "Recommendation Generation",
+        "startedAt": "2026-06-05T11:37:52.792Z",
+        "completedAt": "2026-06-05T11:37:52.793Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "recommendations": 0,
+          "immediate": 0,
+          "thirtyDays": 0,
+          "ninetyDays": 0,
+          "longTerm": 0
+        }
+      },
+      {
+        "step": "Benchmark Generation",
+        "startedAt": "2026-06-05T11:37:52.793Z",
+        "completedAt": "2026-06-05T11:37:52.793Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "benchmarks": 0,
+          "critical": 0,
+          "elevated": 0,
+          "watchlist": 0,
+          "healthy": 0
+        }
+      },
+      {
+        "step": "Narrative Generation",
+        "startedAt": "2026-06-05T11:37:52.794Z",
+        "completedAt": "2026-06-05T11:37:52.796Z",
+        "durationMs": 2,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 7,
+        "metadata": {
+          "sections": 7,
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Report Composition",
+        "startedAt": "2026-06-05T11:37:52.796Z",
+        "completedAt": "2026-06-05T11:37:52.797Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 1,
+        "metadata": {
+          "reportVersion": "MGD-V1",
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "documents": 0,
+          "transactions": 2,
+          "findings": 0,
+          "rootCauses": 0,
+          "recommendations": 0,
+          "benchmarks": 0
+        }
+      }
+    ]
+  },
+  {
+    "traceId": "1b6367b7-605f-4d71-8104-2955f374eaf1",
+    "createdAt": "2026-06-05T11:37:22.491Z",
+    "steps": [
+      {
+        "step": "Document Processing",
+        "startedAt": "2026-06-05T11:37:22.493Z",
+        "completedAt": "2026-06-05T11:37:22.493Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "documents": 0,
+          "transactions": 2,
+          "clientName": "Trace Test Co",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Transaction Extraction",
+        "startedAt": "2026-06-05T11:37:22.493Z",
+        "completedAt": "2026-06-05T11:37:22.493Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 2,
+        "metadata": {
+          "transactions": 2
+        }
+      },
+      {
+        "step": "Findings Generation",
+        "startedAt": "2026-06-05T11:37:22.493Z",
+        "completedAt": "2026-06-05T11:37:22.493Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 2,
+        "outputCount": 0,
+        "metadata": {
+          "findings": 0,
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Root Cause Generation",
+        "startedAt": "2026-06-05T11:37:22.493Z",
+        "completedAt": "2026-06-05T11:37:22.494Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "rootCauses": 0,
+          "critical": 0,
+          "high": 0
+        }
+      },
+      {
+        "step": "Recommendation Generation",
+        "startedAt": "2026-06-05T11:37:22.494Z",
+        "completedAt": "2026-06-05T11:37:22.494Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "recommendations": 0,
+          "immediate": 0,
+          "thirtyDays": 0,
+          "ninetyDays": 0,
+          "longTerm": 0
+        }
+      },
+      {
+        "step": "Benchmark Generation",
+        "startedAt": "2026-06-05T11:37:22.494Z",
+        "completedAt": "2026-06-05T11:37:22.494Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "benchmarks": 0,
+          "critical": 0,
+          "elevated": 0,
+          "watchlist": 0,
+          "healthy": 0
+        }
+      },
+      {
+        "step": "Narrative Generation",
+        "startedAt": "2026-06-05T11:37:22.494Z",
+        "completedAt": "2026-06-05T11:37:22.494Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 7,
+        "metadata": {
+          "sections": 7,
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Report Composition",
+        "startedAt": "2026-06-05T11:37:22.494Z",
+        "completedAt": "2026-06-05T11:37:22.494Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 1,
+        "metadata": {
+          "reportVersion": "MGD-V1",
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "documents": 0,
+          "transactions": 2,
+          "findings": 0,
+          "rootCauses": 0,
+          "recommendations": 0,
+          "benchmarks": 0
+        }
+      }
+    ]
+  },
+  {
+    "traceId": "8f07c35a-8c52-4255-a133-822e141b2637",
+    "createdAt": "2026-06-05T11:37:01.346Z",
+    "steps": [
+      {
+        "step": "Document Processing",
+        "startedAt": "2026-06-05T11:37:01.349Z",
+        "completedAt": "2026-06-05T11:37:01.349Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "documents": 0,
+          "transactions": 2,
+          "clientName": "Trace Test Co",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Transaction Extraction",
+        "startedAt": "2026-06-05T11:37:01.349Z",
+        "completedAt": "2026-06-05T11:37:01.349Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 2,
+        "metadata": {
+          "transactions": 2
+        }
+      },
+      {
+        "step": "Findings Generation",
+        "startedAt": "2026-06-05T11:37:01.349Z",
+        "completedAt": "2026-06-05T11:37:01.351Z",
+        "durationMs": 2,
+        "status": "completed",
+        "inputCount": 2,
+        "outputCount": 0,
+        "metadata": {
+          "findings": 0,
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Root Cause Generation",
+        "startedAt": "2026-06-05T11:37:01.351Z",
+        "completedAt": "2026-06-05T11:37:01.351Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "rootCauses": 0,
+          "critical": 0,
+          "high": 0
+        }
+      },
+      {
+        "step": "Recommendation Generation",
+        "startedAt": "2026-06-05T11:37:01.351Z",
+        "completedAt": "2026-06-05T11:37:01.354Z",
+        "durationMs": 3,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "recommendations": 0,
+          "immediate": 0,
+          "thirtyDays": 0,
+          "ninetyDays": 0,
+          "longTerm": 0
+        }
+      },
+      {
+        "step": "Benchmark Generation",
+        "startedAt": "2026-06-05T11:37:01.354Z",
+        "completedAt": "2026-06-05T11:37:01.355Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "benchmarks": 0,
+          "critical": 0,
+          "elevated": 0,
+          "watchlist": 0,
+          "healthy": 0
+        }
+      },
+      {
+        "step": "Narrative Generation",
+        "startedAt": "2026-06-05T11:37:01.355Z",
+        "completedAt": "2026-06-05T11:37:01.357Z",
+        "durationMs": 2,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 7,
+        "metadata": {
+          "sections": 7,
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Report Composition",
+        "startedAt": "2026-06-05T11:37:01.357Z",
+        "completedAt": "2026-06-05T11:37:01.357Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 1,
+        "metadata": {
+          "reportVersion": "MGD-V1",
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "documents": 0,
+          "transactions": 2,
+          "findings": 0,
+          "rootCauses": 0,
+          "recommendations": 0,
+          "benchmarks": 0
+        }
+      }
+    ]
+  },
+  {
     "traceId": "1afa22ff-3438-468f-a2e7-317b54f2385d",
     "createdAt": "2026-06-05T11:33:50.449Z",
     "steps": [
