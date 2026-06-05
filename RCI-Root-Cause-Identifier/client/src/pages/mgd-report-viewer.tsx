@@ -453,8 +453,8 @@ export default function MGDReportViewer() {
 
   useEffect(() => {
     async function load() {
-      // 1. Try sessionStorage primary key (archive page writes this)
-      const raw1 = sessionStorage.getItem("mgd_archive_report");
+      // 1. Primary key — written by archive View button
+      const raw1 = sessionStorage.getItem("mgd-selected-report");
       if (raw1) {
         try {
           setReport(JSON.parse(raw1));
@@ -462,8 +462,8 @@ export default function MGDReportViewer() {
           return;
         } catch {}
       }
-      // 2. Try secondary key from spec
-      const raw2 = sessionStorage.getItem("mgd-selected-report");
+      // 2. Legacy fallback key
+      const raw2 = sessionStorage.getItem("mgd_archive_report");
       if (raw2) {
         try {
           setReport(JSON.parse(raw2));

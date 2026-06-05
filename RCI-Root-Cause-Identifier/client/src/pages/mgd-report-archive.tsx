@@ -263,12 +263,12 @@ export default function MGDReportArchive() {
   // ── View / Present — store in sessionStorage then navigate ─────────────────
 
   function handleView(r: StoredMGDReport) {
-    try { sessionStorage.setItem("mgd_archive_report", JSON.stringify(r.report)); } catch {}
+    try { sessionStorage.setItem("mgd-selected-report", JSON.stringify(r.report)); } catch {}
     navigate("/mgd/report");
   }
 
   function handlePresent(r: StoredMGDReport) {
-    try { sessionStorage.setItem("mgd_archive_report", JSON.stringify(r.report)); } catch {}
+    try { sessionStorage.setItem("mgd-selected-report", JSON.stringify(r.report)); } catch {}
     navigate("/mgd/present");
   }
 
