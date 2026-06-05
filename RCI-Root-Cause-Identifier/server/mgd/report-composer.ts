@@ -19,6 +19,11 @@ import type { RootCause }                 from "./root-cause-engine";
 import type { OperationalRecommendation } from "./recommendation-engine";
 import type { BenchmarkResult }           from "./benchmark-engine";
 import type { ExecutiveNarrativeReport }  from "./executive-narrative-engine";
+import {
+  generateIndustryInsights,
+  type IndustryRule,
+  type MaturityLevel,
+} from "./industry-engine.js";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -74,6 +79,13 @@ export interface MGDReport {
       elevated:  number;
       critical:  number;
     };
+  };
+
+  industryInsights?: {
+    maturityLevel:    MaturityLevel;
+    rules:            IndustryRule[];
+    topRisks:         IndustryRule[];   // HIGH + CRITICAL rules, desc by confidence
+    topOpportunities: IndustryRule[];   // LOW + MEDIUM rules, desc by confidence
   };
 }
 
@@ -261,8 +273,22 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
     const sortedBenchmarks      = sortBenchmarks(benchmarks);
 
     // Build sub-sections
-    const summary      = buildSummaryMetrics(sortedFindings, sortedRootCauses, sortedRecommendations, sortedBenchmarks);
+    const summary       = buildSummaryMetrics(sortedFindings, sortedRootCauses, sortedRecommendations, sortedBenchmarks);
     const visualMetrics = buildVisualMetrics(operationalHealthScore, sortedFindings, sortedBenchmarks);
+
+    // Industry insights — deterministic, never throws
+    const insightsResult = generateIndustryInsights({
+      industry,
+      findings:   sortedFindings,
+      rootCauses: sortedRootCauses,
+      benchmarks: sortedBenchmarks,
+      metrics:    operationalHealthScore != null
+        ? { operationalHealthScore }
+        : {},
+    });
+    const topRisks         = insightsResult.rules.filter(r => r.severity === "HIGH" || r.severity === "CRITICAL");
+    const topOpportunities = insightsResult.rules.filter(r => r.severity === "LOW"  || r.severity === "MEDIUM");
+    // Both sub-arrays inherit the descending-confidence sort from the pack evaluator
 
     const report: MGDReport = {
       metadata: {
@@ -279,6 +305,12 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
       recommendations: sortedRecommendations,
       benchmarks:      sortedBenchmarks,
       visualMetrics,
+      industryInsights: {
+        maturityLevel:    insightsResult.maturityLevel,
+        rules:            insightsResult.rules,
+        topRisks,
+        topOpportunities,
+      },
     };
 
     // Log summary
@@ -288,7 +320,9 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
       `criticalFindings=${summary.criticalFindings}, ` +
       `criticalRootCauses=${summary.criticalRootCauses}, ` +
       `highPriorityRecs=${summary.highPriorityRecommendations}, ` +
-      `benchmarkAlerts=${summary.benchmarkAlerts}`,
+      `benchmarkAlerts=${summary.benchmarkAlerts}, ` +
+      `maturity=${insightsResult.maturityLevel}, ` +
+      `industryRules=${insightsResult.rules.length} (risks=${topRisks.length} opps=${topOpportunities.length})`,
     );
     console.log(`[MGD][REPORT]   Health: ${visualMetrics.operationalHealthLabel} | Risk: ${visualMetrics.operationalRiskLevel}`);
     console.log(
@@ -346,6 +380,12 @@ function buildEmptyReport(): MGDReport {
       operationalHealthLabel:   "Not Assessed",
       operationalRiskLevel:     "Controlled",
       benchmarkStatusBreakdown: { healthy: 0, watchlist: 0, elevated: 0, critical: 0 },
+    },
+    industryInsights: {
+      maturityLevel:    "FOUNDATIONAL",
+      rules:            [],
+      topRisks:         [],
+      topOpportunities: [],
     },
   };
 }
