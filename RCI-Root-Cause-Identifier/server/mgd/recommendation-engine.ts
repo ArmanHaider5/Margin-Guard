@@ -83,6 +83,9 @@ const RC_EM = {
   ER_CONTROL:    "Event Readiness Control Failure",
   ASSET_ACCOUNT: "Asset Accountability Weakness",
   DISPATCH_PLAN: "Dispatch Planning Immaturity",
+  // Extended V2
+  INV_BREAKDOWN: "Inventory Control Breakdown",
+  DISPATCH_DEP:  "Dispatch Planning Dependency",
 } as const;
 
 // ── Finding category constants ─────────────────────────────────────────────────
@@ -1055,6 +1058,186 @@ export function detectEventReadinessControlGate(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT PACK V2 — EXTENDED RECOMMENDATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Recommendation: Missing Item Prevention Workflow ──────────────────────────
+//
+// Triggered by any inventory shortage or event readiness finding, or by
+// Inventory Control Breakdown root cause.  Delivers a concrete workflow for
+// eliminating the missing-item pattern at its source: pre-dispatch verification.
+
+export function detectMissingItemPreventionWorkflow(
+  findings:   OperationalFinding[],
+  rootCauses: RootCause[],
+): OperationalRecommendation | null {
+  const triggerFindings = findings.filter(f =>
+    [FC_EM.READINESS, FC.INV].includes(f.category as any) && f.severity !== "LOW",
+  );
+  const triggerRCs = rootCauses.filter(rc =>
+    [RC_EM.INV_BREAKDOWN, RC_EM.INV_GOV, RC_EM.ER_CONTROL].includes(rc.title as any),
+  );
+
+  if (triggerFindings.length === 0 && triggerRCs.length === 0) return null;
+
+  const topFinding = [...triggerFindings].sort((a, b) => b.confidence - a.confidence)[0];
+  const topRC      = [...triggerRCs].sort((a, b) => b.confidence - a.confidence)[0];
+  const confidence = cap(
+    Math.max(
+      topFinding?.confidence ?? 0,
+      topRC?.confidence       ?? 0,
+    ) - 5,
+  );
+
+  if (confidence < 30) return null;
+
+  return {
+    id:       hashRecommendation("Missing Item Prevention Workflow"),
+    title:    "Missing Item Prevention Workflow",
+    category: REC_CATEGORIES.EVENT_READINESS_CONTROL,
+    priority: topRC?.severity === "CRITICAL" || topFinding?.severity === "CRITICAL"
+              ? "CRITICAL" : "HIGH",
+    timeframe: "30 days",
+    confidence,
+    summary:
+      "Implement a structured pre-dispatch verification workflow that confirms every item on the " +
+      "event manifest is physically present and loaded before departure — eliminating missing items " +
+      "as a category of operational failure.",
+    rationale:
+      "Missing items are a leading cause of on-site disruptions and client dissatisfaction. " +
+      "The pattern of recurring shortages indicates that the current process has no mandatory " +
+      "verification step between inventory and dispatch. A structured workflow closes this gap.",
+    actionItems: [
+      "Create an event manifest template listing every item required per event type.",
+      "Require a two-person verification check (one calls items, one confirms load) before vehicle departure.",
+      "Record any item that cannot be verified as a pre-dispatch shortfall — triggering an immediate substitute or client notification.",
+      "After each event, log which items were missing and trace back to inventory record — close the loop within 24 hours.",
+      "Review missing item frequency weekly for the first 30 days to identify chronically short SKUs.",
+    ],
+    triggeringFindings:   triggerFindings.map(f => f.id),
+    triggeringRootCauses: triggerRCs.map(rc => rc.id),
+  };
+}
+
+// ── Recommendation: Damage Recovery Programme ─────────────────────────────────
+//
+// Triggered by asset management findings or Asset Accountability Weakness root
+// cause.  Addresses the systematic failure to recover charges for damaged assets
+// with a structured programme that tracks damage, assigns accountability, and
+// ensures recovery is completed before the next event.
+
+export function detectDamageRecoveryProgramme(
+  findings:   OperationalFinding[],
+  rootCauses: RootCause[],
+): OperationalRecommendation | null {
+  const triggerFindings = findings.filter(f =>
+    f.category === FC_EM.ASSET && f.severity !== "LOW",
+  );
+  const triggerRCs = rootCauses.filter(rc =>
+    [RC_EM.ASSET_ACCOUNT].includes(rc.title as any),
+  );
+
+  if (triggerFindings.length === 0 && triggerRCs.length === 0) return null;
+
+  const topFinding = [...triggerFindings].sort((a, b) => b.confidence - a.confidence)[0];
+  const topRC      = [...triggerRCs].sort((a, b) => b.confidence - a.confidence)[0];
+  const confidence = cap(
+    Math.max(
+      topFinding?.confidence ?? 0,
+      topRC?.confidence       ?? 0,
+    ) - 5,
+  );
+
+  if (confidence < 30) return null;
+
+  return {
+    id:       hashRecommendation("Damage Recovery Programme"),
+    title:    "Damage Recovery Programme",
+    category: REC_CATEGORIES.ASSET_RECOVERY,
+    priority: topRC?.severity === "CRITICAL" || topFinding?.severity === "CRITICAL"
+              ? "CRITICAL" : "HIGH",
+    timeframe: "60 days",
+    confidence,
+    summary:
+      "Establish a formal Damage Recovery Programme that ensures every recorded asset damage " +
+      "event results in a documented recovery outcome — whether charge recovery from the responsible " +
+      "party, insurance claim, or a written-off decision with approval.",
+    rationale:
+      "Unrecovered damage charges represent a direct financial loss that compounds over time. " +
+      "The current absence of a structured programme means damaged assets are either written off " +
+      "informally or recovery is forgotten, with no audit trail or accountability.",
+    actionItems: [
+      "Create a Damage Incident Register: asset, event date, damage description, estimated cost, responsible party.",
+      "Assign a recovery owner for each damage event — responsible for obtaining charge or escalating within 7 days.",
+      "Set a 30-day close-out deadline per incident: either recovered, formally waived, or insurance-claimed.",
+      "Track Recovery Amount separately from Damage Cost — report recovery rate monthly.",
+      "Review open incidents weekly until recovery rate exceeds 80%.",
+    ],
+    triggeringFindings:   triggerFindings.map(f => f.id),
+    triggeringRootCauses: triggerRCs.map(rc => rc.id),
+  };
+}
+
+// ── Recommendation: Dispatch Control Tower ────────────────────────────────────
+//
+// Triggered by dispatch operations findings or Dispatch Planning Dependency root
+// cause.  Recommends a centralised real-time coordination point for all active
+// dispatches — a "control tower" model where one person has full visibility of
+// all live dispatches and can intervene before issues become client-facing.
+
+export function detectDispatchControlTower(
+  findings:   OperationalFinding[],
+  rootCauses: RootCause[],
+): OperationalRecommendation | null {
+  const triggerFindings = findings.filter(f =>
+    f.category === FC_EM.DISPATCH && f.severity !== "LOW",
+  );
+  const triggerRCs = rootCauses.filter(rc =>
+    [RC_EM.DISPATCH_DEP, RC_EM.DISPATCH_PLAN].includes(rc.title as any),
+  );
+
+  if (triggerFindings.length === 0 && triggerRCs.length === 0) return null;
+
+  const topFinding = [...triggerFindings].sort((a, b) => b.confidence - a.confidence)[0];
+  const topRC      = [...triggerRCs].sort((a, b) => b.confidence - a.confidence)[0];
+  const confidence = cap(
+    Math.max(
+      topFinding?.confidence ?? 0,
+      topRC?.confidence       ?? 0,
+    ) - 5,
+  );
+
+  if (confidence < 30) return null;
+
+  return {
+    id:       hashRecommendation("Dispatch Control Tower"),
+    title:    "Dispatch Control Tower",
+    category: REC_CATEGORIES.LOGISTICS_OPTIMIZATION,
+    priority: topRC?.severity === "CRITICAL" || topFinding?.severity === "CRITICAL"
+              ? "CRITICAL" : "HIGH",
+    timeframe: "60 days",
+    confidence,
+    summary:
+      "Establish a Dispatch Control Tower — a single coordination role or function with real-time " +
+      "visibility of all active dispatches, their status, ETAs, and any exceptions — so that delays " +
+      "and failures are identified and escalated before they become client-facing events.",
+    rationale:
+      "Recurring dispatch failures and delays indicate that no one has live visibility of what is " +
+      "happening across all active dispatches simultaneously. A control tower model centralises " +
+      "this visibility, enabling proactive intervention rather than reactive problem-solving.",
+    actionItems: [
+      "Designate a Dispatch Controller for each event day — responsible for all active dispatch tracking.",
+      "Require drivers to confirm departure time, checkpoint 1 (halfway), and arrival — via phone or messaging channel.",
+      "Build a simple dispatch dashboard: driver name, destination, planned ETA, actual ETA, status (on time / delayed / issue).",
+      "Define escalation triggers: >15 min delay → controller contacts driver; >30 min → client notified.",
+      "Log all dispatch outcomes per event to generate a weekly Dispatch Reliability Rate metric.",
+    ],
+    triggeringFindings:   triggerFindings.map(f => f.id),
+    triggeringRootCauses: triggerRCs.map(rc => rc.id),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DETECTOR REGISTRY
 // Add new industry-pack detectors here without modifying existing code.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1083,6 +1266,10 @@ const DETECTORS: DetectorFn[] = [
   detectWarehouseCycleCountProgramme,
   detectInventoryAccountabilityMatrix,
   detectEventReadinessControlGate,
+  // ── Event Management Pack V2 — Extended ──────────────────────────────────
+  detectMissingItemPreventionWorkflow,
+  detectDamageRecoveryProgramme,
+  detectDispatchControlTower,
 ];
 
 const CONFIDENCE_THRESHOLD = 30;

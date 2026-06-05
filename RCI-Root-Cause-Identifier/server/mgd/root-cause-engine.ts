@@ -79,9 +79,14 @@ const SEVERITY_SCORE: Record<string, number> = {
   CRITICAL: 20, HIGH: 15, MEDIUM: 10, LOW: 5,
 };
 
+/**
+ * Root cause severity thresholds.
+ * Deliberately set slightly higher than finding thresholds (70/50/30) because
+ * root causes are corroborated patterns — they require stronger evidence.
+ */
 function severityFrom(confidence: number): RootCause["severity"] {
-  if (confidence >= 85) return "CRITICAL";
-  if (confidence >= 65) return "HIGH";
+  if (confidence >= 80) return "CRITICAL";
+  if (confidence >= 60) return "HIGH";
   if (confidence >= 40) return "MEDIUM";
   return "LOW";
 }
@@ -739,6 +744,120 @@ export function detectDispatchPlanningImmaturity(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT PACK V2 — EXTENDED ROOT CAUSE DETECTORS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Root Cause: Inventory Control Breakdown ───────────────────────────────────
+//
+// Fires when inventory visibility findings combine with shortage or readiness
+// findings to indicate a systemic breakdown in inventory control — not just a
+// governance process gap, but an active control failure.
+// Distinct from "Inventory Governance Deficiency" (process/policy gap) in that
+// it specifically requires evidence of observable shortages or readiness failure.
+
+export function detectInventoryControlBreakdown(
+  findings: OperationalFinding[],
+): RootCause | null {
+  const invFinds  = byCategory(findings, CAT.INV);
+  const readyFinds = byCategory(findings, CAT.EM_READINESS);
+  const dispFinds  = byCategory(findings, CAT.EM_DISPATCH);
+
+  // Requires inventory evidence AND at least one corroborating EM signal
+  const emCorroboration = [...readyFinds, ...dispFinds];
+  if (invFinds.length === 0 || emCorroboration.length === 0) return null;
+
+  const contributing = [...invFinds, ...emCorroboration];
+  const confidence   = accumulateConfidence(contributing);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(
+    `[MGD][ROOT_CAUSE] detectInventoryControlBreakdown → ` +
+    `confidence=${confidence} (inv=${invFinds.length}, em=${emCorroboration.length})`,
+  );
+
+  return {
+    id:       makeId("Inventory Control Breakdown"),
+    title:    "Inventory Control Breakdown",
+    severity: severityFrom(confidence),
+    confidence,
+    summary:
+      "Inventory management has broken down at the operational level — not merely a process gap " +
+      "but an active control failure visible in missing items, event shortages, and dispatch discrepancies. " +
+      "Stock availability is not systematically verified against event manifests before dispatch, " +
+      "and there is no automated alert when inventory falls below event requirements.",
+    contributingFindings: contributing.map(f => f.id),
+    operationalImpact: [
+      "Shortages discovered on event day rather than pre-dispatch leave no time for corrective action.",
+      "Substitutions and missing items generate untracked client resolution costs.",
+      "Repeated shortfalls erode client trust and increase the risk of contract non-renewal.",
+      "Without visibility into real-time stock, procurement decisions are reactive and over-stocked.",
+    ],
+    recommendations: [
+      "Implement event-manifest-to-inventory matching check 48 hours before each event.",
+      "Set minimum stock level alerts on all high-usage event items.",
+      "Track missing items and substitutions per event to identify chronically short SKUs.",
+    ],
+  };
+}
+
+// ── Root Cause: Dispatch Planning Dependency ──────────────────────────────────
+//
+// Fires when dispatch operations findings are present, pointing specifically to
+// the DEPENDENCY on manual, person-driven planning rather than systematised
+// dispatch control.  Distinct from "Dispatch Planning Immaturity" (which covers
+// broader maturity) — this root cause names the dependency risk: the business
+// cannot dispatch reliably without specific people making specific decisions.
+
+export function detectDispatchPlanningDependency(
+  findings: OperationalFinding[],
+): RootCause | null {
+  const dispFinds = byCategory(findings, CAT.EM_DISPATCH);
+  const logFinds  = byCategory(findings, CAT.LOG);
+
+  // At least 1 dispatch finding required
+  if (dispFinds.length === 0) return null;
+
+  // Require either a HIGH/CRITICAL dispatch finding or 2+ dispatch findings
+  const strongDispatch = dispFinds.filter(
+    f => f.severity === "HIGH" || f.severity === "CRITICAL",
+  );
+  if (strongDispatch.length === 0 && dispFinds.length < 2) return null;
+
+  const contributing = [...dispFinds, ...logFinds];
+  const confidence   = accumulateConfidence(contributing);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(
+    `[MGD][ROOT_CAUSE] detectDispatchPlanningDependency → ` +
+    `confidence=${confidence} (dispatch=${dispFinds.length}, strong=${strongDispatch.length})`,
+  );
+
+  return {
+    id:       makeId("Dispatch Planning Dependency"),
+    title:    "Dispatch Planning Dependency",
+    severity: severityFrom(confidence),
+    confidence,
+    summary:
+      "The business depends on key individuals making real-time dispatch decisions rather than " +
+      "following a systematic, documented dispatch plan. This creates fragility: when those individuals " +
+      "are unavailable, dispatch quality degrades significantly. Recurring failures and delays confirm " +
+      "that current dispatch relies on personal coordination rather than a repeatable control system.",
+    contributingFindings: contributing.map(f => f.id),
+    operationalImpact: [
+      "Dispatch quality is tied to the availability and judgment of specific staff members.",
+      "No structured dispatch plan means no standard to audit failures against.",
+      "Manual coordination breaks down under simultaneous multi-event scheduling.",
+      "Clients bear the consequences of planning gaps as incomplete or delayed deliveries.",
+    ],
+    recommendations: [
+      "Create a standard dispatch manifest: item list, load sequence, route, departure time, contact.",
+      "Require dispatch plans to be completed and approved 24 hours before each event.",
+      "Build and maintain a dispatch log so each completed event generates a performance record.",
+    ],
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DETECTOR REGISTRY
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -758,6 +877,9 @@ const DETECTORS: RootCauseDetector[] = [
   detectEventReadinessControlFailure,
   detectAssetAccountabilityWeakness,
   detectDispatchPlanningImmaturity,
+  // ── Event Management Pack V2 — Extended ──────────────────────────────────
+  detectInventoryControlBreakdown,
+  detectDispatchPlanningDependency,
 ];
 
 const CONFIDENCE_THRESHOLD = 25;

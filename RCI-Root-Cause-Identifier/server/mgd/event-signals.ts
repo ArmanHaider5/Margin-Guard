@@ -12,14 +12,17 @@
 export interface EventSignals {
   // ── Dispatch reliability ──────────────────────────────────────────────────
   dispatchFailureRate:      number;   // incomplete dispatches / total dispatches
-  inventoryShortageRate:    number;   // missing items / total dispatched items
-  substitutionRate:         number;   // substitutions / total dispatched items
-  deliveryDelayRate:        number;   // delayed dispatches / total dispatches
+  dispatchDelayRate:        number;   // delayed dispatches / total dispatches (alias: deliveryDelayRate)
+  deliveryDelayRate:        number;   // same as dispatchDelayRate (legacy name kept for internal detectors)
   averageDelayMinutes:      number;   // mean minutes across delayed dispatches
+  substitutionRate:         number;   // substitutions / total dispatched items
+  missingItemRate:          number;   // missing items / total dispatched items (alias: inventoryShortageRate)
+  inventoryShortageRate:    number;   // same as missingItemRate (legacy name kept for internal detectors)
 
   // ── Asset management ──────────────────────────────────────────────────────
   assetDamageRate:          number;   // damage events / distinct assets seen
   damageRecoveryRate:       number;   // recovered events / total damage events
+  unrecoveredDamageRate:    number;   // unrecovered events / total damage events (= 1 − damageRecoveryRate)
   unrecoveredDamageValue:   number;   // RM value unrecovered
 
   // ── Composite scores (0–100) ──────────────────────────────────────────────
@@ -70,9 +73,11 @@ function extract(rawText: string, key: string): string | null {
  */
 export function computeEventSignals(transactions: any[]): EventSignals {
   const NEUTRAL: EventSignals = {
-    dispatchFailureRate: 0, inventoryShortageRate: 0, substitutionRate: 0,
-    deliveryDelayRate: 0, averageDelayMinutes: 0, assetDamageRate: 0,
-    damageRecoveryRate: 1, unrecoveredDamageValue: 0,
+    dispatchFailureRate: 0, dispatchDelayRate: 0, deliveryDelayRate: 0,
+    averageDelayMinutes: 0, substitutionRate: 0,
+    missingItemRate: 0, inventoryShortageRate: 0,
+    assetDamageRate: 0, damageRecoveryRate: 1,
+    unrecoveredDamageRate: 0, unrecoveredDamageValue: 0,
     inventoryVisibilityScore: 100, eventReadinessScore: 100,
     totalDispatches: 0, incompleteDispatches: 0, totalMissingItems: 0,
     totalDispatchedItems: 0, totalSubstitutions: 0, delayedDispatches: 0,
@@ -153,11 +158,17 @@ export function computeEventSignals(transactions: any[]): EventSignals {
       totalDamageEvents++;
       if (entity) assetsSeen.add(entity.toLowerCase());
 
+      // "Charge Recovered?" column → Yes/No
       const recVal = extract(rawText, "Charge Recovered?") ?? extract(rawText, "Charge Recovered");
-      const isRecovered = recVal ? /^yes$/i.test(recVal) : val > 0;
+      // "Recovery Amount" column → explicit RM amount recovered
+      const recAmountRaw = extract(rawText, "Recovery Amount") ?? extract(rawText, "Amount Recovered");
+      const recAmount    = safeNum(recAmountRaw ?? "");
+
+      const isRecovered = recVal ? /^yes$/i.test(recVal) : recAmount > 0;
       if (isRecovered) {
         recoveredDamageEvents++;
-        recoveredDamageValue += val;
+        // Use explicit Recovery Amount when available; fall back to full damage value
+        recoveredDamageValue += recAmount > 0 ? recAmount : val;
       }
       totalDamageValue += val;
     }
@@ -176,8 +187,10 @@ export function computeEventSignals(transactions: any[]): EventSignals {
 
   const dispatchFailureRate   = rate(incompleteDispatches, totalDispatches);
   const inventoryShortageRate = rate(totalMissingItems, totalDispatchedItems);
+  const missingItemRate       = inventoryShortageRate;   // canonical name per spec
   const substitutionRate      = rate(totalSubstitutions, Math.max(totalDispatchedItems, 1));
   const deliveryDelayRate     = rate(delayedDispatches, totalDispatches);
+  const dispatchDelayRate     = deliveryDelayRate;        // canonical name per spec
   const averageDelayMinutes   = delayMinutesList.length > 0
     ? delayMinutesList.reduce((s, v) => s + v, 0) / delayMinutesList.length
     : 0;
@@ -185,6 +198,7 @@ export function computeEventSignals(transactions: any[]): EventSignals {
     ? Math.min(1, totalDamageEvents / assetsSeen.size) : 0;
   const damageRecoveryRate    = totalDamageEvents > 0
     ? rate(recoveredDamageEvents, totalDamageEvents) : 1;
+  const unrecoveredDamageRate = 1 - damageRecoveryRate;  // fraction unrecovered
   const unrecoveredDamageValue = Math.max(0, totalDamageValue - recoveredDamageValue);
 
   // ── Composite scores ──────────────────────────────────────────────────────
@@ -208,12 +222,15 @@ export function computeEventSignals(transactions: any[]): EventSignals {
 
   return {
     dispatchFailureRate,
-    inventoryShortageRate,
-    substitutionRate,
+    dispatchDelayRate,
     deliveryDelayRate,
     averageDelayMinutes,
+    substitutionRate,
+    missingItemRate,
+    inventoryShortageRate,
     assetDamageRate,
     damageRecoveryRate,
+    unrecoveredDamageRate,
     unrecoveredDamageValue,
     inventoryVisibilityScore,
     eventReadinessScore,

@@ -1032,6 +1032,247 @@ function detectLogisticsReliabilityDegradation(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DETECTOR REGISTRY
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT PACK V2 — EXTENDED DETECTORS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Detector: Dispatch Reliability Risk ───────────────────────────────────────
+//
+// Composite finding that combines dispatch failure rate AND delay rate into a
+// single reliability score.  Surfaces when either dimension exceeds threshold,
+// giving consultants one clear signal for overall dispatch reliability.
+// Evidence extracted from: Dispatch Complete?, Delay Mins, Missing Items,
+// Substitutions — matching the EM Pack V2 evidence field specification.
+
+export function detectDispatchReliabilityRisk(
+  _stats: TxStats,
+  _transactions: any[],
+  params: FindingsParams,
+): OperationalFinding | null {
+  const em = params.eventSignals;
+  if (!em) return null;
+
+  const { dispatchFailureRate, dispatchDelayRate, averageDelayMinutes,
+          substitutionRate, totalDispatches, incompleteDispatches,
+          delayedDispatches } = em;
+
+  if (dispatchFailureRate <= 0.05 && dispatchDelayRate <= 0.10) return null;
+
+  const evidence: string[] = [];
+
+  if (incompleteDispatches > 0) {
+    const pct = Math.round(dispatchFailureRate * 100);
+    evidence.push(
+      `${incompleteDispatches} of ${totalDispatches} dispatches incomplete ` +
+      `(Dispatch Complete?: No) — ${pct}% failure rate`,
+    );
+  }
+  if (delayedDispatches > 0) {
+    const pct = Math.round(dispatchDelayRate * 100);
+    evidence.push(
+      `${delayedDispatches} delayed dispatches across ${totalDispatches} events ` +
+      `— ${pct}% delay rate`,
+    );
+  }
+  if (averageDelayMinutes > 0) {
+    evidence.push(`Average Delay Mins: ${Math.round(averageDelayMinutes)} min per delayed dispatch`);
+  }
+  if (substitutionRate > 0.05) {
+    const pct = Math.round(substitutionRate * 100);
+    evidence.push(
+      `Substitution rate at ${pct}% — items routinely replaced at dispatch ` +
+      `rather than correct items loaded at source`,
+    );
+  }
+
+  // Rates are 0–1 fractions; scale to 0–100 confidence range
+  const confidence = cap(
+    Math.round(
+      dispatchFailureRate * 45 +
+      dispatchDelayRate   * 30 +
+      substitutionRate    * 15 +
+      (averageDelayMinutes > 30 ? 10 : averageDelayMinutes > 0 ? 5 : 0),
+    ),
+  );
+
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(`[MGD][FINDINGS] detectDispatchReliabilityRisk → confidence=${confidence}`);
+
+  return {
+    id:       makeId("Dispatch Reliability Risk", FINDING_CATEGORIES.DISPATCH_OPERATIONS),
+    title:    "Dispatch Reliability Risk",
+    severity: severityFrom(confidence),
+    category: FINDING_CATEGORIES.DISPATCH_OPERATIONS,
+    department: "Logistics / Operations",
+    summary:
+      `Dispatch operations show a systemic reliability gap — ` +
+      `${Math.round(dispatchFailureRate * 100)}% incomplete and ` +
+      `${Math.round(dispatchDelayRate * 100)}% delayed across ${totalDispatches} events. ` +
+      `Substitution patterns and delay minutes confirm that the root issue is ` +
+      `pre-dispatch planning and load verification, not execution alone.`,
+    signals: evidence,
+    operationalImpact:
+      "Unreliable dispatch directly degrades the client experience at events. " +
+      "Incomplete or delayed deliveries create on-site emergency sourcing, increase labour costs, " +
+      "and erode client confidence in the business's operational capability.",
+    confidence,
+  };
+}
+
+// ── Detector: Event Readiness Exposure ────────────────────────────────────────
+//
+// Fires when a combination of missing items, substitutions, and delivery delays
+// reveals that the business is routinely arriving at events under-prepared.
+// Draws evidence from: Missing Items, Substitutions, Delay Mins, and the
+// composite Event Readiness Score.
+
+export function detectEventReadinessExposure(
+  _stats: TxStats,
+  _transactions: any[],
+  params: FindingsParams,
+): OperationalFinding | null {
+  const em = params.eventSignals;
+  if (!em) return null;
+
+  const { missingItemRate, substitutionRate, eventReadinessScore,
+          totalMissingItems, totalSubstitutions, averageDelayMinutes,
+          totalDispatches } = em;
+
+  if (missingItemRate <= 0.01 && substitutionRate <= 0.05 && eventReadinessScore >= 80) return null;
+
+  const evidence: string[] = [];
+
+  if (totalMissingItems > 0) {
+    const pct = Math.round(missingItemRate * 100);
+    evidence.push(
+      `Missing Items: ${totalMissingItems} items undelivered across ` +
+      `${totalDispatches} events (${pct}% missing item rate)`,
+    );
+  }
+  if (totalSubstitutions > 0) {
+    const pct = Math.round(substitutionRate * 100);
+    evidence.push(
+      `Substitutions: ${totalSubstitutions} item substitutions recorded ` +
+      `— correct items not available at dispatch time (${pct}% rate)`,
+    );
+  }
+  if (averageDelayMinutes > 0) {
+    evidence.push(
+      `Average Delay Mins: ${Math.round(averageDelayMinutes)} min — ` +
+      `late arrivals compress event setup windows`,
+    );
+  }
+  evidence.push(`Event Readiness Score: ${eventReadinessScore}/100 — below operational threshold`);
+
+  // Confidence: readiness gap + missing item pressure + substitution rate
+  const readinessGap  = Math.max(0, 80 - eventReadinessScore);
+  const confidence = cap(
+    Math.round(readinessGap * 0.8 + missingItemRate * 120 + substitutionRate * 60),
+  );
+
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(`[MGD][FINDINGS] detectEventReadinessExposure → confidence=${confidence} (readinessScore=${eventReadinessScore})`);
+
+  return {
+    id:       makeId("Event Readiness Exposure", FINDING_CATEGORIES.EVENT_READINESS),
+    title:    "Event Readiness Exposure",
+    severity: severityFrom(confidence),
+    category: FINDING_CATEGORIES.EVENT_READINESS,
+    department: "Operations / Event Management",
+    summary:
+      `Evidence from ${totalDispatches} event dispatches shows the business routinely ` +
+      `arrives at events with missing items, substitutions, and delivery delays. ` +
+      `The Event Readiness Score of ${eventReadinessScore}/100 reflects a structural ` +
+      `gap between what clients expect to be delivered and what actually arrives on site.`,
+    signals: evidence,
+    operationalImpact:
+      "Under-readiness at events forces last-minute improvisation, increases on-site resolution labour, " +
+      "and risks client dissatisfaction or claims. Repeated exposure damages the brand's reliability " +
+      "reputation and can trigger contract penalties or non-renewals.",
+    confidence,
+  };
+}
+
+// ── Detector: Inventory Shortage Pattern ──────────────────────────────────────
+//
+// Fires when missing items are not isolated incidents but form a recurring
+// pattern across multiple events — indicating a structural inventory problem
+// rather than one-off errors.  Evidence from Missing Items column specifically.
+
+export function detectInventoryShortagePattern(
+  _stats: TxStats,
+  _transactions: any[],
+  params: FindingsParams,
+): OperationalFinding | null {
+  const em = params.eventSignals;
+  if (!em) return null;
+
+  const { missingItemRate, totalMissingItems, totalDispatches,
+          inventoryShortageRate, inventoryVisibilityScore } = em;
+
+  if (totalMissingItems === 0 || (missingItemRate <= 0.02 && totalDispatches < 2)) return null;
+
+  const evidence: string[] = [];
+
+  evidence.push(
+    `Missing Items: ${totalMissingItems} total units missing across ` +
+    `${totalDispatches} dispatch events`,
+  );
+
+  const pct = Math.round(inventoryShortageRate * 100);
+  if (pct > 0) {
+    evidence.push(
+      `Shortage rate: ${pct}% of dispatched items recorded as missing — ` +
+      `pattern indicates pre-existing stock shortfalls, not one-off errors`,
+    );
+  }
+
+  if (inventoryVisibilityScore < 80) {
+    evidence.push(
+      `Inventory Visibility Score: ${inventoryVisibilityScore}/100 — ` +
+      `poor visibility means shortages may only surface at the event, not during loading`,
+    );
+  }
+
+  if (totalDispatches >= 3 && totalMissingItems > 0) {
+    evidence.push(
+      `Shortage pattern spans ${totalDispatches} separate dispatch events — ` +
+      `consistent occurrence rules out isolated packing errors`,
+    );
+  }
+
+  // Confidence: shortage rate + volume + multi-event pattern
+  const patternBonus = totalDispatches >= 3 ? 15 : totalDispatches >= 2 ? 8 : 0;
+  const confidence = cap(
+    Math.round(missingItemRate * 250 + (totalMissingItems > 10 ? 20 : totalMissingItems > 3 ? 10 : 5) + patternBonus),
+  );
+
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(`[MGD][FINDINGS] detectInventoryShortagePattern → confidence=${confidence} (missingItems=${totalMissingItems}, dispatches=${totalDispatches})`);
+
+  return {
+    id:       makeId("Inventory Shortage Pattern", FINDING_CATEGORIES.INVENTORY_VISIBILITY),
+    title:    "Inventory Shortage Pattern",
+    severity: severityFrom(confidence),
+    category: FINDING_CATEGORIES.INVENTORY_VISIBILITY,
+    department: "Warehouse / Inventory",
+    summary:
+      `${totalMissingItems} missing items across ${totalDispatches} dispatch events ` +
+      `form a recurring shortage pattern that cannot be attributed to isolated packing errors. ` +
+      `The pattern suggests that inventory availability is not confirmed against the ` +
+      `event manifest before dispatch — creating predictable shortfalls on event day.`,
+    signals: evidence,
+    operationalImpact:
+      "Recurring shortages force on-site improvisation, client substitution agreements, and emergency sourcing. " +
+      "Each shortage event carries a client satisfaction cost and an untracked operational labour cost " +
+      "to resolve the gap on event day.",
+    confidence,
+  };
+}
+
 // Add new detectors here — each receives (stats, transactions, params).
 // Return null to suppress the finding.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1052,6 +1293,10 @@ const DETECTORS: DetectorFn[] = [
   (s, t, p) => detectAssetDamageRecoveryLeakage(s, t, p),
   (s, t, p) => detectEventReadinessRisk(s, t, p),
   (s, t, p) => detectLogisticsReliabilityDegradation(s, t, p),
+  // ── Event Management Pack V2 — Extended ─────────────────────────────────
+  (s, t, p) => detectDispatchReliabilityRisk(s, t, p),
+  (s, t, p) => detectEventReadinessExposure(s, t, p),
+  (s, t, p) => detectInventoryShortagePattern(s, t, p),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
