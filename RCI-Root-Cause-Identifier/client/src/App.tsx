@@ -31,6 +31,7 @@ import ClientIssues from "@/pages/client/issues";
 import ClientAnalysisDetail from "@/pages/client/analysis-detail";
 import MGDDashboard from "../../server/frontend/mgd/mgd-dashboard";
 import MGDReportPage from "@/pages/mgd-report-page";
+import MGDReportViewer from "@/pages/mgd-report-viewer";
 import MGDRunnerPage from "@/pages/mgd-runner-page";
 import MGDPresentationMode from "@/pages/mgd-presentation-mode";
 import MGDReportArchive from "@/pages/mgd-report-archive";
@@ -85,7 +86,7 @@ function Router() {
         <Route path="/admin/documents/:id" component={DocumentDetail} />
         <Route path="/mgd" component={MGDDashboard} />
         <Route path="/mgd/reports" component={MGDReportArchive} />
-        <Route path="/mgd/report" component={MGDReportPage} />
+        <Route path="/mgd/report" component={MGDReportViewer} />
         <Route path="/mgd/run" component={MGDRunnerPage} />
         <Route path="/mgd/present" component={MGDPresentationMode} />
         
