@@ -24,18 +24,23 @@ function safeString(value: any): string {
 }
 
 export interface ColumnMap {
-  entityName?:    number;
-  customer?:      number;
-  quantityOut?:   number;
-  quantityIn?:    number;
-  balance?:       number;
-  value?:         number;
-  refund?:        number;
-  date?:          number;
-  referenceId?:   number;
-  remarks?:       number;
-  driver?:        number;
-  vehicle?:       number;
+  entityName?:              number;
+  customer?:                number;
+  quantityOut?:             number;
+  quantityIn?:              number;
+  balance?:                 number;
+  value?:                   number;
+  refund?:                  number;
+  date?:                    number;
+  referenceId?:             number;
+  remarks?:                 number;
+  driver?:                  number;
+  vehicle?:                 number;
+  // Event Management operational signals
+  operationalDelay?:        number;
+  dispatchStatus?:          number;
+  recoveryStatus?:          number;
+  operationalSubstitution?: number;
 }
 
 type StandardKey = keyof ColumnMap;
@@ -63,6 +68,8 @@ const SYNONYM_TABLE: [StandardKey, string[]][] = [
     // Extended synonyms
     "issued", "dispatched", "delivery",
     "sold", "quantity out", "out qty", "loaded", "debit",
+    // Event Management — missing / lost items
+    "missing items", "missing item", "lost items", "items missing",
   ]],
   ["quantityIn", [
     // Explicit keyword list (user-specified)
@@ -84,6 +91,9 @@ const SYNONYM_TABLE: [StandardKey, string[]][] = [
     "amount", "total", "value", "price", "cost", "rm", "ringgit",
     "total amount", "total value", "nett", "net", "subtotal", "invoice amount",
     "sale amount", "selling price",
+    // Event Management — damage / recovery amounts
+    "recovery amount", "recovered amount", "damage cost", "damage value",
+    "loss amount", "charge amount",
   ]],
   ["refund", [
     "refund", "deduction", "rebate", "discount", "credit note",
@@ -110,6 +120,23 @@ const SYNONYM_TABLE: [StandardKey, string[]][] = [
   ["vehicle", [
     "vehicle", "lorry", "truck", "plate", "plate no", "registration",
     "vehicle no",
+  ]],
+  // ── Event Management operational signals ──────────────────────────────────
+  ["operationalDelay", [
+    "delay mins", "delay minutes", "delay min", "delay time",
+    "late mins", "late minutes", "delay duration",
+  ]],
+  ["dispatchStatus", [
+    "dispatch complete", "dispatch complete?", "dispatch status",
+    "dispatch ok", "dispatched?", "completed?",
+  ]],
+  ["recoveryStatus", [
+    "charge recovered", "charge recovered?", "recovery status",
+    "recovered?", "payment recovered", "cost recovered",
+  ]],
+  ["operationalSubstitution", [
+    "substitutions", "substitution", "substitute", "substituted",
+    "replacements", "replacement",
   ]],
 ];
 

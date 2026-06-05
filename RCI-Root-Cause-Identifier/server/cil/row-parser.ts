@@ -107,11 +107,16 @@ export function parseRow(
   const hasDriver    = colMap.driver !== undefined && !!cell(colMap.driver);
   const hasVehicle   = colMap.vehicle !== undefined && !!cell(colMap.vehicle);
 
-  const qtyOut   = toNum(cell(colMap.quantityOut));
-  const qtyIn    = toNum(cell(colMap.quantityIn));
-  const balance  = toNum(cell(colMap.balance));
-  const value    = toNum(cell(colMap.value));
-  const refund   = toNum(cell(colMap.refund));
+  const qtyOut        = toNum(cell(colMap.quantityOut));
+  const qtyIn         = toNum(cell(colMap.quantityIn));
+  const balance       = toNum(cell(colMap.balance));
+  const value         = toNum(cell(colMap.value));
+  const refund        = toNum(cell(colMap.refund));
+  // Event Management operational signals
+  const opDelay       = toNum(cell(colMap.operationalDelay));
+  const dispatchOk    = cell(colMap.dispatchStatus);
+  const recoveryOk    = cell(colMap.recoveryStatus);
+  const substitutions = toNum(cell(colMap.operationalSubstitution));
 
   // Block mode supplies the item name directly — it takes precedence over column-derived values
   const resolvedName  = overrideEntityName ?? entityName ?? customer ?? null;
@@ -138,6 +143,10 @@ export function parseRow(
     balance,
     value,
     refund,
+    opDelay,
+    dispatchOk,
+    recoveryOk,
+    substitutions,
   };
 
   const rawText = Object.entries(originalRow)
@@ -188,16 +197,49 @@ export function parseRow(
   // ── If nothing matched but there IS a value (e.g. invoice row) ─────────────
   if (transactions.length === 0 && (value !== null || balance !== null)) {
     const txType: CilTxType =
-      docClass === "invoice"    ? "sale" :
-      docClass === "loss_record" ? "loss" :
-      docClass === "quotation"  ? "adjustment" :
-                                   "adjustment";
+      docClass === "invoice"      ? "sale"       :
+      docClass === "loss_record"  ? "loss"        :
+      docClass === "damage_record"? "asset_damage":
+      docClass === "quotation"    ? "adjustment"  :
+                                    "adjustment";
     transactions.push({
       entityType, entityName: resolvedName, transactionType: txType,
       quantity: balance, value, date, referenceId,
       rawText, documentClassification: docClass,
       netQuantity: null,
       netValue: (value ?? 0) - (refund ?? 0) || null,
+      debugTrace: { originalRow, mappedFields, txCount: 0 },
+    });
+  }
+
+  // ── Event Management: dispatch event (missing items / delay / incomplete) ───
+  // Fires when EM-specific signals are present but no traditional quantity/value
+  // produced a transaction — ensures EM rows are never silently dropped.
+  if (transactions.length === 0 && (
+    opDelay !== null ||
+    dispatchOk !== null ||
+    substitutions !== null
+  )) {
+    // Incomplete dispatch: flag as inventory_loss if missing items were counted,
+    // otherwise as a general dispatch_event operational signal.
+    const hasMissingItems = qtyOut !== null && qtyOut > 0;
+    const txType: CilTxType = hasMissingItems ? "inventory_loss" : "dispatch_event";
+    transactions.push({
+      entityType, entityName: resolvedName, transactionType: txType,
+      quantity: opDelay ?? substitutions ?? null, value: null, date, referenceId,
+      rawText, documentClassification: docClass,
+      netQuantity: null, netValue: null,
+      debugTrace: { originalRow, mappedFields, txCount: 0 },
+    });
+  }
+
+  // ── Event Management: asset damage (charge not recovered, recovery amount) ──
+  if (transactions.length === 0 && recoveryOk !== null) {
+    transactions.push({
+      entityType, entityName: resolvedName, transactionType: "asset_damage",
+      quantity: null, value, date, referenceId,
+      rawText, documentClassification: docClass,
+      netQuantity: null, netValue: null,
       debugTrace: { originalRow, mappedFields, txCount: 0 },
     });
   }

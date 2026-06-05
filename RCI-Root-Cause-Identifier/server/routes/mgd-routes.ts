@@ -145,21 +145,30 @@ export function registerMGDRoutes(app: Express): void {
               }
             } else {
               for (const t of tables) {
-                const rows = Array.isArray(t.rawRows) ? t.rawRows : [];
-                if (rows.length > 0) rawSources.push({ name: t.name ?? "table", rawRows: rows });
+                // PATH B-1: rawRows already stored (current uploads)
+                if (Array.isArray(t.rawRows) && t.rawRows.length > 0) {
+                  rawSources.push({ name: t.name ?? "table", rawRows: t.rawRows });
+                } else if (
+                  Array.isArray(t.headers) && t.headers.length > 0 &&
+                  Array.isArray(t.rows)    && t.rows.length    > 0
+                ) {
+                  // PATH B-2 (FIX 1): legacy uploads — reconstruct rawRows from
+                  // pre-split headers + rows so detectBlocks can run normally.
+                  const reconstructed: any[][] = [t.headers, ...t.rows];
+                  console.log(
+                    `[MGD][RECONSTRUCT] "${doc.fileName}" table="${t.name ?? "?"}" ` +
+                    `headers=${t.headers.length} rows=${t.rows.length}`,
+                  );
+                  rawSources.push({ name: t.name ?? "table", rawRows: reconstructed });
+                }
               }
             }
 
             if (rawSources.length === 0) {
-              console.log(`[AUDIT]   → SKIP: no usable rawRows in sheets or tables`);
-
-              // Log first table's structure for diagnosis even if no rawRows
+              console.log(`[AUDIT]   → SKIP: no usable data (no sheets, rawRows, or headers+rows)`);
               if (tables.length > 0) {
                 const t0 = tables[0];
                 console.log(`[AUDIT]   → table[0] name="${t0.name}" headers=${JSON.stringify((t0.headers ?? []).slice(0, 8))} rows=${(t0.rows ?? []).length} rawRows=${(t0.rawRows ?? []).length}`);
-                if ((t0.rows ?? []).length > 0) {
-                  console.log(`[AUDIT]   → table[0] sample row[0]:`, JSON.stringify((t0.rows[0] ?? []).slice(0, 10)));
-                }
               }
               continue;
             }
@@ -197,11 +206,16 @@ export function registerMGDRoutes(app: Express): void {
 
                 const { columnMap, mappingTrace } = mapColumns(block.headers);
 
+                // FIX 3: accept traditional financial columns OR EM operational signals
                 const hasMeaningful =
-                  columnMap.quantityOut !== undefined ||
-                  columnMap.quantityIn  !== undefined ||
-                  columnMap.value       !== undefined ||
-                  columnMap.balance     !== undefined;
+                  columnMap.quantityOut             !== undefined ||
+                  columnMap.quantityIn              !== undefined ||
+                  columnMap.value                   !== undefined ||
+                  columnMap.balance                 !== undefined ||
+                  columnMap.operationalDelay        !== undefined ||
+                  columnMap.dispatchStatus          !== undefined ||
+                  columnMap.recoveryStatus          !== undefined ||
+                  columnMap.operationalSubstitution !== undefined;
 
                 console.log(
                   `[AUDIT]   block entity="${block.entityName ?? "?"}" type=${block.blockType} ` +
@@ -211,7 +225,7 @@ export function registerMGDRoutes(app: Express): void {
                 console.log(`[AUDIT]   columnMap:`, JSON.stringify(mappingTrace));
 
                 if (!hasMeaningful) {
-                  console.log(`[AUDIT]   → SKIP block: no meaningful columns (need quantityIn/Out, value, or balance)`);
+                  console.log(`[AUDIT]   → SKIP block: no meaningful columns (need qty/value/balance or EM operational signal)`);
                   continue;
                 }
 

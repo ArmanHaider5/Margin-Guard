@@ -637,8 +637,8 @@ export type DiagnosticCase = typeof diagnosticCases.$inferSelect;
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type CilEntityType    = "item" | "customer" | "vehicle" | "staff" | "unknown";
-export type CilTxType        = "outgoing" | "incoming" | "sale" | "loss" | "refund" | "adjustment";
-export type CilDocClass      = "inventory_record" | "movement_log" | "sales_sheet" | "invoice" | "quotation" | "logistics_schedule" | "loss_record" | "unknown";
+export type CilTxType        = "outgoing" | "incoming" | "sale" | "loss" | "refund" | "adjustment" | "dispatch_event" | "asset_damage" | "inventory_loss";
+export type CilDocClass      = "inventory_record" | "movement_log" | "sales_sheet" | "invoice" | "quotation" | "logistics_schedule" | "loss_record" | "dispatch_log" | "damage_record" | "event_record" | "unknown";
 
 export const cilTransactions = pgTable("cil_transactions", {
   id:                   varchar("id").primaryKey().default(sql`gen_random_uuid()`),
