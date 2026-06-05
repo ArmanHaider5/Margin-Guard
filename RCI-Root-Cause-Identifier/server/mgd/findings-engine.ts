@@ -21,6 +21,8 @@
 // transactionType values: "inbound" | "outbound" | "adjustment" | "balance" | "unknown"
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { FindingEvidence, attachEvidenceToFindings } from "./evidence-engine";
+
 // ── Exported interface ─────────────────────────────────────────────────────────
 
 export interface OperationalFinding {
@@ -30,7 +32,8 @@ export interface OperationalFinding {
   category:          string;
   department?:       string;
   summary:           string;
-  evidence:          string[];
+  signals:           string[];
+  evidence?:         FindingEvidence[];
   operationalImpact?: string;
   confidence:        number;  // 0–100
 }
@@ -281,7 +284,7 @@ export function detectManualDependency(
       `and ${stats.total} transactions indicates that operational tracking relies heavily ` +
       `on manual ledger entries and person-to-person coordination. This creates ` +
       `human single-points-of-failure that scale poorly under demand growth.`,
-    evidence,
+    signals: evidence,
     operationalImpact:
       "Manual dependency increases error probability during peak periods, delays response to stock discrepancies, " +
       "and creates knowledge concentration risk when key personnel are unavailable.",
@@ -361,7 +364,7 @@ export function detectInventoryStrain(
       `balance tracking. Across ${stats.uniqueEntities.size} items and ${stats.total} ` +
       `transaction records, outbound movements outpace documented replenishment, ` +
       `and no consistent closing-balance verification is recorded.`,
-    evidence,
+    signals: evidence,
     operationalImpact:
       "Without closing-balance snapshots and matched intake records, stock discrepancies accumulate silently. " +
       "Shortfalls surface only at physical count — by which point the loss window may span weeks.",
@@ -455,7 +458,7 @@ export function detectLogisticsPressure(
       `and irregular scheduling across ${stats.uniqueDates.size} active dates. ` +
       `Logistics coordination is under pressure: volume spikes and fragmented records ` +
       `indicate reactive rather than planned dispatch management.`,
-    evidence,
+    signals: evidence,
     operationalImpact:
       "Reactive logistics scheduling increases last-minute coordination effort, raises delivery failure risk during peak days, " +
       "and limits the ability to optimise vehicle/driver utilisation across routes.",
@@ -537,7 +540,7 @@ export function detectFinancialLeakage(
       `post-hoc adjustments, missing reference documentation on outbound movements, ` +
       `and unmatched value flows. These patterns indicate unquantified operational ` +
       `leakage that is not currently captured in formal financial reporting.`,
-    evidence,
+    signals: evidence,
     operationalImpact:
       "Undocumented dispatch, unrecovered returns, and value imbalances accumulate into chronic margin erosion. " +
       "Without reference tracking on every outbound movement, recovery actions cannot be initiated systematically.",
@@ -628,7 +631,7 @@ export function detectWorkflowScalabilityRisk(
       `${stats.uniqueDocClasses.size} document type(s), and irregular movement cadence ` +
       `indicate that current operational workflows are approaching a complexity ceiling. ` +
       `Scaling activity without process formalisation will amplify coordination failures.`,
-    evidence,
+    signals: evidence,
     operationalImpact:
       "Operational complexity at current levels requires experienced staff to maintain context across many items and document sources. " +
       "Staff turnover or demand increases will expose latent process fragility.",
@@ -700,7 +703,7 @@ export function detectWarehouseOperations(
       `of warehouse activity. Without automated balance verification, handling errors and ` +
       `adjustment records indicate that warehouse operations are absorbing correction ` +
       `effort that displaces productive throughput time.`,
-    evidence,
+    signals: evidence,
     operationalImpact:
       "Concentrated throughput on a few items creates bottleneck risk at the packing/dispatch stage. " +
       "Physical handling adjustments without digital audit trails prevent root-cause analysis of recurring discrepancies.",
@@ -795,7 +798,14 @@ export function generateOperationalFindings(params: FindingsParams): Operational
       console.log(`[MGD][FINDINGS]   • [${f.severity.padEnd(8)}] ${f.title} (${f.confidence}%)`);
     }
 
-    return findings;
+    // ── Attach structured evidence from evidence-engine ──────────────────────
+    const enrichedFindings = attachEvidenceToFindings({
+      findings,
+      transactions,
+      documents,
+    });
+
+    return enrichedFindings as OperationalFinding[];
 
   } catch (err) {
     console.error("[MGD][FINDINGS] generateOperationalFindings failed:", err);
