@@ -121,20 +121,40 @@ export function registerMGDRoutes(app: Express): void {
 
             documents.push(doc);
 
+            // Build a unified list of raw 2-D arrays to process.
+            // PATH A — structured sheets (Excel parsed after the CIL upgrade).
+            // PATH B — tables[].rawRows fallback (documents parsed before sheets
+            //          field was added; same native XLSX data, different location).
+            const rawSources: Array<{ name: string; rawRows: any[][] }> = [];
+
             const sheets = doc.extractedData?.sheets ?? [];
-            if (sheets.length === 0) {
-              console.log(`[MGD][EXTRACT] "${doc.fileName}" — no structured sheets, skipping extraction`);
+            if (sheets.length > 0) {
+              for (const s of sheets) {
+                const rows = Array.isArray(s.rows) ? s.rows : [];
+                if (rows.length > 0) rawSources.push({ name: s.name, rawRows: rows });
+              }
+            } else {
+              const tables = doc.extractedData?.tables ?? [];
+              for (const t of tables) {
+                const rows = Array.isArray(t.rawRows) ? t.rawRows : [];
+                if (rows.length > 0) rawSources.push({ name: t.name ?? "table", rawRows: rows });
+              }
+            }
+
+            if (rawSources.length === 0) {
+              console.log(`[MGD][EXTRACT] "${doc.fileName}" — no extractable data (no sheets or rawRows), skipping`);
               continue;
             }
 
-            let docRows  = 0;
+            const path = sheets.length > 0 ? "sheets" : "tables/rawRows";
+            console.log(`[MGD][EXTRACT] "${doc.fileName}" — path=${path} sources=${rawSources.length}`);
+
+            let docRows   = 0;
             let docBlocks = 0;
-            let docTxs   = 0;
+            let docTxs    = 0;
 
-            for (const sheet of sheets) {
-              const rawRows: any[][] = Array.isArray(sheet.rows) ? sheet.rows : [];
-              if (rawRows.length === 0) continue;
-
+            for (const source of rawSources) {
+              const { rawRows } = source;
               docRows += rawRows.length;
 
               const blocks = detectBlocks(rawRows);
@@ -147,7 +167,6 @@ export function registerMGDRoutes(app: Express): void {
 
                 const { columnMap } = mapColumns(block.headers);
 
-                // Only process blocks with at least one meaningful column
                 const hasMeaningful =
                   columnMap.quantityOut !== undefined ||
                   columnMap.quantityIn  !== undefined ||
