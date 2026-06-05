@@ -324,25 +324,25 @@ export async function runMGDPipeline(
       let status: "completed" | "failed" = "completed";
       try {
         eventSignals = computeEventSignals(transactions);
-        console.log(
-          `[MGD][EVENT_SIGNALS] ` +
-          `dispatchFailureRate=${(eventSignals.dispatchFailureRate * 100).toFixed(1)}% ` +
-          `inventoryShortageRate=${(eventSignals.inventoryShortageRate * 100).toFixed(1)}% ` +
-          `substitutionRate=${(eventSignals.substitutionRate * 100).toFixed(1)}% ` +
-          `deliveryDelayRate=${(eventSignals.deliveryDelayRate * 100).toFixed(1)}% ` +
-          `damageRecoveryRate=${(eventSignals.damageRecoveryRate * 100).toFixed(1)}% ` +
-          `invVisibilityScore=${eventSignals.inventoryVisibilityScore} ` +
-          `eventReadinessScore=${eventSignals.eventReadinessScore}`,
-        );
-        console.log(
-          `[MGD][EVENT_SIGNALS] counts — ` +
-          `dispatches=${eventSignals.totalDispatches} ` +
-          `(incomplete=${eventSignals.incompleteDispatches}, delayed=${eventSignals.delayedDispatches}) ` +
-          `missingItems=${eventSignals.totalMissingItems} ` +
-          `substitutions=${eventSignals.totalSubstitutions} ` +
-          `damageEvents=${eventSignals.totalDamageEvents} ` +
-          `(recovered=${eventSignals.recoveredDamageEvents})`,
-        );
+        // ── Structured EM metrics summary (exact format for diagnostics) ──────
+        console.log(`[MGD][EM-V2] Metrics Summary`);
+        console.log(`  dispatchFailureRate=${(eventSignals.dispatchFailureRate * 100).toFixed(1)}%` +
+          `  (${eventSignals.incompleteDispatches} incomplete / ${eventSignals.totalDispatches} dispatches)`);
+        console.log(`  dispatchDelayRate=${(eventSignals.dispatchDelayRate * 100).toFixed(1)}%` +
+          `  (${eventSignals.delayedDispatches} delayed / ${eventSignals.totalDispatches} dispatches)`);
+        console.log(`  averageDelayMinutes=${eventSignals.averageDelayMinutes.toFixed(1)} min`);
+        console.log(`  substitutionRate=${(eventSignals.substitutionRate * 100).toFixed(1)}%` +
+          `  (${eventSignals.totalSubstitutions} substitutions / ${eventSignals.totalDispatchedItems} dispatched items)`);
+        console.log(`  missingItemRate=${(eventSignals.missingItemRate * 100).toFixed(1)}%` +
+          `  (${eventSignals.totalMissingItems} missing / ${eventSignals.totalDispatchedItems} dispatched items)`);
+        console.log(`  inventoryVisibilityScore=${eventSignals.inventoryVisibilityScore}/100`);
+        console.log(`  eventReadinessScore=${eventSignals.eventReadinessScore}/100`);
+        console.log(`  assetDamageRate=${(eventSignals.assetDamageRate * 100).toFixed(1)}%` +
+          `  (${eventSignals.totalDamageEvents} damage events)`);
+        console.log(`  damageRecoveryRate=${(eventSignals.damageRecoveryRate * 100).toFixed(1)}%` +
+          `  (${eventSignals.recoveredDamageEvents} recovered / ${eventSignals.totalDamageEvents} damage events)`);
+        console.log(`  unrecoveredDamageRate=${(eventSignals.unrecoveredDamageRate * 100).toFixed(1)}%` +
+          `  unrecoveredValue=RM${eventSignals.unrecoveredDamageValue.toFixed(2)}`);
       } catch (err) {
         status = "failed";
         console.error("[MGD][EVENT_SIGNALS] computeEventSignals failed:", err);
