@@ -83,6 +83,7 @@ export function registerMGDRoutes(app: Express): void {
   // any structured spreadsheet sheets via detectBlocks → mapColumns → parseRow,
   // and fails with 400 if no transactions could be extracted.
   app.post("/api/mgd/run", async (req: Request, res: Response) => {
+    console.log("[MGD][ROUTE_VERSION]", "EXTRACTION_BUILD_V1");
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/run — start");
     try {
