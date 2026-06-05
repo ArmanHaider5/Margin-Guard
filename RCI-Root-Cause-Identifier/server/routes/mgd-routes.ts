@@ -115,26 +115,35 @@ export function registerMGDRoutes(app: Express): void {
           try {
             const doc = await storage.getClientDocument(docId);
             if (!doc) {
-              console.log(`[MGD][EXTRACT] Document ${docId} — not found in storage, skipping`);
+              console.log(`[AUDIT] ${docId} — NOT FOUND IN DB`);
               continue;
             }
 
             documents.push(doc);
 
-            // Build a unified list of raw 2-D arrays to process.
-            // PATH A — structured sheets (Excel parsed after the CIL upgrade).
-            // PATH B — tables[].rawRows fallback (documents parsed before sheets
-            //          field was added; same native XLSX data, different location).
+            const hasExtractedData = doc.extractedData != null;
+            const sheets           = doc.extractedData?.sheets  ?? [];
+            const tables           = doc.extractedData?.tables  ?? [];
+            const hasSheets        = sheets.length > 0;
+            const hasTables        = tables.length > 0;
+            const tablesWithRaw    = tables.filter((t: any) => Array.isArray(t.rawRows) && t.rawRows.length > 0);
+
+            console.log(
+              `[AUDIT] "${doc.fileName}" | type=${doc.fileType} | ` +
+              `extractedData=${hasExtractedData ? "Y" : "N"} | ` +
+              `sheets=${sheets.length} | ` +
+              `tables=${tables.length} (rawRows in ${tablesWithRaw.length})`,
+            );
+
+            // ── Build unified raw sources ──────────────────────────────────
             const rawSources: Array<{ name: string; rawRows: any[][] }> = [];
 
-            const sheets = doc.extractedData?.sheets ?? [];
-            if (sheets.length > 0) {
+            if (hasSheets) {
               for (const s of sheets) {
                 const rows = Array.isArray(s.rows) ? s.rows : [];
                 if (rows.length > 0) rawSources.push({ name: s.name, rawRows: rows });
               }
             } else {
-              const tables = doc.extractedData?.tables ?? [];
               for (const t of tables) {
                 const rows = Array.isArray(t.rawRows) ? t.rawRows : [];
                 if (rows.length > 0) rawSources.push({ name: t.name ?? "table", rawRows: rows });
@@ -142,30 +151,51 @@ export function registerMGDRoutes(app: Express): void {
             }
 
             if (rawSources.length === 0) {
-              console.log(`[MGD][EXTRACT] "${doc.fileName}" — no extractable data (no sheets or rawRows), skipping`);
+              console.log(`[AUDIT]   → SKIP: no usable rawRows in sheets or tables`);
+
+              // Log first table's structure for diagnosis even if no rawRows
+              if (tables.length > 0) {
+                const t0 = tables[0];
+                console.log(`[AUDIT]   → table[0] name="${t0.name}" headers=${JSON.stringify((t0.headers ?? []).slice(0, 8))} rows=${(t0.rows ?? []).length} rawRows=${(t0.rawRows ?? []).length}`);
+                if ((t0.rows ?? []).length > 0) {
+                  console.log(`[AUDIT]   → table[0] sample row[0]:`, JSON.stringify((t0.rows[0] ?? []).slice(0, 10)));
+                }
+              }
               continue;
             }
 
-            const path = sheets.length > 0 ? "sheets" : "tables/rawRows";
-            console.log(`[MGD][EXTRACT] "${doc.fileName}" — path=${path} sources=${rawSources.length}`);
-
-            let docRows   = 0;
-            let docBlocks = 0;
-            let docTxs    = 0;
+            const dataPath = hasSheets ? "sheets" : "tables/rawRows";
+            let docRows = 0; let docBlocks = 0; let docTxs = 0;
+            let firstSampleLogged = false;
 
             for (const source of rawSources) {
-              const { rawRows } = source;
+              const { name: srcName, rawRows } = source;
               docRows += rawRows.length;
 
               const blocks = detectBlocks(rawRows);
               docBlocks += blocks.length;
+
+              console.log(`[AUDIT]   source="${srcName}" path=${dataPath} rows=${rawRows.length} blocks=${blocks.length}`);
+
+              // Log first two rows of this source for diagnosis
+              if (rawRows.length > 0) {
+                console.log(`[AUDIT]   row[0]:`, JSON.stringify((rawRows[0] ?? []).slice(0, 10)));
+              }
+              if (rawRows.length > 1) {
+                console.log(`[AUDIT]   row[1]:`, JSON.stringify((rawRows[1] ?? []).slice(0, 10)));
+              }
+
+              if (blocks.length === 0) {
+                console.log(`[AUDIT]   → detectBlocks returned 0 blocks — STOP at this source`);
+                continue;
+              }
 
               for (const block of blocks) {
                 const blockDataRows: string[][] = rawRows
                   .slice(block.startRow, block.endRow + 1)
                   .map((r: any[]) => (Array.isArray(r) ? r : []).map((v: any) => String(v ?? "").trim()));
 
-                const { columnMap } = mapColumns(block.headers);
+                const { columnMap, mappingTrace } = mapColumns(block.headers);
 
                 const hasMeaningful =
                   columnMap.quantityOut !== undefined ||
@@ -173,8 +203,19 @@ export function registerMGDRoutes(app: Express): void {
                   columnMap.value       !== undefined ||
                   columnMap.balance     !== undefined;
 
-                if (!hasMeaningful) continue;
+                console.log(
+                  `[AUDIT]   block entity="${block.entityName ?? "?"}" type=${block.blockType} ` +
+                  `dataRows=${blockDataRows.length} meaningful=${hasMeaningful}`,
+                );
+                console.log(`[AUDIT]   headers:`, JSON.stringify(block.headers.slice(0, 10)));
+                console.log(`[AUDIT]   columnMap:`, JSON.stringify(mappingTrace));
 
+                if (!hasMeaningful) {
+                  console.log(`[AUDIT]   → SKIP block: no meaningful columns (need quantityIn/Out, value, or balance)`);
+                  continue;
+                }
+
+                let blockTxs = 0;
                 for (const row of blockDataRows) {
                   const nonEmpty = row.filter(c => c !== "");
                   if (nonEmpty.length === 0) continue;
@@ -187,6 +228,13 @@ export function registerMGDRoutes(app: Express): void {
                     block.entityName ?? "",
                   );
 
+                  // Log one sample row + parseRow result per document
+                  if (!firstSampleLogged) {
+                    firstSampleLogged = true;
+                    console.log(`[AUDIT]   sample row:`, JSON.stringify(row.slice(0, 10)));
+                    console.log(`[AUDIT]   parseRow result:`, JSON.stringify(parsedTxs.slice(0, 2)));
+                  }
+
                   for (const tx of parsedTxs) {
                     transactions.push({
                       ...tx,
@@ -195,17 +243,17 @@ export function registerMGDRoutes(app: Express): void {
                       clientId:   doc.clientId,
                     });
                     docTxs++;
+                    blockTxs++;
                   }
                 }
+
+                console.log(`[AUDIT]   block transactions=${blockTxs}`);
               }
             }
 
-            console.log(
-              `[MGD][EXTRACT] "${doc.fileName}" — ` +
-              `rows=${docRows} blocks=${docBlocks} transactions=${docTxs}`,
-            );
+            console.log(`[AUDIT] "${doc.fileName}" TOTAL rows=${docRows} blocks=${docBlocks} transactions=${docTxs}`);
           } catch (docErr) {
-            console.error(`[MGD][EXTRACT] Error processing document ${docId}:`, docErr);
+            console.error(`[AUDIT] Error processing document ${docId}:`, docErr);
           }
         }
 
