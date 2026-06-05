@@ -5,7 +5,7 @@ import {
   Info, CheckCircle2, ChevronDown, ChevronUp, Activity,
   Lightbulb, BarChart3, FileText, Clock, Layers,
   Building2, Calendar, Tag, RefreshCw, Inbox,
-  TrendingUp, TrendingDown, Shield, Zap,
+  TrendingUp, TrendingDown, Shield, Zap, Compass,
 } from "lucide-react";
 import { format } from "date-fns";
 import FindingEvidencePanel, { type OperationalFinding } from "@/components/mgd/FindingEvidencePanel";
@@ -41,6 +41,14 @@ interface ExecutiveNarrative {
   finalConclusion: NarrativeSection;
   metadata?: { generatedAt?: string; industry?: string; findingsCount?: number; rootCauseCount?: number; recommendationCount?: number; operationalHealthScore?: number; };
 }
+interface IndustryRule {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  confidence: number;
+}
 interface MGDReport {
   metadata: { generatedAt: string; clientName?: string; industry?: string; operationalHealthScore?: number; reportVersion: string; };
   summary: { criticalFindings: number; highFindings: number; criticalRootCauses: number; highPriorityRecommendations: number; benchmarkAlerts: number; };
@@ -50,6 +58,12 @@ interface MGDReport {
   recommendations: Recommendation[];
   benchmarks: BenchmarkResult[];
   visualMetrics: { operationalHealthLabel: string; operationalRiskLevel: string; benchmarkStatusBreakdown: { healthy: number; watchlist: number; elevated: number; critical: number; }; };
+  industryInsights?: {
+    maturityLevel: string;
+    rules: IndustryRule[];
+    topRisks: IndustryRule[];
+    topOpportunities: IndustryRule[];
+  };
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -439,6 +453,147 @@ function NarrativeCard({ section }: { section: NarrativeSection }) {
   );
 }
 
+// ── Industry Assessment helpers & components ──────────────────────────────────
+
+function maturityConfig(level: string) {
+  switch (level) {
+    case "ADVANCED":   return { color:"text-emerald-400", bg:"bg-emerald-500/15", border:"border-emerald-500/30", dot:"bg-emerald-500" };
+    case "SCALING":    return { color:"text-blue-400",    bg:"bg-blue-500/15",    border:"border-blue-500/30",    dot:"bg-blue-500"    };
+    case "DEVELOPING": return { color:"text-amber-400",   bg:"bg-amber-500/15",   border:"border-amber-500/30",  dot:"bg-amber-500"   };
+    default:           return { color:"text-red-400",     bg:"bg-red-500/15",     border:"border-red-500/30",    dot:"bg-red-500"     };
+  }
+}
+
+function IndustryRuleCard({ rule }: { rule: IndustryRule }) {
+  const sev = SEV[rule.severity] ?? SEV.LOW;
+  return (
+    <div className={`rounded-xl border ${sev.border} bg-white/[0.03] p-5`}>
+      <div className="flex items-start justify-between gap-4 mb-2.5">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <div className="shrink-0 mt-0.5">{sev.icon}</div>
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold text-white leading-snug">{rule.title}</h4>
+            <span className="text-[11px] text-white/35 capitalize">{rule.category.replace(/_/g," ")}</span>
+          </div>
+        </div>
+        <SevBadge severity={rule.severity}/>
+      </div>
+      <p className="text-[13px] text-white/55 leading-relaxed mb-3">{rule.description}</p>
+      <ConfBar value={rule.confidence}/>
+    </div>
+  );
+}
+
+function IndustryAssessmentSection({ report }: { report: MGDReport }) {
+  const [expanded, setExpanded] = useState(false);
+  const ii = report.industryInsights;
+  if (!ii) return null;
+
+  const mat        = maturityConfig(ii.maturityLevel);
+  const rules      = ii.rules ?? [];
+  const topRisk    = (ii.topRisks ?? [])[0];
+  const topOpp     = (ii.topOpportunities ?? [])[0];
+  const FOLD       = 5;
+  const visible    = expanded ? rules : rules.slice(0, FOLD);
+  const hasMore    = rules.length > FOLD;
+
+  return (
+    <GlassCard className="p-6">
+      <SectionHeader icon={Compass} label="Industry Assessment" count={rules.length} accent="#6366f1"/>
+
+      {/* 4 summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+
+        {/* Industry */}
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Building2 className="w-3.5 h-3.5 text-indigo-400"/>
+            <span className="text-[10px] uppercase tracking-widest text-white/30">Industry</span>
+          </div>
+          <p className="text-sm font-semibold text-white leading-snug">
+            {industryLabel(report.metadata.industry)}
+          </p>
+        </div>
+
+        {/* Maturity Level */}
+        <div className={`rounded-xl border ${mat.border} ${mat.bg} p-4`}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <Shield className="w-3.5 h-3.5 text-white/40"/>
+            <span className="text-[10px] uppercase tracking-widest text-white/30">Maturity Level</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${mat.dot} shrink-0`}/>
+            <p className={`text-sm font-bold ${mat.color} capitalize`}>
+              {ii.maturityLevel.charAt(0) + ii.maturityLevel.slice(1).toLowerCase()}
+            </p>
+          </div>
+        </div>
+
+        {/* Top Risk */}
+        <div className={`rounded-xl border ${topRisk ? "border-red-500/20 bg-red-500/[0.05]" : "border-white/10 bg-white/[0.03]"} p-4`}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <TrendingDown className="w-3.5 h-3.5 text-red-400"/>
+            <span className="text-[10px] uppercase tracking-widest text-white/30">Top Risk</span>
+          </div>
+          {topRisk
+            ? <p className="text-[12px] font-semibold text-white leading-snug line-clamp-2">{topRisk.title}</p>
+            : <p className="text-[12px] text-white/25 italic">None detected</p>
+          }
+          {topRisk && (
+            <span className={`mt-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-widest border ${SEV[topRisk.severity]?.bg} ${SEV[topRisk.severity]?.text} ${SEV[topRisk.severity]?.border}`}>
+              {topRisk.confidence}% conf
+            </span>
+          )}
+        </div>
+
+        {/* Top Opportunity */}
+        <div className={`rounded-xl border ${topOpp ? "border-emerald-500/20 bg-emerald-500/[0.05]" : "border-white/10 bg-white/[0.03]"} p-4`}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-400"/>
+            <span className="text-[10px] uppercase tracking-widest text-white/30">Top Opportunity</span>
+          </div>
+          {topOpp
+            ? <p className="text-[12px] font-semibold text-white leading-snug line-clamp-2">{topOpp.title}</p>
+            : <p className="text-[12px] text-white/25 italic">None identified</p>
+          }
+          {topOpp && (
+            <span className={`mt-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-widest border ${SEV[topOpp.severity]?.bg} ${SEV[topOpp.severity]?.text} ${SEV[topOpp.severity]?.border}`}>
+              {topOpp.confidence}% conf
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Industry Rules list */}
+      {rules.length > 0 ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] uppercase tracking-widest text-white/25">Industry Rules</span>
+            <div className="flex-1 h-px bg-white/[0.06]"/>
+          </div>
+          {visible.map(rule => <IndustryRuleCard key={rule.id} rule={rule}/>)}
+          {hasMore && (
+            <button
+              onClick={() => setExpanded(e => !e)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/10 bg-white/[0.02] text-[12px] text-white/40 hover:text-white/70 hover:bg-white/[0.05] transition-all"
+            >
+              {expanded
+                ? <><ChevronUp className="w-3.5 h-3.5"/> Show less</>
+                : <><ChevronDown className="w-3.5 h-3.5"/> Show {rules.length - FOLD} more rule{rules.length - FOLD !== 1 ? "s" : ""}</>
+              }
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 py-6 justify-center text-white/25 text-[13px]">
+          <Zap className="w-4 h-4"/>
+          No industry rules triggered for this diagnostic
+        </div>
+      )}
+    </GlassCard>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function MGDReportViewer() {
@@ -682,6 +837,9 @@ export default function MGDReportViewer() {
                   </div>
                 </div>
               </GlassCard>
+
+              {/* SECTION 3.5 — Industry Assessment */}
+              <IndustryAssessmentSection report={report}/>
 
               {/* SECTION 4 — Findings */}
               {report.findings.length > 0 && (
