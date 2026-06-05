@@ -151,7 +151,7 @@ function ClientHealthCard({ client }: { client: Client }) {
   const color = healthScore >= 80 ? "#34d399" : healthScore >= 65 ? "#fbbf24" : "#fb923c";
 
   return (
-    <Link href={`/mgd/run`}>
+    <Link href="/mgd/diagnostic">
       <GlassCard className="p-4 cursor-pointer hover:bg-white/8 hover:border-white/20 transition-all duration-300 group relative overflow-hidden">
         {/* Left accent line */}
         <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl" style={{ background: color }} />
@@ -322,7 +322,7 @@ function IntelligenceRunPanel({ clients }: { clients: Client[] }) {
         </div>
 
         {/* CTA */}
-        <Link href={`/mgd/run${selectedClient ? `?client=${selectedClient}` : ""}`}>
+        <Link href="/mgd/diagnostic">
           <button className={`w-full flex items-center justify-center gap-2 py-3 px-5 rounded-lg font-semibold text-sm transition-all duration-300 ${
             selectedClient
               ? "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30"
@@ -341,7 +341,7 @@ function IntelligenceRunPanel({ clients }: { clients: Client[] }) {
 // ── Quick Actions Dock ────────────────────────────────────────────────────────
 
 const ACTIONS = [
-  { label: "Run Diagnostic",     icon: Play,      href: "/mgd/run",     color: "#3b82f6", desc: "Execute full MGD pipeline" },
+  { label: "New Diagnostic",     icon: Play,      href: "/mgd/diagnostic", color: "#3b82f6", desc: "Start a new MGD diagnostic" },
   { label: "Report Archive",     icon: FileText,  href: "/mgd/reports", color: "#a855f7", desc: "Browse saved reports" },
   { label: "Presentation Mode",  icon: Monitor,   href: "/mgd/present", color: "#6366f1", desc: "Boardroom presentation view" },
   { label: "Report Viewer",      icon: BarChart3, href: "/mgd/report",  color: "#8b5cf6", desc: "Interactive report renderer" },
@@ -476,10 +476,10 @@ export default function MGDDashboard() {
                   Dashboard
                 </button>
               </Link>
-              <Link href="/mgd/run">
+              <Link href="/mgd/diagnostic">
                 <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-semibold text-white transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30">
                   <Play className="w-3.5 h-3.5" />
-                  Run MGD
+                  New Diagnostic
                 </button>
               </Link>
               <Link href="/mgd/reports">
@@ -564,9 +564,9 @@ export default function MGDDashboard() {
                 ))}
               </div>
               <div className="mt-3 pt-3 border-t border-white/5">
-                <Link href="/mgd/run">
+                <Link href="/mgd/diagnostic">
                   <button className="w-full text-[10px] text-blue-400/60 hover:text-blue-400 transition-colors flex items-center justify-center gap-1.5">
-                    Run diagnostic to resolve alerts
+                    Start new diagnostic to resolve alerts
                     <ArrowRight className="w-3 h-3" />
                   </button>
                 </Link>
@@ -691,7 +691,7 @@ export default function MGDDashboard() {
           <div className="flex items-center gap-4">
             {[
               { label: "Dashboard",      href: "/mgd" },
-              { label: "Run Diagnostic", href: "/mgd/run" },
+              { label: "New Diagnostic", href: "/mgd/diagnostic" },
               { label: "Reports",        href: "/mgd/reports" },
               { label: "Presentation",   href: "/mgd/present" },
               { label: "Report Viewer",  href: "/mgd/report" },
