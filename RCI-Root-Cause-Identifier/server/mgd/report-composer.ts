@@ -24,6 +24,10 @@ import {
   type IndustryRule,
   type MaturityLevel,
 } from "./industry-engine.js";
+import {
+  generateConsultantInsights,
+  type ConsultantNote,
+} from "./consultant-notes-engine.js";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -87,6 +91,11 @@ export interface MGDReport {
     topRisks:         IndustryRule[];   // HIGH + CRITICAL rules, desc by confidence
     topOpportunities: IndustryRule[];   // LOW + MEDIUM rules, desc by confidence
   };
+
+  consultantInsights?: {
+    executiveObservations: string[];
+    operationalConcerns:   string[];
+  };
 }
 
 export interface ReportComposerParams {
@@ -98,6 +107,8 @@ export interface ReportComposerParams {
   benchmarks:              BenchmarkResult[];
   narrative:               ExecutiveNarrativeReport;
   operationalHealthScore?: number;
+  consultantNotes?:        ConsultantNote[];
+  businessConcerns?:       string[];
 }
 
 // ── Sorting helpers ────────────────────────────────────────────────────────────
@@ -247,6 +258,8 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
       industry,
       operationalHealthScore,
       narrative,
+      consultantNotes,
+      businessConcerns,
     } = params;
 
     // Sanitise arrays — remove null/undefined elements
@@ -275,6 +288,13 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
     // Build sub-sections
     const summary       = buildSummaryMetrics(sortedFindings, sortedRootCauses, sortedRecommendations, sortedBenchmarks);
     const visualMetrics = buildVisualMetrics(operationalHealthScore, sortedFindings, sortedBenchmarks);
+
+    // Consultant insights — deterministic, never throws
+    const hasConsultantInput = (consultantNotes && consultantNotes.length > 0)
+      || (businessConcerns && businessConcerns.length > 0);
+    const consultantInsights = hasConsultantInput
+      ? generateConsultantInsights({ consultantNotes, businessConcerns })
+      : undefined;
 
     // Industry insights — deterministic, never throws
     const insightsResult = generateIndustryInsights({
@@ -311,6 +331,7 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
         topRisks,
         topOpportunities,
       },
+      consultantInsights,
     };
 
     // Log summary
@@ -322,7 +343,9 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
       `highPriorityRecs=${summary.highPriorityRecommendations}, ` +
       `benchmarkAlerts=${summary.benchmarkAlerts}, ` +
       `maturity=${insightsResult.maturityLevel}, ` +
-      `industryRules=${insightsResult.rules.length} (risks=${topRisks.length} opps=${topOpportunities.length})`,
+      `industryRules=${insightsResult.rules.length} (risks=${topRisks.length} opps=${topOpportunities.length}), ` +
+      `consultantObs=${consultantInsights?.executiveObservations.length ?? 0}, ` +
+      `consultantConcerns=${consultantInsights?.operationalConcerns.length ?? 0}`,
     );
     console.log(`[MGD][REPORT]   Health: ${visualMetrics.operationalHealthLabel} | Risk: ${visualMetrics.operationalRiskLevel}`);
     console.log(
