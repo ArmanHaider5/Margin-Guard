@@ -342,6 +342,7 @@ function IntelligenceRunPanel({ clients }: { clients: Client[] }) {
 
 const ACTIONS = [
   { label: "Run Diagnostic",     icon: Play,      href: "/mgd/run",     color: "#3b82f6", desc: "Execute full MGD pipeline" },
+  { label: "Report Archive",     icon: FileText,  href: "/mgd/reports", color: "#a855f7", desc: "Browse saved reports" },
   { label: "Presentation Mode",  icon: Monitor,   href: "/mgd/present", color: "#6366f1", desc: "Boardroom presentation view" },
   { label: "Report Viewer",      icon: BarChart3, href: "/mgd/report",  color: "#8b5cf6", desc: "Interactive report renderer" },
   { label: "Upload Documents",   icon: Upload,    href: "/admin/clients",color: "#0ea5e9", desc: "Add transaction data" },
@@ -469,10 +470,22 @@ export default function MGDDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
+              <Link href="/mgd">
+                <button className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium text-white/60 hover:text-white/80 border border-white/10 transition-all">
+                  <Layers className="w-3.5 h-3.5" />
+                  Dashboard
+                </button>
+              </Link>
               <Link href="/mgd/run">
                 <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-semibold text-white transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30">
                   <Play className="w-3.5 h-3.5" />
-                  New Diagnostic
+                  Run MGD
+                </button>
+              </Link>
+              <Link href="/mgd/reports">
+                <button className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium text-white/60 hover:text-white/80 border border-white/10 transition-all">
+                  <FileText className="w-3.5 h-3.5" />
+                  Reports
                 </button>
               </Link>
               <Link href="/mgd/present">
@@ -677,7 +690,9 @@ export default function MGDDashboard() {
           </div>
           <div className="flex items-center gap-4">
             {[
+              { label: "Dashboard",      href: "/mgd" },
               { label: "Run Diagnostic", href: "/mgd/run" },
+              { label: "Reports",        href: "/mgd/reports" },
               { label: "Presentation",   href: "/mgd/present" },
               { label: "Report Viewer",  href: "/mgd/report" },
               { label: "Admin Panel",    href: "/admin" },
