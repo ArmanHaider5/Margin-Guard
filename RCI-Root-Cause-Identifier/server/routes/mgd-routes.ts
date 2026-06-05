@@ -29,6 +29,10 @@ import {
   listReports,
   deleteReport,
 } from "../mgd/report-store";
+import {
+  listTraces,
+  getTrace,
+} from "../mgd/pipeline-trace";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -352,5 +356,38 @@ export function registerMGDRoutes(app: Express): void {
     }
   });
 
-  console.log("[MGD][API] Routes registered: GET /api/mgd/{health,reports,reports/:id}, DELETE /api/mgd/reports/:id, POST /api/mgd/{run,estimate-health,findings,root-causes,recommendations,benchmarks,narrative,export-pdf}");
+  // ── GET /api/mgd/traces ──────────────────────────────────────────────────────
+  // List all stored pipeline traces, newest first.
+  app.get("/api/mgd/traces", async (_req: Request, res: Response) => {
+    try {
+      console.log("[MGD][TRACES] GET /api/mgd/traces");
+      const traces = await listTraces();
+      console.log(`[MGD][TRACES] GET /api/mgd/traces — returned ${traces.length} trace(s)`);
+      ok(res, { traces });
+    } catch (err) {
+      console.error("[MGD][TRACES] GET /api/mgd/traces — error:", err);
+      fail(res, 500, "Failed to list traces");
+    }
+  });
+
+  // ── GET /api/mgd/traces/:id ───────────────────────────────────────────────────
+  // Retrieve a single pipeline trace by traceId.
+  app.get("/api/mgd/traces/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      console.log(`[MGD][TRACES] GET /api/mgd/traces/${id}`);
+      const trace = await getTrace(id);
+      if (!trace) {
+        console.log(`[MGD][TRACES] GET /api/mgd/traces/${id} — not found`);
+        return fail(res, 404, `Trace "${id}" not found`);
+      }
+      console.log(`[MGD][TRACES] GET /api/mgd/traces/${id} — found (steps=${trace.steps.length})`);
+      ok(res, { trace });
+    } catch (err) {
+      console.error("[MGD][TRACES] GET /api/mgd/traces/:id — error:", err);
+      fail(res, 500, "Failed to retrieve trace");
+    }
+  });
+
+  console.log("[MGD][API] Routes registered: GET /api/mgd/{health,reports,reports/:id,traces,traces/:id}, DELETE /api/mgd/reports/:id, POST /api/mgd/{run,estimate-health,findings,root-causes,recommendations,benchmarks,narrative,export-pdf}");
 }
