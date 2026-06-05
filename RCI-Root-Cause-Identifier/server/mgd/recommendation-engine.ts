@@ -50,14 +50,17 @@ export interface RecommendationParams {
 // ── Recommendation categories ──────────────────────────────────────────────────
 
 export const REC_CATEGORIES = {
-  OPERATIONAL_VISIBILITY:  "operational_visibility",
-  LOGISTICS_OPTIMIZATION:  "logistics_optimization",
-  INVENTORY_CONTROL:       "inventory_control",
-  WORKFLOW_REDESIGN:       "workflow_redesign",
-  MANPOWER_COORDINATION:   "manpower_coordination",
-  WAREHOUSE_OPERATIONS:    "warehouse_operations",
+  OPERATIONAL_VISIBILITY:   "operational_visibility",
+  LOGISTICS_OPTIMIZATION:   "logistics_optimization",
+  INVENTORY_CONTROL:        "inventory_control",
+  WORKFLOW_REDESIGN:        "workflow_redesign",
+  MANPOWER_COORDINATION:    "manpower_coordination",
+  WAREHOUSE_OPERATIONS:     "warehouse_operations",
   PROFITABILITY_PROTECTION: "profitability_protection",
-  OPERATIONAL_SCALABILITY: "operational_scalability",
+  OPERATIONAL_SCALABILITY:  "operational_scalability",
+  // Event Management recommendation categories
+  EVENT_READINESS_CONTROL:  "event_readiness_control",
+  ASSET_RECOVERY:           "asset_recovery",
 } as const;
 
 // ── Root cause title constants ─────────────────────────────────────────────────
@@ -73,6 +76,15 @@ const RC = {
   DELAYED_INVENTORY: "Delayed Inventory Certainty",
 } as const;
 
+// ── Event Management root cause title constants ────────────────────────────────
+
+const RC_EM = {
+  INV_GOV:       "Inventory Governance Deficiency",
+  ER_CONTROL:    "Event Readiness Control Failure",
+  ASSET_ACCOUNT: "Asset Accountability Weakness",
+  DISPATCH_PLAN: "Dispatch Planning Immaturity",
+} as const;
+
 // ── Finding category constants ─────────────────────────────────────────────────
 
 const FC = {
@@ -82,6 +94,14 @@ const FC = {
   MAN:  "manpower_dependency",
   FIN:  "financial_leakage",
   WFL:  "workflow_scalability",
+} as const;
+
+// ── Event Management finding category constants ────────────────────────────────
+
+const FC_EM = {
+  READINESS: "event_readiness",
+  DISPATCH:  "dispatch_operations",
+  ASSET:     "asset_management",
 } as const;
 
 // ── Priority ordering (for sort) ───────────────────────────────────────────────
@@ -694,6 +714,347 @@ function detectCrossTraining(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT RECOMMENDATION DETECTORS (Pack V2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── EM 1: Pre-Event Inventory Verification Workflow ───────────────────────────
+
+export function detectPreEventInventoryVerification(
+  findings:   OperationalFinding[],
+  rootCauses: RootCause[],
+): OperationalRecommendation | null {
+  const linkedRCs   = findAllRC(rootCauses, RC_EM.INV_GOV, RC_EM.ER_CONTROL);
+  const linkedFinds = findFindings(findings, FC.INV, FC_EM.DISPATCH, FC_EM.READINESS);
+  if (linkedRCs.length === 0 && linkedFinds.length === 0) return null;
+
+  const confidence = buildConfidence(linkedRCs, linkedFinds);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  const priority = linkedRCs.some(rc => rc.severity === "CRITICAL") ? "CRITICAL" : "HIGH";
+
+  console.log(
+    `[MGD][RECOMMENDATIONS] detectPreEventInventoryVerification → ` +
+    `confidence=${confidence} priority=${priority}`,
+  );
+
+  return {
+    id:      hashRecommendation("Pre-Event Inventory Verification Workflow"),
+    title:   "Pre-Event Inventory Verification Workflow",
+    summary:
+      "Implement a mandatory inventory verification step 24–48 hours before each event deployment. " +
+      "No event commitment may be confirmed unless all line items on the order manifest have been " +
+      "physically located and counted in the warehouse. Any shortage identified at this stage triggers " +
+      "a substitution decision process before event day — not on the day.",
+    priority,
+    timeframe:                "IMMEDIATE",
+    implementationDifficulty: "LOW",
+    category:                 REC_CATEGORIES.INVENTORY_CONTROL,
+    relatedRootCauses:        linkedRCs.map(rc => rc.id),
+    relatedFindings:          linkedFinds.map(f => f.id),
+    expectedOperationalImpact: [
+      "Eliminates on-site item shortages by catching gaps during the planning window.",
+      "Provides 24–48 hours to source substitutions or notify clients before event day.",
+      "Creates a documented inventory commitment trail for each event.",
+      "Reduces substitution pressure on dispatch and setup teams on the day.",
+    ],
+    actionItems: [
+      "Create a per-event inventory manifest template derived from the order confirmation.",
+      "Assign warehouse staff to physically verify each manifest item at T-48 before event day.",
+      "Record any variances with reason codes: damaged, not returned, missing from prior event.",
+      "Escalate unresolved shortages to the event manager for substitution approval before T-24.",
+    ],
+    confidence,
+  };
+}
+
+// ── EM 2: Dispatch Readiness Checklist ────────────────────────────────────────
+
+export function detectDispatchReadinessChecklist(
+  findings:   OperationalFinding[],
+  rootCauses: RootCause[],
+): OperationalRecommendation | null {
+  const linkedRCs   = findAllRC(rootCauses, RC_EM.DISPATCH_PLAN, RC_EM.ER_CONTROL);
+  const linkedFinds = findFindings(findings, FC_EM.DISPATCH, FC.LOG);
+  if (linkedRCs.length === 0 && linkedFinds.length === 0) return null;
+
+  const confidence = buildConfidence(linkedRCs, linkedFinds);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  const priority = linkedRCs.some(rc => rc.severity === "CRITICAL") ? "CRITICAL" : "HIGH";
+
+  console.log(
+    `[MGD][RECOMMENDATIONS] detectDispatchReadinessChecklist → ` +
+    `confidence=${confidence} priority=${priority}`,
+  );
+
+  return {
+    id:      hashRecommendation("Dispatch Readiness Checklist"),
+    title:   "Dispatch Readiness Checklist",
+    summary:
+      "Implement a standardised dispatch readiness checklist that must be completed and signed off " +
+      "before any event vehicle is loaded. The checklist covers: item manifest confirmation, loading " +
+      "sequence, departure time, ETA, driver assignment, and on-site contact. No truck departs without confirmed sign-off.",
+    priority,
+    timeframe:                "IMMEDIATE",
+    implementationDifficulty: "LOW",
+    category:                 REC_CATEGORIES.LOGISTICS_OPTIMIZATION,
+    relatedRootCauses:        linkedRCs.map(rc => rc.id),
+    relatedFindings:          linkedFinds.map(f => f.id),
+    expectedOperationalImpact: [
+      "Prevents incomplete dispatches by making each item's loading explicit and verified.",
+      "Creates a dispatch record that links to the event for post-event pattern analysis.",
+      "Reduces on-site surprises by confirming ETAs and contacts before departure.",
+      "Provides evidence for client disputes about what was dispatched and when.",
+    ],
+    actionItems: [
+      "Design a one-page dispatch checklist: order ref, items, loader, driver, departure time, ETA, sign-off.",
+      "Require the warehouse supervisor to countersign before any vehicle departure.",
+      "File completed checklists by event date — review any incomplete events at weekly operations meeting.",
+      "Measure dispatch completion rate weekly; target ≥98% complete dispatches within 90 days.",
+    ],
+    confidence,
+  };
+}
+
+// ── EM 3: Asset Damage Recovery Register ──────────────────────────────────────
+
+export function detectAssetDamageRecoveryRegister(
+  findings:   OperationalFinding[],
+  rootCauses: RootCause[],
+): OperationalRecommendation | null {
+  const linkedRCs   = findAllRC(rootCauses, RC_EM.ASSET_ACCOUNT);
+  const linkedFinds = findFindings(findings, FC_EM.ASSET);
+  if (linkedRCs.length === 0 && linkedFinds.length === 0) return null;
+
+  const confidence = buildConfidence(linkedRCs, linkedFinds);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(
+    `[MGD][RECOMMENDATIONS] detectAssetDamageRecoveryRegister → confidence=${confidence}`,
+  );
+
+  return {
+    id:      hashRecommendation("Asset Damage Recovery Register"),
+    title:   "Asset Damage Recovery Register",
+    summary:
+      "Create a structured asset damage register that tracks every damage incident from detection " +
+      "through to financial resolution. Each entry records: asset, event, damage type, estimated cost, " +
+      "responsible party, recovery status, and resolution date. Monthly review ensures no case ages without action.",
+    priority:                 "HIGH",
+    timeframe:                "30_DAYS",
+    implementationDifficulty: "LOW",
+    category:                 REC_CATEGORIES.PROFITABILITY_PROTECTION,
+    relatedRootCauses:        linkedRCs.map(rc => rc.id),
+    relatedFindings:          linkedFinds.map(f => f.id),
+    expectedOperationalImpact: [
+      "Converts damage write-offs into documented recovery opportunities with assigned ownership.",
+      "Increases recovery rate by creating accountability and follow-through discipline.",
+      "Provides data to identify which event types or clients have higher damage rates.",
+      "Supports insurance claims and client dispute resolution with documented evidence.",
+    ],
+    actionItems: [
+      "Create a damage register with fields: date, asset, event, type, cost, client, status, resolution.",
+      "Require on-site photo evidence of any damage at collection — uploaded before equipment leaves the venue.",
+      "Assign one finance team member as damage recovery owner — they own every open case.",
+      "Set monthly target: no open damage case older than 45 days without a decision (charge or write-off).",
+    ],
+    confidence,
+  };
+}
+
+// ── EM 4: Live Inventory Dashboard ────────────────────────────────────────────
+
+export function detectLiveInventoryDashboard(
+  findings:   OperationalFinding[],
+  rootCauses: RootCause[],
+): OperationalRecommendation | null {
+  const linkedRCs   = findAllRC(rootCauses, RC_EM.INV_GOV);
+  const linkedFinds = findFindings(findings, FC.INV, FC_EM.READINESS);
+  if (linkedRCs.length === 0 && linkedFinds.length < 2) return null;
+
+  const confidence = buildConfidence(linkedRCs, linkedFinds);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(
+    `[MGD][RECOMMENDATIONS] detectLiveInventoryDashboard → confidence=${confidence}`,
+  );
+
+  return {
+    id:      hashRecommendation("Live Inventory Dashboard"),
+    title:   "Live Inventory Dashboard",
+    summary:
+      "Deploy a live inventory dashboard — even a shared spreadsheet updated in real time — " +
+      "that shows current stock availability for every item category. The dashboard must be updated " +
+      "at three points: on return from event, after damage write-off, and before any new event " +
+      "commitment is confirmed.",
+    priority:                 "HIGH",
+    timeframe:                "30_DAYS",
+    implementationDifficulty: "MEDIUM",
+    category:                 REC_CATEGORIES.OPERATIONAL_VISIBILITY,
+    relatedRootCauses:        linkedRCs.map(rc => rc.id),
+    relatedFindings:          linkedFinds.map(f => f.id),
+    expectedOperationalImpact: [
+      "Sales and operations teams can confirm availability in real time without manual warehouse queries.",
+      "Eliminates double-booking of items across overlapping events.",
+      "Provides early warning of stock gaps before the event window — not at dispatch.",
+      "Reduces substitution frequency by catching shortfalls during booking, not on event day.",
+    ],
+    actionItems: [
+      "Start with a shared spreadsheet: columns for item, total stock, committed, available, last-updated.",
+      "Define three mandatory update triggers: post-event return, damage write-off, new booking confirmed.",
+      "Assign one warehouse owner per update trigger with a maximum 2-hour update window.",
+      "Review dashboard accuracy weekly against physical counts for the first 8 weeks.",
+    ],
+    confidence,
+  };
+}
+
+// ── EM 5: Warehouse Cycle Count Programme ─────────────────────────────────────
+
+export function detectWarehouseCycleCountProgramme(
+  findings:   OperationalFinding[],
+  rootCauses: RootCause[],
+): OperationalRecommendation | null {
+  const linkedRCs   = findAllRC(rootCauses, RC_EM.INV_GOV);
+  const linkedFinds = findFindings(findings, FC.INV, FC.WH);
+  if (linkedRCs.length === 0 && linkedFinds.length === 0) return null;
+
+  const confidence = buildConfidence(linkedRCs, linkedFinds);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(
+    `[MGD][RECOMMENDATIONS] detectWarehouseCycleCountProgramme → confidence=${confidence}`,
+  );
+
+  return {
+    id:      hashRecommendation("Warehouse Cycle Count Programme"),
+    title:   "Warehouse Cycle Count Programme",
+    summary:
+      "Implement a structured cycle count programme — counting a rotation of item categories each " +
+      "week so that every item is physically counted at least once per month. Cycle counts are more " +
+      "sustainable than full stock-takes and create continuous reconciliation discipline that prevents " +
+      "variance accumulation.",
+    priority:                 "HIGH",
+    timeframe:                "30_DAYS",
+    implementationDifficulty: "LOW",
+    category:                 REC_CATEGORIES.WAREHOUSE_OPERATIONS,
+    relatedRootCauses:        linkedRCs.map(rc => rc.id),
+    relatedFindings:          linkedFinds.map(f => f.id),
+    expectedOperationalImpact: [
+      "Keeps inventory records accurate without disruptive full stock-takes.",
+      "Identifies shrinkage and damage trends early, before they accumulate into significant variance.",
+      "Creates a culture of inventory accuracy accountability in the warehouse team.",
+      "Reduces reconciliation effort at period-end because variances are caught continuously.",
+    ],
+    actionItems: [
+      "Divide inventory into 4 groups — count one group per week so all items are counted monthly.",
+      "Assign specific warehouse staff to cycle count ownership, with supervisor sign-off.",
+      "Record count results against system records: any variance above 2% requires immediate investigation.",
+      "Review cycle count results at monthly operations review — track variance trend over time.",
+    ],
+    confidence,
+  };
+}
+
+// ── EM 6: Inventory Accountability Matrix ─────────────────────────────────────
+
+export function detectInventoryAccountabilityMatrix(
+  findings:   OperationalFinding[],
+  rootCauses: RootCause[],
+): OperationalRecommendation | null {
+  const linkedRCs   = findAllRC(rootCauses, RC_EM.ER_CONTROL, RC_EM.INV_GOV);
+  const linkedFinds = findFindings(findings, FC.INV, FC_EM.DISPATCH);
+  if (linkedRCs.length === 0 && linkedFinds.length === 0) return null;
+
+  const confidence = buildConfidence(linkedRCs, linkedFinds);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(
+    `[MGD][RECOMMENDATIONS] detectInventoryAccountabilityMatrix → confidence=${confidence}`,
+  );
+
+  return {
+    id:      hashRecommendation("Inventory Accountability Matrix"),
+    title:   "Inventory Accountability Matrix",
+    summary:
+      "Define explicit ownership for every inventory control action: who records outbound movements, " +
+      "who confirms returns, who approves substitutions, and who investigates shortages. Shared " +
+      "responsibility means no responsibility — the matrix assigns one named owner per control action.",
+    priority:                 "MEDIUM",
+    timeframe:                "30_DAYS",
+    implementationDifficulty: "LOW",
+    category:                 REC_CATEGORIES.MANPOWER_COORDINATION,
+    relatedRootCauses:        linkedRCs.map(rc => rc.id),
+    relatedFindings:          linkedFinds.map(f => f.id),
+    expectedOperationalImpact: [
+      "Eliminates ambiguity about who is responsible when inventory discrepancies occur.",
+      "Creates clear escalation paths when a control action cannot be completed on time.",
+      "Enables performance accountability — control failures can be traced to specific owners.",
+      "Supports training and backup planning because all control actions are documented.",
+    ],
+    actionItems: [
+      "List every inventory control action: dispatch recording, return confirmation, damage logging, shortage escalation.",
+      "Assign one primary owner and one backup per control action.",
+      "Communicate the matrix to all involved staff and confirm understanding.",
+      "Review and update the matrix quarterly or when team structure changes.",
+    ],
+    confidence,
+  };
+}
+
+// ── EM 7: Event Readiness Control Gate ────────────────────────────────────────
+
+export function detectEventReadinessControlGate(
+  findings:   OperationalFinding[],
+  rootCauses: RootCause[],
+): OperationalRecommendation | null {
+  const linkedRCs   = findAllRC(rootCauses, RC_EM.ER_CONTROL, RC_EM.DISPATCH_PLAN);
+  const linkedFinds = findFindings(findings, FC_EM.READINESS, FC_EM.DISPATCH);
+  if (linkedRCs.length === 0 && linkedFinds.length === 0) return null;
+
+  const confidence = buildConfidence(linkedRCs, linkedFinds);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  const priority: OperationalRecommendation["priority"] =
+    linkedFinds.some(f => f.severity === "CRITICAL") ||
+    linkedRCs.some(rc => rc.severity === "CRITICAL") ? "CRITICAL" : "HIGH";
+
+  console.log(
+    `[MGD][RECOMMENDATIONS] detectEventReadinessControlGate → ` +
+    `confidence=${confidence} priority=${priority}`,
+  );
+
+  return {
+    id:      hashRecommendation("Event Readiness Control Gate"),
+    title:   "Event Readiness Control Gate",
+    summary:
+      "Establish a formal Event Readiness Control Gate — a T-24 hour checkpoint where all event " +
+      "delivery elements are confirmed: inventory verified, truck assigned, route confirmed, driver " +
+      "briefed, on-site contact notified. If any element is unresolved at T-24, a defined escalation " +
+      "path is triggered. No element may be left unresolved past T-12.",
+    priority,
+    timeframe:                "IMMEDIATE",
+    implementationDifficulty: "LOW",
+    category:                 REC_CATEGORIES.OPERATIONAL_VISIBILITY,
+    relatedRootCauses:        linkedRCs.map(rc => rc.id),
+    relatedFindings:          linkedFinds.map(f => f.id),
+    expectedOperationalImpact: [
+      "Creates a structured final review before every event — catching gaps while remediation is still possible.",
+      "Prevents on-site surprises by making incomplete elements visible 24 hours before the event.",
+      "Provides an audit trail confirming that all pre-event controls were executed.",
+      "Converts last-minute panic decisions into managed escalations with defined resolution paths.",
+    ],
+    actionItems: [
+      "Define the T-24 gate checklist: inventory confirmed, vehicle confirmed, route confirmed, ETA confirmed, client notified.",
+      "Assign the event manager as T-24 gate owner — they must sign off the gate form for every event.",
+      "Define escalation: if any item is unresolved at T-24, the operations director is automatically notified.",
+      "Track gate completion rate per event — target 100% of events with confirmed T-24 sign-off within 60 days.",
+    ],
+    confidence,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DETECTOR REGISTRY
 // Add new industry-pack detectors here without modifying existing code.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -714,6 +1075,14 @@ const DETECTORS: DetectorFn[] = [
   detectWarehouseStabilization,
   detectDepartmentSync,
   detectCrossTraining,
+  // ── Event Management Pack V2 ──────────────────────────────────────────────
+  detectPreEventInventoryVerification,
+  detectDispatchReadinessChecklist,
+  detectAssetDamageRecoveryRegister,
+  detectLiveInventoryDashboard,
+  detectWarehouseCycleCountProgramme,
+  detectInventoryAccountabilityMatrix,
+  detectEventReadinessControlGate,
 ];
 
 const CONFIDENCE_THRESHOLD = 30;

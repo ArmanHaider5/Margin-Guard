@@ -22,6 +22,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { FindingEvidence, attachEvidenceToFindings } from "./evidence-engine";
+import { type EventSignals } from "./event-signals";
 
 // ── Exported interface ─────────────────────────────────────────────────────────
 
@@ -39,9 +40,10 @@ export interface OperationalFinding {
 }
 
 export interface FindingsParams {
-  transactions: any[];
-  documents:    any[];
-  industry?:    string;
+  transactions:  any[];
+  documents:     any[];
+  industry?:     string;
+  eventSignals?: EventSignals;   // pre-computed EM metrics — passed in by the pipeline
 }
 
 // ── Finding categories ─────────────────────────────────────────────────────────
@@ -53,6 +55,10 @@ export const FINDING_CATEGORIES = {
   MANPOWER_DEPENDENCY:     "manpower_dependency",
   FINANCIAL_LEAKAGE:       "financial_leakage",
   WORKFLOW_SCALABILITY:    "workflow_scalability",
+  // Event Management operational categories
+  EVENT_READINESS:         "event_readiness",
+  DISPATCH_OPERATIONS:     "dispatch_operations",
+  ASSET_MANAGEMENT:        "asset_management",
 } as const;
 
 // ── Thresholds ─────────────────────────────────────────────────────────────────
@@ -712,6 +718,300 @@ export function detectWarehouseOperations(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT DETECTORS (Pack V2)
+// All receive (stats, transactions, params) and read params.eventSignals.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── EM 1: Inventory Visibility Weakness ──────────────────────────────────────
+
+function detectEMInventoryVisibilityWeakness(
+  _stats: TxStats,
+  _transactions: any[],
+  params: FindingsParams,
+): OperationalFinding | null {
+  const signals = params.eventSignals;
+  if (!signals) return null;
+  if (signals.inventoryVisibilityScore >= 70) return null;
+
+  const score      = signals.inventoryVisibilityScore;
+  const confidence = cap(100 - score);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  const evidence: string[] = [
+    `Inventory Visibility Score: ${score}/100 (threshold: 70)`,
+  ];
+  if (signals.totalMissingItems > 0)
+    evidence.push(`${signals.totalMissingItems} missing items recorded across dispatch events`);
+  if (signals.incompleteDispatches > 0)
+    evidence.push(`${signals.incompleteDispatches} of ${signals.totalDispatches} dispatches incomplete`);
+
+  console.log(
+    `[MGD][FINDINGS] detectEMInventoryVisibilityWeakness → ` +
+    `score=${score} confidence=${confidence}`,
+  );
+
+  return {
+    id:         makeId("Inventory Visibility Weakness", FINDING_CATEGORIES.INVENTORY_VISIBILITY),
+    title:      "Inventory Visibility Weakness",
+    severity:   "HIGH",
+    category:   FINDING_CATEGORIES.INVENTORY_VISIBILITY,
+    department: "Warehouse / Operations",
+    summary:
+      `Inventory visibility scored ${score}/100 — below the 70-point operational threshold. ` +
+      `Gaps in real-time stock position are creating downstream dispatch failures and substitution ` +
+      `requirements, indicating that the physical inventory state is not accurately known before ` +
+      `commitments are made to clients.`,
+    signals: evidence,
+    operationalImpact:
+      "Poor inventory visibility forces dispatchers to commit items that may not be physically " +
+      "available, leading to last-minute substitutions and incomplete deliveries that erode client confidence.",
+    confidence,
+  };
+}
+
+// ── EM 2: Recurring Dispatch Failure Pattern ──────────────────────────────────
+
+function detectRecurringDispatchFailure(
+  _stats: TxStats,
+  _transactions: any[],
+  params: FindingsParams,
+): OperationalFinding | null {
+  const signals = params.eventSignals;
+  if (!signals || signals.totalDispatches === 0) return null;
+  if (signals.dispatchFailureRate <= 0.05) return null;
+
+  const rate       = signals.dispatchFailureRate;
+  const confidence = cap(Math.round(rate * 200));
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  const evidence: string[] = [
+    `${(rate * 100).toFixed(1)}% dispatch incomplete rate ` +
+    `(${signals.incompleteDispatches}/${signals.totalDispatches} events)`,
+  ];
+  if (signals.totalMissingItems > 0)
+    evidence.push(`${signals.totalMissingItems} total missing items across dispatch records`);
+  if (signals.totalSubstitutions > 0)
+    evidence.push(`${signals.totalSubstitutions} substitutions required to cover shortfalls`);
+
+  const severity: OperationalFinding["severity"] = confidence >= 65 ? "HIGH" : "MEDIUM";
+
+  console.log(
+    `[MGD][FINDINGS] detectRecurringDispatchFailure → ` +
+    `rate=${(rate * 100).toFixed(1)}% confidence=${confidence}`,
+  );
+
+  return {
+    id:         makeId("Recurring Dispatch Failure Pattern", FINDING_CATEGORIES.DISPATCH_OPERATIONS),
+    title:      "Recurring Dispatch Failure Pattern",
+    severity,
+    category:   FINDING_CATEGORIES.DISPATCH_OPERATIONS,
+    department: "Logistics / Dispatch",
+    summary:
+      `${(rate * 100).toFixed(1)}% of event dispatches recorded as incomplete — ` +
+      `exceeding the 5% operational reliability threshold. ` +
+      `Recurring incomplete dispatches indicate a systemic failure in pre-event preparation and ` +
+      `checklist discipline, not isolated incidents.`,
+    signals: evidence,
+    operationalImpact:
+      "Incomplete dispatches create client-facing failures at events — missing items require on-site " +
+      "substitutions or result in service gaps, directly impacting event quality and client satisfaction.",
+    confidence,
+  };
+}
+
+// ── EM 3: Inventory Shortage Exposure ────────────────────────────────────────
+
+function detectInventoryShortageExposure(
+  _stats: TxStats,
+  _transactions: any[],
+  params: FindingsParams,
+): OperationalFinding | null {
+  const signals = params.eventSignals;
+  if (!signals || signals.totalDispatchedItems === 0) return null;
+  if (signals.inventoryShortageRate <= 0.03) return null;
+
+  const rate       = signals.inventoryShortageRate;
+  const confidence = cap(Math.round(rate * 300));
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  const evidence: string[] = [
+    `${(rate * 100).toFixed(1)}% inventory shortage rate ` +
+    `(${signals.totalMissingItems} missing / ${signals.totalDispatchedItems} dispatched items)`,
+  ];
+  if (signals.substitutionRate > 0)
+    evidence.push(`Substitution rate: ${(signals.substitutionRate * 100).toFixed(1)}%`);
+
+  console.log(
+    `[MGD][FINDINGS] detectInventoryShortageExposure → ` +
+    `rate=${(rate * 100).toFixed(1)}% confidence=${confidence}`,
+  );
+
+  return {
+    id:         makeId("Inventory Shortage Exposure", FINDING_CATEGORIES.INVENTORY_VISIBILITY),
+    title:      "Inventory Shortage Exposure",
+    severity:   "HIGH",
+    category:   FINDING_CATEGORIES.INVENTORY_VISIBILITY,
+    department: "Warehouse / Event Operations",
+    summary:
+      `${(rate * 100).toFixed(1)}% of dispatched items recorded as missing — ` +
+      `exceeding the 3% operational safe threshold. ` +
+      `This level of shortage exposure indicates that inventory commitments are made against ` +
+      `unverified stock levels, creating predictable fulfilment failures at event sites.`,
+    signals: evidence,
+    operationalImpact:
+      "Inventory shortages at event sites force last-minute substitutions or client-visible service gaps. " +
+      "Repeated shortage patterns erode client confidence and create reputational risk for contracted events.",
+    confidence,
+  };
+}
+
+// ── EM 4: Asset Damage Recovery Leakage ──────────────────────────────────────
+
+function detectAssetDamageRecoveryLeakage(
+  _stats: TxStats,
+  _transactions: any[],
+  params: FindingsParams,
+): OperationalFinding | null {
+  const signals = params.eventSignals;
+  if (!signals || signals.totalDamageEvents === 0) return null;
+  if (signals.damageRecoveryRate >= 0.80) return null;
+
+  const recoveryRate = signals.damageRecoveryRate;
+  const leakage      = 1 - recoveryRate;
+  const confidence   = cap(Math.round(leakage * 120));
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  const evidence: string[] = [
+    `Damage recovery rate: ${(recoveryRate * 100).toFixed(0)}% (minimum threshold: 80%)`,
+    `${signals.totalDamageEvents} damage events, ${signals.recoveredDamageEvents} charges recovered`,
+  ];
+  if (signals.unrecoveredDamageValue > 0)
+    evidence.push(`Estimated unrecovered damage value: RM ${signals.unrecoveredDamageValue.toFixed(0)}`);
+
+  console.log(
+    `[MGD][FINDINGS] detectAssetDamageRecoveryLeakage → ` +
+    `recoveryRate=${(recoveryRate * 100).toFixed(0)}% confidence=${confidence}`,
+  );
+
+  return {
+    id:         makeId("Asset Damage Recovery Leakage", FINDING_CATEGORIES.ASSET_MANAGEMENT),
+    title:      "Asset Damage Recovery Leakage",
+    severity:   "HIGH",
+    category:   FINDING_CATEGORIES.ASSET_MANAGEMENT,
+    department: "Finance / Asset Management",
+    summary:
+      `Only ${(recoveryRate * 100).toFixed(0)}% of asset damage charges are being recovered — ` +
+      `below the 80% minimum for financial viability. ` +
+      `Asset damage at events is occurring and being recorded, but recovery processes are not ` +
+      `consistently pursued, resulting in direct write-off of client-chargeable costs.`,
+    signals: evidence,
+    operationalImpact:
+      "Unrecovered damage charges represent direct revenue loss. Repeated non-recovery removes " +
+      "the financial deterrent against client mishandling of hired assets, increasing future damage rates.",
+    confidence,
+  };
+}
+
+// ── EM 5: Event Readiness Risk ────────────────────────────────────────────────
+
+function detectEventReadinessRisk(
+  _stats: TxStats,
+  _transactions: any[],
+  params: FindingsParams,
+): OperationalFinding | null {
+  const signals = params.eventSignals;
+  if (!signals) return null;
+  if (signals.eventReadinessScore >= 75) return null;
+
+  const score      = signals.eventReadinessScore;
+  const confidence = cap(100 - score);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  const evidence: string[] = [
+    `Event Readiness Score: ${score}/100 (threshold: 75)`,
+  ];
+  if (signals.dispatchFailureRate > 0)
+    evidence.push(`Dispatch failure rate: ${(signals.dispatchFailureRate * 100).toFixed(1)}%`);
+  if (signals.inventoryShortageRate > 0)
+    evidence.push(`Inventory shortage rate: ${(signals.inventoryShortageRate * 100).toFixed(1)}%`);
+  if (signals.deliveryDelayRate > 0)
+    evidence.push(`Delivery delay rate: ${(signals.deliveryDelayRate * 100).toFixed(1)}%`);
+
+  console.log(
+    `[MGD][FINDINGS] detectEventReadinessRisk → score=${score} confidence=${confidence}`,
+  );
+
+  return {
+    id:         makeId("Event Readiness Risk", FINDING_CATEGORIES.EVENT_READINESS),
+    title:      "Event Readiness Risk",
+    severity:   "CRITICAL",
+    category:   FINDING_CATEGORIES.EVENT_READINESS,
+    department: "Operations / Event Management",
+    summary:
+      `Overall Event Readiness scored ${score}/100 — below the 75-point threshold for reliable ` +
+      `event delivery. This composite indicator reflects simultaneous failures across dispatch ` +
+      `completion, inventory availability, and logistics timing. The business is consistently ` +
+      `reaching event day with unresolved operational gaps.`,
+    signals: evidence,
+    operationalImpact:
+      "Low event readiness translates directly to client-facing failures. Every event with a readiness " +
+      "gap is an event where the client experiences service below the contracted standard, regardless of root cause.",
+    confidence,
+  };
+}
+
+// ── EM 6: Logistics Reliability Degradation ───────────────────────────────────
+
+function detectLogisticsReliabilityDegradation(
+  _stats: TxStats,
+  _transactions: any[],
+  params: FindingsParams,
+): OperationalFinding | null {
+  const signals = params.eventSignals;
+  if (!signals || signals.totalDispatches === 0) return null;
+  if (signals.deliveryDelayRate <= 0.10) return null;
+
+  const rate       = signals.deliveryDelayRate;
+  const confidence = cap(Math.round(rate * 150));
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  const evidence: string[] = [
+    `${(rate * 100).toFixed(1)}% of dispatches recorded delayed ` +
+    `(${signals.delayedDispatches}/${signals.totalDispatches})`,
+  ];
+  if (signals.averageDelayMinutes > 0)
+    evidence.push(`Average delay: ${signals.averageDelayMinutes.toFixed(0)} minutes per delayed dispatch`);
+
+  const severity: OperationalFinding["severity"] = rate >= 0.25 ? "HIGH" : "MEDIUM";
+
+  console.log(
+    `[MGD][FINDINGS] detectLogisticsReliabilityDegradation → ` +
+    `rate=${(rate * 100).toFixed(1)}% confidence=${confidence}`,
+  );
+
+  return {
+    id:         makeId("Logistics Reliability Degradation", FINDING_CATEGORIES.DISPATCH_OPERATIONS),
+    title:      "Logistics Reliability Degradation",
+    severity,
+    category:   FINDING_CATEGORIES.DISPATCH_OPERATIONS,
+    department: "Logistics",
+    summary:
+      `${(rate * 100).toFixed(1)}% of event dispatches recorded with delays — ` +
+      `exceeding the 10% threshold for reliable logistics performance. ` +
+      (signals.averageDelayMinutes > 0
+        ? `Average delay of ${signals.averageDelayMinutes.toFixed(0)} minutes per event. `
+        : "") +
+      `This indicates that route planning, loading schedules, or last-mile coordination are ` +
+      `systematically under-performing.`,
+    signals: evidence,
+    operationalImpact:
+      "Logistics delays create setup-time pressure at event venues, increasing the risk of incomplete " +
+      "assembly. Repeated delays damage the business's reputation for reliable event-day delivery.",
+    confidence,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DETECTOR REGISTRY
 // Add new detectors here — each receives (stats, transactions, params).
 // Return null to suppress the finding.
@@ -726,6 +1026,13 @@ const DETECTORS: DetectorFn[] = [
   (s, t) => detectFinancialLeakage(s, t),
   (s, t) => detectWorkflowScalabilityRisk(s, t),
   (s, t) => detectWarehouseOperations(s, t),
+  // ── Event Management Pack V2 ────────────────────────────────────────────
+  (s, t, p) => detectEMInventoryVisibilityWeakness(s, t, p),
+  (s, t, p) => detectRecurringDispatchFailure(s, t, p),
+  (s, t, p) => detectInventoryShortageExposure(s, t, p),
+  (s, t, p) => detectAssetDamageRecoveryLeakage(s, t, p),
+  (s, t, p) => detectEventReadinessRisk(s, t, p),
+  (s, t, p) => detectLogisticsReliabilityDegradation(s, t, p),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

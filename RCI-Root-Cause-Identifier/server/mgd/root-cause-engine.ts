@@ -54,12 +54,16 @@ export interface RootCauseParams {
 // ── Finding category constants ─────────────────────────────────────────────────
 
 const CAT = {
-  INV:  "inventory_visibility",
-  LOG:  "logistics_coordination",
-  WH:   "warehouse_operations",
-  MAN:  "manpower_dependency",
-  FIN:  "financial_leakage",
-  WFL:  "workflow_scalability",
+  INV:         "inventory_visibility",
+  LOG:         "logistics_coordination",
+  WH:          "warehouse_operations",
+  MAN:         "manpower_dependency",
+  FIN:         "financial_leakage",
+  WFL:         "workflow_scalability",
+  // Event Management categories
+  EM_READINESS: "event_readiness",
+  EM_DISPATCH:  "dispatch_operations",
+  EM_ASSET:     "asset_management",
 } as const;
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
@@ -539,6 +543,184 @@ export function detectDelayedInventoryCertainty(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EVENT MANAGEMENT ROOT CAUSE DETECTORS (Pack V2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── EM 1: Inventory Governance Deficiency ─────────────────────────────────────
+
+export function detectInventoryGovernanceDeficiency(
+  findings: OperationalFinding[],
+): RootCause | null {
+  const invFinds = byCategory(findings, CAT.INV);
+  if (invFinds.length === 0) return null;
+
+  const contributing = [...invFinds];
+  const confidence   = accumulateConfidence(contributing);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(
+    `[MGD][ROOT_CAUSE] detectInventoryGovernanceDeficiency → ` +
+    `confidence=${confidence} (inv=${invFinds.length})`,
+  );
+
+  return {
+    id:       makeId("Inventory Governance Deficiency"),
+    title:    "Inventory Governance Deficiency",
+    severity: severityFrom(confidence),
+    confidence,
+    summary:
+      "Inventory records cannot be trusted in real time. The absence of systematic stock " +
+      "verification, combined with visible shortage signals in dispatch data, indicates that " +
+      "inventory governance controls — cycle counts, real-time recording, and balance audits — " +
+      "are either absent or inconsistently enforced.",
+    contributingFindings: contributing.map(f => f.id),
+    operationalImpact: [
+      "Inventory decisions are made against stale or inaccurate records, creating fulfilment uncertainty.",
+      "Stock shortages are discovered at dispatch time rather than during planning — too late to remediate.",
+      "Financial reporting of asset values is unreliable without verified inventory positions.",
+      "Clients experience item shortages and substitutions that could be prevented with proactive control.",
+    ],
+    recommendations: [
+      "Implement a pre-event inventory check 24 hours before each event deployment.",
+      "Introduce a weekly cycle count for high-turnover items.",
+      "Require real-time recording of every item dispatched and returned.",
+    ],
+  };
+}
+
+// ── EM 2: Event Readiness Control Failure ─────────────────────────────────────
+
+export function detectEventReadinessControlFailure(
+  findings: OperationalFinding[],
+): RootCause | null {
+  const erFinds   = byCategory(findings, CAT.EM_READINESS);
+  const dispFinds = byCategory(findings, CAT.EM_DISPATCH);
+
+  if (erFinds.length === 0 && dispFinds.length === 0) return null;
+
+  const contributing = [...erFinds, ...dispFinds];
+  const confidence   = accumulateConfidence(contributing);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  const hasCriticalFinding = erFinds.some(f => f.severity === "CRITICAL");
+
+  console.log(
+    `[MGD][ROOT_CAUSE] detectEventReadinessControlFailure → ` +
+    `confidence=${confidence} (er=${erFinds.length}, disp=${dispFinds.length})`,
+  );
+
+  return {
+    id:       makeId("Event Readiness Control Failure"),
+    title:    "Event Readiness Control Failure",
+    severity: hasCriticalFinding ? "CRITICAL" : severityFrom(confidence),
+    confidence,
+    summary:
+      "Pre-event validation controls are insufficient to prevent operational failures at event sites. " +
+      "Dispatch records show incomplete deliveries, inventory shortages, and logistics delays that " +
+      "would be preventable with structured pre-event checklists, inventory confirmation gates, " +
+      "and readiness sign-off protocols.",
+    contributingFindings: contributing.map(f => f.id),
+    operationalImpact: [
+      "Events are launched without verified inventory, creating on-site gaps visible to clients.",
+      "No structured gate exists to halt deployment if dispatch is incomplete — failures proceed to the event.",
+      "Substitution decisions are made ad-hoc under time pressure rather than from pre-approved alternates.",
+      "Recurring failures indicate the absence of a learning loop — past failures are not embedded into future checklists.",
+    ],
+    recommendations: [
+      "Create a mandatory pre-event readiness gate: no truck leaves without confirmed checklist sign-off.",
+      "Define a substitution approval list for each product category so field teams have pre-authorised alternatives.",
+      "Implement a post-event debrief form that feeds into the next event's preparation checklist.",
+    ],
+  };
+}
+
+// ── EM 3: Asset Accountability Weakness ──────────────────────────────────────
+
+export function detectAssetAccountabilityWeakness(
+  findings: OperationalFinding[],
+): RootCause | null {
+  const assetFinds = byCategory(findings, CAT.EM_ASSET);
+  if (assetFinds.length === 0) return null;
+
+  const contributing = [...assetFinds];
+  const confidence   = accumulateConfidence(contributing);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(
+    `[MGD][ROOT_CAUSE] detectAssetAccountabilityWeakness → ` +
+    `confidence=${confidence} (asset=${assetFinds.length})`,
+  );
+
+  return {
+    id:       makeId("Asset Accountability Weakness"),
+    title:    "Asset Accountability Weakness",
+    severity: severityFrom(confidence),
+    confidence,
+    summary:
+      "Damaged assets are not consistently recovered from clients. Damage records show that " +
+      "incidents are being logged, but charge recovery is below the minimum threshold for " +
+      "financial viability. The absence of a structured damage-to-recovery workflow means that " +
+      "write-offs are treated as unavoidable losses rather than controllable recoveries.",
+    contributingFindings: contributing.map(f => f.id),
+    operationalImpact: [
+      "Unrecovered damage charges represent direct, avoidable revenue loss on each event.",
+      "Clients who cause damage without consequence have no deterrent against future mishandling.",
+      "Accumulated unrecovered write-offs reduce the capital available for asset replacement.",
+      "Inconsistent recovery enforcement creates fairness disputes when recovery is selectively pursued.",
+    ],
+    recommendations: [
+      "Implement a damage register tracking each incident from identification through to invoice or write-off.",
+      "Require photo documentation of damage at collection as mandatory evidence for recovery claims.",
+      "Set a recovery target of ≥85% of recorded damage value and review monthly.",
+    ],
+  };
+}
+
+// ── EM 4: Dispatch Planning Immaturity ───────────────────────────────────────
+
+export function detectDispatchPlanningImmaturity(
+  findings: OperationalFinding[],
+): RootCause | null {
+  const dispFinds = byCategory(findings, CAT.EM_DISPATCH);
+  const logFinds  = byCategory(findings, CAT.LOG);
+
+  if (dispFinds.length === 0) return null;
+
+  const contributing = [...dispFinds, ...logFinds];
+  const confidence   = accumulateConfidence(contributing);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(
+    `[MGD][ROOT_CAUSE] detectDispatchPlanningImmaturity → ` +
+    `confidence=${confidence} (disp=${dispFinds.length}, log=${logFinds.length})`,
+  );
+
+  return {
+    id:       makeId("Dispatch Planning Immaturity"),
+    title:    "Dispatch Planning Immaturity",
+    severity: severityFrom(confidence),
+    confidence,
+    summary:
+      "Delivery planning depends on manual coordination and reactive decision-making rather than " +
+      "structured dispatch management. Recurring dispatch failures, delivery delays, and substitution " +
+      "patterns indicate that the business does not have formalised dispatch planning processes — " +
+      "including pre-load checklists, route confirmation, and timing buffers before event setup deadlines.",
+    contributingFindings: contributing.map(f => f.id),
+    operationalImpact: [
+      "Manual dispatch coordination creates single-points-of-failure when key staff are unavailable.",
+      "Route and timing decisions made reactively on event day leave no buffer for problem resolution.",
+      "Recurring delays erode the setup-time window at venues, increasing on-site assembly pressure.",
+      "Absence of structured dispatch records prevents analysis of recurring failure patterns.",
+    ],
+    recommendations: [
+      "Create a standard dispatch planning template: item manifest, loading sequence, route, departure time, ETA.",
+      "Require all dispatch plans to be confirmed 24 hours before event day.",
+      "Build a 30-minute setup buffer into all delivery ETAs to absorb routine delays.",
+    ],
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DETECTOR REGISTRY
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -553,6 +735,11 @@ const DETECTORS: RootCauseDetector[] = [
   detectLogisticsCompressionRisk,
   detectWorkflowSyncFailure,
   detectDelayedInventoryCertainty,
+  // ── Event Management Pack V2 ──────────────────────────────────────────────
+  detectInventoryGovernanceDeficiency,
+  detectEventReadinessControlFailure,
+  detectAssetAccountabilityWeakness,
+  detectDispatchPlanningImmaturity,
 ];
 
 const CONFIDENCE_THRESHOLD = 25;

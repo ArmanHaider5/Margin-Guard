@@ -29,6 +29,7 @@ import { generateOperationalRecommendations } from "./recommendation-engine";
 import { generateBenchmarkResults }           from "./benchmark-engine";
 import { generateExecutiveNarrative }         from "./executive-narrative-engine";
 import { composeMGDReport }                   from "./report-composer";
+import { computeEventSignals, type EventSignals } from "./event-signals";
 import {
   startTrace,
   addTraceStep,
@@ -147,6 +148,81 @@ export function estimateOperationalHealth(
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
+// ── Severity Calibration (EM Pack V2) ─────────────────────────────────────────
+
+/**
+ * Post-analysis severity calibration pass.
+ *
+ * Applied after root causes are generated so we know which findings
+ * contribute to CRITICAL root causes.
+ *
+ * Rules (applied in order):
+ *   A. confidence > 75          → minimum severity HIGH
+ *   B. contributes to CRITICAL RC → minimum severity MEDIUM
+ *   C. estimatedHealth < 65 AND confidence >= 40 → no finding may stay LOW
+ *
+ * Never throws.
+ */
+function calibrateFindingSeverities(
+  findings:         OperationalFinding[],
+  rootCauses:       RootCause[],
+  estimatedHealth:  number,
+): OperationalFinding[] {
+  try {
+    // Build set of finding IDs that contribute to any CRITICAL root cause
+    const critRcFindingIds = new Set<string>();
+    for (const rc of rootCauses) {
+      if (rc.severity === "CRITICAL") {
+        for (const fId of (rc.contributingFindings ?? [])) {
+          critRcFindingIds.add(fId);
+        }
+      }
+    }
+
+    let upgraded = 0;
+    const calibrated = findings.map(f => {
+      let { severity } = f;
+      const original   = severity;
+
+      // Rule A: high-confidence finding → minimum HIGH
+      if (f.confidence > 75 && (severity === "LOW" || severity === "MEDIUM")) {
+        severity = "HIGH";
+      }
+
+      // Rule B: contributes to a CRITICAL root cause → minimum MEDIUM
+      if (critRcFindingIds.has(f.id) && severity === "LOW") {
+        severity = "MEDIUM";
+      }
+
+      // Rule C: unhealthy operation → no LOW allowed above confidence floor
+      if (estimatedHealth < 65 && severity === "LOW" && f.confidence >= 40) {
+        severity = "MEDIUM";
+      }
+
+      if (severity !== original) {
+        upgraded++;
+        console.log(
+          `[MGD][SEVERITY_CAL] "${f.title}" ${original}→${severity} ` +
+          `(confidence=${f.confidence}, health=${estimatedHealth})`,
+        );
+        return { ...f, severity } as OperationalFinding;
+      }
+      return f;
+    });
+
+    if (upgraded > 0) {
+      console.log(`[MGD][SEVERITY_CAL] Calibrated ${upgraded}/${findings.length} finding(s) (health=${estimatedHealth})`);
+    } else {
+      console.log(`[MGD][SEVERITY_CAL] No severity changes (${findings.length} findings, health=${estimatedHealth})`);
+    }
+
+    return calibrated;
+  } catch (err) {
+    console.error("[MGD][SEVERITY_CAL] calibrateFindingSeverities failed (returning original):", err);
+    return findings;
+  }
+}
+
 // ── Pipeline ──────────────────────────────────────────────────────────────────
 
 /**
@@ -236,13 +312,67 @@ export async function runMGDPipeline(
       }));
     }
 
+    // ── EVENT SIGNAL ANALYSIS (EM Pack V2) ──────────────────────────────────
+    // Pre-computes event-management operational metrics from transactions.
+    // EventSignals are passed into the findings engine so EM detectors can
+    // reference dispatch rates, shortage rates, and composite scores.
+    let eventSignals: EventSignals | undefined;
+    {
+      const t0 = new Date().toISOString();
+      let status: "completed" | "failed" = "completed";
+      try {
+        eventSignals = computeEventSignals(transactions);
+        console.log(
+          `[MGD][EVENT_SIGNALS] ` +
+          `dispatchFailureRate=${(eventSignals.dispatchFailureRate * 100).toFixed(1)}% ` +
+          `inventoryShortageRate=${(eventSignals.inventoryShortageRate * 100).toFixed(1)}% ` +
+          `substitutionRate=${(eventSignals.substitutionRate * 100).toFixed(1)}% ` +
+          `deliveryDelayRate=${(eventSignals.deliveryDelayRate * 100).toFixed(1)}% ` +
+          `damageRecoveryRate=${(eventSignals.damageRecoveryRate * 100).toFixed(1)}% ` +
+          `invVisibilityScore=${eventSignals.inventoryVisibilityScore} ` +
+          `eventReadinessScore=${eventSignals.eventReadinessScore}`,
+        );
+        console.log(
+          `[MGD][EVENT_SIGNALS] counts — ` +
+          `dispatches=${eventSignals.totalDispatches} ` +
+          `(incomplete=${eventSignals.incompleteDispatches}, delayed=${eventSignals.delayedDispatches}) ` +
+          `missingItems=${eventSignals.totalMissingItems} ` +
+          `substitutions=${eventSignals.totalSubstitutions} ` +
+          `damageEvents=${eventSignals.totalDamageEvents} ` +
+          `(recovered=${eventSignals.recoveredDamageEvents})`,
+        );
+      } catch (err) {
+        status = "failed";
+        console.error("[MGD][EVENT_SIGNALS] computeEventSignals failed:", err);
+      }
+      await record(makeStep({
+        step:        "Event Signal Analysis",
+        startedAt:   t0,
+        status,
+        inputCount:  transactions.length,
+        outputCount: eventSignals ? 10 : 0,
+        metadata:    eventSignals ? {
+          dispatchFailureRate:      eventSignals.dispatchFailureRate,
+          inventoryShortageRate:    eventSignals.inventoryShortageRate,
+          substitutionRate:         eventSignals.substitutionRate,
+          deliveryDelayRate:        eventSignals.deliveryDelayRate,
+          averageDelayMinutes:      eventSignals.averageDelayMinutes,
+          damageRecoveryRate:       eventSignals.damageRecoveryRate,
+          unrecoveredDamageValue:   eventSignals.unrecoveredDamageValue,
+          inventoryVisibilityScore: eventSignals.inventoryVisibilityScore,
+          eventReadinessScore:      eventSignals.eventReadinessScore,
+          totalDispatches:          eventSignals.totalDispatches,
+        } : {},
+      }));
+    }
+
     // ── STEP 1: Findings ────────────────────────────────────────────────────
     let findings: OperationalFinding[] = [];
     {
       const t0 = new Date().toISOString();
       let status: "completed" | "failed" = "completed";
       try {
-        findings = generateOperationalFindings({ transactions, documents, industry });
+        findings = generateOperationalFindings({ transactions, documents, industry, eventSignals });
         console.log(`[MGD][PIPELINE] STEP 1 — findings=${findings.length}`);
       } catch (err) {
         status = "failed";
@@ -289,6 +419,22 @@ export async function runMGDPipeline(
           high:       rootCauses.filter(r => r.severity === "HIGH").length,
         },
       }));
+    }
+
+    // ── SEVERITY CALIBRATION (EM Pack V2) ───────────────────────────────────
+    // Applies after root causes are known — uses preliminary health estimate
+    // (no benchmarks yet) so calibration improves severity before recommendations.
+    {
+      const preliminaryHealth = estimateOperationalHealth(findings, rootCauses, []);
+      findings = calibrateFindingSeverities(findings, rootCauses, preliminaryHealth);
+      console.log(
+        `[MGD][PIPELINE] SEVERITY_CAL — ` +
+        `prelimHealth=${preliminaryHealth} ` +
+        `critical=${findings.filter(f => f.severity === "CRITICAL").length} ` +
+        `high=${findings.filter(f => f.severity === "HIGH").length} ` +
+        `medium=${findings.filter(f => f.severity === "MEDIUM").length} ` +
+        `low=${findings.filter(f => f.severity === "LOW").length}`,
+      );
     }
 
     // ── STEP 3: Recommendations ─────────────────────────────────────────────

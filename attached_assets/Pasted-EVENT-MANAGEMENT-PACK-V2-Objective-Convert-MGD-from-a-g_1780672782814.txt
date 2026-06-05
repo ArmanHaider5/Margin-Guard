@@ -1,0 +1,203 @@
+EVENT MANAGEMENT PACK V2
+
+Objective:
+Convert MGD from a generic warehouse diagnostic into an event-management operational intelligence engine.
+
+====================================================
+STEP 1 — EVENT SIGNAL ENGINE
+============================
+
+Create server/mgd/event-signals.ts
+
+Generate the following metrics from extracted transactions and event-specific documents:
+
+dispatchFailureRate
+= dispatches marked incomplete / total dispatches
+
+inventoryShortageRate
+= missing items / total dispatched items
+
+substitutionRate
+= substitutions / total dispatched items
+
+deliveryDelayRate
+= delayed dispatches / total dispatches
+
+averageDelayMinutes
+= average delay mins
+
+assetDamageRate
+= damaged assets / active assets
+
+damageRecoveryRate
+= recovered damage value / total damage value
+
+unrecoveredDamageValue
+= total unrecovered charges
+
+inventoryVisibilityScore
+based on:
+
+* adjustment frequency
+* reconciliation frequency
+* inventory discrepancy signals
+
+eventReadinessScore
+based on:
+
+* dispatch completion
+* substitutions
+* missing items
+* delay rates
+
+====================================================
+STEP 2 — NEW FINDINGS
+=====================
+
+Add deterministic findings:
+
+Inventory Visibility Weakness
+
+Trigger:
+inventoryVisibilityScore < 70
+
+Severity:
+HIGH
+
+---
+
+Recurring Dispatch Failure Pattern
+
+Trigger:
+dispatchFailureRate > 5%
+
+Severity:
+HIGH
+
+---
+
+Inventory Shortage Exposure
+
+Trigger:
+inventoryShortageRate > 3%
+
+Severity:
+HIGH
+
+---
+
+Asset Damage Recovery Leakage
+
+Trigger:
+damageRecoveryRate < 80%
+
+Severity:
+HIGH
+
+---
+
+Event Readiness Risk
+
+Trigger:
+eventReadinessScore < 75
+
+Severity:
+CRITICAL
+
+---
+
+Logistics Reliability Degradation
+
+Trigger:
+deliveryDelayRate > 10%
+
+Severity:
+MEDIUM/HIGH
+
+====================================================
+STEP 3 — NEW ROOT CAUSES
+========================
+
+Inventory Governance Deficiency
+
+Inventory records cannot be trusted in real time.
+
+---
+
+Event Readiness Control Failure
+
+Pre-event validation controls are insufficient.
+
+---
+
+Asset Accountability Weakness
+
+Damaged assets are not consistently recovered.
+
+---
+
+Dispatch Planning Immaturity
+
+Delivery planning depends on manual coordination.
+
+====================================================
+STEP 4 — RECOMMENDATIONS
+========================
+
+Add recommendations:
+
+Pre-Event Inventory Verification Workflow
+
+Dispatch Readiness Checklist
+
+Asset Damage Recovery Register
+
+Live Inventory Dashboard
+
+Warehouse Cycle Count Programme
+
+Inventory Accountability Matrix
+
+Event Readiness Control Gate
+
+====================================================
+STEP 5 — SEVERITY CALIBRATION FIX
+=================================
+
+Current issue:
+
+Health Score = 61
+Root Cause = CRITICAL
+Findings = LOW
+
+This is logically inconsistent.
+
+Implement severity alignment:
+
+If health score < 65:
+No finding may remain LOW unless confidence < 40.
+
+If a finding contributes to a CRITICAL root cause:
+minimum severity = MEDIUM.
+
+If confidence > 75:
+minimum severity = HIGH.
+
+====================================================
+STEP 6 — PIPELINE TRACE
+=======================
+
+Add trace section:
+
+[MGD][EVENT_SIGNALS]
+
+Output:
+
+dispatchFailureRate
+inventoryShortageRate
+substitutionRate
+damageRecoveryRate
+inventoryVisibilityScore
+eventReadinessScore
+
+so diagnostics can be audited later.
