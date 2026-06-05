@@ -70,8 +70,8 @@ function Router() {
     return (
       <Switch>
         {/* Counsellor View (full access) */}
-        <Route path="/" component={AdminDashboard} />
-        <Route path="/admin" component={AdminDashboard} />
+        <Route path="/" component={MGDDashboard} />
+        <Route path="/admin" component={MGDDashboard} />
         <Route path="/admin/clients" component={AdminClients} />
         <Route path="/admin/clients/new" component={ClientForm} />
         <Route path="/admin/clients/:id/edit" component={ClientForm} />
