@@ -23,6 +23,12 @@ import { generateRootCauses }          from "../mgd/root-cause-engine";
 import { generateOperationalRecommendations } from "../mgd/recommendation-engine";
 import { generateBenchmarkResults }    from "../mgd/benchmark-engine";
 import { generateExecutiveNarrative }  from "../mgd/executive-narrative-engine";
+import {
+  saveReport,
+  getReport,
+  listReports,
+  deleteReport,
+} from "../mgd/report-store";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -89,6 +95,16 @@ export function registerMGDRoutes(app: Express): void {
         runtimeMs: result.runtimeMs,
         steps:     result.steps,
       });
+
+      // Fire-and-forget persistence — never blocks the response
+      saveReport({
+        clientId:   body.clientId   ?? undefined,
+        clientName: body.clientName ?? undefined,
+        industry:   body.industry   ?? undefined,
+        report:     result.report,
+        runtimeMs:  result.runtimeMs,
+      }).catch(err => console.error("[MGD][API] POST /api/mgd/run — saveReport failed (non-fatal):", err));
+
     } catch (err) {
       console.error("[MGD][API] POST /api/mgd/run — FATAL:", err);
       fail(res, 500, "Pipeline execution failed");
@@ -281,5 +297,58 @@ export function registerMGDRoutes(app: Express): void {
     }
   });
 
-  console.log("[MGD][API] Routes registered: GET /api/mgd/health, POST /api/mgd/{run,estimate-health,findings,root-causes,recommendations,benchmarks,narrative,export-pdf}");
+  // ── GET /api/mgd/reports ────────────────────────────────────────────────────
+  // List all stored reports, optionally filtered by ?clientId=
+  app.get("/api/mgd/reports", async (req: Request, res: Response) => {
+    try {
+      const clientId = typeof req.query.clientId === "string" ? req.query.clientId : undefined;
+      console.log(`[MGD][REPORTS] GET /api/mgd/reports — clientId=${clientId ?? "all"}`);
+      const reports = await listReports(clientId);
+      console.log(`[MGD][REPORTS] GET /api/mgd/reports — returned ${reports.length} record(s)`);
+      ok(res, { reports });
+    } catch (err) {
+      console.error("[MGD][REPORTS] GET /api/mgd/reports — error:", err);
+      fail(res, 500, "Failed to list reports");
+    }
+  });
+
+  // ── GET /api/mgd/reports/:id ─────────────────────────────────────────────────
+  // Retrieve a single stored report by id.
+  app.get("/api/mgd/reports/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      console.log(`[MGD][REPORTS] GET /api/mgd/reports/${id}`);
+      const report = await getReport(id);
+      if (!report) {
+        console.log(`[MGD][REPORTS] GET /api/mgd/reports/${id} — not found`);
+        return fail(res, 404, `Report "${id}" not found`);
+      }
+      console.log(`[MGD][REPORTS] GET /api/mgd/reports/${id} — found`);
+      ok(res, { report });
+    } catch (err) {
+      console.error("[MGD][REPORTS] GET /api/mgd/reports/:id — error:", err);
+      fail(res, 500, "Failed to retrieve report");
+    }
+  });
+
+  // ── DELETE /api/mgd/reports/:id ──────────────────────────────────────────────
+  // Delete a single stored report by id.
+  app.delete("/api/mgd/reports/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      console.log(`[MGD][REPORTS] DELETE /api/mgd/reports/${id}`);
+      const deleted = await deleteReport(id);
+      if (!deleted) {
+        console.log(`[MGD][REPORTS] DELETE /api/mgd/reports/${id} — not found`);
+        return fail(res, 404, `Report "${id}" not found`);
+      }
+      console.log(`[MGD][REPORTS] DELETE /api/mgd/reports/${id} — deleted`);
+      ok(res, { deleted: true });
+    } catch (err) {
+      console.error("[MGD][REPORTS] DELETE /api/mgd/reports/:id — error:", err);
+      fail(res, 500, "Failed to delete report");
+    }
+  });
+
+  console.log("[MGD][API] Routes registered: GET /api/mgd/{health,reports,reports/:id}, DELETE /api/mgd/reports/:id, POST /api/mgd/{run,estimate-health,findings,root-causes,recommendations,benchmarks,narrative,export-pdf}");
 }
