@@ -33,6 +33,10 @@ import {
   listTraces,
   getTrace,
 } from "../mgd/pipeline-trace";
+import { storage }      from "../system/storage";
+import { detectBlocks } from "../cil/block-detector";
+import { mapColumns }   from "../cil/column-mapper";
+import { parseRow }     from "../cil/row-parser";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -73,18 +77,144 @@ export function registerMGDRoutes(app: Express): void {
   // ── POST /api/mgd/run ───────────────────────────────────────────────────────
   // Full pipeline: findings → root causes → recommendations → benchmarks →
   // narrative → composed report.
+  //
+  // When `selectedDocuments` (array of document IDs) is present in the body,
+  // this handler loads each document from storage, extracts transactions from
+  // any structured spreadsheet sheets via detectBlocks → mapColumns → parseRow,
+  // and fails with 400 if no transactions could be extracted.
   app.post("/api/mgd/run", async (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/run — start");
     try {
       const body = req.body ?? {};
+
+      // ── Consultant context ─────────────────────────────────────────────────
+      const rawNotes = safeArray(body.consultantNotes);
+      const consultantNotes = rawNotes.map((n: any) => ({
+        title:       String(n.title       ?? "").trim(),
+        category:    String(n.category    ?? "").trim(),
+        observation: String(n.observation ?? "").trim(),
+      })).filter((n: any) => n.title || n.observation);
+
+      const businessConcerns: string[] = safeArray(body.businessConcerns)
+        .map((c: unknown) => String(c ?? "").trim())
+        .filter(Boolean);
+
+      // ── Document → transaction extraction ─────────────────────────────────
+      const selectedDocIds: string[] = safeArray(body.selectedDocuments)
+        .filter((id: unknown) => typeof id === "string" && id.trim().length > 0);
+
+      const transactions: any[] = [];
+      const documents:    any[] = [];
+
+      if (selectedDocIds.length > 0) {
+        console.log(`[MGD][EXTRACT] Loading ${selectedDocIds.length} selected document(s)`);
+
+        for (const docId of selectedDocIds) {
+          try {
+            const doc = await storage.getClientDocument(docId);
+            if (!doc) {
+              console.log(`[MGD][EXTRACT] Document ${docId} — not found in storage, skipping`);
+              continue;
+            }
+
+            documents.push(doc);
+
+            const sheets = doc.extractedData?.sheets ?? [];
+            if (sheets.length === 0) {
+              console.log(`[MGD][EXTRACT] "${doc.fileName}" — no structured sheets, skipping extraction`);
+              continue;
+            }
+
+            let docRows  = 0;
+            let docBlocks = 0;
+            let docTxs   = 0;
+
+            for (const sheet of sheets) {
+              const rawRows: any[][] = Array.isArray(sheet.rows) ? sheet.rows : [];
+              if (rawRows.length === 0) continue;
+
+              docRows += rawRows.length;
+
+              const blocks = detectBlocks(rawRows);
+              docBlocks += blocks.length;
+
+              for (const block of blocks) {
+                const blockDataRows: string[][] = rawRows
+                  .slice(block.startRow, block.endRow + 1)
+                  .map((r: any[]) => (Array.isArray(r) ? r : []).map((v: any) => String(v ?? "").trim()));
+
+                const { columnMap } = mapColumns(block.headers);
+
+                // Only process blocks with at least one meaningful column
+                const hasMeaningful =
+                  columnMap.quantityOut !== undefined ||
+                  columnMap.quantityIn  !== undefined ||
+                  columnMap.value       !== undefined ||
+                  columnMap.balance     !== undefined;
+
+                if (!hasMeaningful) continue;
+
+                for (const row of blockDataRows) {
+                  const nonEmpty = row.filter(c => c !== "");
+                  if (nonEmpty.length === 0) continue;
+
+                  const parsedTxs = parseRow(
+                    row,
+                    block.headers,
+                    columnMap,
+                    "unknown" as any,
+                    block.entityName ?? "",
+                  );
+
+                  for (const tx of parsedTxs) {
+                    transactions.push({
+                      ...tx,
+                      sourceFile: doc.fileName,
+                      documentId: doc.id,
+                      clientId:   doc.clientId,
+                    });
+                    docTxs++;
+                  }
+                }
+              }
+            }
+
+            console.log(
+              `[MGD][EXTRACT] "${doc.fileName}" — ` +
+              `rows=${docRows} blocks=${docBlocks} transactions=${docTxs}`,
+            );
+          } catch (docErr) {
+            console.error(`[MGD][EXTRACT] Error processing document ${docId}:`, docErr);
+          }
+        }
+
+        console.log("[MGD] Extraction Complete", {
+          documents:    selectedDocIds.length,
+          transactions: transactions.length,
+        });
+
+        if (transactions.length === 0) {
+          return fail(res, 400, "No operational transactions could be extracted from the selected documents.");
+        }
+      }
+
+      // ── Merge with any inline transactions from body (fallback / legacy) ──
+      const finalTransactions = transactions.length > 0
+        ? transactions
+        : safeArray(body.transactions);
+
+      // ── Run pipeline ───────────────────────────────────────────────────────
       const result = await runMGDPipeline({
-        clientName:   body.clientName   ?? undefined,
-        industry:     body.industry     ?? undefined,
-        transactions: safeArray(body.transactions),
-        documents:    safeArray(body.documents),
-        metrics:      safeMetrics(body.metrics),
+        clientName:        body.clientName   ?? undefined,
+        industry:          body.industry     ?? undefined,
+        transactions:      finalTransactions,
+        documents,
+        metrics:           safeMetrics(body.metrics),
+        consultantNotes:   consultantNotes.length   > 0 ? consultantNotes   : undefined,
+        businessConcerns:  businessConcerns.length  > 0 ? businessConcerns  : undefined,
       });
+
       console.log(
         `[MGD][API] POST /api/mgd/run — ` +
         `findings=${result.steps.findingsCount}, ` +
@@ -95,6 +225,7 @@ export function registerMGDRoutes(app: Express): void {
         `traceId=${result.traceId}, ` +
         `pipelineMs=${result.runtimeMs}, totalMs=${Date.now() - t0}`,
       );
+
       ok(res, {
         report:    result.report,
         runtimeMs: result.runtimeMs,

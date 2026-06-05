@@ -1,5 +1,265 @@
 [
   {
+    "id": "3307cacb-a7b3-491c-8b2c-a19fac78582e",
+    "clientId": "41311d78-9900-49fa-be98-fd132a72a09e",
+    "clientName": "Madetill Event Management (MEM) Sdn. Bhd. (TEST) ",
+    "industry": "event_management",
+    "createdAt": "2026-06-05T12:29:44.347Z",
+    "report": {
+      "metadata": {
+        "generatedAt": "2026-06-05T12:29:44.346Z",
+        "clientName": "Madetill Event Management (MEM) Sdn. Bhd. (TEST) ",
+        "industry": "event_management",
+        "operationalHealthScore": 85,
+        "reportVersion": "MGD-V1"
+      },
+      "summary": {
+        "criticalFindings": 0,
+        "highFindings": 0,
+        "criticalRootCauses": 0,
+        "highPriorityRecommendations": 0,
+        "benchmarkAlerts": 0
+      },
+      "narrative": {
+        "executiveOverview": {
+          "id": "executive-overview",
+          "title": "Executive Overview",
+          "content": "This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework. The operational health assessment returned a classification of Operationally Stable, indicating that operations are performing within acceptable parameters.",
+          "priority": 1
+        },
+        "keyFindings": {
+          "id": "key-findings",
+          "title": "Key Operational Findings",
+          "content": "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
+          "priority": 2
+        },
+        "rootCauseSummary": {
+          "id": "root-cause-summary",
+          "title": "Root Cause Analysis",
+          "content": "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
+          "priority": 3
+        },
+        "operationalHealth": {
+          "id": "operational-health",
+          "title": "Operational Health Assessment",
+          "content": "Operational Health Classification: Operationally Stable.  The composite operational health score of 85/100 reflects an operation that has achieved a functional baseline across its core processes. Under these conditions, the focus shifts from stabilisation to optimisation — embedding process controls that preserve performance as the business scales.",
+          "priority": 4
+        },
+        "priorityActions": {
+          "id": "priority-actions",
+          "title": "Priority Actions",
+          "content": "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
+          "priority": 5
+        },
+        "strategicDirection": {
+          "id": "strategic-direction",
+          "title": "Strategic Direction",
+          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. As operational controls mature, the business will develop predictive visibility into demand cycles, allowing for proactive resource allocation rather than reactive scrambling.",
+          "priority": 6
+        },
+        "finalConclusion": {
+          "id": "final-conclusion",
+          "title": "Conclusion",
+          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. The recommendations in this report are practical, sequenced, and designed to generate visible operational improvement within 30 to 90 days. The management team has the knowledge and resources to execute the stabilisation phase — what is required is structured commitment to the process. With structured implementation of the recommended actions, the business is well-positioned to convert current operational strain into a durable competitive advantage — an operation that grows reliably, serves clients consistently, and retains value at scale.",
+          "priority": 7
+        },
+        "metadata": {
+          "generatedAt": "2026-06-05T12:29:44.346Z",
+          "industry": "event_management",
+          "findingsCount": 0,
+          "rootCauseCount": 0,
+          "recommendationCount": 0,
+          "operationalHealthScore": 85
+        }
+      },
+      "findings": [],
+      "rootCauses": [],
+      "recommendations": [],
+      "benchmarks": [],
+      "visualMetrics": {
+        "operationalHealthLabel": "Operationally Stable",
+        "operationalRiskLevel": "Controlled",
+        "benchmarkStatusBreakdown": {
+          "healthy": 0,
+          "watchlist": 0,
+          "elevated": 0,
+          "critical": 0
+        }
+      },
+      "industryInsights": {
+        "maturityLevel": "ADVANCED",
+        "rules": [
+          {
+            "id": "em-catering-growth-opportunity",
+            "category": "strategic_growth",
+            "title": "Catering Growth Opportunity",
+            "description": "Event management businesses with controlled operational baselines frequently have untapped catering margin upside. Developing or expanding an in-house catering offering can increase per-event revenue by 20–40% while deepening client lock-in and reducing third-party vendor dependency.",
+            "severity": "LOW",
+            "confidence": 75
+          },
+          {
+            "id": "em-central-kitchen-readiness",
+            "category": "strategic_growth",
+            "title": "Central Kitchen Readiness",
+            "description": "Event management operations at scale frequently benefit from centralised food production infrastructure. A central kitchen reduces last-mile catering complexity and is a high-leverage investment for businesses running 3 or more simultaneous events.",
+            "severity": "LOW",
+            "confidence": 32
+          }
+        ],
+        "topRisks": [],
+        "topOpportunities": [
+          {
+            "id": "em-catering-growth-opportunity",
+            "category": "strategic_growth",
+            "title": "Catering Growth Opportunity",
+            "description": "Event management businesses with controlled operational baselines frequently have untapped catering margin upside. Developing or expanding an in-house catering offering can increase per-event revenue by 20–40% while deepening client lock-in and reducing third-party vendor dependency.",
+            "severity": "LOW",
+            "confidence": 75
+          },
+          {
+            "id": "em-central-kitchen-readiness",
+            "category": "strategic_growth",
+            "title": "Central Kitchen Readiness",
+            "description": "Event management operations at scale frequently benefit from centralised food production infrastructure. A central kitchen reduces last-mile catering complexity and is a high-leverage investment for businesses running 3 or more simultaneous events.",
+            "severity": "LOW",
+            "confidence": 32
+          }
+        ]
+      }
+    },
+    "runtimeMs": 4
+  },
+  {
+    "id": "e2258d00-a4b5-4b5b-94f1-59b40e5d99a1",
+    "clientId": "41311d78-9900-49fa-be98-fd132a72a09e",
+    "clientName": "Madetill Event Management (MEM) Sdn. Bhd. (TEST) ",
+    "industry": "event_management",
+    "createdAt": "2026-06-05T12:23:38.507Z",
+    "report": {
+      "metadata": {
+        "generatedAt": "2026-06-05T12:23:38.506Z",
+        "clientName": "Madetill Event Management (MEM) Sdn. Bhd. (TEST) ",
+        "industry": "event_management",
+        "operationalHealthScore": 85,
+        "reportVersion": "MGD-V1"
+      },
+      "summary": {
+        "criticalFindings": 0,
+        "highFindings": 0,
+        "criticalRootCauses": 0,
+        "highPriorityRecommendations": 0,
+        "benchmarkAlerts": 0
+      },
+      "narrative": {
+        "executiveOverview": {
+          "id": "executive-overview",
+          "title": "Executive Overview",
+          "content": "This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework. The operational health assessment returned a classification of Operationally Stable, indicating that operations are performing within acceptable parameters.",
+          "priority": 1
+        },
+        "keyFindings": {
+          "id": "key-findings",
+          "title": "Key Operational Findings",
+          "content": "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
+          "priority": 2
+        },
+        "rootCauseSummary": {
+          "id": "root-cause-summary",
+          "title": "Root Cause Analysis",
+          "content": "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
+          "priority": 3
+        },
+        "operationalHealth": {
+          "id": "operational-health",
+          "title": "Operational Health Assessment",
+          "content": "Operational Health Classification: Operationally Stable.  The composite operational health score of 85/100 reflects an operation that has achieved a functional baseline across its core processes. Under these conditions, the focus shifts from stabilisation to optimisation — embedding process controls that preserve performance as the business scales.",
+          "priority": 4
+        },
+        "priorityActions": {
+          "id": "priority-actions",
+          "title": "Priority Actions",
+          "content": "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
+          "priority": 5
+        },
+        "strategicDirection": {
+          "id": "strategic-direction",
+          "title": "Strategic Direction",
+          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. As operational controls mature, the business will develop predictive visibility into demand cycles, allowing for proactive resource allocation rather than reactive scrambling.",
+          "priority": 6
+        },
+        "finalConclusion": {
+          "id": "final-conclusion",
+          "title": "Conclusion",
+          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. The recommendations in this report are practical, sequenced, and designed to generate visible operational improvement within 30 to 90 days. The management team has the knowledge and resources to execute the stabilisation phase — what is required is structured commitment to the process. With structured implementation of the recommended actions, the business is well-positioned to convert current operational strain into a durable competitive advantage — an operation that grows reliably, serves clients consistently, and retains value at scale.",
+          "priority": 7
+        },
+        "metadata": {
+          "generatedAt": "2026-06-05T12:23:38.505Z",
+          "industry": "event_management",
+          "findingsCount": 0,
+          "rootCauseCount": 0,
+          "recommendationCount": 0,
+          "operationalHealthScore": 85
+        }
+      },
+      "findings": [],
+      "rootCauses": [],
+      "recommendations": [],
+      "benchmarks": [],
+      "visualMetrics": {
+        "operationalHealthLabel": "Operationally Stable",
+        "operationalRiskLevel": "Controlled",
+        "benchmarkStatusBreakdown": {
+          "healthy": 0,
+          "watchlist": 0,
+          "elevated": 0,
+          "critical": 0
+        }
+      },
+      "industryInsights": {
+        "maturityLevel": "ADVANCED",
+        "rules": [
+          {
+            "id": "em-catering-growth-opportunity",
+            "category": "strategic_growth",
+            "title": "Catering Growth Opportunity",
+            "description": "Event management businesses with controlled operational baselines frequently have untapped catering margin upside. Developing or expanding an in-house catering offering can increase per-event revenue by 20–40% while deepening client lock-in and reducing third-party vendor dependency.",
+            "severity": "LOW",
+            "confidence": 75
+          },
+          {
+            "id": "em-central-kitchen-readiness",
+            "category": "strategic_growth",
+            "title": "Central Kitchen Readiness",
+            "description": "Event management operations at scale frequently benefit from centralised food production infrastructure. A central kitchen reduces last-mile catering complexity and is a high-leverage investment for businesses running 3 or more simultaneous events.",
+            "severity": "LOW",
+            "confidence": 32
+          }
+        ],
+        "topRisks": [],
+        "topOpportunities": [
+          {
+            "id": "em-catering-growth-opportunity",
+            "category": "strategic_growth",
+            "title": "Catering Growth Opportunity",
+            "description": "Event management businesses with controlled operational baselines frequently have untapped catering margin upside. Developing or expanding an in-house catering offering can increase per-event revenue by 20–40% while deepening client lock-in and reducing third-party vendor dependency.",
+            "severity": "LOW",
+            "confidence": 75
+          },
+          {
+            "id": "em-central-kitchen-readiness",
+            "category": "strategic_growth",
+            "title": "Central Kitchen Readiness",
+            "description": "Event management operations at scale frequently benefit from centralised food production infrastructure. A central kitchen reduces last-mile catering complexity and is a high-leverage investment for businesses running 3 or more simultaneous events.",
+            "severity": "LOW",
+            "confidence": 32
+          }
+        ]
+      }
+    },
+    "runtimeMs": 9
+  },
+  {
     "id": "a58830c0-d125-4771-9a41-ffbb5c155ab7",
     "clientName": "Madetill Event Management (MEM)",
     "industry": "event_management",

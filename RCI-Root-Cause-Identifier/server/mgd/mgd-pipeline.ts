@@ -43,6 +43,7 @@ import type { RootCause }                 from "./root-cause-engine";
 import type { OperationalRecommendation } from "./recommendation-engine";
 import type { BenchmarkResult }           from "./benchmark-engine";
 import type { MGDReport }                 from "./report-composer";
+import type { ConsultantNote }            from "./consultant-notes-engine";
 
 // ── Exported interfaces ────────────────────────────────────────────────────────
 
@@ -52,6 +53,9 @@ export interface MGDRunParams {
 
   transactions: any[];
   documents?:   any[];
+
+  consultantNotes?:  ConsultantNote[];
+  businessConcerns?: string[];
 
   metrics?: {
     inventoryLossRate?:          number;
@@ -183,7 +187,7 @@ export async function runMGDPipeline(
       return empty();
     }
 
-    const { clientName, industry, metrics = {} } = params;
+    const { clientName, industry, metrics = {}, consultantNotes, businessConcerns } = params;
 
     const transactions = Array.isArray(params.transactions)
       ? params.transactions.filter(t => t != null) : [];
@@ -409,6 +413,8 @@ export async function runMGDPipeline(
           benchmarks,
           narrative,
           operationalHealthScore,
+          consultantNotes,
+          businessConcerns,
         });
         console.log(`[MGD][PIPELINE] STEP 7 — report composed (version=${report.metadata.reportVersion})`);
       } catch (err) {
