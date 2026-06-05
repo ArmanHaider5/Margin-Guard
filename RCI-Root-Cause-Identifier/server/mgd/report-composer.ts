@@ -95,6 +95,7 @@ export interface MGDReport {
   consultantInsights?: {
     executiveObservations: string[];
     operationalConcerns:   string[];
+    notes:                 { title: string; category: string; observation: string }[];
   };
 }
 
@@ -293,7 +294,14 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
     const hasConsultantInput = (consultantNotes && consultantNotes.length > 0)
       || (businessConcerns && businessConcerns.length > 0);
     const consultantInsights = hasConsultantInput
-      ? generateConsultantInsights({ consultantNotes, businessConcerns })
+      ? {
+          ...generateConsultantInsights({ consultantNotes, businessConcerns }),
+          notes: (consultantNotes ?? []).map(n => ({
+            title:       n.title,
+            category:    n.category,
+            observation: n.observation,
+          })),
+        }
       : undefined;
 
     // Industry insights — deterministic, never throws

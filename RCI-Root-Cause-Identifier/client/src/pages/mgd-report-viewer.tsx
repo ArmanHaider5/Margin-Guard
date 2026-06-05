@@ -5,7 +5,7 @@ import {
   Info, CheckCircle2, ChevronDown, ChevronUp, Activity,
   Lightbulb, BarChart3, FileText, Clock, Layers,
   Building2, Calendar, Tag, RefreshCw, Inbox,
-  TrendingUp, TrendingDown, Shield, Zap, Compass,
+  TrendingUp, TrendingDown, Shield, Zap, Compass, StickyNote,
 } from "lucide-react";
 import { format } from "date-fns";
 import FindingEvidencePanel, { type OperationalFinding } from "@/components/mgd/FindingEvidencePanel";
@@ -63,6 +63,11 @@ interface MGDReport {
     rules: IndustryRule[];
     topRisks: IndustryRule[];
     topOpportunities: IndustryRule[];
+  };
+  consultantInsights?: {
+    executiveObservations: string[];
+    operationalConcerns:   string[];
+    notes:                 { title: string; category: string; observation: string }[];
   };
 }
 
@@ -484,6 +489,103 @@ function IndustryRuleCard({ rule }: { rule: IndustryRule }) {
   );
 }
 
+// ── Consultant Observations Section ───────────────────────────────────────────
+
+const CATEGORY_ACCENT: Record<string, { bg: string; border: string; text: string }> = {
+  Logistics:   { bg: "bg-sky-500/10",    border: "border-sky-500/25",    text: "text-sky-300"    },
+  Inventory:   { bg: "bg-emerald-500/10",border: "border-emerald-500/25",text: "text-emerald-300" },
+  Finance:     { bg: "bg-blue-500/10",   border: "border-blue-500/25",   text: "text-blue-300"   },
+  Manpower:    { bg: "bg-violet-500/10", border: "border-violet-500/25", text: "text-violet-300"  },
+  Operations:  { bg: "bg-orange-500/10", border: "border-orange-500/25", text: "text-orange-300"  },
+  Procurement: { bg: "bg-teal-500/10",   border: "border-teal-500/25",   text: "text-teal-300"   },
+  Sales:       { bg: "bg-pink-500/10",   border: "border-pink-500/25",   text: "text-pink-300"    },
+  Technology:  { bg: "bg-cyan-500/10",   border: "border-cyan-500/25",   text: "text-cyan-300"   },
+  Other:       { bg: "bg-white/5",       border: "border-white/10",      text: "text-white/40"   },
+};
+
+function ConsultantObservationsSection({ report }: { report: MGDReport }) {
+  const ci = report.consultantInsights;
+  const notes = ci?.notes ?? [];
+  if (!notes.length) return null;
+
+  return (
+    <GlassCard className="p-6">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/15 border border-amber-500/25">
+          <StickyNote className="w-4 h-4 text-amber-400"/>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h3 className="text-[15px] font-bold text-white tracking-tight">Consultant Observations</h3>
+            <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full
+              bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              {notes.length} note{notes.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <p className="text-[11px] text-white/30 mt-0.5">
+            Field observations recorded by the consultant — not system-generated.
+          </p>
+        </div>
+      </div>
+
+      {/* Separator */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex-1 h-px bg-amber-500/10"/>
+        <span className="text-[9px] text-amber-500/40 uppercase tracking-widest font-semibold">
+          Human Input · Pre-diagnostic Context
+        </span>
+        <div className="flex-1 h-px bg-amber-500/10"/>
+      </div>
+
+      {/* Cards */}
+      <div className="space-y-3">
+        {notes.map((note, i) => {
+          const accent = CATEGORY_ACCENT[note.category] ?? CATEGORY_ACCENT["Other"];
+          return (
+            <div
+              key={i}
+              className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] p-4 relative overflow-hidden"
+            >
+              {/* Left accent bar */}
+              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-amber-500/40 rounded-l-xl"/>
+
+              {/* System label */}
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-amber-500/50">
+                  Consultant Observation
+                </span>
+                {note.category && (
+                  <span className={`text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border
+                    ${accent.bg} ${accent.border} ${accent.text}`}>
+                    {note.category}
+                  </span>
+                )}
+              </div>
+
+              {/* Title */}
+              {note.title && (
+                <p className="text-[13px] font-semibold text-white mb-1.5 leading-snug">
+                  {note.title}
+                </p>
+              )}
+
+              {/* Observation */}
+              {note.observation && (
+                <p className="text-[12px] text-white/55 leading-relaxed">
+                  {note.observation}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </GlassCard>
+  );
+}
+
+// ── Industry Assessment Section ────────────────────────────────────────────────
+
 function IndustryAssessmentSection({ report }: { report: MGDReport }) {
   const [expanded, setExpanded] = useState(false);
   const ii = report.industryInsights;
@@ -840,6 +942,9 @@ export default function MGDReportViewer() {
 
               {/* SECTION 3.5 — Industry Assessment */}
               <IndustryAssessmentSection report={report}/>
+
+              {/* SECTION 3.6 — Consultant Observations */}
+              <ConsultantObservationsSection report={report}/>
 
               {/* SECTION 4 — Findings */}
               {report.findings.length > 0 && (
