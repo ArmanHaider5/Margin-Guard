@@ -312,9 +312,12 @@ function FindingCard({ finding }: { finding: Finding }) {
         </div>
         <p className="text-[13px] text-white/55 leading-relaxed mb-3">{finding.summary}</p>
         <ConfBar value={finding.confidence}/>
-        {finding.operationalImpact && finding.operationalImpact.length > 0 && (
+        {finding.operationalImpact && (
           <ul className="mt-3 space-y-1">
-            {finding.operationalImpact.map((imp,i)=>(
+            {(Array.isArray(finding.operationalImpact)
+              ? finding.operationalImpact
+              : [finding.operationalImpact as string]
+            ).map((imp,i)=>(
               <li key={i} className="flex items-start gap-1.5 text-[12px] text-white/40">
                 <span className="mt-1.5 w-1 h-1 rounded-full bg-white/25 shrink-0"/>
                 {imp}
@@ -360,9 +363,12 @@ function RootCauseCard({ rc }: { rc: RootCause }) {
       </div>
       <p className="text-[13px] text-white/55 leading-relaxed mb-3">{rc.summary}</p>
       <ConfBar value={rc.confidence}/>
-      {rc.operationalImpact && rc.operationalImpact.length > 0 && (
+      {rc.operationalImpact && (
         <ul className="mt-3 space-y-1">
-          {rc.operationalImpact.map((imp,i)=>(
+          {(Array.isArray(rc.operationalImpact)
+            ? rc.operationalImpact
+            : [rc.operationalImpact as string]
+          ).map((imp,i)=>(
             <li key={i} className="flex items-start gap-1.5 text-[12px] text-white/40">
               <span className="mt-1.5 w-1 h-1 rounded-full bg-white/25 shrink-0"/>
               {imp}
