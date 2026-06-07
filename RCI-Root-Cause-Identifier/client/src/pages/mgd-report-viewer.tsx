@@ -6,6 +6,7 @@ import {
   Lightbulb, BarChart3, FileText, Clock, Layers,
   Building2, Calendar, Tag, RefreshCw, Inbox,
   TrendingUp, TrendingDown, Shield, Zap, Compass, StickyNote,
+  Truck, PackageX, Wrench, Eye, Star,
 } from "lucide-react";
 import { format } from "date-fns";
 import FindingEvidencePanel, { type OperationalFinding } from "@/components/mgd/FindingEvidencePanel";
@@ -68,6 +69,19 @@ interface MGDReport {
     executiveObservations: string[];
     operationalConcerns:   string[];
     notes:                 { title: string; category: string; observation: string }[];
+  };
+  eventDiagnostics?: {
+    dispatchesAnalysed:       number;
+    dispatchFailureRate:      number;
+    dispatchDelayRate:        number;
+    averageDelayMinutes:      number;
+    missingItemRate:          number;
+    substitutionRate:         number;
+    damageEvents:             number;
+    damageRecoveryRate:       number;
+    unrecoveredDamageRate:    number;
+    inventoryVisibilityScore: number;
+    eventReadinessScore:      number;
   };
 }
 
@@ -492,6 +506,141 @@ function IndustryRuleCard({ rule }: { rule: IndustryRule }) {
       <p className="text-[13px] text-white/55 leading-relaxed mb-3">{rule.description}</p>
       <ConfBar value={rule.confidence}/>
     </div>
+  );
+}
+
+// ── Event Diagnostics Panel ───────────────────────────────────────────────────
+
+const EM_FINDINGS = [
+  "Inventory Visibility Weakness",
+  "Dispatch Reliability Risk",
+  "Inventory Shortage Pattern",
+  "Asset Damage Recovery Leakage",
+  "Event Readiness Exposure",
+];
+
+function pct(v: number) { return `${(v * 100).toFixed(1)}%`; }
+function score(v: number) { return `${v}/100`; }
+
+function EMMetricRow({ label, value, dim = false }: { label: string; value: string; dim?: boolean }) {
+  return (
+    <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
+      <span className="text-[12px] text-white/45">{label}</span>
+      <span className={`text-[12px] font-semibold tabular-nums ${dim ? "text-white/30" : "text-white/80"}`}>{value}</span>
+    </div>
+  );
+}
+
+function EventDiagnosticsPanel({ report }: { report: MGDReport }) {
+  const ed = report.eventDiagnostics;
+  if (!ed) return null;
+
+  const triggeredTitles = new Set(
+    (report.findings ?? []).map(f => f.title)
+  );
+
+  const scoreColor = (v: number) =>
+    v >= 80 ? "text-emerald-400" : v >= 60 ? "text-amber-400" : "text-red-400";
+
+  return (
+    <GlassCard className="p-6">
+      <SectionHeader icon={Truck} label="Event Management Metrics" accent="#06b6d4"/>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* Left column — metrics */}
+        <div className="space-y-4">
+
+          {/* Dispatch block */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Truck className="w-3.5 h-3.5 text-cyan-400/60"/>
+              <span className="text-[10px] uppercase tracking-widest text-white/25">Dispatch</span>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-1">
+              <EMMetricRow label="Dispatches Analysed"  value={String(ed.dispatchesAnalysed)} dim={ed.dispatchesAnalysed === 0}/>
+              <EMMetricRow label="Dispatch Failure Rate" value={pct(ed.dispatchFailureRate)}/>
+              <EMMetricRow label="Dispatch Delay Rate"   value={pct(ed.dispatchDelayRate)}/>
+              <EMMetricRow label="Avg Delay Minutes"     value={`${ed.averageDelayMinutes.toFixed(1)} min`}/>
+            </div>
+          </div>
+
+          {/* Inventory block */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <PackageX className="w-3.5 h-3.5 text-amber-400/60"/>
+              <span className="text-[10px] uppercase tracking-widest text-white/25">Inventory</span>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-1">
+              <EMMetricRow label="Missing Item Rate"  value={pct(ed.missingItemRate)}/>
+              <EMMetricRow label="Substitution Rate"  value={pct(ed.substitutionRate)}/>
+            </div>
+          </div>
+
+          {/* Damage block */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Wrench className="w-3.5 h-3.5 text-red-400/60"/>
+              <span className="text-[10px] uppercase tracking-widest text-white/25">Asset Damage</span>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-1">
+              <EMMetricRow label="Damage Events"          value={String(ed.damageEvents)} dim={ed.damageEvents === 0}/>
+              <EMMetricRow label="Damage Recovery Rate"   value={pct(ed.damageRecoveryRate)}/>
+              <EMMetricRow label="Unrecovered Damage Rate" value={pct(ed.unrecoveredDamageRate)}/>
+            </div>
+          </div>
+
+          {/* Scores block */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Eye className="w-3.5 h-3.5 text-indigo-400/60"/>
+              <span className="text-[10px] uppercase tracking-widest text-white/25">Readiness Scores</span>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-1">
+              <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
+                <span className="text-[12px] text-white/45">Inventory Visibility Score</span>
+                <span className={`text-[12px] font-bold tabular-nums ${scoreColor(ed.inventoryVisibilityScore)}`}>{score(ed.inventoryVisibilityScore)}</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-[12px] text-white/45">Event Readiness Score</span>
+                <span className={`text-[12px] font-bold tabular-nums ${scoreColor(ed.eventReadinessScore)}`}>{score(ed.eventReadinessScore)}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right column — triggered findings checklist */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Star className="w-3.5 h-3.5 text-violet-400/60"/>
+            <span className="text-[10px] uppercase tracking-widest text-white/25">Triggered Findings</span>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+            {EM_FINDINGS.map(name => {
+              const hit = triggeredTitles.has(name);
+              return (
+                <div key={name} className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${hit ? "bg-emerald-500/20 border border-emerald-500/40" : "bg-white/[0.03] border border-white/10"}`}>
+                    {hit
+                      ? <CheckCircle2 className="w-3 h-3 text-emerald-400"/>
+                      : <span className="w-2 h-0.5 bg-white/20 rounded"/>
+                    }
+                  </div>
+                  <span className={`text-[12px] leading-snug ${hit ? "text-white/80 font-medium" : "text-white/30"}`}>
+                    {name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-[10px] text-white/20 leading-relaxed">
+            Triggered findings indicate which EM detection patterns fired based on uploaded event data. Zero dispatches analysed means no event-management source files have been processed yet for this client.
+          </p>
+        </div>
+
+      </div>
+    </GlassCard>
   );
 }
 
@@ -949,7 +1098,10 @@ export default function MGDReportViewer() {
               {/* SECTION 3.5 — Industry Assessment */}
               <IndustryAssessmentSection report={report}/>
 
-              {/* SECTION 3.6 — Consultant Observations */}
+              {/* SECTION 3.6 — Event Diagnostics Panel */}
+              <EventDiagnosticsPanel report={report}/>
+
+              {/* SECTION 3.7 — Consultant Observations */}
               <ConsultantObservationsSection report={report}/>
 
               {/* SECTION 4 — Findings */}

@@ -563,6 +563,7 @@ export async function runMGDPipeline(
           operationalHealthScore,
           consultantNotes,
           businessConcerns,
+          eventSignals,
         });
         console.log(`[MGD][PIPELINE] STEP 7 — report composed (version=${report.metadata.reportVersion})`);
       } catch (err) {

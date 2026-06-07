@@ -19,6 +19,7 @@ import type { RootCause }                 from "./root-cause-engine";
 import type { OperationalRecommendation } from "./recommendation-engine";
 import type { BenchmarkResult }           from "./benchmark-engine";
 import type { ExecutiveNarrativeReport }  from "./executive-narrative-engine";
+import type { EventSignals }              from "./event-signals";
 import {
   generateIndustryInsights,
   type IndustryRule,
@@ -97,6 +98,20 @@ export interface MGDReport {
     operationalConcerns:   string[];
     notes:                 { title: string; category: string; observation: string }[];
   };
+
+  eventDiagnostics?: {
+    dispatchesAnalysed:       number;
+    dispatchFailureRate:      number;
+    dispatchDelayRate:        number;
+    averageDelayMinutes:      number;
+    missingItemRate:          number;
+    substitutionRate:         number;
+    damageEvents:             number;
+    damageRecoveryRate:       number;
+    unrecoveredDamageRate:    number;
+    inventoryVisibilityScore: number;
+    eventReadinessScore:      number;
+  };
 }
 
 export interface ReportComposerParams {
@@ -110,6 +125,7 @@ export interface ReportComposerParams {
   operationalHealthScore?: number;
   consultantNotes?:        ConsultantNote[];
   businessConcerns?:       string[];
+  eventSignals?:           EventSignals;
 }
 
 // ── Sorting helpers ────────────────────────────────────────────────────────────
@@ -261,6 +277,7 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
       narrative,
       consultantNotes,
       businessConcerns,
+      eventSignals,
     } = params;
 
     // Sanitise arrays — remove null/undefined elements
@@ -340,6 +357,19 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
         topOpportunities,
       },
       consultantInsights,
+      eventDiagnostics: eventSignals ? {
+        dispatchesAnalysed:       eventSignals.totalDispatches,
+        dispatchFailureRate:      eventSignals.dispatchFailureRate,
+        dispatchDelayRate:        eventSignals.dispatchDelayRate,
+        averageDelayMinutes:      eventSignals.averageDelayMinutes,
+        missingItemRate:          eventSignals.missingItemRate,
+        substitutionRate:         eventSignals.substitutionRate,
+        damageEvents:             eventSignals.totalDamageEvents,
+        damageRecoveryRate:       eventSignals.damageRecoveryRate,
+        unrecoveredDamageRate:    eventSignals.unrecoveredDamageRate,
+        inventoryVisibilityScore: eventSignals.inventoryVisibilityScore,
+        eventReadinessScore:      eventSignals.eventReadinessScore,
+      } : undefined,
     };
 
     // Log summary
