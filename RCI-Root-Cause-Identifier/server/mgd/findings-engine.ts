@@ -1419,6 +1419,53 @@ export function generateOperationalFindings(params: FindingsParams): Operational
       }
     }
 
+    // ── Event finding override rules ─────────────────────────────────────────
+    // Prefer operational consequence over generic symptom.
+    {
+      const triggered = new Set(findings.map(f => f.title));
+
+      // Titles to remove entirely
+      const suppress = new Set<string>();
+      // Rule 1: specific dispatch failure overrides generic logistics symptom
+      if (triggered.has("Dispatch Reliability Risk")) {
+        suppress.add("Logistics Coordination Strain");
+      }
+      // Rule 3: planning dependency suppresses generic driver dependency
+      // (ready for when DispatchPlanningDependency / DriverDependencyRisk detectors are added)
+      if (triggered.has("Dispatch Planning Dependency")) {
+        suppress.add("Driver Dependency Risk");
+      }
+
+      // Titles to downgrade (severity → LOW, confidence capped at 30)
+      const downgrade = new Set<string>();
+      // Rule 2: concrete shortage pattern makes generic visibility weakness redundant
+      if (triggered.has("Inventory Shortage Pattern")) {
+        downgrade.add("Inventory Visibility Weakness");
+      }
+
+      // Apply suppress
+      for (let i = findings.length - 1; i >= 0; i--) {
+        if (suppress.has(findings[i].title)) {
+          console.log(
+            `[MGD][FINDINGS] 🚫 SUPPRESS "${findings[i].title}" — overridden by event-specific finding`,
+          );
+          findings.splice(i, 1);
+        }
+      }
+
+      // Apply downgrade
+      for (const f of findings) {
+        if (downgrade.has(f.title)) {
+          const prev = `${f.severity}/${f.confidence}`;
+          f.severity   = "LOW";
+          f.confidence = Math.min(f.confidence, 30);
+          console.log(
+            `[MGD][FINDINGS] ⬇️  DOWNGRADE "${f.title}" ${prev} → ${f.severity}/${f.confidence}`,
+          );
+        }
+      }
+    }
+
     // ── Sort by priority DESC, then confidence DESC ───────────────────────────
     findings.sort((a, b) => {
       const pd = (b.findingPriority ?? 0) - (a.findingPriority ?? 0);
