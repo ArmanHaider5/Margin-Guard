@@ -35,12 +35,32 @@ import type { OperationalFinding } from "./findings-engine";
 
 // ── Exported interfaces ───────────────────────────────────────────────────────
 
+// ── Root cause priority ───────────────────────────────────────────────────────
+
+export const RootCausePriority = {
+  EVENT_PACK: 100,
+  GENERIC:     50,
+} as const;
+
+export type RootCausePriorityValue = typeof RootCausePriority[keyof typeof RootCausePriority];
+
+/** Event Pack root cause titles — always surface above generic root causes. */
+export const EVENT_PACK_RC_TITLES = new Set([
+  "Inventory Governance Deficiency",
+  "Event Readiness Control Failure",
+  "Asset Accountability Weakness",
+  "Dispatch Planning Immaturity",
+  "Inventory Control Breakdown",
+  "Dispatch Planning Dependency",
+]);
+
 export interface RootCause {
   id:                    string;
   title:                 string;
   summary:               string;
   severity:              "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   confidence:            number;           // 0–100
+  rootCausePriority:     RootCausePriorityValue;
   contributingFindings:  string[];         // finding IDs that triggered this root cause
   operationalImpact:     string[];
   recommendations?:      string[];
@@ -662,7 +682,10 @@ export function detectEventReadinessControlFailure(
 export function detectAssetAccountabilityWeakness(
   findings: OperationalFinding[],
 ): RootCause | null {
-  const assetFinds = byCategory(findings, CAT.EM_ASSET);
+  // Spec trigger: AssetDamageRecoveryLeakage finding must be present
+  const assetFinds = findings.filter(
+    f => f.title === "Asset Damage Recovery Leakage" || f.category === CAT.EM_ASSET,
+  );
   if (assetFinds.length === 0) return null;
 
   const contributing = [...assetFinds];
@@ -758,14 +781,17 @@ export function detectDispatchPlanningImmaturity(
 export function detectInventoryControlBreakdown(
   findings: OperationalFinding[],
 ): RootCause | null {
-  const invFinds  = byCategory(findings, CAT.INV);
-  const readyFinds = byCategory(findings, CAT.EM_READINESS);
-  const dispFinds  = byCategory(findings, CAT.EM_DISPATCH);
+  // Spec trigger: InventoryVisibilityWeakness AND InventoryShortagePattern
+  const hasVisibility = findings.some(f => f.title === "Inventory Visibility Weakness");
+  const hasShortage   = findings.some(f => f.title === "Inventory Shortage Pattern");
+  if (!hasVisibility || !hasShortage) return null;
 
-  // Requires inventory evidence AND at least one corroborating EM signal
-  const emCorroboration = [...readyFinds, ...dispFinds];
-  if (invFinds.length === 0 || emCorroboration.length === 0) return null;
-
+  // Contributing: all inventory + any EM corroboration
+  const invFinds       = byCategory(findings, CAT.INV);
+  const emCorroboration = [
+    ...byCategory(findings, CAT.EM_READINESS),
+    ...byCategory(findings, CAT.EM_DISPATCH),
+  ];
   const contributing = [...invFinds, ...emCorroboration];
   const confidence   = accumulateConfidence(contributing);
   if (confidence < CONFIDENCE_THRESHOLD) return null;
@@ -814,14 +840,14 @@ export function detectDispatchPlanningDependency(
   const dispFinds = byCategory(findings, CAT.EM_DISPATCH);
   const logFinds  = byCategory(findings, CAT.LOG);
 
-  // At least 1 dispatch finding required
-  if (dispFinds.length === 0) return null;
+  // Spec trigger: DispatchReliabilityRisk OR 2+ dispatch-related findings
+  const hasDispatchRisk = findings.some(f => f.title === "Dispatch Reliability Risk");
+  const dispatchCount   = dispFinds.length + logFinds.filter(
+    f => f.title.toLowerCase().includes("dispatch") ||
+         f.title.toLowerCase().includes("logistics"),
+  ).length;
 
-  // Require either a HIGH/CRITICAL dispatch finding or 2+ dispatch findings
-  const strongDispatch = dispFinds.filter(
-    f => f.severity === "HIGH" || f.severity === "CRITICAL",
-  );
-  if (strongDispatch.length === 0 && dispFinds.length < 2) return null;
+  if (!hasDispatchRisk && dispatchCount < 2) return null;
 
   const contributing = [...dispFinds, ...logFinds];
   const confidence   = accumulateConfidence(contributing);
@@ -940,8 +966,19 @@ export function generateRootCauses(params: RootCauseParams): RootCause[] {
       return true;
     });
 
-    // Sort by confidence descending
-    unique.sort((a, b) => b.confidence - a.confidence);
+    // Stamp rootCausePriority from title membership
+    for (const rc of unique) {
+      (rc as any).rootCausePriority = EVENT_PACK_RC_TITLES.has(rc.title)
+        ? RootCausePriority.EVENT_PACK
+        : RootCausePriority.GENERIC;
+    }
+
+    // Sort: Event Pack first (priority DESC), then confidence DESC
+    unique.sort((a, b) => {
+      const pd = (b.rootCausePriority ?? 0) - (a.rootCausePriority ?? 0);
+      if (pd !== 0) return pd;
+      return b.confidence - a.confidence;
+    });
 
     console.log(`[MGD][ROOT_CAUSE] Complete — ${unique.length} root cause(s) generated`);
     for (const rc of unique) {

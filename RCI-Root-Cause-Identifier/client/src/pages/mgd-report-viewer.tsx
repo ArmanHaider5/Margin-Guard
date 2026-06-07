@@ -21,7 +21,7 @@ interface Finding {
   signals?: string[]; evidence?: unknown[]; operationalImpact?: string[];
 }
 interface RootCause {
-  id: string; title: string; severity: string; confidence: number;
+  id: string; title: string; severity: string; confidence: number; rootCausePriority?: number;
   summary: string; contributingFindings?: string[]; operationalImpact?: string[];
 }
 interface Recommendation {
