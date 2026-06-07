@@ -212,13 +212,14 @@ export function computeEventSignals(transactions: any[]): EventSignals {
   if (inventoryShortageRate > 0.03) invScore -= 15;
   const inventoryVisibilityScore = Math.max(0, Math.min(100, Math.round(invScore)));
 
-  // Event Readiness Score (100 = fully ready, lower = riskier)
-  let erScore = 100;
-  erScore -= Math.round(dispatchFailureRate   * 40);
-  erScore -= Math.round(inventoryShortageRate * 25);
-  erScore -= Math.round(substitutionRate      * 15);
-  erScore -= Math.round(deliveryDelayRate     * 20);
-  const eventReadinessScore = Math.max(0, Math.min(100, Math.round(erScore)));
+  // Event Readiness Score (canonical formula)
+  const failurePenalty      = dispatchFailureRate * 300;   // rate 0-1 → penalty 0-300, clamped at 100
+  const delayPenalty        = dispatchDelayRate   * 200;
+  const substitutionPenalty = substitutionRate    * 150;
+  const missingPenalty      = missingItemRate     * 400;
+  const eventReadinessScore = Math.max(0, Math.min(100, Math.round(
+    100 - failurePenalty - delayPenalty - substitutionPenalty - missingPenalty,
+  )));
 
   return {
     dispatchFailureRate,

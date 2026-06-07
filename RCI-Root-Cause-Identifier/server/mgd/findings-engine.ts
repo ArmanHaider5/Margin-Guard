@@ -1139,7 +1139,7 @@ export function detectEventReadinessExposure(
           totalMissingItems, totalSubstitutions, averageDelayMinutes,
           totalDispatches } = em;
 
-  if (missingItemRate <= 0.01 && substitutionRate <= 0.05 && eventReadinessScore >= 80) return null;
+  if (eventReadinessScore >= 80) return null;
 
   const evidence: string[] = [];
 
