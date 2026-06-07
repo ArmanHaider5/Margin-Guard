@@ -16,6 +16,7 @@ import FindingEvidencePanel, { type OperationalFinding } from "@/components/mgd/
 interface Finding {
   id: string; category: string;
   severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  findingPriority?: number;
   confidence: number; title: string; summary: string;
   signals?: string[]; evidence?: unknown[]; operationalImpact?: string[];
 }

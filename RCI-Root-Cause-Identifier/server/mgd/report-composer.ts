@@ -132,8 +132,10 @@ export interface ReportComposerParams {
 
 function sortFindings(findings: OperationalFinding[]): OperationalFinding[] {
   return [...findings].sort((a, b) => {
-    const sd = (SEVERITY_ORDER[b.severity] ?? 0) - (SEVERITY_ORDER[a.severity] ?? 0);
-    if (sd !== 0) return sd;
+    // Primary: findingPriority DESC (EVENT_SPECIFIC=100 > INVENTORY_SPECIFIC=80 > GENERIC=50)
+    const pd = (b.findingPriority ?? 0) - (a.findingPriority ?? 0);
+    if (pd !== 0) return pd;
+    // Secondary: confidence DESC
     return (b.confidence ?? 0) - (a.confidence ?? 0);
   });
 }

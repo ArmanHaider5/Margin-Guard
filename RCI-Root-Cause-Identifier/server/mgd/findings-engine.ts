@@ -26,11 +26,38 @@ import { type EventSignals } from "./event-signals";
 
 // ── Exported interface ─────────────────────────────────────────────────────────
 
+// ── Finding priority ──────────────────────────────────────────────────────────
+
+export const FindingPriority = {
+  EVENT_SPECIFIC:      100,
+  INVENTORY_SPECIFIC:   80,
+  GENERIC_OPERATIONAL:  50,
+} as const;
+
+export type FindingPriorityValue = typeof FindingPriority[keyof typeof FindingPriority];
+
+/** Maps finding category → priority value. Defaults to GENERIC_OPERATIONAL. */
+export const CATEGORY_PRIORITY: Record<string, FindingPriorityValue> = {
+  // Event-specific (highest priority — surface before generic findings)
+  event_readiness:    FindingPriority.EVENT_SPECIFIC,
+  dispatch_operations: FindingPriority.EVENT_SPECIFIC,
+  asset_management:   FindingPriority.EVENT_SPECIFIC,
+  // Inventory-specific
+  inventory_visibility: FindingPriority.INVENTORY_SPECIFIC,
+  // Generic operational (warehouse / logistics)
+  logistics_coordination: FindingPriority.GENERIC_OPERATIONAL,
+  warehouse_operations:   FindingPriority.GENERIC_OPERATIONAL,
+  manpower_dependency:    FindingPriority.GENERIC_OPERATIONAL,
+  financial_leakage:      FindingPriority.GENERIC_OPERATIONAL,
+  workflow_scalability:   FindingPriority.GENERIC_OPERATIONAL,
+};
+
 export interface OperationalFinding {
   id:                string;
   title:             string;
   severity:          "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   category:          string;
+  findingPriority:   FindingPriorityValue;
   department?:       string;
   summary:           string;
   signals:           string[];
@@ -1361,8 +1388,18 @@ export function generateOperationalFindings(params: FindingsParams): Operational
       }
     }
 
-    // ── Sort by confidence descending ────────────────────────────────────────
-    findings.sort((a, b) => b.confidence - a.confidence);
+    // ── Stamp findingPriority from category ──────────────────────────────────
+    for (const f of findings) {
+      (f as any).findingPriority =
+        CATEGORY_PRIORITY[f.category] ?? FindingPriority.GENERIC_OPERATIONAL;
+    }
+
+    // ── Sort by priority DESC, then confidence DESC ───────────────────────────
+    findings.sort((a, b) => {
+      const pd = (b.findingPriority ?? 0) - (a.findingPriority ?? 0);
+      if (pd !== 0) return pd;
+      return b.confidence - a.confidence;
+    });
 
     console.log(`[MGD][FINDINGS] Complete — ${findings.length} finding(s) generated`);
     for (const f of findings) {
