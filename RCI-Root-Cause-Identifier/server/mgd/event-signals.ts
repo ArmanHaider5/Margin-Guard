@@ -31,6 +31,12 @@ export interface EventSignals {
   dispatchReliabilityScore:   number;   // 100 = no failures/delays; lower = worse
   assetAccountabilityScore:   number;   // 100 = full recovery or no damage; lower = worse
 
+  // ── Financial exposure estimates ──────────────────────────────────────────
+  averageEventValue:           number;   // RM — mean value per dispatch event
+  estimatedRevenueExposure:    number;   // totalMissingItems × averageEventValue
+  dispatchFailureExposure:     number;   // incompleteDispatches × averageEventValue
+  assetDamageExposure:         number;   // alias for totalDamageValue (total recorded damage)
+
   // ── Raw counts (for trace and debug) ─────────────────────────────────────
   totalDispatches:          number;
   incompleteDispatches:     number;
@@ -82,6 +88,8 @@ export function computeEventSignals(transactions: any[]): EventSignals {
     unrecoveredDamageRate: 0, unrecoveredDamageValue: 0,
     inventoryVisibilityScore: 100, eventReadinessScore: 100,
     dispatchReliabilityScore: 100, assetAccountabilityScore: 100,
+    averageEventValue: 0, estimatedRevenueExposure: 0,
+    dispatchFailureExposure: 0, assetDamageExposure: 0,
     totalDispatches: 0, incompleteDispatches: 0, totalMissingItems: 0,
     totalDispatchedItems: 0, totalSubstitutions: 0, delayedDispatches: 0,
     totalDamageEvents: 0, recoveredDamageEvents: 0,
@@ -107,6 +115,9 @@ export function computeEventSignals(transactions: any[]): EventSignals {
   let adjustmentCount    = 0;
   let hasReconciliation  = false;
   let discrepancySignals = 0;
+
+  let totalEventValue  = 0;   // sum of value across dispatch rows with value > 0
+  let eventValueCount  = 0;   // count of dispatch rows with value > 0
 
   for (const tx of transactions) {
     if (!tx || typeof tx !== "object") continue;
@@ -137,6 +148,9 @@ export function computeEventSignals(transactions: any[]): EventSignals {
         : 0;
       totalMissingItems    += missing;
       totalDispatchedItems += qty > 0 ? qty : 1;
+
+      // Event value (revenue per event row)
+      if (val > 0) { totalEventValue += val; eventValueCount++; }
 
       // Substitutions
       const subVal = extract(rawText, "Substitutions") ?? extract(rawText, "Substitution");
@@ -234,6 +248,14 @@ export function computeEventSignals(transactions: any[]): EventSignals {
     ? 100
     : Math.max(0, Math.min(100, Math.round(damageRecoveryRate * 100)));
 
+  // ── Financial exposure estimates ──────────────────────────────────────────
+
+  const averageEventValue        = eventValueCount > 0
+    ? Math.round(totalEventValue / eventValueCount) : 0;
+  const estimatedRevenueExposure = Math.round(totalMissingItems  * averageEventValue);
+  const dispatchFailureExposure  = Math.round(incompleteDispatches * averageEventValue);
+  const assetDamageExposure      = Math.round(totalDamageValue);   // total recorded damage RM
+
   return {
     dispatchFailureRate,
     dispatchDelayRate,
@@ -250,6 +272,10 @@ export function computeEventSignals(transactions: any[]): EventSignals {
     eventReadinessScore,
     dispatchReliabilityScore,
     assetAccountabilityScore,
+    averageEventValue,
+    estimatedRevenueExposure,
+    dispatchFailureExposure,
+    assetDamageExposure,
     totalDispatches,
     incompleteDispatches,
     totalMissingItems,

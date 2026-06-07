@@ -113,6 +113,12 @@ export interface MGDReport {
     eventReadinessScore:        number;
     dispatchReliabilityScore:   number;
     assetAccountabilityScore:   number;
+    // Financial exposure
+    averageEventValue:          number;
+    estimatedRevenueExposure:   number;
+    dispatchFailureExposure:    number;
+    assetDamageExposure:        number;
+    unrecoveredDamageValue:     number;
   };
 }
 
@@ -375,6 +381,11 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
         eventReadinessScore:        eventSignals.eventReadinessScore,
         dispatchReliabilityScore:   eventSignals.dispatchReliabilityScore,
         assetAccountabilityScore:   eventSignals.assetAccountabilityScore,
+        averageEventValue:          eventSignals.averageEventValue,
+        estimatedRevenueExposure:   eventSignals.estimatedRevenueExposure,
+        dispatchFailureExposure:    eventSignals.dispatchFailureExposure,
+        assetDamageExposure:        eventSignals.assetDamageExposure,
+        unrecoveredDamageValue:     eventSignals.unrecoveredDamageValue,
       } : undefined,
     };
 

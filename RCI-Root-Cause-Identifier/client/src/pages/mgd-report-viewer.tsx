@@ -85,6 +85,11 @@ interface MGDReport {
     eventReadinessScore:        number;
     dispatchReliabilityScore:   number;
     assetAccountabilityScore:   number;
+    averageEventValue:          number;
+    estimatedRevenueExposure:   number;
+    dispatchFailureExposure:    number;
+    assetDamageExposure:        number;
+    unrecoveredDamageValue:     number;
   };
 }
 
@@ -669,6 +674,121 @@ function EventDiagnosticsPanel({ report }: { report: MGDReport }) {
         </div>
 
       </div>
+
+      {/* ── EVENT IMPACT CALCULATOR ────────────────────────────────────────── */}
+      <div className="mt-6 pt-5 border-t border-white/[0.06]">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingDown className="w-3.5 h-3.5 text-red-400/60"/>
+          <span className="text-[10px] uppercase tracking-widest text-white/25">Event Impact Calculator</span>
+          {ed.averageEventValue === 0 && (
+            <span className="ml-2 text-[9px] text-white/20 italic">— add event value data to unlock estimates</span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+
+          {/* Card 1 — Revenue Exposure (Missing Items) */}
+          <div className="rounded-xl border border-red-500/15 bg-red-500/[0.04] p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <PackageX className="w-3.5 h-3.5 text-red-400/60"/>
+              <span className="text-[10px] uppercase tracking-widest text-white/30">Revenue Exposure</span>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-white/40">Missing Items</span>
+                <span className="text-[12px] font-semibold text-white/70 tabular-nums">{ed.dispatchesAnalysed > 0 ? Math.round(ed.missingItemRate * ed.dispatchesAnalysed) : "—"}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-white/40">Avg Event Value</span>
+                <span className="text-[12px] font-semibold text-white/70 tabular-nums">
+                  {ed.averageEventValue > 0 ? `RM ${ed.averageEventValue.toLocaleString()}` : "—"}
+                </span>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-white/[0.06]">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-white/50">Potential Exposure</span>
+                <span className={`text-[14px] font-bold tabular-nums ${ed.estimatedRevenueExposure > 0 ? "text-red-400" : "text-white/25"}`}>
+                  {ed.estimatedRevenueExposure > 0 ? `RM ${ed.estimatedRevenueExposure.toLocaleString()}` : "RM 0"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2 — Dispatch Failure Exposure */}
+          <div className="rounded-xl border border-orange-500/15 bg-orange-500/[0.04] p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Truck className="w-3.5 h-3.5 text-orange-400/60"/>
+              <span className="text-[10px] uppercase tracking-widest text-white/30">Dispatch Failure</span>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-white/40">Failed Dispatches</span>
+                <span className="text-[12px] font-semibold text-white/70 tabular-nums">{ed.dispatchesAnalysed > 0 ? Math.round(ed.dispatchFailureRate * ed.dispatchesAnalysed) : "—"}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-white/40">Avg Event Value</span>
+                <span className="text-[12px] font-semibold text-white/70 tabular-nums">
+                  {ed.averageEventValue > 0 ? `RM ${ed.averageEventValue.toLocaleString()}` : "—"}
+                </span>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-white/[0.06]">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-white/50">Potential Exposure</span>
+                <span className={`text-[14px] font-bold tabular-nums ${ed.dispatchFailureExposure > 0 ? "text-orange-400" : "text-white/25"}`}>
+                  {ed.dispatchFailureExposure > 0 ? `RM ${ed.dispatchFailureExposure.toLocaleString()}` : "RM 0"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3 — Asset Damage Exposure */}
+          <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Wrench className="w-3.5 h-3.5 text-amber-400/60"/>
+              <span className="text-[10px] uppercase tracking-widest text-white/30">Asset Damage</span>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-white/40">Total Damage Value</span>
+                <span className="text-[12px] font-semibold text-white/70 tabular-nums">
+                  {ed.assetDamageExposure > 0 ? `RM ${ed.assetDamageExposure.toLocaleString()}` : "—"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-white/40">Unrecovered</span>
+                <span className="text-[12px] font-semibold text-red-400/80 tabular-nums">
+                  {ed.unrecoveredDamageValue > 0 ? `RM ${ed.unrecoveredDamageValue.toLocaleString()}` : "—"}
+                </span>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-white/[0.06]">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-white/50">Asset Exposure</span>
+                <span className={`text-[14px] font-bold tabular-nums ${ed.assetDamageExposure > 0 ? "text-amber-400" : "text-white/25"}`}>
+                  {ed.assetDamageExposure > 0 ? `RM ${ed.assetDamageExposure.toLocaleString()}` : "RM 0"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Total exposure footer */}
+        {(() => {
+          const total = ed.estimatedRevenueExposure + ed.dispatchFailureExposure + ed.assetDamageExposure;
+          return total > 0 ? (
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-5 py-3 flex items-center justify-between">
+              <span className="text-[11px] text-white/40 uppercase tracking-wider">Total Estimated Exposure</span>
+              <span className="text-[16px] font-bold text-red-400 tabular-nums">RM {total.toLocaleString()}</span>
+            </div>
+          ) : null;
+        })()}
+        <p className="mt-3 text-[10px] text-white/15 leading-relaxed">
+          Exposure estimates are derived from operational data and event value averages. Actual impact may vary. Use as a directional indicator for prioritisation.
+        </p>
+      </div>
+
     </GlassCard>
   );
 }
