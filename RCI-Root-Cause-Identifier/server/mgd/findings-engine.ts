@@ -36,6 +36,22 @@ export const FindingPriority = {
 
 export type FindingPriorityValue = typeof FindingPriority[keyof typeof FindingPriority];
 
+// ── Event severity multiplier ─────────────────────────────────────────────────
+
+export const EVENT_WEIGHT   = 3;
+export const GENERIC_WEIGHT = 1;
+
+/**
+ * Findings that carry the EVENT_WEIGHT multiplier.
+ * A single dispatch failure must outweigh hundreds of generic inventory rows.
+ */
+export const EVENT_WEIGHTED_TITLES = new Set([
+  "Dispatch Reliability Risk",
+  "Inventory Shortage Pattern",
+  "Event Readiness Exposure",
+  "Asset Damage Recovery Leakage",
+]);
+
 /** Maps finding category → priority value. Defaults to GENERIC_OPERATIONAL. */
 export const CATEGORY_PRIORITY: Record<string, FindingPriorityValue> = {
   // Event-specific (highest priority — surface before generic findings)
@@ -1388,10 +1404,19 @@ export function generateOperationalFindings(params: FindingsParams): Operational
       }
     }
 
-    // ── Stamp findingPriority from category ──────────────────────────────────
+    // ── Stamp findingPriority + apply event severity multiplier ─────────────
     for (const f of findings) {
       (f as any).findingPriority =
         CATEGORY_PRIORITY[f.category] ?? FindingPriority.GENERIC_OPERATIONAL;
+
+      if (EVENT_WEIGHTED_TITLES.has(f.title)) {
+        const raw = f.confidence;
+        f.confidence = Math.min(100, Math.round(raw * EVENT_WEIGHT));
+        console.log(
+          `[MGD][FINDINGS] ⚡ EVENT_WEIGHT ×${EVENT_WEIGHT} "${f.title}" ` +
+          `confidence: ${raw} → ${f.confidence}`,
+        );
+      }
     }
 
     // ── Sort by priority DESC, then confidence DESC ───────────────────────────
