@@ -25,7 +25,7 @@ interface RootCause {
   summary: string; contributingFindings?: string[]; operationalImpact?: string[];
 }
 interface Recommendation {
-  id: string; title: string; priority: string; timeframe: string;
+  id: string; title: string; priority: string; timeframe: string; recommendationPriority?: number;
   category: string; implementationDifficulty: string; summary: string;
   relatedRootCauses?: string[]; actionItems?: string[];
   expectedOperationalImpact?: string[]; confidence: number;

@@ -24,6 +24,32 @@
 import type { OperationalFinding } from "./findings-engine";
 import type { RootCause } from "./root-cause-engine";
 
+// ── Recommendation priority ───────────────────────────────────────────────────
+
+export const RecommendationPriority = {
+  EVENT_PACK: 100,
+  GENERIC:     50,
+} as const;
+
+export type RecommendationPriorityValue =
+  typeof RecommendationPriority[keyof typeof RecommendationPriority];
+
+/** Event Pack recommendation titles — always surface above generic recommendations. */
+export const EVENT_PACK_REC_TITLES = new Set([
+  // V2 extended chain recommendations
+  "Missing Item Prevention Workflow",
+  "Dispatch Control Tower",
+  "Damage Recovery Programme",
+  // V2 core event pack recommendations
+  "Pre-Event Inventory Verification Workflow",
+  "Dispatch Readiness Checklist",
+  "Asset Damage Recovery Register",
+  "Live Inventory Dashboard",
+  "Warehouse Cycle Count Programme",
+  "Inventory Accountability Matrix",
+  "Event Readiness Control Gate",
+]);
+
 // ── Exported interface ─────────────────────────────────────────────────────────
 
 export interface OperationalRecommendation {
@@ -34,6 +60,7 @@ export interface OperationalRecommendation {
   timeframe:                 "IMMEDIATE" | "30_DAYS" | "90_DAYS" | "LONG_TERM";
   implementationDifficulty:  "LOW" | "MEDIUM" | "HIGH";
   category:                  string;
+  recommendationPriority:    RecommendationPriorityValue;
   relatedRootCauses:         string[];    // root cause IDs
   relatedFindings:           string[];    // finding IDs
   expectedOperationalImpact: string[];
@@ -1063,20 +1090,22 @@ export function detectEventReadinessControlGate(
 
 // ── Recommendation: Missing Item Prevention Workflow ──────────────────────────
 //
-// Triggered by any inventory shortage or event readiness finding, or by
-// Inventory Control Breakdown root cause.  Delivers a concrete workflow for
-// eliminating the missing-item pattern at its source: pre-dispatch verification.
+// Deterministic chain:
+//   Inventory Shortage Pattern (finding)
+//     → Inventory Control Breakdown (root cause)
+//       → Missing Item Prevention Workflow (recommendation)
+//
+// Primary trigger: "Inventory Shortage Pattern" finding present.
+// Secondary trigger: "Inventory Control Breakdown" root cause present.
+// Either is sufficient; both together maximise confidence.
 
 export function detectMissingItemPreventionWorkflow(
   findings:   OperationalFinding[],
   rootCauses: RootCause[],
 ): OperationalRecommendation | null {
-  const triggerFindings = findings.filter(f =>
-    [FC_EM.READINESS, FC.INV].includes(f.category as any) && f.severity !== "LOW",
-  );
-  const triggerRCs = rootCauses.filter(rc =>
-    [RC_EM.INV_BREAKDOWN, RC_EM.INV_GOV, RC_EM.ER_CONTROL].includes(rc.title as any),
-  );
+  // Title-specific chain triggers
+  const triggerFindings = findings.filter(f => f.title === "Inventory Shortage Pattern");
+  const triggerRCs = rootCauses.filter(rc => rc.title === RC_EM.INV_BREAKDOWN);
 
   if (triggerFindings.length === 0 && triggerRCs.length === 0) return null;
 
@@ -1121,21 +1150,22 @@ export function detectMissingItemPreventionWorkflow(
 
 // ── Recommendation: Damage Recovery Programme ─────────────────────────────────
 //
-// Triggered by asset management findings or Asset Accountability Weakness root
-// cause.  Addresses the systematic failure to recover charges for damaged assets
-// with a structured programme that tracks damage, assigns accountability, and
-// ensures recovery is completed before the next event.
+// Deterministic chain:
+//   Asset Damage Recovery Leakage (finding)
+//     → Asset Accountability Weakness (root cause)
+//       → Damage Recovery Programme (recommendation)
+//
+// Primary trigger: "Asset Damage Recovery Leakage" finding present.
+// Secondary trigger: "Asset Accountability Weakness" root cause present.
+// Either is sufficient; both together maximise confidence.
 
 export function detectDamageRecoveryProgramme(
   findings:   OperationalFinding[],
   rootCauses: RootCause[],
 ): OperationalRecommendation | null {
-  const triggerFindings = findings.filter(f =>
-    f.category === FC_EM.ASSET && f.severity !== "LOW",
-  );
-  const triggerRCs = rootCauses.filter(rc =>
-    [RC_EM.ASSET_ACCOUNT].includes(rc.title as any),
-  );
+  // Title-specific chain triggers
+  const triggerFindings = findings.filter(f => f.title === "Asset Damage Recovery Leakage");
+  const triggerRCs = rootCauses.filter(rc => rc.title === RC_EM.ASSET_ACCOUNT);
 
   if (triggerFindings.length === 0 && triggerRCs.length === 0) return null;
 
@@ -1180,21 +1210,22 @@ export function detectDamageRecoveryProgramme(
 
 // ── Recommendation: Dispatch Control Tower ────────────────────────────────────
 //
-// Triggered by dispatch operations findings or Dispatch Planning Dependency root
-// cause.  Recommends a centralised real-time coordination point for all active
-// dispatches — a "control tower" model where one person has full visibility of
-// all live dispatches and can intervene before issues become client-facing.
+// Deterministic chain:
+//   Dispatch Reliability Risk (finding)
+//     → Dispatch Planning Dependency (root cause)
+//       → Dispatch Control Tower (recommendation)
+//
+// Primary trigger: "Dispatch Reliability Risk" finding present.
+// Secondary trigger: "Dispatch Planning Dependency" root cause present.
+// Either is sufficient; both together maximise confidence.
 
 export function detectDispatchControlTower(
   findings:   OperationalFinding[],
   rootCauses: RootCause[],
 ): OperationalRecommendation | null {
-  const triggerFindings = findings.filter(f =>
-    f.category === FC_EM.DISPATCH && f.severity !== "LOW",
-  );
-  const triggerRCs = rootCauses.filter(rc =>
-    [RC_EM.DISPATCH_DEP, RC_EM.DISPATCH_PLAN].includes(rc.title as any),
-  );
+  // Title-specific chain triggers
+  const triggerFindings = findings.filter(f => f.title === "Dispatch Reliability Risk");
+  const triggerRCs = rootCauses.filter(rc => rc.title === RC_EM.DISPATCH_DEP);
 
   if (triggerFindings.length === 0 && triggerRCs.length === 0) return null;
 
@@ -1340,8 +1371,17 @@ export function generateOperationalRecommendations(
       return true;
     });
 
-    // Sort: priority DESC then confidence DESC
+    // Stamp recommendationPriority from title membership
+    for (const rec of unique) {
+      (rec as any).recommendationPriority = EVENT_PACK_REC_TITLES.has(rec.title)
+        ? RecommendationPriority.EVENT_PACK
+        : RecommendationPriority.GENERIC;
+    }
+
+    // Sort: Event Pack first (recommendationPriority DESC), then severity (PRIORITY_ORDER DESC), then confidence DESC
     unique.sort((a, b) => {
+      const rp = (b.recommendationPriority ?? 0) - (a.recommendationPriority ?? 0);
+      if (rp !== 0) return rp;
       const pd = (PRIORITY_ORDER[b.priority] ?? 0) - (PRIORITY_ORDER[a.priority] ?? 0);
       if (pd !== 0) return pd;
       return b.confidence - a.confidence;
