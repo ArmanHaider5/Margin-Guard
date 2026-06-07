@@ -149,13 +149,24 @@ function sortFindings(findings: OperationalFinding[]): OperationalFinding[] {
 }
 
 function sortRootCauses(rootCauses: RootCause[]): RootCause[] {
-  return [...rootCauses].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+  return [...rootCauses].sort((a, b) => {
+    // Primary: Event Pack root causes before generic (rootCausePriority DESC)
+    const pp = (b.rootCausePriority ?? 0) - (a.rootCausePriority ?? 0);
+    if (pp !== 0) return pp;
+    // Secondary: confidence DESC
+    return (b.confidence ?? 0) - (a.confidence ?? 0);
+  });
 }
 
 function sortRecommendations(recommendations: OperationalRecommendation[]): OperationalRecommendation[] {
   return [...recommendations].sort((a, b) => {
+    // Primary: Event Pack recommendations before generic (recommendationPriority DESC)
+    const rp = (b.recommendationPriority ?? 0) - (a.recommendationPriority ?? 0);
+    if (rp !== 0) return rp;
+    // Secondary: severity (CRITICAL > HIGH > MEDIUM > LOW)
     const pd = (PRIORITY_ORDER[b.priority] ?? 0) - (PRIORITY_ORDER[a.priority] ?? 0);
     if (pd !== 0) return pd;
+    // Tertiary: confidence DESC
     return (b.confidence ?? 0) - (a.confidence ?? 0);
   });
 }

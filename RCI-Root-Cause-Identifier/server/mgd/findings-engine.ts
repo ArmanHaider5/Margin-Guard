@@ -1436,13 +1436,6 @@ export function generateOperationalFindings(params: FindingsParams): Operational
         suppress.add("Driver Dependency Risk");
       }
 
-      // Titles to downgrade (severity → LOW, confidence capped at 30)
-      const downgrade = new Set<string>();
-      // Rule 2: concrete shortage pattern makes generic visibility weakness redundant
-      if (triggered.has("Inventory Shortage Pattern")) {
-        downgrade.add("Inventory Visibility Weakness");
-      }
-
       // Apply suppress
       for (let i = findings.length - 1; i >= 0; i--) {
         if (suppress.has(findings[i].title)) {
@@ -1450,18 +1443,6 @@ export function generateOperationalFindings(params: FindingsParams): Operational
             `[MGD][FINDINGS] 🚫 SUPPRESS "${findings[i].title}" — overridden by event-specific finding`,
           );
           findings.splice(i, 1);
-        }
-      }
-
-      // Apply downgrade
-      for (const f of findings) {
-        if (downgrade.has(f.title)) {
-          const prev = `${f.severity}/${f.confidence}`;
-          f.severity   = "LOW";
-          f.confidence = Math.min(f.confidence, 30);
-          console.log(
-            `[MGD][FINDINGS] ⬇️  DOWNGRADE "${f.title}" ${prev} → ${f.severity}/${f.confidence}`,
-          );
         }
       }
     }
