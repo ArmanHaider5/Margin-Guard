@@ -26,8 +26,10 @@ export interface EventSignals {
   unrecoveredDamageValue:   number;   // RM value unrecovered
 
   // ── Composite scores (0–100) ──────────────────────────────────────────────
-  inventoryVisibilityScore: number;
-  eventReadinessScore:      number;
+  inventoryVisibilityScore:   number;
+  eventReadinessScore:        number;
+  dispatchReliabilityScore:   number;   // 100 = no failures/delays; lower = worse
+  assetAccountabilityScore:   number;   // 100 = full recovery or no damage; lower = worse
 
   // ── Raw counts (for trace and debug) ─────────────────────────────────────
   totalDispatches:          number;
@@ -79,6 +81,7 @@ export function computeEventSignals(transactions: any[]): EventSignals {
     assetDamageRate: 0, damageRecoveryRate: 1,
     unrecoveredDamageRate: 0, unrecoveredDamageValue: 0,
     inventoryVisibilityScore: 100, eventReadinessScore: 100,
+    dispatchReliabilityScore: 100, assetAccountabilityScore: 100,
     totalDispatches: 0, incompleteDispatches: 0, totalMissingItems: 0,
     totalDispatchedItems: 0, totalSubstitutions: 0, delayedDispatches: 0,
     totalDamageEvents: 0, recoveredDamageEvents: 0,
@@ -221,6 +224,16 @@ export function computeEventSignals(transactions: any[]): EventSignals {
     100 - failurePenalty - delayPenalty - substitutionPenalty - missingPenalty,
   )));
 
+  // Dispatch Reliability Score — penalises failures and delays independently
+  const dispatchReliabilityScore = Math.max(0, Math.min(100, Math.round(
+    100 - dispatchFailureRate * 200 - dispatchDelayRate * 100,
+  )));
+
+  // Asset Accountability Score — based on damage recovery rate; 100 when no damage
+  const assetAccountabilityScore = totalDamageEvents === 0
+    ? 100
+    : Math.max(0, Math.min(100, Math.round(damageRecoveryRate * 100)));
+
   return {
     dispatchFailureRate,
     dispatchDelayRate,
@@ -235,6 +248,8 @@ export function computeEventSignals(transactions: any[]): EventSignals {
     unrecoveredDamageValue,
     inventoryVisibilityScore,
     eventReadinessScore,
+    dispatchReliabilityScore,
+    assetAccountabilityScore,
     totalDispatches,
     incompleteDispatches,
     totalMissingItems,

@@ -109,8 +109,10 @@ export interface MGDReport {
     damageEvents:             number;
     damageRecoveryRate:       number;
     unrecoveredDamageRate:    number;
-    inventoryVisibilityScore: number;
-    eventReadinessScore:      number;
+    inventoryVisibilityScore:   number;
+    eventReadinessScore:        number;
+    dispatchReliabilityScore:   number;
+    assetAccountabilityScore:   number;
   };
 }
 
@@ -369,8 +371,10 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
         damageEvents:             eventSignals.totalDamageEvents,
         damageRecoveryRate:       eventSignals.damageRecoveryRate,
         unrecoveredDamageRate:    eventSignals.unrecoveredDamageRate,
-        inventoryVisibilityScore: eventSignals.inventoryVisibilityScore,
-        eventReadinessScore:      eventSignals.eventReadinessScore,
+        inventoryVisibilityScore:   eventSignals.inventoryVisibilityScore,
+        eventReadinessScore:        eventSignals.eventReadinessScore,
+        dispatchReliabilityScore:   eventSignals.dispatchReliabilityScore,
+        assetAccountabilityScore:   eventSignals.assetAccountabilityScore,
       } : undefined,
     };
 

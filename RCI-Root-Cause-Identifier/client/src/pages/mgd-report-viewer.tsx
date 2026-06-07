@@ -6,7 +6,7 @@ import {
   Lightbulb, BarChart3, FileText, Clock, Layers,
   Building2, Calendar, Tag, RefreshCw, Inbox,
   TrendingUp, TrendingDown, Shield, Zap, Compass, StickyNote,
-  Truck, PackageX, Wrench, Eye, Star,
+  Truck, PackageX, Wrench, Eye, Star, Gauge,
 } from "lucide-react";
 import { format } from "date-fns";
 import FindingEvidencePanel, { type OperationalFinding } from "@/components/mgd/FindingEvidencePanel";
@@ -81,8 +81,10 @@ interface MGDReport {
     damageEvents:             number;
     damageRecoveryRate:       number;
     unrecoveredDamageRate:    number;
-    inventoryVisibilityScore: number;
-    eventReadinessScore:      number;
+    inventoryVisibilityScore:   number;
+    eventReadinessScore:        number;
+    dispatchReliabilityScore:   number;
+    assetAccountabilityScore:   number;
   };
 }
 
@@ -543,9 +545,35 @@ function EventDiagnosticsPanel({ report }: { report: MGDReport }) {
   const scoreColor = (v: number) =>
     v >= 80 ? "text-emerald-400" : v >= 60 ? "text-amber-400" : "text-red-400";
 
+  const eventHealthScores = [
+    { label: "Dispatch Reliability", val: ed.dispatchReliabilityScore  },
+    { label: "Event Readiness",      val: ed.eventReadinessScore       },
+    { label: "Asset Accountability", val: ed.assetAccountabilityScore  },
+    { label: "Inventory Visibility", val: ed.inventoryVisibilityScore  },
+  ];
+
   return (
     <GlassCard className="p-6">
       <SectionHeader icon={Truck} label="Event Management Metrics" accent="#06b6d4"/>
+
+      {/* ── EVENT HEALTH block ─────────────────────────────────────────────── */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Gauge className="w-3.5 h-3.5 text-cyan-400/60"/>
+          <span className="text-[10px] uppercase tracking-widest text-white/25">Event Health</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {eventHealthScores.map(({ label, val }) => (
+            <div key={label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 flex flex-col items-center gap-1.5">
+              <div className="flex items-baseline gap-0.5">
+                <span className={`text-2xl font-bold tabular-nums ${scoreColor(val)}`}>{val}</span>
+                <span className="text-[11px] text-white/25 font-normal">/100</span>
+              </div>
+              <span className="text-[10px] text-white/35 text-center leading-snug">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 

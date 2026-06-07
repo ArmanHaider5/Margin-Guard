@@ -65,6 +65,10 @@ const CATEGORY_LABEL: Record<string, string> = {
   manpower_dependency:   "manpower dependency",
   financial_leakage:     "financial leakage",
   workflow_scalability:  "workflow scalability",
+  // Event Management categories
+  event_readiness:       "event readiness control",
+  dispatch_operations:   "dispatch reliability",
+  asset_management:      "asset accountability",
 };
 
 const SEVERITY_ORDER: Record<string, number> = {
@@ -197,6 +201,16 @@ export function generateExecutiveOverview(
   const hasInv       = hasCategory(findings, "inventory_visibility");
   const hasMano      = hasCategory(findings, "manpower_dependency");
   const hasScaling   = hasCategory(findings, "workflow_scalability");
+  const hasWarehouse = hasCategory(findings, "warehouse_operations");
+  // Event Management signals
+  const hasEMDispatch  = hasCategory(findings, "dispatch_operations");
+  const hasEMReadiness = hasCategory(findings, "event_readiness");
+  const hasEMAsset     = hasCategory(findings, "asset_management");
+  const hasDispatchFail  = findings.some(f => f.title === "Dispatch Reliability Risk");
+  const hasMissingItems  = findings.some(f => f.title === "Inventory Shortage Pattern");
+  const hasSubstitutions = findings.some(f => f.title.toLowerCase().includes("substitut") &&
+    (f.category === "dispatch_operations" || f.category === "event_readiness"));
+  const hasDamageLeakage = findings.some(f => f.title === "Asset Damage Recovery Leakage");
 
   const openings = [
     `This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework.`,
@@ -225,12 +239,32 @@ export function generateExecutiveOverview(
   if (hasLeakage) {
     themeLines.push(`Financial leakage indicators were detected, suggesting undocumented value loss in the current operating model.`);
   }
+  // ── Event Management narrative — specific signal language ─────────────────
+  if (hasDispatchFail || hasEMDispatch) {
+    themeLines.push(`Dispatch failures were identified as a recurring operational gap, with evidence of incomplete or delayed dispatches affecting client delivery reliability.`);
+  }
+  if (hasMissingItems) {
+    themeLines.push(`Missing item incidents were detected across event dispatch cycles, indicating a pre-departure verification gap that is directly addressable through structured workflow controls.`);
+  }
+  if (hasSubstitutions) {
+    themeLines.push(`Substitution incidents were recorded, indicating that items were replaced rather than fulfilled as ordered — a proxy indicator for inventory preparation gaps.`);
+  }
+  if (hasEMReadiness) {
+    themeLines.push(`Event readiness control gaps were identified in the pre-event preparation process, creating avoidable on-site risk from incomplete preparation.`);
+  }
+  if (hasDamageLeakage || hasEMAsset) {
+    themeLines.push(`Asset damage recovery leakage was detected, indicating that damaged assets are not being systematically recovered or charged — a source of compounding margin erosion.`);
+  }
+  // ── Generic operational narrative — only when supported by findings ────────
   if (hasLogistics && hasInv) {
     themeLines.push(`Logistics and inventory processes show evidence of structural misalignment that increases the risk of fulfillment failure during peak demand.`);
   } else if (hasLogistics) {
     themeLines.push(`Logistics coordination patterns reflect reactive scheduling practices that are vulnerable to disruption under increasing order volume.`);
-  } else if (hasInv) {
+  } else if (hasInv && !hasMissingItems) {
     themeLines.push(`Inventory visibility gaps indicate a structural lag between physical stock position and recorded data — a risk to fulfillment reliability.`);
+  }
+  if (hasWarehouse) {
+    themeLines.push(`Warehouse operations show structural inefficiencies that are creating friction in the stock-to-dispatch workflow.`);
   }
   if (hasMano) {
     themeLines.push(`Significant operational decisions are concentrated in a small number of individuals, creating single-point-of-failure exposure.`);
