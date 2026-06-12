@@ -1,5 +1,157 @@
 [
   {
+    "traceId": "0a3eb172-31a6-4671-b5c2-534dc174c687",
+    "createdAt": "2026-06-12T14:05:06.127Z",
+    "steps": [
+      {
+        "step": "Document Processing",
+        "startedAt": "2026-06-12T14:05:06.133Z",
+        "completedAt": "2026-06-12T14:05:06.133Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 1,
+        "outputCount": 1,
+        "metadata": {
+          "documents": 1,
+          "transactions": 103,
+          "clientName": "MEM - 2008",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Transaction Extraction",
+        "startedAt": "2026-06-12T14:05:06.133Z",
+        "completedAt": "2026-06-12T14:05:06.133Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 1,
+        "outputCount": 103,
+        "metadata": {
+          "transactions": 103
+        }
+      },
+      {
+        "step": "Event Signal Analysis",
+        "startedAt": "2026-06-12T14:05:06.133Z",
+        "completedAt": "2026-06-12T14:05:06.135Z",
+        "durationMs": 2,
+        "status": "completed",
+        "inputCount": 103,
+        "outputCount": 10,
+        "metadata": {
+          "dispatchFailureRate": 0,
+          "inventoryShortageRate": 0,
+          "substitutionRate": 0,
+          "deliveryDelayRate": 0,
+          "averageDelayMinutes": 0,
+          "damageRecoveryRate": 1,
+          "unrecoveredDamageValue": 0,
+          "inventoryVisibilityScore": 90,
+          "eventReadinessScore": 100,
+          "totalDispatches": 0
+        }
+      },
+      {
+        "step": "Findings Generation",
+        "startedAt": "2026-06-12T14:05:06.135Z",
+        "completedAt": "2026-06-12T14:05:06.144Z",
+        "durationMs": 9,
+        "status": "completed",
+        "inputCount": 103,
+        "outputCount": 4,
+        "metadata": {
+          "findings": 4,
+          "critical": 1,
+          "high": 0,
+          "medium": 1,
+          "low": 2,
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Root Cause Generation",
+        "startedAt": "2026-06-12T14:05:06.144Z",
+        "completedAt": "2026-06-12T14:05:06.148Z",
+        "durationMs": 4,
+        "status": "completed",
+        "inputCount": 4,
+        "outputCount": 4,
+        "metadata": {
+          "rootCauses": 4,
+          "critical": 1,
+          "high": 1
+        }
+      },
+      {
+        "step": "Recommendation Generation",
+        "startedAt": "2026-06-12T14:05:06.149Z",
+        "completedAt": "2026-06-12T14:05:06.154Z",
+        "durationMs": 5,
+        "status": "completed",
+        "inputCount": 8,
+        "outputCount": 8,
+        "metadata": {
+          "recommendations": 8,
+          "immediate": 1,
+          "thirtyDays": 6,
+          "ninetyDays": 1,
+          "longTerm": 0
+        }
+      },
+      {
+        "step": "Benchmark Generation",
+        "startedAt": "2026-06-12T14:05:06.154Z",
+        "completedAt": "2026-06-12T14:05:06.155Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "benchmarks": 0,
+          "critical": 0,
+          "elevated": 0,
+          "watchlist": 0,
+          "healthy": 0
+        }
+      },
+      {
+        "step": "Narrative Generation",
+        "startedAt": "2026-06-12T14:05:06.155Z",
+        "completedAt": "2026-06-12T14:05:06.159Z",
+        "durationMs": 4,
+        "status": "completed",
+        "inputCount": 16,
+        "outputCount": 7,
+        "metadata": {
+          "sections": 7,
+          "operationalHealthScore": 59,
+          "healthScoreSource": "estimated",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Report Composition",
+        "startedAt": "2026-06-12T14:05:06.159Z",
+        "completedAt": "2026-06-12T14:05:06.161Z",
+        "durationMs": 2,
+        "status": "completed",
+        "inputCount": 16,
+        "outputCount": 1,
+        "metadata": {
+          "reportVersion": "MGD-V1",
+          "operationalHealthScore": 59,
+          "healthScoreSource": "estimated",
+          "documents": 1,
+          "transactions": 103,
+          "findings": 4,
+          "rootCauses": 4,
+          "recommendations": 8,
+          "benchmarks": 0
+        }
+      }
+    ]
+  },
+  {
     "traceId": "a296e03a-7f15-4142-b51c-05bf967acbfc",
     "createdAt": "2026-06-12T13:52:33.369Z",
     "steps": [
