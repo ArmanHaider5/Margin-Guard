@@ -277,7 +277,11 @@ export function registerMGDRoutes(app: Express): void {
         });
 
         if (transactions.length === 0) {
-          return fail(res, 400, "No operational transactions could be extracted from the selected documents.");
+          console.log(
+            `[MGD][EXTRACT] No transactions extracted from documents — ` +
+            `continuing as baseline analysis (industry + concerns + notes only). ` +
+            `Documents attached for context but columns were not parseable as transaction records.`
+          );
         }
       }
 
