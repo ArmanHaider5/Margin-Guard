@@ -1,5 +1,514 @@
 [
   {
+    "id": "40906e68-eaf1-4f53-8fce-73ecdfa7205d",
+    "clientId": "066ff09b-6798-4aaa-b34b-78f05ff40788",
+    "clientName": "MEM - 2008",
+    "industry": "event_management",
+    "createdAt": "2026-06-12T13:52:33.394Z",
+    "report": {
+      "metadata": {
+        "generatedAt": "2026-06-12T13:52:33.393Z",
+        "clientName": "MEM - 2008",
+        "industry": "event_management",
+        "operationalHealthScore": 79,
+        "reportVersion": "MGD-V1"
+      },
+      "summary": {
+        "criticalFindings": 0,
+        "highFindings": 0,
+        "criticalRootCauses": 0,
+        "highPriorityRecommendations": 6,
+        "benchmarkAlerts": 0
+      },
+      "narrative": {
+        "executiveOverview": {
+          "id": "executive-overview",
+          "title": "Executive Overview",
+          "content": "The Margin Guard Diagnostics (MGD) framework has been applied to deliver the following structured operational assessment. Based on the diagnostic evidence collected, the operation is classified as Moderate Operational Strain — the operation is functional but carrying structural inefficiencies that will compound under demand growth. Operational stress is concentrated across inventory management, manpower dependency, workflow scalability, and warehouse operations. Inventory visibility gaps indicate a structural lag between physical stock position and recorded data — a risk to fulfillment reliability. Warehouse operations show structural inefficiencies that are creating friction in the stock-to-dispatch workflow. Significant operational decisions are concentrated in a small number of individuals, creating single-point-of-failure exposure. Workflow scalability constraints suggest the current operating model will not sustain proportional demand growth without redesign. 6 high-priority recommendations have been identified to address the most pressing operational vulnerabilities.",
+          "priority": 1
+        },
+        "keyFindings": {
+          "id": "key-findings",
+          "title": "Key Operational Findings",
+          "content": "The diagnostic review identified the following key operational findings, ranked by severity and evidential confidence:\n\nAdditional Observations:\n• High Manual Coordination Dependency — The volume and variety of inventory movements across 103 distinct items and 103 transactions indicates that operational tracking relies heavily on manual ledger entries and person-to-person coordination. This creates human single-points-of-failure that scale poorly under demand growth.\n• High Inventory Movement Complexity — The breadth of 103 tracked entities, 103 transactions across 0 document type(s), and irregular movement cadence indicate that current operational workflows are approaching a complexity ceiling. Scaling activity without process formalisation will amplify coordination failures.\n• Delayed Inventory Reconciliation — Movement records show systematic gaps in inventory intake documentation and balance tracking. Across 103 items and 103 transaction records, outbound movements outpace documented replenishment, and no consistent closing-balance verification is recorded.\n• Concentrated Warehouse Throughput Pressure — Movement records show that a small set of high-turnover items drives the majority of warehouse activity. Without automated balance verification, handling errors and adjustment records indicate that warehouse operations are absorbing correction effort that displaces productive throughput time.\n\nTaken together, these findings paint a picture of an operation under structural strain that can be systematically resolved.",
+          "priority": 2
+        },
+        "rootCauseSummary": {
+          "id": "root-cause-summary",
+          "title": "Root Cause Analysis",
+          "content": "The MGD diagnostic engine identified 1 systemic root cause underlying the operational findings above. These are not independent issues — they represent interconnected structural conditions that compound under operational pressure.\n\nMEDIUM | Operational Scalability Mismatch (49% confidence) Primary impacts include: Each additional item or transaction adds disproportionate coordination overhead in a manual system. and Warehouse throughput concentration creates a bottleneck that grows with demand but cannot be resolved by effort alone..\n\nEach root cause above represents a structural condition embedded in the operating model. Corrective action at the recommendation level is designed to address these causes directly, not merely their visible symptoms.",
+          "priority": 3
+        },
+        "operationalHealth": {
+          "id": "operational-health",
+          "title": "Operational Health Assessment",
+          "content": "Operational Health Classification: Moderate Operational Strain.  The composite operational health score of 79/100 reflects an operation that is functional but carrying unresolved structural inefficiencies. Operational strain is concentrated in inventory management, manpower dependency, workflow scalability, and warehouse operations. Under these conditions, targeted stabilisation interventions will deliver meaningful performance improvement with minimal disruption to current operations.",
+          "priority": 4
+        },
+        "priorityActions": {
+          "id": "priority-actions",
+          "title": "Priority Actions",
+          "content": "The following priority actions have been identified from the diagnostic findings. Actions are organised by urgency and operational function.\n\nImmediate Stabilisation (Action Now):\n• Inventory Checkpoint Controls [LOW effort] — Implement mandatory closing-balance recording at the end of each operational day for all tracked inventory items. Pair this with a same-day intake recording rule: every inbound delivery is logged on the day of receipt, not retrospectively. These two controls close the structural lag between physical inventory and recorded inventory position.\n\nWorkflow Improvements:\n• Preventive Reconciliation Workflow [MEDIUM effort, 30 DAYS] — Establish a weekly cross-functional reconciliation cycle: logistics confirms dispatch completion, warehouse confirms physical closing balances, and coordination reviews any discrepancies against records. Reconciliation happens before the next operating week begins — preventing discrepancies from accumulating across periods.\n• Cross-Training and Knowledge Distribution Programme [LOW effort, 30 DAYS] — Systematically transfer operational knowledge from key coordinators to the wider team. Identify the top ten routine coordination decisions, document the resolution logic for each, and cross-train a minimum of two backup staff on each decision. This directly reduces single-person operational risk and builds team-wide operational resilience.\n\nScalability Improvements:\n• Workflow Redesign Initiative [HIGH effort, 90 DAYS] — Commission a structured review of the end-to-end operational workflow — from booking or order intake through to item return or delivery completion. The objective is to identify and document the five highest-friction handoff points, then redesign those handoffs to be process-driven rather than person-driven. This is the foundational work that makes all other scalability improvements sustainable.\n\nAdditional Recommended Actions:\n• Inventory Audit Scheduling and Warehouse Stabilisation — Establish a structured inventory audit schedule: weekly spot-checks on the top 5 highest-movement items, and a full physical count once per quarter. Pair this with dedicated staging areas for the top concentration items to reduce picking errors and handling time during peak throughput periods.\n• Warehouse Cycle Count Programme — Implement a structured cycle count programme — counting a rotation of item categories each week so that every item is physically counted at least once per month. Cycle counts are more sustainable than full stock-takes and create continuous reconciliation discipline that prevents variance accumulation.",
+          "priority": 5
+        },
+        "strategicDirection": {
+          "id": "strategic-direction",
+          "title": "Strategic Direction",
+          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. Achieving reliable inventory visibility and logistics coordination discipline will unlock the ability to commit confidently to client fulfilment windows — a capability that directly translates to improved client retention and revenue predictability. Addressing the identified scalability constraints is a prerequisite for sustainable growth. The current operating model has reached a complexity ceiling — the workflow redesign work identified in this report is what separates a business that grows profitably from one that grows chaotically. Mature operational controls create the conditions for predictive planning: stock positions are known in advance, logistics is scheduled rather than improvised, and coordination decisions are process-driven rather than person-dependent. The 1 longer-horizon recommendation in this report — such as Workflow Redesign Initiative — represent the structural investments that convert a stabilised operation into a scalable, process-driven enterprise.",
+          "priority": 6
+        },
+        "finalConclusion": {
+          "id": "final-conclusion",
+          "title": "Conclusion",
+          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. This review has identified 6 high-priority corrective actions that address the root causes directly. These are not aspirational improvements — they are structural corrections with defined implementation steps. The corrective actions identified are deliberately practical in scope. The immediate stabilisation steps require no additional capital — only structured application of existing team capability to better-defined processes. The business has the operational foundation to succeed at its stated growth objectives. This report provides the structured framework to ensure that foundation is built deliberately rather than discovered through operational failure.",
+          "priority": 7
+        },
+        "metadata": {
+          "generatedAt": "2026-06-12T13:52:33.391Z",
+          "industry": "event_management",
+          "findingsCount": 4,
+          "rootCauseCount": 1,
+          "recommendationCount": 8,
+          "operationalHealthScore": 79
+        }
+      },
+      "findings": [
+        {
+          "id": "mgd-inve-69bfa5f3",
+          "title": "Delayed Inventory Reconciliation",
+          "severity": "MEDIUM",
+          "category": "inventory_visibility",
+          "department": "Warehouse / Inventory",
+          "summary": "Movement records show systematic gaps in inventory intake documentation and balance tracking. Across 103 items and 103 transaction records, outbound movements outpace documented replenishment, and no consistent closing-balance verification is recorded.",
+          "signals": [
+            "103 items tracked with no closing-balance records — reconciliation state unknown",
+            "100% of transactions have no date — timeline reconstruction is incomplete"
+          ],
+          "operationalImpact": "Without closing-balance snapshots and matched intake records, stock discrepancies accumulate silently. Shortfalls surface only at physical count — by which point the loss window may span weeks.",
+          "confidence": 30,
+          "findingPriority": 80,
+          "evidence": [
+            {
+              "observation": "No inventory balance verification records were detected across 103 transactions. Inventory position cannot be confirmed at any point in the review period.",
+              "source": "inventory_movements",
+              "confidence": 80
+            },
+            {
+              "observation": "103 of 103 transactions (100%) are missing quantity data, preventing accurate inventory balance calculation.",
+              "source": "inventory_movements",
+              "confidence": 72
+            }
+          ]
+        },
+        {
+          "id": "mgd-manp-8821fa80",
+          "title": "High Manual Coordination Dependency",
+          "severity": "MEDIUM",
+          "category": "manpower_dependency",
+          "department": "Operations / Warehouse",
+          "summary": "The volume and variety of inventory movements across 103 distinct items and 103 transactions indicates that operational tracking relies heavily on manual ledger entries and person-to-person coordination. This creates human single-points-of-failure that scale poorly under demand growth.",
+          "signals": [
+            "103 distinct inventory items tracked — each requiring individual manual ledger entries",
+            "Entity count exceeds 15 — manual reconciliation complexity is high",
+            "103 total movement records detected across documents"
+          ],
+          "operationalImpact": "Manual dependency increases error probability during peak periods, delays response to stock discrepancies, and creates knowledge concentration risk when key personnel are unavailable.",
+          "confidence": 45,
+          "findingPriority": 50,
+          "evidence": []
+        },
+        {
+          "id": "mgd-work-94386529",
+          "title": "High Inventory Movement Complexity",
+          "severity": "MEDIUM",
+          "category": "workflow_scalability",
+          "department": "Operations / Management",
+          "summary": "The breadth of 103 tracked entities, 103 transactions across 0 document type(s), and irregular movement cadence indicate that current operational workflows are approaching a complexity ceiling. Scaling activity without process formalisation will amplify coordination failures.",
+          "signals": [
+            "103 distinct inventory entities across documents — high operational catalogue complexity",
+            "103 transaction records — growing volume that will strain existing manual workflows",
+            "100% of items appear in only 1–2 transactions — highly fragmented item catalogue with long tail of low-frequency items"
+          ],
+          "operationalImpact": "Operational complexity at current levels requires experienced staff to maintain context across many items and document sources. Staff turnover or demand increases will expose latent process fragility.",
+          "confidence": 45,
+          "findingPriority": 50,
+          "evidence": []
+        },
+        {
+          "id": "mgd-ware-38885a97",
+          "title": "Concentrated Warehouse Throughput Pressure",
+          "severity": "LOW",
+          "category": "warehouse_operations",
+          "department": "Warehouse",
+          "summary": "Movement records show that a small set of high-turnover items drives the majority of warehouse activity. Without automated balance verification, handling errors and adjustment records indicate that warehouse operations are absorbing correction effort that displaces productive throughput time.",
+          "signals": [
+            "103 movement records with no closing-balance audit entries — physical counts cannot be system-verified"
+          ],
+          "operationalImpact": "Concentrated throughput on a few items creates bottleneck risk at the packing/dispatch stage. Physical handling adjustments without digital audit trails prevent root-cause analysis of recurring discrepancies.",
+          "confidence": 20,
+          "findingPriority": 50,
+          "evidence": [
+            {
+              "observation": "103 of 103 warehouse transactions (100%) are missing reference identifiers. Without reference traceability, stock discrepancies cannot be attributed or audited.",
+              "source": "warehouse_traceability",
+              "confidence": 64
+            }
+          ]
+        }
+      ],
+      "rootCauses": [
+        {
+          "id": "mgd-rc-bc7fb5e6",
+          "title": "Operational Scalability Mismatch",
+          "severity": "MEDIUM",
+          "confidence": 49,
+          "summary": "The breadth of the inventory catalogue, the volume of warehouse movement, and the reliance on manual coordination have collectively exceeded what the current operational design can absorb without compounding errors. Scaling revenue or demand under these conditions will amplify coordination failures faster than staff capacity can compensate.",
+          "contributingFindings": [
+            "mgd-work-94386529",
+            "mgd-ware-38885a97",
+            "mgd-manp-8821fa80"
+          ],
+          "operationalImpact": [
+            "Each additional item or transaction adds disproportionate coordination overhead in a manual system.",
+            "Warehouse throughput concentration creates a bottleneck that grows with demand but cannot be resolved by effort alone.",
+            "Onboarding new staff provides diminishing returns when the process itself is not documented.",
+            "Customer fulfilment speed will not improve — and may decline — as order volume increases."
+          ],
+          "recommendations": [
+            "Conduct a catalogue rationalisation: identify the top 20% of items by movement volume and standardise their handling first.",
+            "Define and document a warehouse dispatch SOP with checklist before expanding throughput capacity.",
+            "Pilot a basic digital stock ledger (even a shared spreadsheet) before investing in WMS software.",
+            "Set a transaction volume threshold at which the current process will be formally reviewed."
+          ],
+          "rootCausePriority": 50
+        }
+      ],
+      "recommendations": [
+        {
+          "id": "mgd-rec-2a3789ef",
+          "title": "Warehouse Cycle Count Programme",
+          "summary": "Implement a structured cycle count programme — counting a rotation of item categories each week so that every item is physically counted at least once per month. Cycle counts are more sustainable than full stock-takes and create continuous reconciliation discipline that prevents variance accumulation.",
+          "priority": "HIGH",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "LOW",
+          "category": "warehouse_operations",
+          "relatedRootCauses": [],
+          "relatedFindings": [
+            "mgd-inve-69bfa5f3",
+            "mgd-ware-38885a97"
+          ],
+          "expectedOperationalImpact": [
+            "Keeps inventory records accurate without disruptive full stock-takes.",
+            "Identifies shrinkage and damage trends early, before they accumulate into significant variance.",
+            "Creates a culture of inventory accuracy accountability in the warehouse team.",
+            "Reduces reconciliation effort at period-end because variances are caught continuously."
+          ],
+          "actionItems": [
+            "Divide inventory into 4 groups — count one group per week so all items are counted monthly.",
+            "Assign specific warehouse staff to cycle count ownership, with supervisor sign-off.",
+            "Record count results against system records: any variance above 2% requires immediate investigation.",
+            "Review cycle count results at monthly operations review — track variance trend over time."
+          ],
+          "confidence": 35,
+          "recommendationPriority": 100
+        },
+        {
+          "id": "mgd-rec-e146082f",
+          "title": "Workflow Redesign Initiative",
+          "summary": "Commission a structured review of the end-to-end operational workflow — from booking or order intake through to item return or delivery completion. The objective is to identify and document the five highest-friction handoff points, then redesign those handoffs to be process-driven rather than person-driven. This is the foundational work that makes all other scalability improvements sustainable.",
+          "priority": "HIGH",
+          "timeframe": "90_DAYS",
+          "implementationDifficulty": "HIGH",
+          "category": "operational_scalability",
+          "relatedRootCauses": [
+            "mgd-rc-bc7fb5e6"
+          ],
+          "relatedFindings": [
+            "mgd-manp-8821fa80",
+            "mgd-work-94386529"
+          ],
+          "expectedOperationalImpact": [
+            "Operational capacity increases without proportional increase in headcount.",
+            "New staff can be onboarded and productive faster with documented process standards.",
+            "Decision quality improves because processes — not individuals — hold operational logic.",
+            "The business can absorb demand growth without compounding coordination failures."
+          ],
+          "actionItems": [
+            "Map the current workflow as-is: identify every handoff, decision point, and delay.",
+            "Score each handoff by frequency × error rate to prioritise which to redesign first.",
+            "Redesign the top three handoffs with a documented SOP, owner, and completion criteria.",
+            "Pilot the redesigned workflow for 30 days with a defined success metric before full rollout."
+          ],
+          "confidence": 50,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-9ff10f4a",
+          "title": "Inventory Audit Scheduling and Warehouse Stabilisation",
+          "summary": "Establish a structured inventory audit schedule: weekly spot-checks on the top 5 highest-movement items, and a full physical count once per quarter. Pair this with dedicated staging areas for the top concentration items to reduce picking errors and handling time during peak throughput periods.",
+          "priority": "HIGH",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "LOW",
+          "category": "warehouse_operations",
+          "relatedRootCauses": [
+            "mgd-rc-bc7fb5e6"
+          ],
+          "relatedFindings": [
+            "mgd-inve-69bfa5f3",
+            "mgd-ware-38885a97"
+          ],
+          "expectedOperationalImpact": [
+            "Stock discrepancies are caught weekly on high-risk items rather than at quarterly count.",
+            "Dedicated staging reduces picking time and error rate on high-throughput items.",
+            "Physical count effort decreases when weekly spot-checks maintain record accuracy.",
+            "Warehouse handling capacity increases for the same team size through layout optimisation."
+          ],
+          "actionItems": [
+            "Identify the top 5 highest-movement items and designate a named staging area for each.",
+            "Create a weekly spot-check template: physical count, recorded count, variance, and action.",
+            "Schedule the quarterly full physical count in advance — block it in the operations calendar.",
+            "Track week-on-week spot-check variance as a warehouse accuracy KPI."
+          ],
+          "confidence": 50,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-60946231",
+          "title": "Inventory Checkpoint Controls",
+          "summary": "Implement mandatory closing-balance recording at the end of each operational day for all tracked inventory items. Pair this with a same-day intake recording rule: every inbound delivery is logged on the day of receipt, not retrospectively. These two controls close the structural lag between physical inventory and recorded inventory position.",
+          "priority": "HIGH",
+          "timeframe": "IMMEDIATE",
+          "implementationDifficulty": "LOW",
+          "category": "inventory_control",
+          "relatedRootCauses": [],
+          "relatedFindings": [
+            "mgd-inve-69bfa5f3",
+            "mgd-ware-38885a97"
+          ],
+          "expectedOperationalImpact": [
+            "Eliminates the lag between physical stock reality and recorded position.",
+            "Enables same-day identification of stock discrepancies rather than period-end discovery.",
+            "Provides a reliable basis for replenishment decisions without physical count dependency.",
+            "Reduces period-end reconciliation effort by up to 70% when applied consistently."
+          ],
+          "actionItems": [
+            "Assign a closing-balance owner for each item category — one person, one category, non-negotiable.",
+            "Create a closing-balance template with item name, opening balance, movements, and closing figure.",
+            "Set a maximum 4-hour lag policy between physical movement and system entry.",
+            "Schedule a monthly reconciliation checkpoint where physical count is compared against records."
+          ],
+          "confidence": 35,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-7e465f45",
+          "title": "Preventive Reconciliation Workflow",
+          "summary": "Establish a weekly cross-functional reconciliation cycle: logistics confirms dispatch completion, warehouse confirms physical closing balances, and coordination reviews any discrepancies against records. Reconciliation happens before the next operating week begins — preventing discrepancies from accumulating across periods.",
+          "priority": "HIGH",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "MEDIUM",
+          "category": "workflow_redesign",
+          "relatedRootCauses": [],
+          "relatedFindings": [
+            "mgd-inve-69bfa5f3",
+            "mgd-work-94386529"
+          ],
+          "expectedOperationalImpact": [
+            "Discrepancies are caught weekly rather than at period-end, reducing investigation complexity.",
+            "Cross-functional alignment is institutionalised as a weekly rhythm rather than a crisis response.",
+            "Logistics and warehouse teams develop a shared understanding of operational state.",
+            "Management receives a reliable weekly operational health summary."
+          ],
+          "actionItems": [
+            "Define the weekly reconciliation agenda: dispatch log review, closing balance check, open discrepancies.",
+            "Set a fixed day and time for the weekly reconciliation meeting — protect it from ad-hoc conflicts.",
+            "Create a discrepancy register: open items are tracked until closed, not forgotten between meetings.",
+            "Assign a reconciliation facilitator who owns the process and escalates unresolved items to management."
+          ],
+          "confidence": 35,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-927b9f29",
+          "title": "Cross-Training and Knowledge Distribution Programme",
+          "summary": "Systematically transfer operational knowledge from key coordinators to the wider team. Identify the top ten routine coordination decisions, document the resolution logic for each, and cross-train a minimum of two backup staff on each decision. This directly reduces single-person operational risk and builds team-wide operational resilience.",
+          "priority": "HIGH",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "LOW",
+          "category": "manpower_coordination",
+          "relatedRootCauses": [
+            "mgd-rc-bc7fb5e6"
+          ],
+          "relatedFindings": [
+            "mgd-manp-8821fa80"
+          ],
+          "expectedOperationalImpact": [
+            "Operational continuity is maintained during key staff absence — eliminating stoppage risk.",
+            "Decision-making speed is no longer bounded by the availability of one coordinator.",
+            "Staff satisfaction improves as operational knowledge becomes shared rather than hoarded.",
+            "Business continuity during unexpected disruptions (illness, resignation) is formally addressed."
+          ],
+          "actionItems": [
+            "List the ten most frequent coordination decisions and their current owner.",
+            "Document a decision guide for each: trigger, options, resolution, and escalation path.",
+            "Identify backup staff for each decision and schedule shadow sessions within 30 days.",
+            "Test backup capability: have the backup handle the decision independently once per month."
+          ],
+          "confidence": 30,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-f1fed453",
+          "title": "Operational Capacity Review",
+          "summary": "Conduct a structured assessment of current operational throughput capacity: maximum daily transactions the team can process without quality degradation, vehicle/driver availability ceiling, and warehouse handling throughput per person per shift. Set explicit capacity thresholds that trigger expansion planning before the ceiling is hit — not after.",
+          "priority": "MEDIUM",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "MEDIUM",
+          "category": "manpower_coordination",
+          "relatedRootCauses": [
+            "mgd-rc-bc7fb5e6"
+          ],
+          "relatedFindings": [
+            "mgd-manp-8821fa80",
+            "mgd-work-94386529"
+          ],
+          "expectedOperationalImpact": [
+            "Management can make staffing and resource decisions with quantified rather than intuitive data.",
+            "Demand growth is matched with capacity planning rather than discovered as a crisis.",
+            "Operational ceiling is defined and communicated — enabling controlled business development.",
+            "Staff workload is assessed objectively, reducing burnout risk in key coordination roles."
+          ],
+          "actionItems": [
+            "Define the current team's maximum sustainable daily transaction volume — measure for two weeks.",
+            "Calculate vehicle/driver utilisation as a percentage of maximum possible daily routes.",
+            "Set a capacity threshold (e.g. 80% utilisation) that triggers a pre-planned expansion review.",
+            "Document the expansion plan: what gets added first, at what cost, and with what lead time."
+          ],
+          "confidence": 50,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-59eda3c6",
+          "title": "Department Synchronisation Framework",
+          "summary": "Define and implement a structured information-sharing protocol between warehouse, logistics, and coordination teams. Each team publishes a daily status update at defined times: warehouse readiness at 8 AM, logistics schedule confirmation at 10 AM, end-of-day dispatch summary at 6 PM. This creates a cadence that replaces ad-hoc communication with predictable, structured sync points.",
+          "priority": "MEDIUM",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "LOW",
+          "category": "workflow_redesign",
+          "relatedRootCauses": [
+            "mgd-rc-bc7fb5e6"
+          ],
+          "relatedFindings": [
+            "mgd-manp-8821fa80",
+            "mgd-work-94386529"
+          ],
+          "expectedOperationalImpact": [
+            "Inter-team information gaps are closed at defined points rather than discovered during execution.",
+            "Coordination overhead decreases as teams operate from a shared, predictable rhythm.",
+            "Management has three daily checkpoints to review operational state without ad-hoc queries.",
+            "Onboarding new team members becomes faster as the communication structure is documented."
+          ],
+          "actionItems": [
+            "Define the three daily sync points and the one-paragraph update format for each team.",
+            "Create a shared communication channel (group chat or board) where updates are posted.",
+            "Run the synchronisation protocol for four weeks and measure unplanned coordination calls before and after.",
+            "Review and adjust the sync point content after 30 days based on what information was still missing."
+          ],
+          "confidence": 50,
+          "recommendationPriority": 50
+        }
+      ],
+      "benchmarks": [],
+      "visualMetrics": {
+        "operationalHealthLabel": "Moderate Operational Strain",
+        "operationalRiskLevel": "Controlled",
+        "benchmarkStatusBreakdown": {
+          "healthy": 0,
+          "watchlist": 0,
+          "elevated": 0,
+          "critical": 0
+        }
+      },
+      "industryInsights": {
+        "maturityLevel": "SCALING",
+        "rules": [
+          {
+            "id": "em-catering-growth-opportunity",
+            "category": "strategic_growth",
+            "title": "Catering Growth Opportunity",
+            "description": "Event management businesses with controlled operational baselines frequently have untapped catering margin upside. Developing or expanding an in-house catering offering can increase per-event revenue by 20–40% while deepening client lock-in and reducing third-party vendor dependency.",
+            "severity": "LOW",
+            "confidence": 75
+          },
+          {
+            "id": "em-event-scalability-constraint",
+            "category": "workflow_scalability",
+            "title": "Event Scalability Constraint",
+            "description": "Workflow scalability findings indicate the team is absorbing growth through overtime and manual coordination rather than process improvement. In event management, this ceiling is reached faster than other industries due to concurrent event load — quality degradation accelerates beyond the current team capacity.",
+            "severity": "MEDIUM",
+            "confidence": 49
+          },
+          {
+            "id": "em-central-kitchen-readiness",
+            "category": "strategic_growth",
+            "title": "Central Kitchen Readiness",
+            "description": "Event management operations at scale frequently benefit from centralised food production infrastructure. A central kitchen reduces last-mile catering complexity and is a high-leverage investment for businesses running 3 or more simultaneous events.",
+            "severity": "LOW",
+            "confidence": 32
+          }
+        ],
+        "topRisks": [],
+        "topOpportunities": [
+          {
+            "id": "em-catering-growth-opportunity",
+            "category": "strategic_growth",
+            "title": "Catering Growth Opportunity",
+            "description": "Event management businesses with controlled operational baselines frequently have untapped catering margin upside. Developing or expanding an in-house catering offering can increase per-event revenue by 20–40% while deepening client lock-in and reducing third-party vendor dependency.",
+            "severity": "LOW",
+            "confidence": 75
+          },
+          {
+            "id": "em-event-scalability-constraint",
+            "category": "workflow_scalability",
+            "title": "Event Scalability Constraint",
+            "description": "Workflow scalability findings indicate the team is absorbing growth through overtime and manual coordination rather than process improvement. In event management, this ceiling is reached faster than other industries due to concurrent event load — quality degradation accelerates beyond the current team capacity.",
+            "severity": "MEDIUM",
+            "confidence": 49
+          },
+          {
+            "id": "em-central-kitchen-readiness",
+            "category": "strategic_growth",
+            "title": "Central Kitchen Readiness",
+            "description": "Event management operations at scale frequently benefit from centralised food production infrastructure. A central kitchen reduces last-mile catering complexity and is a high-leverage investment for businesses running 3 or more simultaneous events.",
+            "severity": "LOW",
+            "confidence": 32
+          }
+        ]
+      },
+      "eventDiagnostics": {
+        "dispatchesAnalysed": 0,
+        "dispatchFailureRate": 0,
+        "dispatchDelayRate": 0,
+        "averageDelayMinutes": 0,
+        "missingItemRate": 0,
+        "substitutionRate": 0,
+        "damageEvents": 0,
+        "damageRecoveryRate": 1,
+        "unrecoveredDamageRate": 0,
+        "inventoryVisibilityScore": 90,
+        "eventReadinessScore": 100,
+        "dispatchReliabilityScore": 100,
+        "assetAccountabilityScore": 100,
+        "averageEventValue": 0,
+        "estimatedRevenueExposure": 0,
+        "dispatchFailureExposure": 0,
+        "assetDamageExposure": 0,
+        "unrecoveredDamageValue": 0
+      }
+    },
+    "runtimeMs": 24
+  },
+  {
     "id": "89b9fc33-4a6f-41df-a521-d7dbcf39a6de",
     "clientId": "066ff09b-6798-4aaa-b34b-78f05ff40788",
     "clientName": "MEM - 2008",

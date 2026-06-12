@@ -138,32 +138,71 @@ export function registerMGDRoutes(app: Express): void {
     }
     console.log(`[MGD][FLAT] "${srcName}" — value column = ${valueColIdx} ("${headers[valueColIdx]}")`);
 
+    // ── Detect customer frequency table ──────────────────────────────────
+    // A frequency/pivot table (e.g. "Sales Freq by Customer") has most column
+    // headers as numeric year/month values.  In that case each data row is a
+    // CLIENT (not an inventory item) and the numeric cells are event counts.
+    const nonEmptyHeaders = headers.filter((h: string) => h !== "");
+    const numericHdrCount = nonEmptyHeaders.filter((h: string) => !isNaN(Number(h))).length;
+    const isFrequencyTable =
+      nonEmptyHeaders.length > 1 &&
+      (numericHdrCount / nonEmptyHeaders.length) > 0.4;
+
+    console.log(
+      `[MGD][FLAT] "${srcName}" — isFrequencyTable=${isFrequencyTable} ` +
+      `(${numericHdrCount}/${nonEmptyHeaders.length} numeric headers)`,
+    );
+
     // ── 4. Emit one record per data row ──────────────────────────────────
     for (let i = headerIdx + 1; i < rawRows.length; i++) {
       const row  = rawRows[i] as any[];
       const name = String(row[0] ?? "").trim();
       if (!name || !isNaN(Number(name))) continue;    // skip blanks / sub-totals
 
-      // Sum all numeric cells in this row as a fallback quantity
-      let qty = Number(row[valueColIdx]);
-      if (isNaN(qty) || qty <= 0) {
-        // Try row-sum of all numeric cells beyond col 0
-        const rowSum = row
-          .slice(1)
-          .reduce((acc: number, c: any) => acc + (isNaN(Number(c)) ? 0 : Number(c)), 0);
-        qty = rowSum;
-      }
+      // Always use the full row-sum of numeric cells as the event count.
+      // (The single "value column" is unreliable for sparse frequency matrices
+      //  where the last column may be empty for many rows.)
+      const rowSum = (row as any[])
+        .slice(1)
+        .reduce((acc: number, c: any) => acc + (isNaN(Number(c)) ? 0 : Number(c)), 0);
+
+      // Also check the designated value column as a floor
+      const colVal = Number(row[valueColIdx]);
+      const qty    = rowSum > 0 ? rowSum : (!isNaN(colVal) && colVal > 0 ? colVal : 0);
+
       if (qty <= 0) continue;
 
-      results.push({
-        entityName:  name,
-        description: srcName,
-        quantityOut: qty,
-        value:       qty,
-        sourceFile:  fileName,
-        documentId,
-        clientId,
-      });
+      if (isFrequencyTable) {
+        // Customer-frequency: each row is a CLIENT, not an inventory item.
+        // entityName = generic service label  |  remarks = the actual client name.
+        // This prevents the findings engine from treating 103 clients as
+        // "103 distinct inventory items" and generating warehouse findings.
+        results.push({
+          entityName:             "Event Services",
+          description:            srcName,
+          transactionType:        "outbound",
+          quantity:               qty,   // buildStats reads tx.quantity
+          quantityOut:            qty,
+          value:                  qty,
+          remarks:                name,  // client name → hasCustomerRefs fires
+          documentClassification: "customer_frequency",
+          sourceFile:             fileName,
+          documentId,
+          clientId,
+        });
+      } else {
+        results.push({
+          entityName:  name,
+          description: srcName,
+          transactionType: "outbound",
+          quantity:        qty,
+          quantityOut:     qty,
+          value:           qty,
+          sourceFile:      fileName,
+          documentId,
+          clientId,
+        });
+      }
     }
     console.log(`[MGD][FLAT] "${srcName}" — extracted ${results.length} record(s) from flat table`);
     return results;

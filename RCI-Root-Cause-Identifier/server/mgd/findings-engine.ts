@@ -197,9 +197,10 @@ interface TxStats {
   totalValueOut:      number;
   byEntity:           Map<string, { in: number; out: number; adj: number; txCount: number }>;
   byDate:             Map<string, number>;   // date → tx count on that day
-  hasLogisticsBlock:  boolean;              // any tx debugTrace.blockType === "logistics_schedule"
-  hasReturns:         boolean;              // rawText contains return/refund signals
-  hasCustomerRefs:    boolean;              // rawText/remarks contain customer names
+  hasLogisticsBlock:    boolean;              // any tx debugTrace.blockType === "logistics_schedule"
+  hasReturns:           boolean;              // rawText contains return/refund signals
+  hasCustomerRefs:      boolean;              // rawText/remarks contain customer names
+  isCustomerFrequency:  boolean;              // all/most transactions from a customer_frequency document
 }
 
 function buildStats(transactions: any[]): TxStats {
@@ -209,7 +210,7 @@ function buildStats(transactions: any[]): TxStats {
     uniqueSources: new Set(), missingDate: 0, missingRef: 0, missingValue: 0,
     totalQtyIn: 0, totalQtyOut: 0, totalValueIn: 0, totalValueOut: 0,
     byEntity: new Map(), byDate: new Map(), hasLogisticsBlock: false,
-    hasReturns: false, hasCustomerRefs: false,
+    hasReturns: false, hasCustomerRefs: false, isCustomerFrequency: false,
   };
 
   for (const tx of transactions) {
@@ -285,6 +286,9 @@ function buildStats(transactions: any[]): TxStats {
     }
   }
 
+  // Customer frequency document: all transactions tagged by the flat-table extractor
+  stats.isCustomerFrequency = stats.uniqueDocClasses.has("customer_frequency");
+
   return stats;
 }
 
@@ -306,34 +310,44 @@ export function detectManualDependency(
     ? Math.max(...Array.from(stats.byEntity.values()).map(e => e.txCount))
     : 0;
 
-  // Signal: high entity variety (each needs individual manual tracking)
-  if (entCount > 5)  { score += 20; evidence.push(`${entCount} distinct inventory items tracked — each requiring individual manual ledger entries`); }
-  if (entCount > 15) { score += 15; evidence.push(`Entity count exceeds 15 — manual reconciliation complexity is high`); }
+  if (stats.isCustomerFrequency) {
+    // ── Customer-frequency data: use client-appropriate signals ────────────
+    // Treat each transaction as a service event, not an inventory movement.
+    if (stats.total > 50)  { score += 20; evidence.push(`${stats.total} client service records detected — client portfolio coordination requires systematic management`); }
+    if (stats.total > 100) { score += 10; evidence.push(`Client base exceeds 100 service records — manual coordination per client creates scalability constraints`); }
+    if (stats.hasCustomerRefs) { score += 15; evidence.push("Each client is tracked individually — service coordination is client-specific and manually managed without a centralised CRM"); }
+    if (stats.uniqueSources.size > 1) { score += 10; evidence.push(`Client data spread across ${stats.uniqueSources.size} source files — no centralised client management system`); }
+  } else {
+    // ── Standard inventory / operational data ──────────────────────────────
+    // Signal: high entity variety (each needs individual manual tracking)
+    if (entCount > 5)  { score += 20; evidence.push(`${entCount} distinct inventory items tracked — each requiring individual manual ledger entries`); }
+    if (entCount > 15) { score += 15; evidence.push(`Entity count exceeds 15 — manual reconciliation complexity is high`); }
 
-  // Signal: high transaction volume per entity
-  if (maxEntityTx > 30) { score += 15; evidence.push(`Highest movement volume per item: ${maxEntityTx} transactions — indicates heavy manual throughput`); }
-  if (stats.total > 100) { score += 10; evidence.push(`${stats.total} total movement records detected across documents`); }
+    // Signal: high transaction volume per entity
+    if (maxEntityTx > 30) { score += 15; evidence.push(`Highest movement volume per item: ${maxEntityTx} transactions — indicates heavy manual throughput`); }
+    if (stats.total > 100) { score += 10; evidence.push(`${stats.total} total movement records detected across documents`); }
 
-  // Signal: outbound-only entities (no paired returns/inbound)
-  let outboundOnlyCount = 0;
-  for (const [, e] of stats.byEntity) {
-    if (e.out > 0 && e.in === 0) outboundOnlyCount++;
-  }
-  if (outboundOnlyCount > 0) {
-    const pct = Math.round((outboundOnlyCount / Math.max(stats.byEntity.size, 1)) * 100);
-    if (pct > 25) { score += 15; evidence.push(`${outboundOnlyCount} items (${pct}%) show outbound-only movement — no systematic return/intake records`); }
-  }
+    // Signal: outbound-only entities (no paired returns/inbound)
+    let outboundOnlyCount = 0;
+    for (const [, e] of stats.byEntity) {
+      if (e.out > 0 && e.in === 0) outboundOnlyCount++;
+    }
+    if (outboundOnlyCount > 0) {
+      const pct = Math.round((outboundOnlyCount / Math.max(stats.byEntity.size, 1)) * 100);
+      if (pct > 25) { score += 15; evidence.push(`${outboundOnlyCount} items (${pct}%) show outbound-only movement — no systematic return/intake records`); }
+    }
 
-  // Signal: customer-named references tracked manually in remarks
-  if (stats.hasCustomerRefs) { score += 10; evidence.push("Customer names embedded in movement remarks — coordination managed manually per customer request"); }
+    // Signal: customer-named references tracked manually in remarks
+    if (stats.hasCustomerRefs) { score += 10; evidence.push("Customer names embedded in movement remarks — coordination managed manually per customer request"); }
 
-  // Signal: multiple source files (fragmented record-keeping)
-  if (stats.uniqueSources.size > 1) { score += 10; evidence.push(`Movement data spread across ${stats.uniqueSources.size} separate files — no centralised tracking`); }
+    // Signal: multiple source files (fragmented record-keeping)
+    if (stats.uniqueSources.size > 1) { score += 10; evidence.push(`Movement data spread across ${stats.uniqueSources.size} separate files — no centralised tracking`); }
 
-  // Signal: high missing reference IDs on outbound
-  if (stats.outbound > 0) {
-    const missingRefPct = Math.round((stats.missingRef / stats.total) * 100);
-    if (missingRefPct > 40) { score += 10; evidence.push(`${missingRefPct}% of transactions lack a reference ID — manual dispatch without documentation`); }
+    // Signal: high missing reference IDs on outbound
+    if (stats.outbound > 0) {
+      const missingRefPct = Math.round((stats.missingRef / stats.total) * 100);
+      if (missingRefPct > 40) { score += 10; evidence.push(`${missingRefPct}% of transactions lack a reference ID — manual dispatch without documentation`); }
+    }
   }
 
   const confidence = cap(score);
@@ -341,21 +355,29 @@ export function detectManualDependency(
 
   console.log(`[MGD][FINDINGS] detectManualDependency → score=${confidence} signals=${evidence.length}`);
 
+  const summaryText = stats.isCustomerFrequency
+    ? `Service records for ${stats.total} client engagements are managed without a centralised tracking system. ` +
+      `Each client relationship is coordinated individually, creating manual bottlenecks that become ` +
+      `increasingly difficult to manage as the client base grows.`
+    : `The volume and variety of inventory movements across ${entCount} distinct items ` +
+      `and ${stats.total} transactions indicates that operational tracking relies heavily ` +
+      `on manual ledger entries and person-to-person coordination. This creates ` +
+      `human single-points-of-failure that scale poorly under demand growth.`;
+
   return {
     id:               makeId("High Manual Coordination Dependency", FINDING_CATEGORIES.MANPOWER_DEPENDENCY),
     title:            "High Manual Coordination Dependency",
     severity:         severityFrom(confidence),
     category:         FINDING_CATEGORIES.MANPOWER_DEPENDENCY,
-    department:       "Operations / Warehouse",
-    summary:
-      `The volume and variety of inventory movements across ${entCount} distinct items ` +
-      `and ${stats.total} transactions indicates that operational tracking relies heavily ` +
-      `on manual ledger entries and person-to-person coordination. This creates ` +
-      `human single-points-of-failure that scale poorly under demand growth.`,
-    signals: evidence,
+    department:       stats.isCustomerFrequency ? "Sales / Client Management" : "Operations / Warehouse",
+    summary:          summaryText,
+    signals:          evidence,
     operationalImpact:
-      "Manual dependency increases error probability during peak periods, delays response to stock discrepancies, " +
-      "and creates knowledge concentration risk when key personnel are unavailable.",
+      stats.isCustomerFrequency
+        ? "Manual client coordination increases response delays and error rates during peak event periods, " +
+          "and creates knowledge concentration risk when key account managers are unavailable."
+        : "Manual dependency increases error probability during peak periods, delays response to stock discrepancies, " +
+          "and creates knowledge concentration risk when key personnel are unavailable.",
     confidence,
   };
 }
@@ -370,6 +392,13 @@ export function detectInventoryStrain(
   stats: TxStats,
   _transactions: any[],
 ): OperationalFinding | null {
+  // Customer frequency data is a sales report, not an inventory log.
+  // "No inbound replenishment" is meaningless here — suppress the detector.
+  if (stats.isCustomerFrequency) {
+    console.log("[MGD][FINDINGS] detectInventoryStrain — SKIP (customer_frequency data — not applicable)");
+    return null;
+  }
+
   const evidence: string[] = [];
   let score = 0;
 
@@ -1322,6 +1351,91 @@ export function detectInventoryShortagePattern(
 
 type DetectorFn = (stats: TxStats, transactions: any[], params: FindingsParams) => OperationalFinding | null;
 
+// ── Detector: Client Concentration (customer frequency data only) ──────────────
+//
+// Fires when transactions come from a customer_frequency document.
+// Analyses client portfolio distribution, repeat engagement, and concentration.
+
+export function detectClientConcentration(
+  stats: TxStats,
+  transactions: any[],
+): OperationalFinding | null {
+  if (!stats.isCustomerFrequency) return null;
+
+  const evidence: string[] = [];
+  let score = 0;
+
+  // Build client-level event counts from the remarks field
+  const clientEvents = new Map<string, number>();
+  for (const tx of transactions) {
+    const client = String(tx.remarks ?? "").trim();
+    if (!client) continue;
+    clientEvents.set(client, (clientEvents.get(client) ?? 0) + safeNum(tx.quantity));
+  }
+
+  const totalClients = clientEvents.size;
+  const totalEvents  = Array.from(clientEvents.values()).reduce((s, v) => s + v, 0);
+
+  if (totalClients === 0) return null;
+
+  const sorted      = Array.from(clientEvents.entries()).sort((a, b) => b[1] - a[1]);
+  const top1Count   = sorted[0]?.[1] ?? 0;
+  const top5Count   = sorted.slice(0, 5).reduce((s, [, v]) => s + v, 0);
+  const top1Pct     = totalEvents > 0 ? Math.round((top1Count / totalEvents) * 100) : 0;
+  const top5Pct     = totalEvents > 0 ? Math.round((top5Count / totalEvents) * 100) : 0;
+
+  const repeatClients = sorted.filter(([, v]) => v > 1).length;
+  const oneOffClients = totalClients - repeatClients;
+  const oneOffPct     = Math.round((oneOffClients / totalClients) * 100);
+  const repeatRate    = Math.round((repeatClients / totalClients) * 100);
+
+  // Always emit a base finding for any client portfolio
+  score += 25;
+  evidence.push(`${totalClients} unique clients served across ${totalEvents} total service events`);
+
+  if (top1Pct >= 15) {
+    score += 20;
+    evidence.push(`Top client "${sorted[0]?.[0]}" accounts for ${top1Pct}% of all service events — potential single-client dependency`);
+  }
+  if (totalClients >= 5 && top5Pct >= 50) {
+    score += 15;
+    evidence.push(`Top 5 clients represent ${top5Pct}% of all events — revenue concentration within a small group`);
+  }
+  if (oneOffPct >= 50) {
+    score += 20;
+    evidence.push(`${oneOffClients} clients (${oneOffPct}%) were served only once — high proportion of one-off engagements indicates low repeat retention`);
+  } else if (repeatRate >= 30) {
+    score += 10;
+    evidence.push(`${repeatClients} clients (${repeatRate}%) are repeat customers — healthy base of recurring engagements`);
+  }
+
+  const confidence = cap(score);
+  if (confidence < CONFIDENCE_THRESHOLD) return null;
+
+  console.log(`[MGD][FINDINGS] detectClientConcentration → score=${confidence} clients=${totalClients} events=${totalEvents}`);
+
+  const topList = sorted.slice(0, 3).map(([name, count]) => `${name} (${count})`).join(", ");
+
+  return {
+    id:       makeId("Client Portfolio Concentration", FINDING_CATEGORIES.WORKFLOW_SCALABILITY),
+    title:    "Client Portfolio Concentration",
+    severity: severityFrom(confidence),
+    category: FINDING_CATEGORIES.WORKFLOW_SCALABILITY,
+    department: "Sales / Client Management",
+    summary:
+      `Analysis of ${totalClients} clients across ${totalEvents} service engagements reveals concentration ` +
+      `patterns in the client portfolio. Most active clients: ${topList}. ` +
+      `${oneOffPct}% of clients engaged only once, indicating a high proportion of one-off business. ` +
+      `Client concentration and retention strategy warrant review to ensure sustainable, diversified revenue.`,
+    signals: evidence,
+    operationalImpact:
+      "High client concentration creates revenue dependency on a small number of accounts. " +
+      "Low repeat engagement rates reduce revenue predictability and increase cost-per-acquisition over time. " +
+      "A retention programme targeting high-frequency clients can significantly improve portfolio stability.",
+    confidence,
+  };
+}
+
 const DETECTORS: DetectorFn[] = [
   (s, t) => detectManualDependency(s, t),
   (s, t) => detectInventoryStrain(s, t),
@@ -1340,6 +1454,8 @@ const DETECTORS: DetectorFn[] = [
   (s, t, p) => detectDispatchReliabilityRisk(s, t, p),
   (s, t, p) => detectEventReadinessExposure(s, t, p),
   (s, t, p) => detectInventoryShortagePattern(s, t, p),
+  // ── Customer Frequency Analysis ──────────────────────────────────────────
+  (s, t) => detectClientConcentration(s, t),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
