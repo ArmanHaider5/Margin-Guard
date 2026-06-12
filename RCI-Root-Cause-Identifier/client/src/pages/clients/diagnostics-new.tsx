@@ -11,7 +11,7 @@ import {
   ArrowLeft, Zap, Search, FileSpreadsheet, FileText, File, Loader2, CheckCircle2, AlertTriangle,
   UploadCloud, ClipboardList, SlidersHorizontal, PlayCircle, XCircle, Clock, Check, ChevronRight
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Client, ClientDocument, DiagnosticContext } from "@shared/schema";
@@ -75,7 +75,18 @@ export default function ClientDiagnosticsNew() {
 
   // Show ALL uploaded documents (not just processed) for selection
   const uploadedDocs = documents || [];
-  
+
+  // Auto-select newly appearing documents. Uses a ref so manual deselects are respected
+  // (we only add IDs we've never seen before — we never re-force a deselected doc).
+  const seenDocIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const newIds = uploadedDocs.map(d => d.id).filter(id => !seenDocIds.current.has(id));
+    if (newIds.length > 0) {
+      newIds.forEach(id => seenDocIds.current.add(id));
+      setSelectedDocs(prev => [...new Set([...prev, ...newIds])]);
+    }
+  }, [uploadedDocs]);
+
   const hasDocumentsSelected = selectedDocs.length > 0;
   const hasProcessedDocs = uploadedDocs.some(d => selectedDocs.includes(d.id) && d.status === "processed");
   const hasDocsStillProcessing = uploadedDocs.some(d => selectedDocs.includes(d.id) && (d.status === "uploaded" || d.status === "processing"));

@@ -1,5 +1,1053 @@
 [
   {
+    "id": "eff0feb8-ca40-4c1c-bff6-d53e722d797b",
+    "clientId": "ef2bd2c5-a49a-4ead-b78b-b2a4f5816c7b",
+    "clientName": "NSK",
+    "industry": "logistics",
+    "createdAt": "2026-06-12T13:25:50.837Z",
+    "report": {
+      "metadata": {
+        "generatedAt": "2026-06-12T13:25:50.836Z",
+        "clientName": "NSK",
+        "industry": "logistics",
+        "operationalHealthScore": 85,
+        "reportVersion": "MGD-V1"
+      },
+      "summary": {
+        "criticalFindings": 0,
+        "highFindings": 0,
+        "criticalRootCauses": 0,
+        "highPriorityRecommendations": 0,
+        "benchmarkAlerts": 0
+      },
+      "narrative": {
+        "executiveOverview": {
+          "id": "executive-overview",
+          "title": "Executive Overview",
+          "content": "This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework. The operational health assessment returned a classification of Operationally Stable, indicating that operations are performing within acceptable parameters.",
+          "priority": 1
+        },
+        "keyFindings": {
+          "id": "key-findings",
+          "title": "Key Operational Findings",
+          "content": "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
+          "priority": 2
+        },
+        "rootCauseSummary": {
+          "id": "root-cause-summary",
+          "title": "Root Cause Analysis",
+          "content": "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
+          "priority": 3
+        },
+        "operationalHealth": {
+          "id": "operational-health",
+          "title": "Operational Health Assessment",
+          "content": "Operational Health Classification: Operationally Stable.  The composite operational health score of 85/100 reflects an operation that has achieved a functional baseline across its core processes. Under these conditions, the focus shifts from stabilisation to optimisation — embedding process controls that preserve performance as the business scales.",
+          "priority": 4
+        },
+        "priorityActions": {
+          "id": "priority-actions",
+          "title": "Priority Actions",
+          "content": "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
+          "priority": 5
+        },
+        "strategicDirection": {
+          "id": "strategic-direction",
+          "title": "Strategic Direction",
+          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. As operational controls mature, the business will develop predictive visibility into demand cycles, allowing for proactive resource allocation rather than reactive scrambling.",
+          "priority": 6
+        },
+        "finalConclusion": {
+          "id": "final-conclusion",
+          "title": "Conclusion",
+          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. The recommendations in this report are practical, sequenced, and designed to generate visible operational improvement within 30 to 90 days. The management team has the knowledge and resources to execute the stabilisation phase — what is required is structured commitment to the process. With structured implementation of the recommended actions, the business is well-positioned to convert current operational strain into a durable competitive advantage — an operation that grows reliably, serves clients consistently, and retains value at scale.",
+          "priority": 7
+        },
+        "metadata": {
+          "generatedAt": "2026-06-12T13:25:50.834Z",
+          "industry": "logistics",
+          "findingsCount": 0,
+          "rootCauseCount": 0,
+          "recommendationCount": 0,
+          "operationalHealthScore": 85
+        }
+      },
+      "findings": [],
+      "rootCauses": [],
+      "recommendations": [],
+      "benchmarks": [],
+      "visualMetrics": {
+        "operationalHealthLabel": "Operationally Stable",
+        "operationalRiskLevel": "Controlled",
+        "benchmarkStatusBreakdown": {
+          "healthy": 0,
+          "watchlist": 0,
+          "elevated": 0,
+          "critical": 0
+        }
+      },
+      "industryInsights": {
+        "maturityLevel": "ADVANCED",
+        "rules": [],
+        "topRisks": [],
+        "topOpportunities": []
+      },
+      "consultantInsights": {
+        "executiveObservations": [],
+        "operationalConcerns": [
+          "Inventory losses.",
+          "Staff dependency."
+        ],
+        "notes": []
+      },
+      "eventDiagnostics": {
+        "dispatchesAnalysed": 0,
+        "dispatchFailureRate": 0,
+        "dispatchDelayRate": 0,
+        "averageDelayMinutes": 0,
+        "missingItemRate": 0,
+        "substitutionRate": 0,
+        "damageEvents": 0,
+        "damageRecoveryRate": 1,
+        "unrecoveredDamageRate": 0,
+        "inventoryVisibilityScore": 100,
+        "eventReadinessScore": 100,
+        "dispatchReliabilityScore": 100,
+        "assetAccountabilityScore": 100,
+        "averageEventValue": 0,
+        "estimatedRevenueExposure": 0,
+        "dispatchFailureExposure": 0,
+        "assetDamageExposure": 0,
+        "unrecoveredDamageValue": 0
+      }
+    },
+    "runtimeMs": 20
+  },
+  {
+    "id": "21fcb64b-7aa2-470b-b597-7535c361c7dd",
+    "clientId": "41311d78-9900-49fa-be98-fd132a72a09e",
+    "clientName": "Madetill Event Management (MEM) Sdn. Bhd. (TEST) ",
+    "industry": "event_management",
+    "createdAt": "2026-06-09T06:45:50.755Z",
+    "report": {
+      "metadata": {
+        "generatedAt": "2026-06-09T06:45:50.753Z",
+        "clientName": "Madetill Event Management (MEM) Sdn. Bhd. (TEST) ",
+        "industry": "event_management",
+        "operationalHealthScore": 70,
+        "reportVersion": "MGD-V1"
+      },
+      "summary": {
+        "criticalFindings": 0,
+        "highFindings": 1,
+        "criticalRootCauses": 0,
+        "highPriorityRecommendations": 9,
+        "benchmarkAlerts": 0
+      },
+      "narrative": {
+        "executiveOverview": {
+          "id": "executive-overview",
+          "title": "Executive Overview",
+          "content": "The Margin Guard Diagnostics (MGD) framework has been applied to deliver the following structured operational assessment. Based on the diagnostic evidence collected, the operation is classified as Moderate Operational Strain — the operation is functional but carrying structural inefficiencies that will compound under demand growth. A further 1 high-severity operational finding indicates structural strain that will amplify under demand growth. Operational stress is concentrated across inventory management, manpower dependency, logistics coordination, financial leakage, warehouse operations, and workflow scalability. Financial leakage indicators were detected, suggesting undocumented value loss in the current operating model. Logistics and inventory processes show evidence of structural misalignment that increases the risk of fulfillment failure during peak demand. Warehouse operations show structural inefficiencies that are creating friction in the stock-to-dispatch workflow. Significant operational decisions are concentrated in a small number of individuals, creating single-point-of-failure exposure. Workflow scalability constraints suggest the current operating model will not sustain proportional demand growth without redesign. 9 high-priority recommendations have been identified to address the most pressing operational vulnerabilities.",
+          "priority": 1
+        },
+        "keyFindings": {
+          "id": "key-findings",
+          "title": "Key Operational Findings",
+          "content": "Analysis of operational data surfaced 6 material findings. The highest-priority observations are summarised below:\n\nHigh-Priority Findings:\n• Inventory Visibility Weakness — Inventory visibility scored 60/100 — below the 70-point operational threshold. Gaps in real-time stock position are creating downstream dispatch failures and substitution requirements, indicating that the physical inventory state is not accurately known before commitments are made to clients.\n\nAdditional Observations:\n• High Manual Coordination Dependency — The volume and variety of inventory movements across 1 distinct items and 486 transactions indicates that operational tracking relies heavily on manual ledger entries and person-to-person coordination. This creates human single-points-of-failure that scale poorly under demand growth.\n• Logistics Coordination Strain — Transaction patterns reveal concentrated movement surges, outbound-dominant flow, and irregular scheduling across 158 active dates. Logistics coordination is under pressure: volume spikes and fragmented records indicate reactive rather than planned dispatch management.\n• Elevated Operational Leakage Exposure — Financial control signals in the transaction records show 268 post-hoc adjustments, missing reference documentation on outbound movements, and unmatched value flows. These patterns indicate unquantified operational leakage that is not currently captured in formal financial reporting.\n• Concentrated Warehouse Throughput Pressure — Movement records show that a small set of high-turnover items drives the majority of warehouse activity. Without automated balance verification, handling errors and adjustment records indicate that warehouse operations are absorbing correction effort that displaces productive throughput time.\n• High Inventory Movement Complexity — The breadth of 1 tracked entities, 486 transactions across 1 document type(s), and irregular movement cadence indicate that current operational workflows are approaching a complexity ceiling. Scaling activity without process formalisation will amplify coordination failures.\n\nThese findings represent the operational pressure points with the highest potential for corrective leverage.",
+          "priority": 2
+        },
+        "rootCauseSummary": {
+          "id": "root-cause-summary",
+          "title": "Root Cause Analysis",
+          "content": "The MGD diagnostic engine identified 8 systemic root causes underlying the operational findings above. These are not independent issues — they represent interconnected structural conditions that compound under operational pressure.\n\nMEDIUM | Delayed Inventory Certainty (58% confidence) Primary impacts include: Commitment of items to orders that are no longer physically available leads to fulfilment failure. and Reorder decisions are delayed until physical shortage is observable rather than predictable..\nMEDIUM | Reactive Operational Coordination Model (50% confidence) Primary impacts include: Reactive logistics scheduling creates recurring last-minute dispatch pressure and elevated error rates. and Inventory decisions made without reliable stock visibility risk both overstock and stockout simultaneously..\nMEDIUM | Operational Scalability Mismatch (49% confidence) Primary impacts include: Each additional item or transaction adds disproportionate coordination overhead in a manual system. and Warehouse throughput concentration creates a bottleneck that grows with demand but cannot be resolved by effort alone..\nMEDIUM | Inventory Visibility Weakness (43% confidence) Primary impacts include: Stock shortfalls are discovered at the point of dispatch rather than in advance, causing fulfilment failures. and Replenishment decisions are made on intuition rather than data, leading to over-ordering or stockouts..\nLOW | Operational Fragmentation (39% confidence) Primary impacts include: Financial leakage compounds when logistics and workflow complexity are high — losses are harder to trace. and Process fragmentation means improvements in one area (e.g., dispatch) do not flow through to others (e.g., stock records)..\n\nEach root cause above represents a structural condition embedded in the operating model. Corrective action at the recommendation level is designed to address these causes directly, not merely their visible symptoms.",
+          "priority": 3
+        },
+        "operationalHealth": {
+          "id": "operational-health",
+          "title": "Operational Health Assessment",
+          "content": "Operational Health Classification: Moderate Operational Strain.  The composite operational health score of 70/100 reflects an operation that is functional but carrying unresolved structural inefficiencies. Operational strain is concentrated in inventory management, manpower dependency, logistics coordination, financial leakage, warehouse operations, and workflow scalability. Under these conditions, targeted stabilisation interventions will deliver meaningful performance improvement with minimal disruption to current operations.",
+          "priority": 4
+        },
+        "priorityActions": {
+          "id": "priority-actions",
+          "title": "Priority Actions",
+          "content": "The following priority actions have been identified from the diagnostic findings. Actions are organised by urgency and operational function.\n\nImmediate Stabilisation (Action Now):\n• Inventory Checkpoint Controls [LOW effort] — Implement mandatory closing-balance recording at the end of each operational day for all tracked inventory items. Pair this with a same-day intake recording rule: every inbound delivery is logged on the day of receipt, not retrospectively. These two controls close the structural lag between physical inventory and recorded inventory position.\n• Dispatch Readiness Checkpoints [LOW effort] — Introduce a structured pre-dispatch confirmation process: warehouse readiness is confirmed before logistics commits to the delivery schedule. This single control point eliminates the most common class of last-minute fulfilment failure — committing to deliveries without verified item availability.\n• Reference ID Enforcement and Leakage Controls [LOW effort] — Mandate a reference or invoice number on every outbound movement record. Any dispatch without a reference ID must be escalated before it leaves the warehouse. Simultaneously, implement a return verification step: all returned items are inspected, counted, and recorded before being re-entered into available inventory. These two controls eliminate the most common sources of undocumented operational leakage.\n\nOperational Visibility:\n• Centralised Operational Dashboard [MEDIUM effort, 30 DAYS] — Establish a single shared operational view — a daily or real-time board showing inventory position, dispatch status, and pending movements — so that coordination decisions are made from shared data rather than individual memory. This is the foundation control action before any other process change can be sustained.\n\nWorkflow Improvements:\n• Preventive Reconciliation Workflow [MEDIUM effort, 30 DAYS] — Establish a weekly cross-functional reconciliation cycle: logistics confirms dispatch completion, warehouse confirms physical closing balances, and coordination reviews any discrepancies against records. Reconciliation happens before the next operating week begins — preventing discrepancies from accumulating across periods.\n\nScalability Improvements:\n• Workflow Redesign Initiative [HIGH effort, 90 DAYS] — Commission a structured review of the end-to-end operational workflow — from booking or order intake through to item return or delivery completion. The objective is to identify and document the five highest-friction handoff points, then redesign those handoffs to be process-driven rather than person-driven. This is the foundational work that makes all other scalability improvements sustainable.\n\nAdditional Recommended Actions:\n• Inventory Audit Scheduling and Warehouse Stabilisation — Establish a structured inventory audit schedule: weekly spot-checks on the top 5 highest-movement items, and a full physical count once per quarter. Pair this with dedicated staging areas for the top concentration items to reduce picking errors and handling time during peak throughput periods.\n• Warehouse Cycle Count Programme — Implement a structured cycle count programme — counting a rotation of item categories each week so that every item is physically counted at least once per month. Cycle counts are more sustainable than full stock-takes and create continuous reconciliation discipline that prevents variance accumulation.",
+          "priority": 5
+        },
+        "strategicDirection": {
+          "id": "strategic-direction",
+          "title": "Strategic Direction",
+          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. Achieving reliable inventory visibility and logistics coordination discipline will unlock the ability to commit confidently to client fulfilment windows — a capability that directly translates to improved client retention and revenue predictability. Addressing the identified scalability constraints is a prerequisite for sustainable growth. The current operating model has reached a complexity ceiling — the workflow redesign work identified in this report is what separates a business that grows profitably from one that grows chaotically. Mature operational controls create the conditions for predictive planning: stock positions are known in advance, logistics is scheduled rather than improvised, and coordination decisions are process-driven rather than person-dependent. The 1 longer-horizon recommendation in this report — such as Workflow Redesign Initiative — represent the structural investments that convert a stabilised operation into a scalable, process-driven enterprise.",
+          "priority": 6
+        },
+        "finalConclusion": {
+          "id": "final-conclusion",
+          "title": "Conclusion",
+          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. This review has identified 9 high-priority corrective actions that address the root causes directly. These are not aspirational improvements — they are structural corrections with defined implementation steps. The corrective actions identified are deliberately practical in scope. The immediate stabilisation steps require no additional capital — only structured application of existing team capability to better-defined processes. The business has the operational foundation to succeed at its stated growth objectives. This report provides the structured framework to ensure that foundation is built deliberately rather than discovered through operational failure.",
+          "priority": 7
+        },
+        "metadata": {
+          "generatedAt": "2026-06-09T06:45:50.752Z",
+          "industry": "event_management",
+          "findingsCount": 6,
+          "rootCauseCount": 8,
+          "recommendationCount": 11,
+          "operationalHealthScore": 70
+        }
+      },
+      "findings": [
+        {
+          "id": "mgd-inve-41daa355",
+          "title": "Inventory Visibility Weakness",
+          "severity": "HIGH",
+          "category": "inventory_visibility",
+          "department": "Warehouse / Operations",
+          "summary": "Inventory visibility scored 60/100 — below the 70-point operational threshold. Gaps in real-time stock position are creating downstream dispatch failures and substitution requirements, indicating that the physical inventory state is not accurately known before commitments are made to clients.",
+          "signals": [
+            "Inventory Visibility Score: 60/100 (threshold: 70)"
+          ],
+          "operationalImpact": "Poor inventory visibility forces dispatchers to commit items that may not be physically available, leading to last-minute substitutions and incomplete deliveries that erode client confidence.",
+          "confidence": 40,
+          "findingPriority": 80,
+          "evidence": [
+            {
+              "observation": "No inventory balance verification records were detected across 486 transactions. Inventory position cannot be confirmed at any point in the review period.",
+              "source": "inventory_movements",
+              "confidence": 80
+            },
+            {
+              "observation": "486 of 486 transactions (100%) are missing quantity data, preventing accurate inventory balance calculation.",
+              "source": "inventory_movements",
+              "confidence": 72
+            }
+          ]
+        },
+        {
+          "id": "mgd-manp-8821fa80",
+          "title": "High Manual Coordination Dependency",
+          "severity": "MEDIUM",
+          "category": "manpower_dependency",
+          "department": "Operations / Warehouse",
+          "summary": "The volume and variety of inventory movements across 1 distinct items and 486 transactions indicates that operational tracking relies heavily on manual ledger entries and person-to-person coordination. This creates human single-points-of-failure that scale poorly under demand growth.",
+          "signals": [
+            "Highest movement volume per item: 486 transactions — indicates heavy manual throughput",
+            "486 total movement records detected across documents",
+            "Customer names embedded in movement remarks — coordination managed manually per customer request"
+          ],
+          "operationalImpact": "Manual dependency increases error probability during peak periods, delays response to stock discrepancies, and creates knowledge concentration risk when key personnel are unavailable.",
+          "confidence": 35,
+          "findingPriority": 50,
+          "evidence": [
+            {
+              "observation": "Manual workflow indicators were detected in 1 transaction description (0% of records). Keywords associated with paper-based or spreadsheet-driven processes suggest high manual execution dependency.",
+              "source": "transaction_descriptions",
+              "confidence": 55
+            },
+            {
+              "observation": "Entity \"sales person :hafiq akmal\" is referenced in 486 of 486 transactions (100%), indicating high operational concentration in a single individual or unit.",
+              "source": "entity_distribution",
+              "confidence": 95
+            },
+            {
+              "observation": "Only 1 unique operator identified across 486 transactions. Low workforce distribution amplifies key-person dependency and continuity risk.",
+              "source": "entity_distribution",
+              "confidence": 72
+            }
+          ]
+        },
+        {
+          "id": "mgd-logi-a0015cf5",
+          "title": "Logistics Coordination Strain",
+          "severity": "MEDIUM",
+          "category": "logistics_coordination",
+          "department": "Logistics / Dispatch",
+          "summary": "Transaction patterns reveal concentrated movement surges, outbound-dominant flow, and irregular scheduling across 158 active dates. Logistics coordination is under pressure: volume spikes and fragmented records indicate reactive rather than planned dispatch management.",
+          "signals": [
+            "Peak single-day movement of 11 transactions (3.6× daily average) — detected on 2025-12-12",
+            "158 distinct movement dates — sustained high-frequency scheduling activity"
+          ],
+          "operationalImpact": "Reactive logistics scheduling increases last-minute coordination effort, raises delivery failure risk during peak days, and limits the ability to optimise vehicle/driver utilisation across routes.",
+          "confidence": 35,
+          "findingPriority": 50,
+          "evidence": []
+        },
+        {
+          "id": "mgd-fina-d4a84dca",
+          "title": "Elevated Operational Leakage Exposure",
+          "severity": "MEDIUM",
+          "category": "financial_leakage",
+          "department": "Finance / Operations",
+          "summary": "Financial control signals in the transaction records show 268 post-hoc adjustments, missing reference documentation on outbound movements, and unmatched value flows. These patterns indicate unquantified operational leakage that is not currently captured in formal financial reporting.",
+          "signals": [
+            "268 adjustment transaction(s) (55% of total) — post-hoc corrections imply upstream recording errors",
+            "Return or refund-related transactions detected — indicates operational leakage through asset returns"
+          ],
+          "operationalImpact": "Undocumented dispatch, unrecovered returns, and value imbalances accumulate into chronic margin erosion. Without reference tracking on every outbound movement, recovery actions cannot be initiated systematically.",
+          "confidence": 35,
+          "findingPriority": 50,
+          "evidence": []
+        },
+        {
+          "id": "mgd-ware-38885a97",
+          "title": "Concentrated Warehouse Throughput Pressure",
+          "severity": "MEDIUM",
+          "category": "warehouse_operations",
+          "department": "Warehouse",
+          "summary": "Movement records show that a small set of high-turnover items drives the majority of warehouse activity. Without automated balance verification, handling errors and adjustment records indicate that warehouse operations are absorbing correction effort that displaces productive throughput time.",
+          "signals": [
+            "486 movement records with no closing-balance audit entries — physical counts cannot be system-verified",
+            "268 warehouse adjustment record(s) — physical handling discrepancies corrected post-movement"
+          ],
+          "operationalImpact": "Concentrated throughput on a few items creates bottleneck risk at the packing/dispatch stage. Physical handling adjustments without digital audit trails prevent root-cause analysis of recurring discrepancies.",
+          "confidence": 35,
+          "findingPriority": 50,
+          "evidence": [
+            {
+              "observation": "268 inventory adjustment transactions recorded (55% of total activity), indicating active reconciliation work to correct discrepancies between physical and system stock positions.",
+              "source": "inventory_adjustments",
+              "confidence": 80
+            }
+          ]
+        },
+        {
+          "id": "mgd-work-94386529",
+          "title": "High Inventory Movement Complexity",
+          "severity": "MEDIUM",
+          "category": "workflow_scalability",
+          "department": "Operations / Management",
+          "summary": "The breadth of 1 tracked entities, 486 transactions across 1 document type(s), and irregular movement cadence indicate that current operational workflows are approaching a complexity ceiling. Scaling activity without process formalisation will amplify coordination failures.",
+          "signals": [
+            "486 total transaction records — high operational throughput with manual coordination overhead",
+            "158 distinct movement dates — over 2 months of continuous operations tracked in uploaded records"
+          ],
+          "operationalImpact": "Operational complexity at current levels requires experienced staff to maintain context across many items and document sources. Staff turnover or demand increases will expose latent process fragility.",
+          "confidence": 30,
+          "findingPriority": 50,
+          "evidence": []
+        }
+      ],
+      "rootCauses": [
+        {
+          "id": "mgd-rc-507b40b0",
+          "title": "Delayed Inventory Certainty",
+          "severity": "MEDIUM",
+          "confidence": 58,
+          "summary": "The business operates with a persistent lag between physical inventory reality and recorded inventory position. Warehouse movement is active and concentrated, but closing-balance records and matched intake documentation lag behind. Decisions about what to order, what to commit, and what to dispatch are made against an inventory picture that is already hours or days out of date.",
+          "contributingFindings": [
+            "mgd-inve-41daa355",
+            "mgd-ware-38885a97",
+            "mgd-fina-d4a84dca"
+          ],
+          "operationalImpact": [
+            "Commitment of items to orders that are no longer physically available leads to fulfilment failure.",
+            "Reorder decisions are delayed until physical shortage is observable rather than predictable.",
+            "Reconciliation effort at period-end is high because the gap between physical and recorded has grown.",
+            "Financial reporting of stock value is unreliable until a physical count is conducted."
+          ],
+          "recommendations": [
+            "Implement a real-time outbound recording step at the point of dispatch — not retrospectively.",
+            "Close the intake-to-record gap: every delivery of new stock must be recorded on the same day.",
+            "Define a maximum acceptable lag between physical movement and system entry (e.g. 4 hours).",
+            "Schedule weekly spot-checks on the 5 highest-movement items to catch discrepancies before month-end."
+          ],
+          "rootCausePriority": 50
+        },
+        {
+          "id": "mgd-rc-20d0c626",
+          "title": "Reactive Operational Coordination Model",
+          "severity": "MEDIUM",
+          "confidence": 50,
+          "summary": "The operational structure exhibits a reactive pattern: inventory visibility gaps trigger ad-hoc replenishment decisions, logistics coordination is driven by immediate demand rather than forward planning, and manual dependency means that coordination speed is limited by individual bandwidth. These three dysfunctions reinforce each other — no single fix resolves the underlying coordination model.",
+          "contributingFindings": [
+            "mgd-logi-a0015cf5",
+            "mgd-inve-41daa355",
+            "mgd-manp-8821fa80"
+          ],
+          "operationalImpact": [
+            "Reactive logistics scheduling creates recurring last-minute dispatch pressure and elevated error rates.",
+            "Inventory decisions made without reliable stock visibility risk both overstock and stockout simultaneously.",
+            "Key-person dependency means operational continuity is fragile during staff absence or turnover.",
+            "Customer-facing service quality fluctuates in proportion to demand volume rather than improving with it."
+          ],
+          "recommendations": [
+            "Implement a daily closing-balance snapshot routine before any other process improvement.",
+            "Introduce a 48-hour advance dispatch schedule to shift logistics from reactive to planned mode.",
+            "Create a cross-trained operations backup roster to reduce single-person dependencies.",
+            "Define a minimum reorder trigger point per inventory category based on average weekly outflow."
+          ],
+          "rootCausePriority": 50
+        },
+        {
+          "id": "mgd-rc-bc7fb5e6",
+          "title": "Operational Scalability Mismatch",
+          "severity": "MEDIUM",
+          "confidence": 49,
+          "summary": "The breadth of the inventory catalogue, the volume of warehouse movement, and the reliance on manual coordination have collectively exceeded what the current operational design can absorb without compounding errors. Scaling revenue or demand under these conditions will amplify coordination failures faster than staff capacity can compensate.",
+          "contributingFindings": [
+            "mgd-work-94386529",
+            "mgd-ware-38885a97",
+            "mgd-manp-8821fa80"
+          ],
+          "operationalImpact": [
+            "Each additional item or transaction adds disproportionate coordination overhead in a manual system.",
+            "Warehouse throughput concentration creates a bottleneck that grows with demand but cannot be resolved by effort alone.",
+            "Onboarding new staff provides diminishing returns when the process itself is not documented.",
+            "Customer fulfilment speed will not improve — and may decline — as order volume increases."
+          ],
+          "recommendations": [
+            "Conduct a catalogue rationalisation: identify the top 20% of items by movement volume and standardise their handling first.",
+            "Define and document a warehouse dispatch SOP with checklist before expanding throughput capacity.",
+            "Pilot a basic digital stock ledger (even a shared spreadsheet) before investing in WMS software.",
+            "Set a transaction volume threshold at which the current process will be formally reviewed."
+          ],
+          "rootCausePriority": 50
+        },
+        {
+          "id": "mgd-rc-bbac86da",
+          "title": "Inventory Visibility Weakness",
+          "severity": "MEDIUM",
+          "confidence": 43,
+          "summary": "The business lacks reliable, real-time inventory position data. Outbound movements are not consistently matched against documented intake, closing balances are not systematically recorded, and the financial value of stock on hand cannot be independently verified. This creates a structural blind spot in operational and financial decision-making.",
+          "contributingFindings": [
+            "mgd-inve-41daa355",
+            "mgd-fina-d4a84dca"
+          ],
+          "operationalImpact": [
+            "Stock shortfalls are discovered at the point of dispatch rather than in advance, causing fulfilment failures.",
+            "Replenishment decisions are made on intuition rather than data, leading to over-ordering or stockouts.",
+            "Financial reporting of inventory value carries unquantified uncertainty.",
+            "Physical count discrepancies cannot be traced to source because movement records are incomplete."
+          ],
+          "recommendations": [
+            "Mandate a closing-balance entry for every item at end of each operating day.",
+            "Match every outbound movement to a documented intake within the same reporting period.",
+            "Conduct a physical count within 30 days and reconcile against available records to establish a baseline.",
+            "Assign one owner per item category responsible for weekly stock position verification."
+          ],
+          "rootCausePriority": 50
+        },
+        {
+          "id": "mgd-rc-543f3920",
+          "title": "Operational Fragmentation",
+          "severity": "LOW",
+          "confidence": 39,
+          "summary": "Operational records reveal three concurrent stress patterns: workflow complexity that exceeds current process capacity, financial control gaps that allow value to leak unchecked, and logistics coordination under active pressure. These are not independent problems — they are symptoms of an operation that has grown without a corresponding investment in process integration.",
+          "contributingFindings": [
+            "mgd-work-94386529",
+            "mgd-fina-d4a84dca",
+            "mgd-logi-a0015cf5"
+          ],
+          "operationalImpact": [
+            "Financial leakage compounds when logistics and workflow complexity are high — losses are harder to trace.",
+            "Process fragmentation means improvements in one area (e.g., dispatch) do not flow through to others (e.g., stock records).",
+            "Management attention is divided across multiple simultaneous operational fires.",
+            "Audit and compliance exposure increases as financial records diverge from physical reality."
+          ],
+          "recommendations": [
+            "Map the end-to-end operational workflow from customer booking to item return — identify the three biggest handoff failures.",
+            "Implement reference ID discipline on all outbound movements as the first financial control action.",
+            "Consolidate logistics scheduling and inventory allocation into a single daily planning meeting.",
+            "Set a monthly financial reconciliation checkpoint to surface and investigate leakage before it accumulates."
+          ],
+          "rootCausePriority": 50
+        },
+        {
+          "id": "mgd-rc-dba8256c",
+          "title": "Fragmented Workflow Synchronisation",
+          "severity": "LOW",
+          "confidence": 39,
+          "summary": "Workflow complexity, logistics scheduling pressure, and warehouse throughput are operating as disconnected subsystems. Information about what has been dispatched, what is in the warehouse, and what is scheduled for delivery is not flowing between these three functions in a coordinated way. Each function compensates by improvising — which introduces compounding synchronisation gaps.",
+          "contributingFindings": [
+            "mgd-work-94386529",
+            "mgd-logi-a0015cf5",
+            "mgd-ware-38885a97"
+          ],
+          "operationalImpact": [
+            "Dispatch decisions are made without confirmed warehouse readiness, causing last-minute item substitutions.",
+            "Scheduling changes in logistics are not reflected in warehouse picking priorities.",
+            "Errors discovered at the warehouse stage cannot be resolved in time for committed delivery windows.",
+            "Cross-functional visibility requires manual checking rather than shared system state."
+          ],
+          "recommendations": [
+            "Establish a single source-of-truth for the daily dispatch list, accessible to both warehouse and logistics teams.",
+            "Introduce a pre-dispatch confirmation step: warehouse confirms item readiness before logistics commits to schedule.",
+            "Define what information must flow between warehouse, logistics, and coordination at each stage of an order cycle.",
+            "Review the top 5 most recent fulfilment failures and identify which synchronisation gap each originated from."
+          ],
+          "rootCausePriority": 50
+        },
+        {
+          "id": "mgd-rc-708d77bd",
+          "title": "Centralised Coordination Dependency",
+          "severity": "LOW",
+          "confidence": 35,
+          "summary": "Operational coordination — including dispatch sequencing, inventory allocation, and customer-facing fulfilment — is concentrated in a small number of individuals. This creates a knowledge and decision bottleneck: when those individuals are unavailable, operation throughput slows or stops. Logistics pressure makes this dependency time-critical.",
+          "contributingFindings": [
+            "mgd-manp-8821fa80",
+            "mgd-logi-a0015cf5"
+          ],
+          "operationalImpact": [
+            "Staff absence during peak periods creates direct operational stoppage risk.",
+            "Tacit knowledge about inventory positions and customer preferences is not systemically captured.",
+            "Decision-making speed is bounded by the availability of one or two key coordinators.",
+            "Business continuity during unexpected disruption (illness, resignation) is not assured."
+          ],
+          "recommendations": [
+            "Document the top 10 most frequent coordination decisions and their resolution steps.",
+            "Cross-train a minimum of two staff members on dispatch and inventory allocation processes.",
+            "Create a daily operations handover note so context is not held in individuals' memory alone.",
+            "Define escalation rules so non-key staff can make routine decisions independently."
+          ],
+          "rootCausePriority": 50
+        },
+        {
+          "id": "mgd-rc-901a8adb",
+          "title": "Logistics Compression Risk",
+          "severity": "LOW",
+          "confidence": 35,
+          "summary": "Logistics scheduling patterns show movement surges concentrated on peak days, outbound-dominant flow, and irregular cadence — compounded by warehouse throughput pressure on a concentrated item set. The logistics chain is operating near its coordination ceiling. A moderate increase in demand or a scheduling failure could trigger fulfilment breakdown.",
+          "contributingFindings": [
+            "mgd-logi-a0015cf5",
+            "mgd-ware-38885a97"
+          ],
+          "operationalImpact": [
+            "Peak-day movement surges create dispatch errors that are costly to recover from post-delivery.",
+            "Irregular scheduling prevents vehicle and driver utilisation from being optimised.",
+            "Warehouse throughput concentration means delays on key items cascade into full-order holds.",
+            "Customer experience is tied to logistical peak capacity rather than average capacity."
+          ],
+          "recommendations": [
+            "Introduce a dispatch cut-off time to enforce advance scheduling and reduce same-day pressure.",
+            "Review the top 3 high-throughput items and establish dedicated staging areas to reduce picking time.",
+            "Track peak-day delivery failure rate separately from average as a leading indicator.",
+            "Model maximum daily throughput based on current team and vehicle capacity to set a demand ceiling."
+          ],
+          "rootCausePriority": 50
+        }
+      ],
+      "recommendations": [
+        {
+          "id": "mgd-rec-2a3789ef",
+          "title": "Warehouse Cycle Count Programme",
+          "summary": "Implement a structured cycle count programme — counting a rotation of item categories each week so that every item is physically counted at least once per month. Cycle counts are more sustainable than full stock-takes and create continuous reconciliation discipline that prevents variance accumulation.",
+          "priority": "HIGH",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "LOW",
+          "category": "warehouse_operations",
+          "relatedRootCauses": [],
+          "relatedFindings": [
+            "mgd-inve-41daa355",
+            "mgd-ware-38885a97"
+          ],
+          "expectedOperationalImpact": [
+            "Keeps inventory records accurate without disruptive full stock-takes.",
+            "Identifies shrinkage and damage trends early, before they accumulate into significant variance.",
+            "Creates a culture of inventory accuracy accountability in the warehouse team.",
+            "Reduces reconciliation effort at period-end because variances are caught continuously."
+          ],
+          "actionItems": [
+            "Divide inventory into 4 groups — count one group per week so all items are counted monthly.",
+            "Assign specific warehouse staff to cycle count ownership, with supervisor sign-off.",
+            "Record count results against system records: any variance above 2% requires immediate investigation.",
+            "Review cycle count results at monthly operations review — track variance trend over time."
+          ],
+          "confidence": 35,
+          "recommendationPriority": 100
+        },
+        {
+          "id": "mgd-rec-60946231",
+          "title": "Inventory Checkpoint Controls",
+          "summary": "Implement mandatory closing-balance recording at the end of each operational day for all tracked inventory items. Pair this with a same-day intake recording rule: every inbound delivery is logged on the day of receipt, not retrospectively. These two controls close the structural lag between physical inventory and recorded inventory position.",
+          "priority": "HIGH",
+          "timeframe": "IMMEDIATE",
+          "implementationDifficulty": "LOW",
+          "category": "inventory_control",
+          "relatedRootCauses": [
+            "mgd-rc-507b40b0",
+            "mgd-rc-bbac86da"
+          ],
+          "relatedFindings": [
+            "mgd-inve-41daa355",
+            "mgd-fina-d4a84dca",
+            "mgd-ware-38885a97"
+          ],
+          "expectedOperationalImpact": [
+            "Eliminates the lag between physical stock reality and recorded position.",
+            "Enables same-day identification of stock discrepancies rather than period-end discovery.",
+            "Provides a reliable basis for replenishment decisions without physical count dependency.",
+            "Reduces period-end reconciliation effort by up to 70% when applied consistently."
+          ],
+          "actionItems": [
+            "Assign a closing-balance owner for each item category — one person, one category, non-negotiable.",
+            "Create a closing-balance template with item name, opening balance, movements, and closing figure.",
+            "Set a maximum 4-hour lag policy between physical movement and system entry.",
+            "Schedule a monthly reconciliation checkpoint where physical count is compared against records."
+          ],
+          "confidence": 80,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-9ff10f4a",
+          "title": "Inventory Audit Scheduling and Warehouse Stabilisation",
+          "summary": "Establish a structured inventory audit schedule: weekly spot-checks on the top 5 highest-movement items, and a full physical count once per quarter. Pair this with dedicated staging areas for the top concentration items to reduce picking errors and handling time during peak throughput periods.",
+          "priority": "HIGH",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "LOW",
+          "category": "warehouse_operations",
+          "relatedRootCauses": [
+            "mgd-rc-507b40b0",
+            "mgd-rc-bc7fb5e6",
+            "mgd-rc-bbac86da"
+          ],
+          "relatedFindings": [
+            "mgd-inve-41daa355",
+            "mgd-ware-38885a97"
+          ],
+          "expectedOperationalImpact": [
+            "Stock discrepancies are caught weekly on high-risk items rather than at quarterly count.",
+            "Dedicated staging reduces picking time and error rate on high-throughput items.",
+            "Physical count effort decreases when weekly spot-checks maintain record accuracy.",
+            "Warehouse handling capacity increases for the same team size through layout optimisation."
+          ],
+          "actionItems": [
+            "Identify the top 5 highest-movement items and designate a named staging area for each.",
+            "Create a weekly spot-check template: physical count, recorded count, variance, and action.",
+            "Schedule the quarterly full physical count in advance — block it in the operations calendar.",
+            "Track week-on-week spot-check variance as a warehouse accuracy KPI."
+          ],
+          "confidence": 80,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-7e465f45",
+          "title": "Preventive Reconciliation Workflow",
+          "summary": "Establish a weekly cross-functional reconciliation cycle: logistics confirms dispatch completion, warehouse confirms physical closing balances, and coordination reviews any discrepancies against records. Reconciliation happens before the next operating week begins — preventing discrepancies from accumulating across periods.",
+          "priority": "HIGH",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "MEDIUM",
+          "category": "workflow_redesign",
+          "relatedRootCauses": [
+            "mgd-rc-20d0c626",
+            "mgd-rc-543f3920",
+            "mgd-rc-dba8256c"
+          ],
+          "relatedFindings": [
+            "mgd-inve-41daa355",
+            "mgd-logi-a0015cf5",
+            "mgd-work-94386529"
+          ],
+          "expectedOperationalImpact": [
+            "Discrepancies are caught weekly rather than at period-end, reducing investigation complexity.",
+            "Cross-functional alignment is institutionalised as a weekly rhythm rather than a crisis response.",
+            "Logistics and warehouse teams develop a shared understanding of operational state.",
+            "Management receives a reliable weekly operational health summary."
+          ],
+          "actionItems": [
+            "Define the weekly reconciliation agenda: dispatch log review, closing balance check, open discrepancies.",
+            "Set a fixed day and time for the weekly reconciliation meeting — protect it from ad-hoc conflicts.",
+            "Create a discrepancy register: open items are tracked until closed, not forgotten between meetings.",
+            "Assign a reconciliation facilitator who owns the process and escalates unresolved items to management."
+          ],
+          "confidence": 75,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-a8762d61",
+          "title": "Centralised Operational Dashboard",
+          "summary": "Establish a single shared operational view — a daily or real-time board showing inventory position, dispatch status, and pending movements — so that coordination decisions are made from shared data rather than individual memory. This is the foundation control action before any other process change can be sustained.",
+          "priority": "HIGH",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "MEDIUM",
+          "category": "operational_visibility",
+          "relatedRootCauses": [
+            "mgd-rc-20d0c626",
+            "mgd-rc-708d77bd"
+          ],
+          "relatedFindings": [
+            "mgd-inve-41daa355",
+            "mgd-manp-8821fa80",
+            "mgd-logi-a0015cf5"
+          ],
+          "expectedOperationalImpact": [
+            "Reduces last-minute coordination calls by providing a shared status view.",
+            "Enables proactive dispatch planning instead of reactive response.",
+            "Surfaces inventory shortfalls before dispatch commitment rather than at delivery.",
+            "Reduces key-person dependency by making operational state visible to all team members."
+          ],
+          "actionItems": [
+            "Identify the three most frequently asked coordination questions — these define the minimum dashboard content.",
+            "Create a shared daily operations sheet (digital or physical) updated at start and end of each shift.",
+            "Define who is responsible for updating each section and the update frequency.",
+            "Run a two-week pilot with the core dispatch team and measure coordination call volume before and after."
+          ],
+          "confidence": 70,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-93753cdc",
+          "title": "Dispatch Readiness Checkpoints",
+          "summary": "Introduce a structured pre-dispatch confirmation process: warehouse readiness is confirmed before logistics commits to the delivery schedule. This single control point eliminates the most common class of last-minute fulfilment failure — committing to deliveries without verified item availability.",
+          "priority": "HIGH",
+          "timeframe": "IMMEDIATE",
+          "implementationDifficulty": "LOW",
+          "category": "logistics_optimization",
+          "relatedRootCauses": [
+            "mgd-rc-20d0c626",
+            "mgd-rc-dba8256c",
+            "mgd-rc-901a8adb"
+          ],
+          "relatedFindings": [
+            "mgd-logi-a0015cf5",
+            "mgd-ware-38885a97"
+          ],
+          "expectedOperationalImpact": [
+            "Eliminates dispatch commitments made on unverified inventory — reducing day-of cancellations.",
+            "Shifts logistics from reactive scrambling to confirmed schedule execution.",
+            "Reduces warehouse-side item substitution errors that compound in high-throughput periods.",
+            "Creates an audit trail for each dispatch cycle that enables failure root-cause analysis."
+          ],
+          "actionItems": [
+            "Define the checklist: item count, loading confirmation, and vehicle assignment — three fields minimum.",
+            "Assign a dispatch cut-off time (e.g. 6 PM day-prior) after which the schedule is locked unless escalated.",
+            "Make the pre-dispatch confirmation a signed-off step — digital or physical acknowledgement required.",
+            "Track and report same-day dispatch changes weekly; target zero unplanned changes within 90 days."
+          ],
+          "confidence": 60,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-e146082f",
+          "title": "Workflow Redesign Initiative",
+          "summary": "Commission a structured review of the end-to-end operational workflow — from booking or order intake through to item return or delivery completion. The objective is to identify and document the five highest-friction handoff points, then redesign those handoffs to be process-driven rather than person-driven. This is the foundational work that makes all other scalability improvements sustainable.",
+          "priority": "HIGH",
+          "timeframe": "90_DAYS",
+          "implementationDifficulty": "HIGH",
+          "category": "operational_scalability",
+          "relatedRootCauses": [
+            "mgd-rc-bc7fb5e6",
+            "mgd-rc-543f3920",
+            "mgd-rc-dba8256c"
+          ],
+          "relatedFindings": [
+            "mgd-manp-8821fa80",
+            "mgd-work-94386529"
+          ],
+          "expectedOperationalImpact": [
+            "Operational capacity increases without proportional increase in headcount.",
+            "New staff can be onboarded and productive faster with documented process standards.",
+            "Decision quality improves because processes — not individuals — hold operational logic.",
+            "The business can absorb demand growth without compounding coordination failures."
+          ],
+          "actionItems": [
+            "Map the current workflow as-is: identify every handoff, decision point, and delay.",
+            "Score each handoff by frequency × error rate to prioritise which to redesign first.",
+            "Redesign the top three handoffs with a documented SOP, owner, and completion criteria.",
+            "Pilot the redesigned workflow for 30 days with a defined success metric before full rollout."
+          ],
+          "confidence": 60,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-408e8318",
+          "title": "Reference ID Enforcement and Leakage Controls",
+          "summary": "Mandate a reference or invoice number on every outbound movement record. Any dispatch without a reference ID must be escalated before it leaves the warehouse. Simultaneously, implement a return verification step: all returned items are inspected, counted, and recorded before being re-entered into available inventory. These two controls eliminate the most common sources of undocumented operational leakage.",
+          "priority": "HIGH",
+          "timeframe": "IMMEDIATE",
+          "implementationDifficulty": "LOW",
+          "category": "profitability_protection",
+          "relatedRootCauses": [
+            "mgd-rc-bbac86da",
+            "mgd-rc-543f3920"
+          ],
+          "relatedFindings": [
+            "mgd-inve-41daa355",
+            "mgd-fina-d4a84dca"
+          ],
+          "expectedOperationalImpact": [
+            "Every outbound movement becomes traceable — enabling systematic recovery action on disputes.",
+            "Return leakage is quantified and contained rather than absorbed as an untracked cost.",
+            "Financial reporting of inventory value becomes auditable rather than estimated.",
+            "Adjustment transactions decrease as recording discipline improves at source."
+          ],
+          "actionItems": [
+            "Update the outbound recording form to make reference ID a mandatory field — blank = blocked.",
+            "Create a returns inspection log: item name, quantity returned, condition, and date — signed by receiver.",
+            "Run a 30-day audit of all adjustment transactions to identify and resolve the top three recurring causes.",
+            "Report monthly on the number of movements without reference IDs as a declining KPI target."
+          ],
+          "confidence": 55,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-927b9f29",
+          "title": "Cross-Training and Knowledge Distribution Programme",
+          "summary": "Systematically transfer operational knowledge from key coordinators to the wider team. Identify the top ten routine coordination decisions, document the resolution logic for each, and cross-train a minimum of two backup staff on each decision. This directly reduces single-person operational risk and builds team-wide operational resilience.",
+          "priority": "HIGH",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "LOW",
+          "category": "manpower_coordination",
+          "relatedRootCauses": [
+            "mgd-rc-bc7fb5e6",
+            "mgd-rc-708d77bd"
+          ],
+          "relatedFindings": [
+            "mgd-manp-8821fa80"
+          ],
+          "expectedOperationalImpact": [
+            "Operational continuity is maintained during key staff absence — eliminating stoppage risk.",
+            "Decision-making speed is no longer bounded by the availability of one coordinator.",
+            "Staff satisfaction improves as operational knowledge becomes shared rather than hoarded.",
+            "Business continuity during unexpected disruptions (illness, resignation) is formally addressed."
+          ],
+          "actionItems": [
+            "List the ten most frequent coordination decisions and their current owner.",
+            "Document a decision guide for each: trigger, options, resolution, and escalation path.",
+            "Identify backup staff for each decision and schedule shadow sessions within 30 days.",
+            "Test backup capability: have the backup handle the decision independently once per month."
+          ],
+          "confidence": 35,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-f1fed453",
+          "title": "Operational Capacity Review",
+          "summary": "Conduct a structured assessment of current operational throughput capacity: maximum daily transactions the team can process without quality degradation, vehicle/driver availability ceiling, and warehouse handling throughput per person per shift. Set explicit capacity thresholds that trigger expansion planning before the ceiling is hit — not after.",
+          "priority": "MEDIUM",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "MEDIUM",
+          "category": "manpower_coordination",
+          "relatedRootCauses": [
+            "mgd-rc-20d0c626",
+            "mgd-rc-bc7fb5e6",
+            "mgd-rc-708d77bd"
+          ],
+          "relatedFindings": [
+            "mgd-manp-8821fa80",
+            "mgd-logi-a0015cf5",
+            "mgd-work-94386529"
+          ],
+          "expectedOperationalImpact": [
+            "Management can make staffing and resource decisions with quantified rather than intuitive data.",
+            "Demand growth is matched with capacity planning rather than discovered as a crisis.",
+            "Operational ceiling is defined and communicated — enabling controlled business development.",
+            "Staff workload is assessed objectively, reducing burnout risk in key coordination roles."
+          ],
+          "actionItems": [
+            "Define the current team's maximum sustainable daily transaction volume — measure for two weeks.",
+            "Calculate vehicle/driver utilisation as a percentage of maximum possible daily routes.",
+            "Set a capacity threshold (e.g. 80% utilisation) that triggers a pre-planned expansion review.",
+            "Document the expansion plan: what gets added first, at what cost, and with what lead time."
+          ],
+          "confidence": 85,
+          "recommendationPriority": 50
+        },
+        {
+          "id": "mgd-rec-59eda3c6",
+          "title": "Department Synchronisation Framework",
+          "summary": "Define and implement a structured information-sharing protocol between warehouse, logistics, and coordination teams. Each team publishes a daily status update at defined times: warehouse readiness at 8 AM, logistics schedule confirmation at 10 AM, end-of-day dispatch summary at 6 PM. This creates a cadence that replaces ad-hoc communication with predictable, structured sync points.",
+          "priority": "MEDIUM",
+          "timeframe": "30_DAYS",
+          "implementationDifficulty": "LOW",
+          "category": "workflow_redesign",
+          "relatedRootCauses": [
+            "mgd-rc-20d0c626",
+            "mgd-rc-bc7fb5e6",
+            "mgd-rc-dba8256c"
+          ],
+          "relatedFindings": [
+            "mgd-manp-8821fa80",
+            "mgd-logi-a0015cf5",
+            "mgd-work-94386529"
+          ],
+          "expectedOperationalImpact": [
+            "Inter-team information gaps are closed at defined points rather than discovered during execution.",
+            "Coordination overhead decreases as teams operate from a shared, predictable rhythm.",
+            "Management has three daily checkpoints to review operational state without ad-hoc queries.",
+            "Onboarding new team members becomes faster as the communication structure is documented."
+          ],
+          "actionItems": [
+            "Define the three daily sync points and the one-paragraph update format for each team.",
+            "Create a shared communication channel (group chat or board) where updates are posted.",
+            "Run the synchronisation protocol for four weeks and measure unplanned coordination calls before and after.",
+            "Review and adjust the sync point content after 30 days based on what information was still missing."
+          ],
+          "confidence": 85,
+          "recommendationPriority": 50
+        }
+      ],
+      "benchmarks": [],
+      "visualMetrics": {
+        "operationalHealthLabel": "Moderate Operational Strain",
+        "operationalRiskLevel": "Controlled",
+        "benchmarkStatusBreakdown": {
+          "healthy": 0,
+          "watchlist": 0,
+          "elevated": 0,
+          "critical": 0
+        }
+      },
+      "industryInsights": {
+        "maturityLevel": "SCALING",
+        "rules": [
+          {
+            "id": "em-catering-growth-opportunity",
+            "category": "strategic_growth",
+            "title": "Catering Growth Opportunity",
+            "description": "Event management businesses with controlled operational baselines frequently have untapped catering margin upside. Developing or expanding an in-house catering offering can increase per-event revenue by 20–40% while deepening client lock-in and reducing third-party vendor dependency.",
+            "severity": "LOW",
+            "confidence": 70
+          },
+          {
+            "id": "em-asset-leakage-exposure",
+            "category": "financial_leakage",
+            "title": "Asset Leakage Exposure",
+            "description": "The combination of inventory visibility gaps and financial leakage signals indicates active asset leakage — goods and materials consumed or lost during event execution without being captured in billing or stock records. This pattern typically compounds into significant quarterly margin compression.",
+            "severity": "MEDIUM",
+            "confidence": 48
+          },
+          {
+            "id": "em-revenue-fulfilment-constraint",
+            "category": "operations",
+            "title": "Revenue Fulfilment Constraint",
+            "description": "Co-occurring logistics and manpower dependency findings indicate a systemic fulfilment risk. Events cannot be delivered at full revenue potential when both coordination and team capacity are constrained simultaneously — this compound pattern typically drives client churn.",
+            "severity": "MEDIUM",
+            "confidence": 43
+          },
+          {
+            "id": "em-inventory-visibility-weakness",
+            "category": "inventory_visibility",
+            "title": "Inventory Visibility Weakness",
+            "description": "Critical gaps in inventory tracking have been identified. Without real-time stock visibility, event teams operate on lagged data — creating systematic over- and under-procurement cycles that drive margin erosion and last-minute supplier dependency.",
+            "severity": "HIGH",
+            "confidence": 43
+          },
+          {
+            "id": "em-driver-dependency-risk",
+            "category": "manpower_dependency",
+            "title": "Driver Dependency Risk",
+            "description": "Manpower dependency and logistics coordination issues are occurring together, indicating that event delivery relies heavily on specific individuals coordinating transport and logistics. The departure or unavailability of these key persons directly stalls event execution.",
+            "severity": "MEDIUM",
+            "confidence": 41
+          },
+          {
+            "id": "em-reconciliation-dependency",
+            "category": "warehouse_operations",
+            "title": "Reconciliation Dependency",
+            "description": "Warehouse operations findings indicate a reliance on manual stock reconciliation cycles. In event management, delayed reconciliation creates inaccurate inventory positions ahead of live events — compounding procurement decisions and increasing write-off exposure.",
+            "severity": "MEDIUM",
+            "confidence": 35
+          },
+          {
+            "id": "em-event-scalability-constraint",
+            "category": "workflow_scalability",
+            "title": "Event Scalability Constraint",
+            "description": "Workflow scalability findings indicate the team is absorbing growth through overtime and manual coordination rather than process improvement. In event management, this ceiling is reached faster than other industries due to concurrent event load — quality degradation accelerates beyond the current team capacity.",
+            "severity": "MEDIUM",
+            "confidence": 34
+          },
+          {
+            "id": "em-central-kitchen-readiness",
+            "category": "strategic_growth",
+            "title": "Central Kitchen Readiness",
+            "description": "Event management operations at scale frequently benefit from centralised food production infrastructure. A central kitchen reduces last-mile catering complexity and is a high-leverage investment for businesses running 3 or more simultaneous events.",
+            "severity": "LOW",
+            "confidence": 32
+          }
+        ],
+        "topRisks": [
+          {
+            "id": "em-inventory-visibility-weakness",
+            "category": "inventory_visibility",
+            "title": "Inventory Visibility Weakness",
+            "description": "Critical gaps in inventory tracking have been identified. Without real-time stock visibility, event teams operate on lagged data — creating systematic over- and under-procurement cycles that drive margin erosion and last-minute supplier dependency.",
+            "severity": "HIGH",
+            "confidence": 43
+          }
+        ],
+        "topOpportunities": [
+          {
+            "id": "em-catering-growth-opportunity",
+            "category": "strategic_growth",
+            "title": "Catering Growth Opportunity",
+            "description": "Event management businesses with controlled operational baselines frequently have untapped catering margin upside. Developing or expanding an in-house catering offering can increase per-event revenue by 20–40% while deepening client lock-in and reducing third-party vendor dependency.",
+            "severity": "LOW",
+            "confidence": 70
+          },
+          {
+            "id": "em-asset-leakage-exposure",
+            "category": "financial_leakage",
+            "title": "Asset Leakage Exposure",
+            "description": "The combination of inventory visibility gaps and financial leakage signals indicates active asset leakage — goods and materials consumed or lost during event execution without being captured in billing or stock records. This pattern typically compounds into significant quarterly margin compression.",
+            "severity": "MEDIUM",
+            "confidence": 48
+          },
+          {
+            "id": "em-revenue-fulfilment-constraint",
+            "category": "operations",
+            "title": "Revenue Fulfilment Constraint",
+            "description": "Co-occurring logistics and manpower dependency findings indicate a systemic fulfilment risk. Events cannot be delivered at full revenue potential when both coordination and team capacity are constrained simultaneously — this compound pattern typically drives client churn.",
+            "severity": "MEDIUM",
+            "confidence": 43
+          },
+          {
+            "id": "em-driver-dependency-risk",
+            "category": "manpower_dependency",
+            "title": "Driver Dependency Risk",
+            "description": "Manpower dependency and logistics coordination issues are occurring together, indicating that event delivery relies heavily on specific individuals coordinating transport and logistics. The departure or unavailability of these key persons directly stalls event execution.",
+            "severity": "MEDIUM",
+            "confidence": 41
+          },
+          {
+            "id": "em-reconciliation-dependency",
+            "category": "warehouse_operations",
+            "title": "Reconciliation Dependency",
+            "description": "Warehouse operations findings indicate a reliance on manual stock reconciliation cycles. In event management, delayed reconciliation creates inaccurate inventory positions ahead of live events — compounding procurement decisions and increasing write-off exposure.",
+            "severity": "MEDIUM",
+            "confidence": 35
+          },
+          {
+            "id": "em-event-scalability-constraint",
+            "category": "workflow_scalability",
+            "title": "Event Scalability Constraint",
+            "description": "Workflow scalability findings indicate the team is absorbing growth through overtime and manual coordination rather than process improvement. In event management, this ceiling is reached faster than other industries due to concurrent event load — quality degradation accelerates beyond the current team capacity.",
+            "severity": "MEDIUM",
+            "confidence": 34
+          },
+          {
+            "id": "em-central-kitchen-readiness",
+            "category": "strategic_growth",
+            "title": "Central Kitchen Readiness",
+            "description": "Event management operations at scale frequently benefit from centralised food production infrastructure. A central kitchen reduces last-mile catering complexity and is a high-leverage investment for businesses running 3 or more simultaneous events.",
+            "severity": "LOW",
+            "confidence": 32
+          }
+        ]
+      },
+      "eventDiagnostics": {
+        "dispatchesAnalysed": 0,
+        "dispatchFailureRate": 0,
+        "dispatchDelayRate": 0,
+        "averageDelayMinutes": 0,
+        "missingItemRate": 0,
+        "substitutionRate": 0,
+        "damageEvents": 0,
+        "damageRecoveryRate": 1,
+        "unrecoveredDamageRate": 0,
+        "inventoryVisibilityScore": 60,
+        "eventReadinessScore": 100,
+        "dispatchReliabilityScore": 100,
+        "assetAccountabilityScore": 100,
+        "averageEventValue": 0,
+        "estimatedRevenueExposure": 0,
+        "dispatchFailureExposure": 0,
+        "assetDamageExposure": 0,
+        "unrecoveredDamageValue": 0
+      }
+    },
+    "runtimeMs": 28
+  },
+  {
     "id": "12bbad73-dae5-4094-9258-67014b93f1be",
     "clientId": "41311d78-9900-49fa-be98-fd132a72a09e",
     "clientName": "Madetill Event Management (MEM) Sdn. Bhd. (TEST) ",
@@ -2936,728 +3984,5 @@
       }
     },
     "runtimeMs": 9
-  },
-  {
-    "id": "a58830c0-d125-4771-9a41-ffbb5c155ab7",
-    "clientName": "Madetill Event Management (MEM)",
-    "industry": "event_management",
-    "createdAt": "2026-06-05T12:03:34.822Z",
-    "report": {
-      "metadata": {
-        "generatedAt": "2026-06-05T12:03:34.822Z",
-        "clientName": "Madetill Event Management (MEM)",
-        "industry": "event_management",
-        "operationalHealthScore": 51,
-        "reportVersion": "MGD-V1"
-      },
-      "summary": {
-        "criticalFindings": 0,
-        "highFindings": 0,
-        "criticalRootCauses": 0,
-        "highPriorityRecommendations": 0,
-        "benchmarkAlerts": 6
-      },
-      "narrative": {
-        "executiveOverview": {
-          "id": "executive-overview",
-          "title": "Executive Overview",
-          "content": "This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework. The operational health assessment returned a classification of Elevated Operational Strain, indicating that the operation is absorbing significant inefficiencies that expose it to service disruptions during peak demand.",
-          "priority": 1
-        },
-        "keyFindings": {
-          "id": "key-findings",
-          "title": "Key Operational Findings",
-          "content": "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
-          "priority": 2
-        },
-        "rootCauseSummary": {
-          "id": "root-cause-summary",
-          "title": "Root Cause Analysis",
-          "content": "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
-          "priority": 3
-        },
-        "operationalHealth": {
-          "id": "operational-health",
-          "title": "Operational Health Assessment",
-          "content": "Operational Health Classification: Elevated Operational Strain.  The composite operational health score of 51/100 reflects an operation absorbing significant structural inefficiency — a condition that will deteriorate under increased demand. Under these conditions, the risk of service disruption increases with each demand peak. Immediate stabilisation action is the priority before optimisation can begin.",
-          "priority": 4
-        },
-        "priorityActions": {
-          "id": "priority-actions",
-          "title": "Priority Actions",
-          "content": "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
-          "priority": 5
-        },
-        "strategicDirection": {
-          "id": "strategic-direction",
-          "title": "Strategic Direction",
-          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. As operational controls mature, the business will develop predictive visibility into demand cycles, allowing for proactive resource allocation rather than reactive scrambling.",
-          "priority": 6
-        },
-        "finalConclusion": {
-          "id": "final-conclusion",
-          "title": "Conclusion",
-          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. The recommendations in this report are practical, sequenced, and designed to generate visible operational improvement within 30 to 90 days. The management team has the knowledge and resources to execute the stabilisation phase — what is required is structured commitment to the process. With structured implementation of the recommended actions, the business is well-positioned to convert current operational strain into a durable competitive advantage — an operation that grows reliably, serves clients consistently, and retains value at scale.",
-          "priority": 7
-        },
-        "metadata": {
-          "generatedAt": "2026-06-05T12:03:34.821Z",
-          "industry": "event_management",
-          "findingsCount": 0,
-          "rootCauseCount": 0,
-          "recommendationCount": 0,
-          "operationalHealthScore": 51
-        }
-      },
-      "findings": [],
-      "rootCauses": [],
-      "recommendations": [],
-      "benchmarks": [
-        {
-          "id": "mgd-bm-b615b4a9",
-          "metric": "Refund Leakage Rate",
-          "category": "financial_leakage",
-          "actualValue": 14.2,
-          "benchmarkRange": {
-            "low": 3,
-            "medium": 5,
-            "high": 8
-          },
-          "status": "CRITICAL",
-          "interpretation": "Refund Leakage Rate of 14.2% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
-          "operationalRisk": "Refund rates at this level indicate a systemic event delivery breakdown. Client confidence is at risk and revenue recovery is being offset by refund obligations.",
-          "recommendedAction": "Suspend the highest-risk service lines pending a full process review. Introduce mandatory pre-delivery sign-off and post-service feedback capture.",
-          "confidence": 88
-        },
-        {
-          "id": "mgd-bm-f20fea03",
-          "metric": "Manual Workflow Dependency",
-          "category": "workflow_scalability",
-          "actualValue": 78,
-          "benchmarkRange": {
-            "low": 30,
-            "medium": 50,
-            "high": 70
-          },
-          "status": "CRITICAL",
-          "interpretation": "Manual Workflow Dependency of 78.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
-          "operationalRisk": "Manual dependency at this level means event operations cannot scale. Every additional event compounds the coordination and execution burden disproportionately.",
-          "recommendedAction": "Immediate workflow redesign is required. Map all manual processes, prioritise the top 10 by operational risk, and implement structured replacements within 30 days.",
-          "confidence": 78
-        },
-        {
-          "id": "mgd-bm-3c92ee35",
-          "metric": "Manpower Dependency Rate",
-          "category": "manpower_dependency",
-          "actualValue": 62,
-          "benchmarkRange": {
-            "low": 20,
-            "medium": 35,
-            "high": 55
-          },
-          "status": "CRITICAL",
-          "interpretation": "Manpower Dependency Rate of 62.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
-          "operationalRisk": "The event operation is critically dependent on a single decision-maker or a very small team. Any absence or concurrent demand will halt or severely compromise event delivery.",
-          "recommendedAction": "Immediately initiate a cross-training and knowledge distribution programme. Assign backup decision-makers for all critical operational roles and document all undocumented processes.",
-          "confidence": 75
-        },
-        {
-          "id": "mgd-bm-506c85af",
-          "metric": "Overtime Exposure Rate",
-          "category": "manpower_dependency",
-          "actualValue": 34,
-          "benchmarkRange": {
-            "low": 10,
-            "medium": 20,
-            "high": 30
-          },
-          "status": "CRITICAL",
-          "interpretation": "Overtime Exposure Rate of 34.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
-          "operationalRisk": "Overtime at this level is unsustainable and is compromising event delivery quality and staff wellbeing. This will manifest as execution errors, attrition, and client complaints.",
-          "recommendedAction": "Immediate staffing model review is required. Introduce shift rotation protocols, consider temporary capacity augmentation, and audit the processes generating the highest overtime burden.",
-          "confidence": 72
-        },
-        {
-          "id": "mgd-bm-37cbbe8e",
-          "metric": "Inventory Loss Rate",
-          "category": "inventory_control",
-          "actualValue": 5.8,
-          "benchmarkRange": {
-            "low": 2,
-            "medium": 4,
-            "high": 7
-          },
-          "status": "ELEVATED",
-          "interpretation": "Inventory Loss Rate of 5.8% reflects material strain in event operational performance, indicating structural inefficiency that requires targeted corrective action.",
-          "operationalRisk": "Inventory loss at this rate is generating measurable financial leakage and signals a breakdown in stock accountability controls.",
-          "recommendedAction": "Implement mandatory closing-balance verification at each stock movement event and conduct an immediate audit of the highest-loss SKUs.",
-          "confidence": 90
-        },
-        {
-          "id": "mgd-bm-d0075ee2",
-          "metric": "Inventory Discrepancy Rate",
-          "category": "inventory_control",
-          "actualValue": 11.8,
-          "benchmarkRange": {
-            "low": 5,
-            "medium": 10,
-            "high": 20
-          },
-          "status": "ELEVATED",
-          "interpretation": "Inventory Discrepancy Rate of 11.8% reflects material strain in event operational performance, indicating structural inefficiency that requires targeted corrective action.",
-          "operationalRisk": "At this discrepancy rate, inventory records cannot be relied upon for operational decision-making — replenishment, allocation, and dispatch decisions are all compromised.",
-          "recommendedAction": "Conduct a full inventory audit. Implement mandatory reconciliation after each stock movement and introduce dual-verification for high-value items.",
-          "confidence": 85
-        },
-        {
-          "id": "mgd-bm-3550bbfd",
-          "metric": "Rejected Jobs Rate",
-          "category": "logistics_coordination",
-          "actualValue": 3.2,
-          "benchmarkRange": {
-            "low": 5,
-            "medium": 10,
-            "high": 20
-          },
-          "status": "HEALTHY",
-          "interpretation": "Rejected Jobs Rate of 3.2% is within sustainable operational norms — no corrective intervention is required at this time.",
-          "confidence": 83
-        },
-        {
-          "id": "mgd-bm-6c4b2643",
-          "metric": "Logistics Capacity Utilisation",
-          "category": "logistics_coordination",
-          "actualValue": 0.81,
-          "benchmarkRange": {
-            "low": 75,
-            "medium": 85,
-            "high": 95
-          },
-          "status": "HEALTHY",
-          "interpretation": "Logistics Capacity Utilisation of 0.8% is within sustainable operational norms — no corrective intervention is required at this time.",
-          "confidence": 82
-        },
-        {
-          "id": "mgd-bm-06944bd5",
-          "metric": "Reconciliation Delay Rate",
-          "category": "workflow_scalability",
-          "actualValue": 2.4,
-          "benchmarkRange": {
-            "low": 10,
-            "medium": 20,
-            "high": 35
-          },
-          "status": "HEALTHY",
-          "interpretation": "Reconciliation Delay Rate of 2.4% is within sustainable operational norms — no corrective intervention is required at this time.",
-          "confidence": 80
-        }
-      ],
-      "visualMetrics": {
-        "operationalHealthLabel": "Elevated Operational Strain",
-        "operationalRiskLevel": "Controlled",
-        "benchmarkStatusBreakdown": {
-          "healthy": 3,
-          "watchlist": 0,
-          "elevated": 2,
-          "critical": 4
-        }
-      }
-    },
-    "runtimeMs": 5
-  },
-  {
-    "id": "24dc2c78-04c1-47f9-bf99-a3f794df8a2b",
-    "clientName": "Madetill Event Management (MEM)",
-    "industry": "event_management",
-    "createdAt": "2026-06-05T12:03:12.532Z",
-    "report": {
-      "metadata": {
-        "generatedAt": "2026-06-05T12:03:12.530Z",
-        "clientName": "Madetill Event Management (MEM)",
-        "industry": "event_management",
-        "operationalHealthScore": 51,
-        "reportVersion": "MGD-V1"
-      },
-      "summary": {
-        "criticalFindings": 0,
-        "highFindings": 0,
-        "criticalRootCauses": 0,
-        "highPriorityRecommendations": 0,
-        "benchmarkAlerts": 6
-      },
-      "narrative": {
-        "executiveOverview": {
-          "id": "executive-overview",
-          "title": "Executive Overview",
-          "content": "This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework. The operational health assessment returned a classification of Elevated Operational Strain, indicating that the operation is absorbing significant inefficiencies that expose it to service disruptions during peak demand.",
-          "priority": 1
-        },
-        "keyFindings": {
-          "id": "key-findings",
-          "title": "Key Operational Findings",
-          "content": "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
-          "priority": 2
-        },
-        "rootCauseSummary": {
-          "id": "root-cause-summary",
-          "title": "Root Cause Analysis",
-          "content": "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
-          "priority": 3
-        },
-        "operationalHealth": {
-          "id": "operational-health",
-          "title": "Operational Health Assessment",
-          "content": "Operational Health Classification: Elevated Operational Strain.  The composite operational health score of 51/100 reflects an operation absorbing significant structural inefficiency — a condition that will deteriorate under increased demand. Under these conditions, the risk of service disruption increases with each demand peak. Immediate stabilisation action is the priority before optimisation can begin.",
-          "priority": 4
-        },
-        "priorityActions": {
-          "id": "priority-actions",
-          "title": "Priority Actions",
-          "content": "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
-          "priority": 5
-        },
-        "strategicDirection": {
-          "id": "strategic-direction",
-          "title": "Strategic Direction",
-          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. As operational controls mature, the business will develop predictive visibility into demand cycles, allowing for proactive resource allocation rather than reactive scrambling.",
-          "priority": 6
-        },
-        "finalConclusion": {
-          "id": "final-conclusion",
-          "title": "Conclusion",
-          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. The recommendations in this report are practical, sequenced, and designed to generate visible operational improvement within 30 to 90 days. The management team has the knowledge and resources to execute the stabilisation phase — what is required is structured commitment to the process. With structured implementation of the recommended actions, the business is well-positioned to convert current operational strain into a durable competitive advantage — an operation that grows reliably, serves clients consistently, and retains value at scale.",
-          "priority": 7
-        },
-        "metadata": {
-          "generatedAt": "2026-06-05T12:03:12.530Z",
-          "industry": "event_management",
-          "findingsCount": 0,
-          "rootCauseCount": 0,
-          "recommendationCount": 0,
-          "operationalHealthScore": 51
-        }
-      },
-      "findings": [],
-      "rootCauses": [],
-      "recommendations": [],
-      "benchmarks": [
-        {
-          "id": "mgd-bm-b615b4a9",
-          "metric": "Refund Leakage Rate",
-          "category": "financial_leakage",
-          "actualValue": 14.2,
-          "benchmarkRange": {
-            "low": 3,
-            "medium": 5,
-            "high": 8
-          },
-          "status": "CRITICAL",
-          "interpretation": "Refund Leakage Rate of 14.2% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
-          "operationalRisk": "Refund rates at this level indicate a systemic event delivery breakdown. Client confidence is at risk and revenue recovery is being offset by refund obligations.",
-          "recommendedAction": "Suspend the highest-risk service lines pending a full process review. Introduce mandatory pre-delivery sign-off and post-service feedback capture.",
-          "confidence": 88
-        },
-        {
-          "id": "mgd-bm-f20fea03",
-          "metric": "Manual Workflow Dependency",
-          "category": "workflow_scalability",
-          "actualValue": 78,
-          "benchmarkRange": {
-            "low": 30,
-            "medium": 50,
-            "high": 70
-          },
-          "status": "CRITICAL",
-          "interpretation": "Manual Workflow Dependency of 78.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
-          "operationalRisk": "Manual dependency at this level means event operations cannot scale. Every additional event compounds the coordination and execution burden disproportionately.",
-          "recommendedAction": "Immediate workflow redesign is required. Map all manual processes, prioritise the top 10 by operational risk, and implement structured replacements within 30 days.",
-          "confidence": 78
-        },
-        {
-          "id": "mgd-bm-3c92ee35",
-          "metric": "Manpower Dependency Rate",
-          "category": "manpower_dependency",
-          "actualValue": 62,
-          "benchmarkRange": {
-            "low": 20,
-            "medium": 35,
-            "high": 55
-          },
-          "status": "CRITICAL",
-          "interpretation": "Manpower Dependency Rate of 62.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
-          "operationalRisk": "The event operation is critically dependent on a single decision-maker or a very small team. Any absence or concurrent demand will halt or severely compromise event delivery.",
-          "recommendedAction": "Immediately initiate a cross-training and knowledge distribution programme. Assign backup decision-makers for all critical operational roles and document all undocumented processes.",
-          "confidence": 75
-        },
-        {
-          "id": "mgd-bm-506c85af",
-          "metric": "Overtime Exposure Rate",
-          "category": "manpower_dependency",
-          "actualValue": 34,
-          "benchmarkRange": {
-            "low": 10,
-            "medium": 20,
-            "high": 30
-          },
-          "status": "CRITICAL",
-          "interpretation": "Overtime Exposure Rate of 34.0% represents an unsustainable operational condition for event delivery — immediate intervention is required to prevent recurring service failures.",
-          "operationalRisk": "Overtime at this level is unsustainable and is compromising event delivery quality and staff wellbeing. This will manifest as execution errors, attrition, and client complaints.",
-          "recommendedAction": "Immediate staffing model review is required. Introduce shift rotation protocols, consider temporary capacity augmentation, and audit the processes generating the highest overtime burden.",
-          "confidence": 72
-        },
-        {
-          "id": "mgd-bm-37cbbe8e",
-          "metric": "Inventory Loss Rate",
-          "category": "inventory_control",
-          "actualValue": 5.8,
-          "benchmarkRange": {
-            "low": 2,
-            "medium": 4,
-            "high": 7
-          },
-          "status": "ELEVATED",
-          "interpretation": "Inventory Loss Rate of 5.8% reflects material strain in event operational performance, indicating structural inefficiency that requires targeted corrective action.",
-          "operationalRisk": "Inventory loss at this rate is generating measurable financial leakage and signals a breakdown in stock accountability controls.",
-          "recommendedAction": "Implement mandatory closing-balance verification at each stock movement event and conduct an immediate audit of the highest-loss SKUs.",
-          "confidence": 90
-        },
-        {
-          "id": "mgd-bm-d0075ee2",
-          "metric": "Inventory Discrepancy Rate",
-          "category": "inventory_control",
-          "actualValue": 11.8,
-          "benchmarkRange": {
-            "low": 5,
-            "medium": 10,
-            "high": 20
-          },
-          "status": "ELEVATED",
-          "interpretation": "Inventory Discrepancy Rate of 11.8% reflects material strain in event operational performance, indicating structural inefficiency that requires targeted corrective action.",
-          "operationalRisk": "At this discrepancy rate, inventory records cannot be relied upon for operational decision-making — replenishment, allocation, and dispatch decisions are all compromised.",
-          "recommendedAction": "Conduct a full inventory audit. Implement mandatory reconciliation after each stock movement and introduce dual-verification for high-value items.",
-          "confidence": 85
-        },
-        {
-          "id": "mgd-bm-3550bbfd",
-          "metric": "Rejected Jobs Rate",
-          "category": "logistics_coordination",
-          "actualValue": 3.2,
-          "benchmarkRange": {
-            "low": 5,
-            "medium": 10,
-            "high": 20
-          },
-          "status": "HEALTHY",
-          "interpretation": "Rejected Jobs Rate of 3.2% is within sustainable operational norms — no corrective intervention is required at this time.",
-          "confidence": 83
-        },
-        {
-          "id": "mgd-bm-6c4b2643",
-          "metric": "Logistics Capacity Utilisation",
-          "category": "logistics_coordination",
-          "actualValue": 0.81,
-          "benchmarkRange": {
-            "low": 75,
-            "medium": 85,
-            "high": 95
-          },
-          "status": "HEALTHY",
-          "interpretation": "Logistics Capacity Utilisation of 0.8% is within sustainable operational norms — no corrective intervention is required at this time.",
-          "confidence": 82
-        },
-        {
-          "id": "mgd-bm-06944bd5",
-          "metric": "Reconciliation Delay Rate",
-          "category": "workflow_scalability",
-          "actualValue": 2.4,
-          "benchmarkRange": {
-            "low": 10,
-            "medium": 20,
-            "high": 35
-          },
-          "status": "HEALTHY",
-          "interpretation": "Reconciliation Delay Rate of 2.4% is within sustainable operational norms — no corrective intervention is required at this time.",
-          "confidence": 80
-        }
-      ],
-      "visualMetrics": {
-        "operationalHealthLabel": "Elevated Operational Strain",
-        "operationalRiskLevel": "Controlled",
-        "benchmarkStatusBreakdown": {
-          "healthy": 3,
-          "watchlist": 0,
-          "elevated": 2,
-          "critical": 4
-        }
-      }
-    },
-    "runtimeMs": 11
-  },
-  {
-    "id": "2b508d38-78d8-4028-90fc-a17f7a9be466",
-    "clientName": "Trace Test Co",
-    "industry": "event_management",
-    "createdAt": "2026-06-05T11:37:52.798Z",
-    "report": {
-      "metadata": {
-        "generatedAt": "2026-06-05T11:37:52.797Z",
-        "clientName": "Trace Test Co",
-        "industry": "event_management",
-        "operationalHealthScore": 85,
-        "reportVersion": "MGD-V1"
-      },
-      "summary": {
-        "criticalFindings": 0,
-        "highFindings": 0,
-        "criticalRootCauses": 0,
-        "highPriorityRecommendations": 0,
-        "benchmarkAlerts": 0
-      },
-      "narrative": {
-        "executiveOverview": {
-          "id": "executive-overview",
-          "title": "Executive Overview",
-          "content": "This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework. The operational health assessment returned a classification of Operationally Stable, indicating that operations are performing within acceptable parameters.",
-          "priority": 1
-        },
-        "keyFindings": {
-          "id": "key-findings",
-          "title": "Key Operational Findings",
-          "content": "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
-          "priority": 2
-        },
-        "rootCauseSummary": {
-          "id": "root-cause-summary",
-          "title": "Root Cause Analysis",
-          "content": "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
-          "priority": 3
-        },
-        "operationalHealth": {
-          "id": "operational-health",
-          "title": "Operational Health Assessment",
-          "content": "Operational Health Classification: Operationally Stable.  The composite operational health score of 85/100 reflects an operation that has achieved a functional baseline across its core processes. Under these conditions, the focus shifts from stabilisation to optimisation — embedding process controls that preserve performance as the business scales.",
-          "priority": 4
-        },
-        "priorityActions": {
-          "id": "priority-actions",
-          "title": "Priority Actions",
-          "content": "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
-          "priority": 5
-        },
-        "strategicDirection": {
-          "id": "strategic-direction",
-          "title": "Strategic Direction",
-          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. As operational controls mature, the business will develop predictive visibility into demand cycles, allowing for proactive resource allocation rather than reactive scrambling.",
-          "priority": 6
-        },
-        "finalConclusion": {
-          "id": "final-conclusion",
-          "title": "Conclusion",
-          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. The recommendations in this report are practical, sequenced, and designed to generate visible operational improvement within 30 to 90 days. The management team has the knowledge and resources to execute the stabilisation phase — what is required is structured commitment to the process. With structured implementation of the recommended actions, the business is well-positioned to convert current operational strain into a durable competitive advantage — an operation that grows reliably, serves clients consistently, and retains value at scale.",
-          "priority": 7
-        },
-        "metadata": {
-          "generatedAt": "2026-06-05T11:37:52.796Z",
-          "industry": "event_management",
-          "findingsCount": 0,
-          "rootCauseCount": 0,
-          "recommendationCount": 0,
-          "operationalHealthScore": 85
-        }
-      },
-      "findings": [],
-      "rootCauses": [],
-      "recommendations": [],
-      "benchmarks": [],
-      "visualMetrics": {
-        "operationalHealthLabel": "Operationally Stable",
-        "operationalRiskLevel": "Controlled",
-        "benchmarkStatusBreakdown": {
-          "healthy": 0,
-          "watchlist": 0,
-          "elevated": 0,
-          "critical": 0
-        }
-      }
-    },
-    "runtimeMs": 14
-  },
-  {
-    "id": "c056d8f7-6ca8-4cac-807e-567dcef0d5a6",
-    "clientName": "Trace Test Co",
-    "industry": "event_management",
-    "createdAt": "2026-06-05T11:37:22.495Z",
-    "report": {
-      "metadata": {
-        "generatedAt": "2026-06-05T11:37:22.494Z",
-        "clientName": "Trace Test Co",
-        "industry": "event_management",
-        "operationalHealthScore": 85,
-        "reportVersion": "MGD-V1"
-      },
-      "summary": {
-        "criticalFindings": 0,
-        "highFindings": 0,
-        "criticalRootCauses": 0,
-        "highPriorityRecommendations": 0,
-        "benchmarkAlerts": 0
-      },
-      "narrative": {
-        "executiveOverview": {
-          "id": "executive-overview",
-          "title": "Executive Overview",
-          "content": "This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework. The operational health assessment returned a classification of Operationally Stable, indicating that operations are performing within acceptable parameters.",
-          "priority": 1
-        },
-        "keyFindings": {
-          "id": "key-findings",
-          "title": "Key Operational Findings",
-          "content": "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
-          "priority": 2
-        },
-        "rootCauseSummary": {
-          "id": "root-cause-summary",
-          "title": "Root Cause Analysis",
-          "content": "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
-          "priority": 3
-        },
-        "operationalHealth": {
-          "id": "operational-health",
-          "title": "Operational Health Assessment",
-          "content": "Operational Health Classification: Operationally Stable.  The composite operational health score of 85/100 reflects an operation that has achieved a functional baseline across its core processes. Under these conditions, the focus shifts from stabilisation to optimisation — embedding process controls that preserve performance as the business scales.",
-          "priority": 4
-        },
-        "priorityActions": {
-          "id": "priority-actions",
-          "title": "Priority Actions",
-          "content": "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
-          "priority": 5
-        },
-        "strategicDirection": {
-          "id": "strategic-direction",
-          "title": "Strategic Direction",
-          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. As operational controls mature, the business will develop predictive visibility into demand cycles, allowing for proactive resource allocation rather than reactive scrambling.",
-          "priority": 6
-        },
-        "finalConclusion": {
-          "id": "final-conclusion",
-          "title": "Conclusion",
-          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. The recommendations in this report are practical, sequenced, and designed to generate visible operational improvement within 30 to 90 days. The management team has the knowledge and resources to execute the stabilisation phase — what is required is structured commitment to the process. With structured implementation of the recommended actions, the business is well-positioned to convert current operational strain into a durable competitive advantage — an operation that grows reliably, serves clients consistently, and retains value at scale.",
-          "priority": 7
-        },
-        "metadata": {
-          "generatedAt": "2026-06-05T11:37:22.494Z",
-          "industry": "event_management",
-          "findingsCount": 0,
-          "rootCauseCount": 0,
-          "recommendationCount": 0,
-          "operationalHealthScore": 85
-        }
-      },
-      "findings": [],
-      "rootCauses": [],
-      "recommendations": [],
-      "benchmarks": [],
-      "visualMetrics": {
-        "operationalHealthLabel": "Operationally Stable",
-        "operationalRiskLevel": "Controlled",
-        "benchmarkStatusBreakdown": {
-          "healthy": 0,
-          "watchlist": 0,
-          "elevated": 0,
-          "critical": 0
-        }
-      }
-    },
-    "runtimeMs": 3
-  },
-  {
-    "id": "62c846b9-a16b-4dcc-9202-6c0141f14a5d",
-    "clientName": "Trace Test Co",
-    "industry": "event_management",
-    "createdAt": "2026-06-05T11:37:01.358Z",
-    "report": {
-      "metadata": {
-        "generatedAt": "2026-06-05T11:37:01.357Z",
-        "clientName": "Trace Test Co",
-        "industry": "event_management",
-        "operationalHealthScore": 85,
-        "reportVersion": "MGD-V1"
-      },
-      "summary": {
-        "criticalFindings": 0,
-        "highFindings": 0,
-        "criticalRootCauses": 0,
-        "highPriorityRecommendations": 0,
-        "benchmarkAlerts": 0
-      },
-      "narrative": {
-        "executiveOverview": {
-          "id": "executive-overview",
-          "title": "Executive Overview",
-          "content": "This operational diagnostic report presents the findings of a structured review conducted under the Margin Guard Diagnostics (MGD) framework. The operational health assessment returned a classification of Operationally Stable, indicating that operations are performing within acceptable parameters.",
-          "priority": 1
-        },
-        "keyFindings": {
-          "id": "key-findings",
-          "title": "Key Operational Findings",
-          "content": "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
-          "priority": 2
-        },
-        "rootCauseSummary": {
-          "id": "root-cause-summary",
-          "title": "Root Cause Analysis",
-          "content": "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
-          "priority": 3
-        },
-        "operationalHealth": {
-          "id": "operational-health",
-          "title": "Operational Health Assessment",
-          "content": "Operational Health Classification: Operationally Stable.  The composite operational health score of 85/100 reflects an operation that has achieved a functional baseline across its core processes. Under these conditions, the focus shifts from stabilisation to optimisation — embedding process controls that preserve performance as the business scales.",
-          "priority": 4
-        },
-        "priorityActions": {
-          "id": "priority-actions",
-          "title": "Priority Actions",
-          "content": "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
-          "priority": 5
-        },
-        "strategicDirection": {
-          "id": "strategic-direction",
-          "title": "Strategic Direction",
-          "content": "The operational improvements identified in this review represent the first phase of a structured operational maturity journey. The stabilisation actions in Phase 1 are designed to eliminate the most acute operational risks and establish reliable baseline controls. Once these controls are embedded, the business will be positioned to move from reactive coordination to structured operational management. As operational controls mature, the business will develop predictive visibility into demand cycles, allowing for proactive resource allocation rather than reactive scrambling.",
-          "priority": 6
-        },
-        "finalConclusion": {
-          "id": "final-conclusion",
-          "title": "Conclusion",
-          "content": "A key distinction that this review reinforces: the operational challenges observed are not primarily a consequence of insufficient demand — they are the result of operational complexity that has outpaced the systems and processes managing it. The recommendations in this report are practical, sequenced, and designed to generate visible operational improvement within 30 to 90 days. The management team has the knowledge and resources to execute the stabilisation phase — what is required is structured commitment to the process. With structured implementation of the recommended actions, the business is well-positioned to convert current operational strain into a durable competitive advantage — an operation that grows reliably, serves clients consistently, and retains value at scale.",
-          "priority": 7
-        },
-        "metadata": {
-          "generatedAt": "2026-06-05T11:37:01.356Z",
-          "industry": "event_management",
-          "findingsCount": 0,
-          "rootCauseCount": 0,
-          "recommendationCount": 0,
-          "operationalHealthScore": 85
-        }
-      },
-      "findings": [],
-      "rootCauses": [],
-      "recommendations": [],
-      "benchmarks": [],
-      "visualMetrics": {
-        "operationalHealthLabel": "Operationally Stable",
-        "operationalRiskLevel": "Controlled",
-        "benchmarkStatusBreakdown": {
-          "healthy": 0,
-          "watchlist": 0,
-          "elevated": 0,
-          "critical": 0
-        }
-      }
-    },
-    "runtimeMs": 11
   }
 ]

@@ -1,5 +1,461 @@
 [
   {
+    "traceId": "e720897b-98e1-4543-bb25-30269973622e",
+    "createdAt": "2026-06-12T13:28:00.215Z",
+    "steps": [
+      {
+        "step": "Document Processing",
+        "startedAt": "2026-06-12T13:28:00.220Z",
+        "completedAt": "2026-06-12T13:28:00.220Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "documents": 0,
+          "transactions": 0,
+          "clientName": null,
+          "industry": null
+        }
+      },
+      {
+        "step": "Transaction Extraction",
+        "startedAt": "2026-06-12T13:28:00.220Z",
+        "completedAt": "2026-06-12T13:28:00.220Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "transactions": 0
+        }
+      },
+      {
+        "step": "Event Signal Analysis",
+        "startedAt": "2026-06-12T13:28:00.220Z",
+        "completedAt": "2026-06-12T13:28:00.221Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 10,
+        "metadata": {
+          "dispatchFailureRate": 0,
+          "inventoryShortageRate": 0,
+          "substitutionRate": 0,
+          "deliveryDelayRate": 0,
+          "averageDelayMinutes": 0,
+          "damageRecoveryRate": 1,
+          "unrecoveredDamageValue": 0,
+          "inventoryVisibilityScore": 100,
+          "eventReadinessScore": 100,
+          "totalDispatches": 0
+        }
+      },
+      {
+        "step": "Findings Generation",
+        "startedAt": "2026-06-12T13:28:00.221Z",
+        "completedAt": "2026-06-12T13:28:00.221Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "findings": 0,
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "industry": null
+        }
+      },
+      {
+        "step": "Root Cause Generation",
+        "startedAt": "2026-06-12T13:28:00.221Z",
+        "completedAt": "2026-06-12T13:28:00.221Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "rootCauses": 0,
+          "critical": 0,
+          "high": 0
+        }
+      },
+      {
+        "step": "Recommendation Generation",
+        "startedAt": "2026-06-12T13:28:00.221Z",
+        "completedAt": "2026-06-12T13:28:00.221Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "recommendations": 0,
+          "immediate": 0,
+          "thirtyDays": 0,
+          "ninetyDays": 0,
+          "longTerm": 0
+        }
+      },
+      {
+        "step": "Benchmark Generation",
+        "startedAt": "2026-06-12T13:28:00.221Z",
+        "completedAt": "2026-06-12T13:28:00.222Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "benchmarks": 0,
+          "critical": 0,
+          "elevated": 0,
+          "watchlist": 0,
+          "healthy": 0
+        }
+      },
+      {
+        "step": "Narrative Generation",
+        "startedAt": "2026-06-12T13:28:00.222Z",
+        "completedAt": "2026-06-12T13:28:00.223Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 7,
+        "metadata": {
+          "sections": 7,
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "industry": null
+        }
+      },
+      {
+        "step": "Report Composition",
+        "startedAt": "2026-06-12T13:28:00.223Z",
+        "completedAt": "2026-06-12T13:28:00.224Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 1,
+        "metadata": {
+          "reportVersion": "MGD-V1",
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "documents": 0,
+          "transactions": 0,
+          "findings": 0,
+          "rootCauses": 0,
+          "recommendations": 0,
+          "benchmarks": 0
+        }
+      }
+    ]
+  },
+  {
+    "traceId": "9cb7b7b7-ecba-4d9e-a666-4752e98272cd",
+    "createdAt": "2026-06-12T13:25:50.817Z",
+    "steps": [
+      {
+        "step": "Document Processing",
+        "startedAt": "2026-06-12T13:25:50.826Z",
+        "completedAt": "2026-06-12T13:25:50.826Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "documents": 0,
+          "transactions": 0,
+          "clientName": "NSK",
+          "industry": "logistics"
+        }
+      },
+      {
+        "step": "Transaction Extraction",
+        "startedAt": "2026-06-12T13:25:50.827Z",
+        "completedAt": "2026-06-12T13:25:50.827Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "transactions": 0
+        }
+      },
+      {
+        "step": "Event Signal Analysis",
+        "startedAt": "2026-06-12T13:25:50.829Z",
+        "completedAt": "2026-06-12T13:25:50.830Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 10,
+        "metadata": {
+          "dispatchFailureRate": 0,
+          "inventoryShortageRate": 0,
+          "substitutionRate": 0,
+          "deliveryDelayRate": 0,
+          "averageDelayMinutes": 0,
+          "damageRecoveryRate": 1,
+          "unrecoveredDamageValue": 0,
+          "inventoryVisibilityScore": 100,
+          "eventReadinessScore": 100,
+          "totalDispatches": 0
+        }
+      },
+      {
+        "step": "Findings Generation",
+        "startedAt": "2026-06-12T13:25:50.830Z",
+        "completedAt": "2026-06-12T13:25:50.830Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "findings": 0,
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "industry": "logistics"
+        }
+      },
+      {
+        "step": "Root Cause Generation",
+        "startedAt": "2026-06-12T13:25:50.830Z",
+        "completedAt": "2026-06-12T13:25:50.831Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "rootCauses": 0,
+          "critical": 0,
+          "high": 0
+        }
+      },
+      {
+        "step": "Recommendation Generation",
+        "startedAt": "2026-06-12T13:25:50.831Z",
+        "completedAt": "2026-06-12T13:25:50.832Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "recommendations": 0,
+          "immediate": 0,
+          "thirtyDays": 0,
+          "ninetyDays": 0,
+          "longTerm": 0
+        }
+      },
+      {
+        "step": "Benchmark Generation",
+        "startedAt": "2026-06-12T13:25:50.832Z",
+        "completedAt": "2026-06-12T13:25:50.832Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "benchmarks": 0,
+          "critical": 0,
+          "elevated": 0,
+          "watchlist": 0,
+          "healthy": 0
+        }
+      },
+      {
+        "step": "Narrative Generation",
+        "startedAt": "2026-06-12T13:25:50.832Z",
+        "completedAt": "2026-06-12T13:25:50.834Z",
+        "durationMs": 2,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 7,
+        "metadata": {
+          "sections": 7,
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "industry": "logistics"
+        }
+      },
+      {
+        "step": "Report Composition",
+        "startedAt": "2026-06-12T13:25:50.834Z",
+        "completedAt": "2026-06-12T13:25:50.836Z",
+        "durationMs": 2,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 1,
+        "metadata": {
+          "reportVersion": "MGD-V1",
+          "operationalHealthScore": 85,
+          "healthScoreSource": "estimated",
+          "documents": 0,
+          "transactions": 0,
+          "findings": 0,
+          "rootCauses": 0,
+          "recommendations": 0,
+          "benchmarks": 0
+        }
+      }
+    ]
+  },
+  {
+    "traceId": "3af05e04-22c2-4688-8ccb-9f7702397efb",
+    "createdAt": "2026-06-09T06:45:50.726Z",
+    "steps": [
+      {
+        "step": "Document Processing",
+        "startedAt": "2026-06-09T06:45:50.730Z",
+        "completedAt": "2026-06-09T06:45:50.730Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 10,
+        "outputCount": 10,
+        "metadata": {
+          "documents": 10,
+          "transactions": 486,
+          "clientName": "Madetill Event Management (MEM) Sdn. Bhd. (TEST) ",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Transaction Extraction",
+        "startedAt": "2026-06-09T06:45:50.730Z",
+        "completedAt": "2026-06-09T06:45:50.730Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 10,
+        "outputCount": 486,
+        "metadata": {
+          "transactions": 486
+        }
+      },
+      {
+        "step": "Event Signal Analysis",
+        "startedAt": "2026-06-09T06:45:50.730Z",
+        "completedAt": "2026-06-09T06:45:50.733Z",
+        "durationMs": 3,
+        "status": "completed",
+        "inputCount": 486,
+        "outputCount": 10,
+        "metadata": {
+          "dispatchFailureRate": 0,
+          "inventoryShortageRate": 0,
+          "substitutionRate": 0,
+          "deliveryDelayRate": 0,
+          "averageDelayMinutes": 0,
+          "damageRecoveryRate": 1,
+          "unrecoveredDamageValue": 0,
+          "inventoryVisibilityScore": 60,
+          "eventReadinessScore": 100,
+          "totalDispatches": 0
+        }
+      },
+      {
+        "step": "Findings Generation",
+        "startedAt": "2026-06-09T06:45:50.733Z",
+        "completedAt": "2026-06-09T06:45:50.744Z",
+        "durationMs": 11,
+        "status": "completed",
+        "inputCount": 486,
+        "outputCount": 6,
+        "metadata": {
+          "findings": 6,
+          "critical": 0,
+          "high": 1,
+          "medium": 5,
+          "low": 0,
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Root Cause Generation",
+        "startedAt": "2026-06-09T06:45:50.744Z",
+        "completedAt": "2026-06-09T06:45:50.746Z",
+        "durationMs": 2,
+        "status": "completed",
+        "inputCount": 6,
+        "outputCount": 8,
+        "metadata": {
+          "rootCauses": 8,
+          "critical": 0,
+          "high": 0
+        }
+      },
+      {
+        "step": "Recommendation Generation",
+        "startedAt": "2026-06-09T06:45:50.747Z",
+        "completedAt": "2026-06-09T06:45:50.750Z",
+        "durationMs": 3,
+        "status": "completed",
+        "inputCount": 14,
+        "outputCount": 11,
+        "metadata": {
+          "recommendations": 11,
+          "immediate": 3,
+          "thirtyDays": 7,
+          "ninetyDays": 1,
+          "longTerm": 0
+        }
+      },
+      {
+        "step": "Benchmark Generation",
+        "startedAt": "2026-06-09T06:45:50.750Z",
+        "completedAt": "2026-06-09T06:45:50.750Z",
+        "durationMs": 0,
+        "status": "completed",
+        "inputCount": 0,
+        "outputCount": 0,
+        "metadata": {
+          "benchmarks": 0,
+          "critical": 0,
+          "elevated": 0,
+          "watchlist": 0,
+          "healthy": 0
+        }
+      },
+      {
+        "step": "Narrative Generation",
+        "startedAt": "2026-06-09T06:45:50.750Z",
+        "completedAt": "2026-06-09T06:45:50.752Z",
+        "durationMs": 2,
+        "status": "completed",
+        "inputCount": 25,
+        "outputCount": 7,
+        "metadata": {
+          "sections": 7,
+          "operationalHealthScore": 70,
+          "healthScoreSource": "estimated",
+          "industry": "event_management"
+        }
+      },
+      {
+        "step": "Report Composition",
+        "startedAt": "2026-06-09T06:45:50.752Z",
+        "completedAt": "2026-06-09T06:45:50.753Z",
+        "durationMs": 1,
+        "status": "completed",
+        "inputCount": 25,
+        "outputCount": 1,
+        "metadata": {
+          "reportVersion": "MGD-V1",
+          "operationalHealthScore": 70,
+          "healthScoreSource": "estimated",
+          "documents": 10,
+          "transactions": 486,
+          "findings": 6,
+          "rootCauses": 8,
+          "recommendations": 11,
+          "benchmarks": 0
+        }
+      }
+    ]
+  },
+  {
     "traceId": "279625fd-22a0-4e85-bcd9-e43f68d1de10",
     "createdAt": "2026-06-07T07:54:17.574Z",
     "steps": [
