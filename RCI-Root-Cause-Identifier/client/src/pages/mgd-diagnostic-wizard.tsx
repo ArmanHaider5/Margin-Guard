@@ -306,7 +306,7 @@ function Step1Client({
 
 function Step2Documents({
   clientDocs, loadingDocs, selectedDocIds, toggleDoc, toggleAll,
-  uploadedClassified, onFilesSelected, isDragging, setIsDragging, fileInputRef,
+  uploadedClassified, onFilesSelected, isDragging, setIsDragging, fileInputRef, uploading,
 }: {
   clientDocs: ClientDoc[]; loadingDocs: boolean;
   selectedDocIds: Set<string>; toggleDoc: (id: string) => void; toggleAll: () => void;
@@ -314,6 +314,7 @@ function Step2Documents({
   onFilesSelected: (files: FileList | null) => void;
   isDragging: boolean; setIsDragging: (v: boolean) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
+  uploading: boolean;
 }) {
   const allSelected = clientDocs.length > 0 && clientDocs.every(d => selectedDocIds.has(d.id));
 
@@ -376,20 +377,27 @@ function Step2Documents({
       <div>
         <Label>Upload Additional Files</Label>
         <div
-          onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+          onDragOver={e => { e.preventDefault(); if (!uploading) setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
-          onDrop={e => { e.preventDefault(); setIsDragging(false); onFilesSelected(e.dataTransfer.files); }}
-          onClick={() => fileInputRef.current?.click()}
-          className={`rounded-xl border-2 border-dashed p-8 flex flex-col items-center gap-3 cursor-pointer transition-all
-            ${isDragging
-              ? "border-blue-500/60 bg-blue-500/[0.07]"
-              : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}
+          onDrop={e => { e.preventDefault(); setIsDragging(false); if (!uploading) onFilesSelected(e.dataTransfer.files); }}
+          onClick={() => { if (!uploading) fileInputRef.current?.click(); }}
+          className={`rounded-xl border-2 border-dashed p-8 flex flex-col items-center gap-3 transition-all
+            ${uploading
+              ? "border-blue-500/40 bg-blue-500/[0.04] cursor-wait"
+              : isDragging
+                ? "border-blue-500/60 bg-blue-500/[0.07] cursor-pointer"
+                : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04] cursor-pointer"}`}
         >
           <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center">
-            <Upload className="w-5 h-5 text-white/30"/>
+            {uploading
+              ? <Loader2 className="w-5 h-5 text-blue-400 animate-spin"/>
+              : <Upload className="w-5 h-5 text-white/30"/>
+            }
           </div>
           <div className="text-center">
-            <p className="text-[13px] text-white/50 font-medium">Drop files here or click to browse</p>
+            <p className="text-[13px] text-white/50 font-medium">
+              {uploading ? "Uploading…" : "Drop files here or click to browse"}
+            </p>
             <p className="text-[11px] text-white/25 mt-0.5">.xlsx · .csv · .pdf · .docx</p>
           </div>
           <input
@@ -672,6 +680,7 @@ export default function MGDDiagnosticWizard() {
   const [uploadedFiles,    setUploadedFiles]     = useState<File[]>([]);
   const [uploadedClassified, setUploadedClassified] = useState<ClassifiedDocument[]>([]);
   const [isDragging,       setIsDragging]        = useState(false);
+  const [uploading,        setUploading]         = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Step 3 state ───────────────────────────────────────────────────────────
@@ -737,9 +746,11 @@ export default function MGDDiagnosticWizard() {
   }
 
   // Handle uploaded files
-  const handleFilesSelected = useCallback((files: FileList | null) => {
+  const handleFilesSelected = useCallback(async (files: FileList | null) => {
     if (!files) return;
     const arr = Array.from(files);
+
+    // Local classification for the "Detected Document Types" panel
     setUploadedFiles(prev => {
       const existing = new Set(prev.map(f => f.name));
       const fresh = arr.filter(f => !existing.has(f.name));
@@ -747,7 +758,27 @@ export default function MGDDiagnosticWizard() {
       setUploadedClassified(merged.map(f => classifyFilename(f.name)));
       return merged;
     });
-  }, []);
+
+    // Upload to server and refresh the Available Client Documents list
+    if (!selectedId) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      arr.forEach(f => form.append("files", f));
+      await fetch(`/api/admin/clients/${selectedId}/documents`, { method: "POST", body: form });
+
+      // Refresh doc list and auto-select all (including new ones)
+      const res  = await fetch(`/api/admin/clients/${selectedId}/documents`);
+      const data = await res.json();
+      const docs: ClientDoc[] = Array.isArray(data) ? data : [];
+      setClientDocs(docs);
+      setSelectedDocIds(new Set(docs.map(d => d.id)));
+    } catch {
+      // silent — classification panel still shows, user can retry
+    } finally {
+      setUploading(false);
+    }
+  }, [selectedId]);
 
   // Toggle doc selection
   const toggleDoc = useCallback((id: string) => {
@@ -888,6 +919,7 @@ export default function MGDDiagnosticWizard() {
               onFilesSelected={handleFilesSelected}
               isDragging={isDragging} setIsDragging={setIsDragging}
               fileInputRef={fileInputRef}
+              uploading={uploading}
             />
           )}
           {step === 3 && (
