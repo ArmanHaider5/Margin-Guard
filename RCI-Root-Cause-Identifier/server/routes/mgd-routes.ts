@@ -74,6 +74,101 @@ export function registerMGDRoutes(app: Express): void {
     });
   });
 
+  // ── Flat-table extraction helper ───────────────────────────────────────────
+  // Used when detectBlocks returns 0 (summary/pivot/frequency tables that have
+  // no repeating operational block structure, e.g. "Freq of Sales by Customer").
+  //
+  // Strategy:
+  //   1. Scan the first 30 rows for the real header row (first row with ≥2
+  //      non-empty cells where cell[0] is a non-numeric string label).
+  //   2. Run mapColumns on those headers — proper synonyms win automatically.
+  //   3. If no recognised column, fall back to the last non-empty column as
+  //      the "value" column (covers year-count, total, jumlah, etc.).
+  //   4. Emit one synthetic transaction per data row that has a non-empty
+  //      string entity name and at least one positive numeric value.
+  function extractFlatTableTransactions(
+    rawRows:    any[][],
+    srcName:    string,
+    fileName:   string,
+    documentId: string,
+    clientId:   string,
+  ): any[] {
+    const results: any[] = [];
+
+    // ── 1. Find header row ───────────────────────────────────────────────
+    let headerIdx = -1;
+    for (let i = 0; i < Math.min(rawRows.length, 30); i++) {
+      const row = rawRows[i];
+      const nonEmpty = row.filter((c: any) => c !== null && c !== undefined && c !== "");
+      if (nonEmpty.length < 2) continue;
+      const first = String(row[0] ?? "").trim();
+      if (first && isNaN(Number(first))) { headerIdx = i; break; }
+    }
+    if (headerIdx === -1) {
+      console.log(`[MGD][FLAT] "${srcName}" — no header row found in first 30 rows`);
+      return [];
+    }
+
+    const headers = (rawRows[headerIdx] as any[]).map((h: any) =>
+      String(h ?? "").toLowerCase().trim(),
+    );
+    console.log(`[MGD][FLAT] "${srcName}" — header row ${headerIdx}: ${JSON.stringify(headers.slice(0, 8))}`);
+
+    // ── 2. Map recognised columns ────────────────────────────────────────
+    const { columnMap } = mapColumns(headers);
+    let valueColIdx: number | undefined =
+      columnMap.quantityOut ?? columnMap.value ?? columnMap.balance ?? columnMap.quantityIn;
+
+    // ── 3. Fallback: "total"/"jumlah" column or last non-empty column ────
+    if (valueColIdx === undefined) {
+      for (let c = 1; c < headers.length; c++) {
+        if (/total|jumlah|sum|grand|kekerapan|freq/.test(headers[c])) {
+          valueColIdx = c; break;
+        }
+      }
+    }
+    if (valueColIdx === undefined) {
+      for (let c = headers.length - 1; c >= 1; c--) {
+        if (headers[c]) { valueColIdx = c; break; }
+      }
+    }
+    if (valueColIdx === undefined) {
+      console.log(`[MGD][FLAT] "${srcName}" — no value column found`);
+      return [];
+    }
+    console.log(`[MGD][FLAT] "${srcName}" — value column = ${valueColIdx} ("${headers[valueColIdx]}")`);
+
+    // ── 4. Emit one record per data row ──────────────────────────────────
+    for (let i = headerIdx + 1; i < rawRows.length; i++) {
+      const row  = rawRows[i] as any[];
+      const name = String(row[0] ?? "").trim();
+      if (!name || !isNaN(Number(name))) continue;    // skip blanks / sub-totals
+
+      // Sum all numeric cells in this row as a fallback quantity
+      let qty = Number(row[valueColIdx]);
+      if (isNaN(qty) || qty <= 0) {
+        // Try row-sum of all numeric cells beyond col 0
+        const rowSum = row
+          .slice(1)
+          .reduce((acc: number, c: any) => acc + (isNaN(Number(c)) ? 0 : Number(c)), 0);
+        qty = rowSum;
+      }
+      if (qty <= 0) continue;
+
+      results.push({
+        entityName:  name,
+        description: srcName,
+        quantityOut: qty,
+        value:       qty,
+        sourceFile:  fileName,
+        documentId,
+        clientId,
+      });
+    }
+    console.log(`[MGD][FLAT] "${srcName}" — extracted ${results.length} record(s) from flat table`);
+    return results;
+  }
+
   // ── POST /api/mgd/run ───────────────────────────────────────────────────────
   // Full pipeline: findings → root causes → recommendations → benchmarks →
   // narrative → composed report.
@@ -81,7 +176,7 @@ export function registerMGDRoutes(app: Express): void {
   // When `selectedDocuments` (array of document IDs) is present in the body,
   // this handler loads each document from storage, extracts transactions from
   // any structured spreadsheet sheets via detectBlocks → mapColumns → parseRow,
-  // and fails with 400 if no transactions could be extracted.
+  // and continues as baseline analysis if no transactions could be extracted.
   app.post("/api/mgd/run", async (req: Request, res: Response) => {
     console.log("[MGD][ROUTE_VERSION]", "EXTRACTION_BUILD_V1");
     const t0 = Date.now();
@@ -195,7 +290,19 @@ export function registerMGDRoutes(app: Express): void {
               }
 
               if (blocks.length === 0) {
-                console.log(`[AUDIT]   → detectBlocks returned 0 blocks — STOP at this source`);
+                // ── Flat-table fallback ─────────────────────────────────────
+                // Summary / pivot / frequency sheets (e.g. "Freq of Sales by
+                // Customer") have no repeating block structure but still contain
+                // real operational data (entity names + numeric counts / totals).
+                const flatTxs = extractFlatTableTransactions(
+                  rawRows, srcName, doc.fileName, doc.id, doc.clientId,
+                );
+                if (flatTxs.length > 0) {
+                  console.log(`[AUDIT]   → FLAT TABLE FALLBACK: ${flatTxs.length} record(s) from "${srcName}"`);
+                  for (const tx of flatTxs) { transactions.push(tx); docTxs++; }
+                } else {
+                  console.log(`[AUDIT]   → detectBlocks=0, flat-table=0 — no data in "${srcName}"`);
+                }
                 continue;
               }
 
