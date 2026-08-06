@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "paws-residence",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:\\Projects\\ScopeOptix\\paws-residence", "run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "paws-residence-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:\\Projects\\ScopeOptix\\paws-residence", "run", "start", "--", "-p", "3001"],
+      "port": 3001
+    }
+  ]
+}
