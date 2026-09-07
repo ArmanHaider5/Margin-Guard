@@ -9,6 +9,30 @@ import connectPg from "connect-pg-simple";
 import { Pool } from "pg";
 import { storage } from "./storage";
 
+/**
+ * LOCAL DEV AUTH BYPASS — NOT FOR PRODUCTION.
+ *
+ * Real login below is wired to Replit's own OIDC provider (REPL_ID /
+ * ISSUER_URL), which cannot be satisfied outside an actual Replit
+ * deployment — the callback URL Replit validates against is tied to the
+ * Repl's own domain, not localhost. Setting LOCAL_DEV_AUTH=true in .env
+ * replaces the entire OIDC flow with one fixed, admin-role dev user, so the
+ * app can run and be clicked through locally. Every request is treated as
+ * already logged in as this user. This must never be set in a real
+ * deployment — nothing below this block is touched when the flag is unset.
+ */
+const DEV_BYPASS = process.env.LOCAL_DEV_AUTH === "true";
+const DEV_USER_ID = "dev-local-user";
+const DEV_USER = {
+  claims: {
+    sub: DEV_USER_ID,
+    email: "dev@localhost",
+    first_name: "Dev",
+    last_name: "User",
+  },
+  expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365,
+};
+
 const getOidcConfig = memoize(
   async () => {
     return await client.discovery(
@@ -66,6 +90,27 @@ async function upsertUser(claims: any) {
 }
 
 export async function setupAuth(app: Express) {
+  if (DEV_BYPASS) {
+    console.log(
+      `[auth] LOCAL_DEV_AUTH=true — real login is bypassed. Every request is treated as logged in as "${DEV_USER_ID}" (role: admin).`,
+    );
+    await storage.upsertUser({
+      id: DEV_USER_ID,
+      email: DEV_USER.claims.email,
+      firstName: DEV_USER.claims.first_name,
+      lastName: DEV_USER.claims.last_name,
+      role: "admin",
+    });
+    app.use((req, _res, next) => {
+      (req as any).user = DEV_USER;
+      (req as any).isAuthenticated = () => true;
+      next();
+    });
+    app.get("/api/login", (_req, res) => res.redirect("/"));
+    app.get("/api/logout", (_req, res) => res.redirect("/"));
+    return;
+  }
+
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(passport.initialize());
@@ -134,6 +179,8 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  if (DEV_BYPASS) return next();
+
   const user = req.user as any;
 
   // Debug logging

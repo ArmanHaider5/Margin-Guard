@@ -89,7 +89,10 @@ export default async function runApp(
   server.listen({
     port,
     host: "0.0.0.0",
-    reusePort: true,
+    // reusePort (SO_REUSEPORT) is a Replit-hosting requirement — Windows
+    // sockets don't support it at all (throws ENOTSUP), so it's only
+    // passed on platforms that actually support it.
+    ...(process.platform !== "win32" ? { reusePort: true } : {}),
   }, () => {
     log(`serving on port ${port}`);
   });

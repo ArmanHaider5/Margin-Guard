@@ -143,8 +143,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount execution routes
   app.use("/api/execution", executionRoutes);
 
-  // Mount MGD routes
-  registerMGDRoutes(app);
+  // MGD routes are mounted further down, once `isAdmin` exists (see there) —
+  // registration order here has no effect on request routing, since none of
+  // /api/mgd/* overlaps any other mounted path.
 
   // Auth routes - returns null for unauthenticated users (not 401)
   app.get('/api/auth/user', async (req: any, res) => {
@@ -509,6 +510,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("[isAdmin] PASSED");
     next();
   };
+
+  // Mount MGD routes — every /api/mgd/* route except the health probe is
+  // guarded by [isAuthenticated, isAdmin], the same pattern every other
+  // /api/admin/* route in this file already uses. Previously mounted with
+  // no auth guard at all (server/routes/mgd-routes.ts's own file header
+  // used to say so explicitly); this closes that gap.
+  registerMGDRoutes(app, [isAuthenticated, isAdmin]);
 
   // Get admin dashboard stats
   app.get("/api/admin/stats", isAuthenticated, isAdmin, async (req: any, res) => {
