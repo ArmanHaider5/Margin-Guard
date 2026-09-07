@@ -303,6 +303,29 @@ export default function MGDRunnerPage() {
         </div>
       </nav>
 
+      {/*
+        DEVELOPER TEST HARNESS — NOT A CLIENT DIAGNOSTIC TOOL.
+        This page always runs the real /api/mgd/run pipeline against a fixed
+        set of 12 hardcoded fictional transactions (MOCK_TRANSACTIONS below),
+        regardless of the "Client Name" typed in below — that field labels
+        the output, it does not change what gets analyzed. Its only purpose
+        is exercising the real MGD engines against known fixture data during
+        development. No normal-user navigation links here (verified by
+        server/__tests__/mgd-route-classification.test.ts); the canonical,
+        real-client entry point is /mgd/diagnostic.
+      */}
+      <div className="mx-auto max-w-7xl px-6 pt-4">
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+          <p className="text-xs text-amber-800 leading-relaxed">
+            <span className="font-bold uppercase tracking-wide">Developer test harness</span> — not a real client
+            diagnostic. Every run analyzes the same fixed mock transaction set below, no matter what client name
+            is entered. For a real diagnostic, use{" "}
+            <Link href="/mgd/diagnostic"><a className="underline font-semibold hover:text-amber-950">New Diagnostic</a></Link>.
+          </p>
+        </div>
+      </div>
+
       <div className="mx-auto max-w-7xl px-6 py-10">
         <div className="flex flex-col xl:flex-row gap-8 items-start">
 
@@ -311,10 +334,9 @@ export default function MGDRunnerPage() {
 
             {/* Header */}
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 leading-tight">MGD Runner</h1>
+              <h1 className="text-2xl font-bold text-slate-900 leading-tight">MGD Runner <span className="text-sm font-semibold text-amber-600 align-middle">(Dev Harness)</span></h1>
               <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
-                Operational intelligence pipeline for Margin Guard Diagnostics.
-                Configure and execute a full diagnostic run.
+                Internal pipeline test harness for Margin Guard Diagnostics — not for client-facing use.
               </p>
             </div>
 

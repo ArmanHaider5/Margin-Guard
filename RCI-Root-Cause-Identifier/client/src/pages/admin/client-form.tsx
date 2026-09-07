@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation, useParams } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,9 +62,24 @@ const industries = [
   { id: "other", label: "Other" },
 ];
 
+// Shape returned by GET/PATCH /api/admin/clients/:id (shared/schema.ts's
+// `clients` table). Only `name` and `industry` overlap with fields the form
+// below actually collects — `description`, the contact fields, and the
+// analysis-period fields are not real columns and are not sent or received
+// here; they are decorative on both create and edit (see the note on
+// `clientFormSchema` above).
+interface StoredClient {
+  id:       string;
+  name:     string;
+  industry: string;
+}
+
 export default function ClientForm() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const params = useParams<{ id?: string }>();
+  const clientId = params.id;
+  const isEditMode = !!clientId;
 
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientFormSchema),
@@ -79,6 +94,28 @@ export default function ClientForm() {
       analysisPeriodEnd: "",
     },
   });
+
+  // In edit mode, load the real persisted record so the form reflects what
+  // is actually saved (name/industry only — see StoredClient above) rather
+  // than reusing whatever the create form's blank defaults happened to be.
+  const {
+    data: existingClient,
+    isLoading: isLoadingClient,
+    isError: isClientLoadError,
+  } = useQuery<StoredClient>({
+    queryKey: ["/api/admin/clients", clientId],
+    enabled: isEditMode,
+  });
+
+  useEffect(() => {
+    if (existingClient) {
+      form.reset({
+        ...form.getValues(),
+        name: existingClient.name,
+        industry: existingClient.industry,
+      });
+    }
+  }, [existingClient]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createClient = useMutation({
     mutationFn: async (data: ClientFormData) => {
@@ -103,9 +140,111 @@ export default function ClientForm() {
     },
   });
 
+  // Wires the existing PATCH /api/admin/clients/:id endpoint (already
+  // auth-gated, already implemented in server/system/routes.ts) — this form
+  // previously always POSTed a brand-new client even when the route was
+  // "/admin/clients/:id/edit", silently creating a duplicate instead of
+  // editing. Only name/industry are sent: the only fields this form both
+  // collects and the server persists.
+  const updateClient = useMutation({
+    mutationFn: async (data: ClientFormData) => {
+      const response = await apiRequest("PATCH", `/api/admin/clients/${clientId}`, {
+        name: data.name,
+        industry: data.industry,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/clients", clientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast({
+        title: "Client updated",
+        description: "The client organization has been updated successfully.",
+      });
+      navigate("/admin/clients");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update client",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: ClientFormData) => {
-    createClient.mutate(data);
+    if (isEditMode) {
+      updateClient.mutate(data);
+    } else {
+      createClient.mutate(data);
+    }
   };
+
+  const isSaving = isEditMode ? updateClient.isPending : createClient.isPending;
+
+  // Edit mode, still loading the record to edit: render only the header
+  // chrome so the form below never briefly shows blank/default fields for
+  // an existing client.
+  if (isEditMode && isLoadingClient) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="border-b">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <Link href="/admin/clients">
+                <Button variant="ghost" size="icon" data-testid="button-back">
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold">Edit Client</h1>
+                <p className="text-muted-foreground">Loading client details…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Edit mode, but the client couldn't be loaded (deleted, bad id, etc.):
+  // show a clear error instead of silently falling through to the create
+  // form, which would let the user believe they're editing this client
+  // while actually submitting a brand-new one.
+  if (isEditMode && isClientLoadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="border-b">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <Link href="/admin/clients">
+                <Button variant="ghost" size="icon" data-testid="button-back">
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold">Edit Client</h1>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-destructive" data-testid="text-client-load-error">
+                This client could not be loaded — it may have been deleted, or the link may be
+                invalid. No changes have been made.
+              </p>
+              <Link href="/admin/clients">
+                <Button variant="outline" className="mt-4">Back to Clients</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,8 +257,12 @@ export default function ClientForm() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold" data-testid="text-form-title">Add New Client</h1>
-              <p className="text-muted-foreground">Create a new client organization</p>
+              <h1 className="text-2xl font-bold" data-testid="text-form-title">
+                {isEditMode ? "Edit Client" : "Add New Client"}
+              </h1>
+              <p className="text-muted-foreground">
+                {isEditMode ? "Update this client organization" : "Create a new client organization"}
+              </p>
             </div>
           </div>
         </div>
@@ -165,7 +308,17 @@ export default function ClientForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Industry *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      {/*
+                        `value` (controlled), not `defaultValue` (uncontrolled
+                        — Radix Select only reads it once, at mount). Edit
+                        mode populates this field via `form.reset()` after an
+                        async fetch, which happens after mount — with
+                        `defaultValue` the trigger stayed stuck on the
+                        placeholder even though the real value was already
+                        correctly present in form state (and would still have
+                        been submitted correctly on save, just invisibly).
+                      */}
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-industry">
                             <SelectValue placeholder="Select industry" />
@@ -316,13 +469,13 @@ export default function ClientForm() {
                       Cancel
                     </Button>
                   </Link>
-                  <Button 
-                    type="submit" 
-                    disabled={createClient.isPending}
+                  <Button
+                    type="submit"
+                    disabled={isSaving}
                     data-testid="button-submit"
                   >
-                    {createClient.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Create Client
+                    {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    {isEditMode ? "Save Changes" : "Create Client"}
                   </Button>
                 </div>
               </form>

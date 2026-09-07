@@ -46,8 +46,10 @@ type SortKey = "newest" | "oldest";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function healthScore(r: StoredMGDReport): number {
-  return r.report?.metadata?.operationalHealthScore ?? 0;
+function healthScore(r: StoredMGDReport): number | null {
+  // Preserve null (not assessed) rather than coalescing to 0 — 0 is a
+  // legitimate real score (catastrophic, measured) with a different meaning.
+  return r.report?.metadata?.operationalHealthScore ?? null;
 }
 
 function riskLevel(r: StoredMGDReport): string {
@@ -72,7 +74,12 @@ function fmtDate(iso: string): string {
 
 // ── Health score config ───────────────────────────────────────────────────────
 
-function healthConfig(score: number) {
+function healthConfig(score: number | null) {
+  // null means "not assessed" — no transactional evidence existed. This
+  // must render as a neutral state, never as "Critical" (which a naive
+  // `?? 0` coalesce would produce, since 0 falls into the same band as a
+  // real catastrophic measured score).
+  if (score == null) return { label: "Not Assessed", color: "text-white/40", bg: "bg-white/5", border: "border-white/10", bar: "bg-white/20" };
   if (score >= 80) return { label: "Healthy",       color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/30", bar: "bg-emerald-500" };
   if (score >= 65) return { label: "Watchlist",     color: "text-blue-400",    bg: "bg-blue-500/15",    border: "border-blue-500/30",    bar: "bg-blue-500"    };
   if (score >= 50) return { label: "Elevated Risk", color: "text-amber-400",   bg: "bg-amber-500/15",   border: "border-amber-500/30",   bar: "bg-amber-500"   };
@@ -170,7 +177,21 @@ function EmptyState() {
         <p className="text-white/50 text-sm font-medium">No reports available yet</p>
         <p className="text-white/25 text-xs mt-1">Run a diagnostic to generate your first report</p>
       </div>
-      <Link href="/mgd/run">
+      {/*
+        Previously linked to /mgd/run, a page that unconditionally runs the
+        real pipeline against 12 hardcoded fictional transactions
+        (MOCK_TRANSACTIONS in mgd-runner-page.tsx) with no real-data path at
+        all, then presents the result exactly like any other diagnostic
+        report — normal users clicking "Run First Diagnostic" from an empty
+        archive had no way to know the report they'd get back described a
+        fake client. That is the "obviously dangerous, demo-only production
+        affordance exposed to normal users" this milestone's architectural
+        protection explicitly permits removing without touching /mgd/run
+        itself or the undecided three-diagnostic-systems question (see the
+        milestone report). Repointed to the real, wizard-driven diagnostic
+        entry point already used everywhere else in the app.
+      */}
+      <Link href="/mgd/diagnostic">
         <a className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 text-sm font-medium hover:bg-blue-500/30 transition-all">
           <Play className="w-3.5 h-3.5" />
           Run First Diagnostic
@@ -229,23 +250,24 @@ export default function MGDReportArchive() {
   });
 
   // ── PDF export ─────────────────────────────────────────────────────────────
+  // Exports the exact persisted report by id — the server reads it back from
+  // the same store this archive lists from, it never re-runs a diagnostic.
+
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   async function handleExportPdf(r: StoredMGDReport) {
     try {
       setPdfLoadingId(r.id);
+      setPdfError(null);
       const res = await fetch("/api/mgd/export-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          findings:        r.report.summary ? [] : [],
-          rootCauses:      [],
-          recommendations: [],
-          benchmarks:      [],
-          narrative:       null,
-          report:          r.report,
-        }),
+        body: JSON.stringify({ reportId: r.id }),
       });
-      if (!res.ok) throw new Error("PDF failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "PDF export failed");
+      }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a");
@@ -255,21 +277,24 @@ export default function MGDReportArchive() {
       URL.revokeObjectURL(url);
     } catch (e) {
       console.error("[MGD][ARCHIVE] PDF export failed:", e);
+      setPdfError(e instanceof Error ? e.message : "PDF export failed");
     } finally {
       setPdfLoadingId(null);
     }
   }
 
-  // ── View / Present — store in sessionStorage then navigate ─────────────────
+  // ── View / Present — navigate by canonical report id ────────────────────
+  // Both destinations independently resolve the same persisted report via
+  // GET /api/mgd/reports/:id — no report object is passed through route
+  // state or sessionStorage, so View and Present always show the exact same
+  // report, reloadable and shareable via the URL alone.
 
   function handleView(r: StoredMGDReport) {
-    try { sessionStorage.setItem("mgd-selected-report", JSON.stringify(r.report)); } catch {}
-    navigate("/mgd/report");
+    navigate(`/mgd/report?id=${r.id}`);
   }
 
   function handlePresent(r: StoredMGDReport) {
-    try { sessionStorage.setItem("mgd-selected-report", JSON.stringify(r.report)); } catch {}
-    navigate("/mgd/present");
+    navigate(`/mgd/present?id=${r.id}`);
   }
 
   // ── Derived data ───────────────────────────────────────────────────────────
@@ -302,7 +327,7 @@ export default function MGDReportArchive() {
     const total   = reports.length;
     const latest  = reports.length ? reports.reduce((a, b) => a.createdAt > b.createdAt ? a : b).createdAt : null;
     const clients = new Set(reports.map(r => r.clientId ?? r.clientName ?? r.id)).size;
-    const scores  = reports.map(healthScore).filter(s => s > 0);
+    const scores  = reports.map(healthScore).filter((s): s is number => s != null && s > 0);
     const avg     = scores.length ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length) : 0;
     return { total, latest, clients, avg };
   }, [reports]);
@@ -338,7 +363,8 @@ export default function MGDReportArchive() {
               <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
               Refresh
             </button>
-            <Link href="/mgd/run">
+            {/* See the comment on the equivalent empty-state CTA above — same reason, same fix. */}
+            <Link href="/mgd/diagnostic">
               <a className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-500/35 text-blue-300 text-sm font-medium hover:bg-blue-500/30 transition-all">
                 <Play className="w-3.5 h-3.5" />
                 Run New Diagnostic
@@ -417,6 +443,14 @@ export default function MGDReportArchive() {
           </div>
         </GlassCard>
 
+        {/* ── PDF export error ── */}
+        {pdfError && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-300 text-[12px]">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            {pdfError}
+          </div>
+        )}
+
         {/* ── Reports Table ── */}
         <GlassCard className="overflow-hidden">
           {/* Table header */}
@@ -484,7 +518,7 @@ export default function MGDReportArchive() {
 
                     {/* Health Score */}
                     <div className="min-w-0 flex flex-col justify-center">
-                      {score > 0 ? (
+                      {score != null ? (
                         <>
                           <span className={`text-sm font-bold ${color}`}>{score}</span>
                           <HealthBar score={score} />

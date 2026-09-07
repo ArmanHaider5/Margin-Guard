@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Activity, AlertTriangle, BarChart3, Building2,
-  ChevronRight, Clock, FileText, Layers,
-  Lightbulb, Monitor, Play, Plus,
-  Shield, TrendingUp, Upload, Users, Zap,
-  CheckCircle2, Circle, RefreshCw, ArrowRight,
-  Cpu, Database,
+  Activity, BarChart3, Building2,
+  ChevronRight, FileText, Layers,
+  Monitor, Play, Plus,
+  Users,
+  Circle, ArrowRight,
+  Database,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -30,26 +30,6 @@ interface Client {
   updatedAt?:   string;
 }
 
-interface AttentionItem {
-  id:       string;
-  severity: "CRITICAL" | "ELEVATED" | "WATCHLIST";
-  client:   string;
-  alert:    string;
-  metric?:  string;
-  value?:   string;
-  ts:       string;
-}
-
-// ── Mock data for queue + activity (until dedicated endpoints exist) ───────────
-
-const MOCK_ATTENTION: AttentionItem[] = [
-  { id: "a1", severity: "CRITICAL", client: "Acme Events Sdn. Bhd.",    alert: "Refund Leakage Rate breach",       metric: "Refund Rate",    value: "14.2%", ts: new Date(Date.now() - 1_800_000).toISOString() },
-  { id: "a2", severity: "CRITICAL", client: "Acme Events Sdn. Bhd.",    alert: "Manual Workflow Dependency spike",  metric: "MWD",            value: "78%",   ts: new Date(Date.now() - 3_600_000).toISOString() },
-  { id: "a3", severity: "ELEVATED", client: "Pinnacle F&B Holdings",    alert: "Inventory Discrepancy elevated",   metric: "Discrepancy",    value: "11.8%", ts: new Date(Date.now() - 7_200_000).toISOString() },
-  { id: "a4", severity: "ELEVATED", client: "Acme Events Sdn. Bhd.",    alert: "Overtime Exposure exceeds threshold", metric: "OT Rate",     value: "34%",   ts: new Date(Date.now() - 10_800_000).toISOString() },
-  { id: "a5", severity: "WATCHLIST",client: "Pinnacle F&B Holdings",    alert: "Inventory Loss trending upward",   metric: "Loss Rate",      value: "5.8%",  ts: new Date(Date.now() - 18_000_000).toISOString() },
-];
-
 // ── Utility helpers ───────────────────────────────────────────────────────────
 
 function relativeTime(iso: string): string {
@@ -63,12 +43,6 @@ function industryLabel(raw: string): string {
     .replace(/Fnb/g, "F&B")
     .replace(/Qsr/g, "QSR") || "—";
 }
-
-const SEV_COLORS: Record<string, { ring: string; badge: string; dot: string; text: string }> = {
-  CRITICAL: { ring: "border-red-500/30",    badge: "bg-red-500/15 text-red-300 border border-red-500/30",    dot: "bg-red-400",    text: "text-red-400" },
-  ELEVATED: { ring: "border-orange-500/30", badge: "bg-orange-500/15 text-orange-300 border border-orange-500/30", dot: "bg-orange-400", text: "text-orange-400" },
-  WATCHLIST:{ ring: "border-amber-500/30",  badge: "bg-amber-500/15 text-amber-300 border border-amber-500/30",  dot: "bg-amber-400",  text: "text-amber-400" },
-};
 
 const ACT_ICONS: Record<string, React.ElementType> = {
   analysis: BarChart3,
@@ -147,14 +121,15 @@ function ExecutiveStatCard({
 }
 
 function ClientHealthCard({ client }: { client: Client }) {
-  const healthScore = Math.floor(50 + Math.random() * 45); // placeholder until live run
-  const color = healthScore >= 80 ? "#34d399" : healthScore >= 65 ? "#fbbf24" : "#fb923c";
-
+  // No live per-client health score exists yet outside a completed
+  // diagnostic run (server/mgd/report-store.ts holds one per report, not
+  // per client) — shown honestly as "not yet assessed" rather than a
+  // fabricated number. This card previously showed Math.random()-generated
+  // placeholder score; a real per-client rollup is future work, not
+  // invented here.
   return (
     <Link href="/mgd/diagnostic">
       <GlassCard className="p-4 cursor-pointer hover:bg-white/8 hover:border-white/20 transition-all duration-300 group relative overflow-hidden">
-        {/* Left accent line */}
-        <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl" style={{ background: color }} />
         <div className="flex items-start justify-between mb-3">
           <div>
             <div className="font-semibold text-sm text-white leading-snug mb-0.5 group-hover:text-blue-200 transition-colors">
@@ -165,14 +140,10 @@ function ClientHealthCard({ client }: { client: Client }) {
             </div>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-lg font-bold" style={{ color }}>{healthScore}</span>
-            <span className="text-[9px] text-white/25">/ 100</span>
+            <span className="text-[11px] font-medium text-white/25 italic">Not yet assessed</span>
           </div>
         </div>
-        <div className="w-full bg-white/5 rounded-full h-1.5 mb-3">
-          <div className="h-1.5 rounded-full transition-all duration-700" style={{ width: `${healthScore}%`, background: color }} />
-        </div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-3">
           <div className="flex items-center gap-1.5">
             <div className={`w-1.5 h-1.5 rounded-full ${client.status === "active" ? "bg-emerald-400" : "bg-white/20"}`} />
             <span className="text-[10px] text-white/30 capitalize">{client.status}</span>
@@ -185,39 +156,23 @@ function ClientHealthCard({ client }: { client: Client }) {
   );
 }
 
-function OperationalAlertCard({ item }: { item: AttentionItem }) {
-  const sev = SEV_COLORS[item.severity] ?? SEV_COLORS.WATCHLIST;
-  return (
-    <div className={`p-3 rounded-lg border bg-white/3 ${sev.ring} flex items-start gap-3`}>
-      <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${sev.dot}`}
-        style={{ boxShadow: item.severity === "CRITICAL" ? "0 0 6px rgba(248,113,113,0.7)" : "none" }} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-          <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${sev.badge}`}>
-            {item.severity}
-          </span>
-          <span className="text-[10px] text-white/35 truncate">{item.client}</span>
-        </div>
-        <div className="text-xs text-white/65 leading-snug">{item.alert}</div>
-        {item.metric && (
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="text-[9px] text-white/25">{item.metric}:</span>
-            <span className={`text-[9px] font-bold ${sev.text}`}>{item.value}</span>
-          </div>
-        )}
-        <div className="text-[9px] text-white/20 mt-1">{relativeTime(item.ts)}</div>
-      </div>
-    </div>
-  );
-}
-
 function ActivityTimeline({ items }: { items: AdminStats["recentActivity"] }) {
-  const augmented = [
-    ...items.map(i => ({ ...i, icon: ACT_ICONS[i.type] ?? Activity, colorCls: ACT_COLORS[i.type] ?? "text-blue-400 bg-blue-500/15" })),
-    { id: "sys1", type: "analysis" as const, name: "MGD Benchmark Engine — 9 metrics evaluated", date: new Date(Date.now() - 5 * 60_000).toISOString(), icon: BarChart3, colorCls: "text-blue-400 bg-blue-500/15" },
-    { id: "sys2", type: "document" as const, name: "PDF Report generated — Acme Events Sdn. Bhd.", date: new Date(Date.now() - 15 * 60_000).toISOString(), icon: FileText, colorCls: "text-violet-400 bg-violet-500/15" },
-    { id: "sys3", type: "analysis" as const, name: "MGD Pipeline executed — 4 CRITICAL benchmarks", date: new Date(Date.now() - 35 * 60_000).toISOString(), icon: Cpu, colorCls: "text-blue-400 bg-blue-500/15" },
-  ].slice(0, 8);
+  // Only real activity from GET /api/admin/stats is shown — this used to
+  // unconditionally append three fixed, fictional entries ("PDF Report
+  // generated — Acme Events Sdn. Bhd." etc.) to every render, interleaved
+  // with genuine activity so the two were visually indistinguishable.
+  if (items.length === 0) {
+    return (
+      <div className="py-6 flex flex-col items-center gap-2 text-center">
+        <Circle className="w-5 h-5 text-white/15" />
+        <p className="text-xs text-white/25">No recent activity yet.</p>
+      </div>
+    );
+  }
+
+  const augmented = items
+    .map(i => ({ ...i, icon: ACT_ICONS[i.type] ?? Activity, colorCls: ACT_COLORS[i.type] ?? "text-blue-400 bg-blue-500/15" }))
+    .slice(0, 8);
 
   return (
     <div className="space-y-1">
@@ -301,26 +256,6 @@ function IntelligenceRunPanel({ clients }: { clients: Client[] }) {
           </div>
         )}
 
-        {/* Pipeline readiness */}
-        <div className="mb-5">
-          <div className="text-[9px] font-bold uppercase tracking-widest text-white/25 mb-2">Pipeline Modules Ready</div>
-          <div className="grid grid-cols-2 gap-1.5">
-            {[
-              { label: "Findings Engine",       ok: true },
-              { label: "Root Cause Engine",     ok: true },
-              { label: "Benchmark Engine",      ok: true },
-              { label: "Recommendation Engine", ok: true },
-              { label: "Narrative Engine",      ok: true },
-              { label: "Report Composer",       ok: true },
-            ].map(m => (
-              <div key={m.label} className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-                <span className="text-[10px] text-white/35">{m.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* CTA */}
         <Link href="/mgd/diagnostic">
           <button className={`w-full flex items-center justify-center gap-2 py-3 px-5 rounded-lg font-semibold text-sm transition-all duration-300 ${
@@ -333,44 +268,6 @@ function IntelligenceRunPanel({ clients }: { clients: Client[] }) {
             {selectedClient && <ArrowRight className="w-3.5 h-3.5 ml-auto" />}
           </button>
         </Link>
-      </div>
-    </GlassCard>
-  );
-}
-
-// ── Quick Actions Dock ────────────────────────────────────────────────────────
-
-const ACTIONS = [
-  { label: "New Diagnostic",     icon: Play,      href: "/mgd/diagnostic", color: "#3b82f6", desc: "Start a new MGD diagnostic" },
-  { label: "Report Archive",     icon: FileText,  href: "/mgd/reports", color: "#a855f7", desc: "Browse saved reports" },
-  { label: "Presentation Mode",  icon: Monitor,   href: "/mgd/present", color: "#6366f1", desc: "Boardroom presentation view" },
-  { label: "Report Viewer",      icon: BarChart3, href: "/mgd/report",  color: "#8b5cf6", desc: "Interactive report renderer" },
-  { label: "Upload Documents",   icon: Upload,    href: "/admin/clients",color: "#0ea5e9", desc: "Add transaction data" },
-];
-
-function QuickActionsDock() {
-  return (
-    <GlassCard className="p-4">
-      <div className="text-[9px] font-bold uppercase tracking-widest text-white/25 mb-3">Quick Actions</div>
-      <div className="space-y-2">
-        {ACTIONS.map(a => {
-          const Icon = a.icon;
-          return (
-            <Link key={a.label} href={a.href}>
-              <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 transition-all cursor-pointer group">
-                <div className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${a.color}22`, border: `1px solid ${a.color}44` }}>
-                  <Icon className="w-3.5 h-3.5" style={{ color: a.color }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-white/70 group-hover:text-white/90 transition-colors">{a.label}</div>
-                  <div className="text-[9px] text-white/25">{a.desc}</div>
-                </div>
-                <ChevronRight className="w-3 h-3 text-white/15 group-hover:text-white/35 transition-colors" />
-              </div>
-            </Link>
-          );
-        })}
       </div>
     </GlassCard>
   );
@@ -494,6 +391,12 @@ export default function MGDDashboard() {
                   Present
                 </button>
               </Link>
+              <Link href="/mgd/report">
+                <button className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium text-white/60 hover:text-white/80 border border-white/10 transition-all">
+                  <FileText className="w-3.5 h-3.5" />
+                  Report Viewer
+                </button>
+              </Link>
             </div>
           </div>
 
@@ -508,9 +411,9 @@ export default function MGDDashboard() {
               loading={statsLoading}
             />
             <ExecutiveStatCard
-              label="Active Diagnostics"
+              label="Active Clients"
               value={stats?.activeClients ?? 0}
-              sub="clients with live data"
+              sub="status = active"
               icon={Activity}
               accent="#10b981"
               loading={statsLoading}
@@ -534,45 +437,26 @@ export default function MGDDashboard() {
           </div>
         </div>
 
-        {/* ── SECTION 2 + 4 — Run Panel + Attention Queue ───────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-          {/* Run Panel — 2 columns */}
-          <div className="lg:col-span-2">
-            {clientsLoading ? (
-              <GlassCard className="p-6 h-full animate-pulse">
-                <div className="h-4 bg-white/10 rounded w-1/3 mb-4" />
-                <div className="h-8 bg-white/10 rounded w-2/3 mb-6" />
-                <div className="h-10 bg-white/10 rounded mb-4" />
-                <div className="h-10 bg-white/10 rounded" />
-              </GlassCard>
-            ) : (
-              <IntelligenceRunPanel clients={allClients} />
-            )}
-          </div>
-
-          {/* Attention Queue — 1 column */}
-          <div>
-            <GlassCard className="p-4 h-full">
-              <SectionHeader
-                title="Operational Attention"
-                sub={`${MOCK_ATTENTION.filter(a => a.severity === "CRITICAL").length} critical alerts`}
-                icon={AlertTriangle}
-              />
-              <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 320 }}>
-                {MOCK_ATTENTION.map(item => (
-                  <OperationalAlertCard key={item.id} item={item} />
-                ))}
-              </div>
-              <div className="mt-3 pt-3 border-t border-white/5">
-                <Link href="/mgd/diagnostic">
-                  <button className="w-full text-[10px] text-blue-400/60 hover:text-blue-400 transition-colors flex items-center justify-center gap-1.5">
-                    Start new diagnostic to resolve alerts
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
-                </Link>
-              </div>
+        {/* ── SECTION 2 — Run Panel ─────────────────────────────────────── */}
+        {/*
+          Previously shared this row with an "Operational Attention" panel
+          (MOCK_ATTENTION — fabricated client alerts with fake severities and
+          metrics). No real alerting/attention-queue system exists behind
+          that panel at all, so it was removed rather than replaced with an
+          empty state for a feature that was never real. Run Panel now takes
+          the full row.
+        */}
+        <div className="mb-6">
+          {clientsLoading ? (
+            <GlassCard className="p-6 animate-pulse">
+              <div className="h-4 bg-white/10 rounded w-1/3 mb-4" />
+              <div className="h-8 bg-white/10 rounded w-2/3 mb-6" />
+              <div className="h-10 bg-white/10 rounded mb-4" />
+              <div className="h-10 bg-white/10 rounded" />
             </GlassCard>
-          </div>
+          ) : (
+            <IntelligenceRunPanel clients={allClients} />
+          )}
         </div>
 
         {/* ── SECTION 3 — Active Clients Grid ──────────────────────────────── */}
@@ -617,92 +501,59 @@ export default function MGDDashboard() {
           )}
         </div>
 
-        {/* ── SECTION 5 + 6 — Activity Feed + Quick Actions ────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Activity Feed — 2 columns */}
-          <div className="lg:col-span-2">
-            <GlassCard className="p-4">
-              <SectionHeader
-                title="Intelligence Activity Feed"
-                sub="Diagnostics, reports, and pipeline events"
-                icon={Activity}
-                action={
-                  <div className="flex items-center gap-1.5 text-[9px] text-white/20">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Live
-                  </div>
-                }
-              />
-              {recentAct.length === 0 && !statsLoading ? (
-                <ActivityTimeline items={[]} />
-              ) : statsLoading ? (
-                <div className="space-y-3">
-                  {[0,1,2,3].map(i => (
-                    <div key={i} className="flex items-start gap-3 animate-pulse">
-                      <div className="w-6 h-6 rounded-md bg-white/10 flex-shrink-0" />
-                      <div className="flex-1">
-                        <div className="h-3 bg-white/10 rounded w-3/4 mb-1.5" />
-                        <div className="h-2 bg-white/10 rounded w-1/4" />
-                      </div>
+        {/* ── SECTION 5 — Activity Feed ─────────────────────────────────── */}
+        {/*
+          Previously a 3-column row: this feed, a "Quick Actions" dock
+          duplicating the hero-strip nav above, and a "Pipeline Status" card
+          whose four "Operational" badges had no real health check behind
+          them at all (see the removed Pipeline Modules/Pipeline Status
+          blocks). Both were removed rather than replaced — the hero strip
+          is now this dashboard's one navigation surface (see its own
+          comment above), and no real per-engine health signal exists to
+          honestly show in Pipeline Status's place.
+        */}
+        <div>
+          <GlassCard className="p-4">
+            <SectionHeader
+              title="Intelligence Activity Feed"
+              sub="Diagnostics, reports, and pipeline events"
+              icon={Activity}
+              action={
+                <div className="flex items-center gap-1.5 text-[9px] text-white/20">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live
+                </div>
+              }
+            />
+            {statsLoading ? (
+              <div className="space-y-3">
+                {[0,1,2,3].map(i => (
+                  <div key={i} className="flex items-start gap-3 animate-pulse">
+                    <div className="w-6 h-6 rounded-md bg-white/10 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="h-3 bg-white/10 rounded w-3/4 mb-1.5" />
+                      <div className="h-2 bg-white/10 rounded w-1/4" />
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <ActivityTimeline items={recentAct} />
-              )}
-            </GlassCard>
-          </div>
-
-          {/* Quick Actions Dock — 1 column */}
-          <div className="space-y-3">
-            <QuickActionsDock />
-
-            {/* MGD system status card */}
-            <GlassCard className="p-4">
-              <div className="text-[9px] font-bold uppercase tracking-widest text-white/25 mb-3">Pipeline Status</div>
-              {[
-                { label: "Findings Engine",    status: "Operational", color: "text-emerald-400 bg-emerald-500/15" },
-                { label: "Benchmark Engine",   status: "Operational", color: "text-emerald-400 bg-emerald-500/15" },
-                { label: "Narrative Engine",   status: "Operational", color: "text-emerald-400 bg-emerald-500/15" },
-                { label: "PDF Export",         status: "Operational", color: "text-emerald-400 bg-emerald-500/15" },
-              ].map(s => (
-                <div key={s.label} className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-white/35">{s.label}</span>
-                  <span className={`text-[9px] font-medium px-2 py-0.5 rounded-full ${s.color}`}>{s.status}</span>
-                </div>
-              ))}
-              <div className="mt-3 pt-3 border-t border-white/5">
-                <Link href="/api/mgd/health">
-                  <button className="text-[9px] text-white/20 hover:text-white/40 transition-colors flex items-center gap-1">
-                    <Cpu className="w-3 h-3" />
-                    View API Health
-                  </button>
-                </Link>
+                  </div>
+                ))}
               </div>
-            </GlassCard>
-          </div>
+            ) : (
+              <ActivityTimeline items={recentAct} />
+            )}
+          </GlassCard>
         </div>
 
         {/* Footer */}
-        <div className="mt-10 pt-6 border-t border-white/5 flex items-center justify-between flex-wrap gap-3">
+        {/*
+          Previously duplicated a third copy of the same destinations already
+          in the hero strip above (plus /admin, which renders this identical
+          component). The hero strip is now this dashboard's one navigation
+          surface; /admin/clients remains reachable via "Active Clients →
+          View all" above, so nothing genuinely useful was dropped.
+        */}
+        <div className="mt-10 pt-6 border-t border-white/5">
           <div className="text-[9px] text-white/15 uppercase tracking-widest">
             MGD Operational Intelligence · Scope Optix Sdn. Bhd.
-          </div>
-          <div className="flex items-center gap-4">
-            {[
-              { label: "Dashboard",      href: "/mgd" },
-              { label: "New Diagnostic", href: "/mgd/diagnostic" },
-              { label: "Reports",        href: "/mgd/reports" },
-              { label: "Presentation",   href: "/mgd/present" },
-              { label: "Report Viewer",  href: "/mgd/report" },
-              { label: "Admin Panel",    href: "/admin" },
-            ].map(l => (
-              <Link key={l.label} href={l.href}>
-                <span className="text-[9px] text-white/20 hover:text-white/45 transition-colors uppercase tracking-wider cursor-pointer">
-                  {l.label}
-                </span>
-              </Link>
-            ))}
           </div>
         </div>
 

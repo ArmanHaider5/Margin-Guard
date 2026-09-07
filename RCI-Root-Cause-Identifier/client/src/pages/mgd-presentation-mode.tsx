@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "wouter";
+import { Link, useSearch, useLocation } from "wouter";
 import {
   ArrowLeft, ArrowRight, ChevronLeft, ChevronRight,
   Clock, Maximize2, Minimize2, Pause, Play,
   AlertTriangle, BarChart3, Layers, Lightbulb,
   TrendingUp, Shield, Building2, Activity,
-  CheckCircle2, XCircle, X,
+  CheckCircle2, XCircle, X, Loader2, Inbox,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -35,7 +35,12 @@ interface ExecutiveNarrative {
   keyFindings?: NarrativeSection; priorityActions?: NarrativeSection;
 }
 interface MGDReport {
-  metadata: { generatedAt: string; clientName?: string; industry?: string; operationalHealthScore?: number; reportVersion: string; };
+  id?: string;
+  metadata: {
+    generatedAt: string; clientName?: string; industry?: string;
+    operationalHealthScore?: number; reportVersion: string;
+    evidence?: { level: "NONE" | "PARTIAL" | "SUFFICIENT"; reasons: string[] };
+  };
   summary: { criticalFindings: number; highFindings: number; criticalRootCauses: number; highPriorityRecommendations: number; benchmarkAlerts: number; };
   narrative: ExecutiveNarrative;
   findings: Finding[];
@@ -46,6 +51,14 @@ interface MGDReport {
 }
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
+//
+// DEV/TEST FIXTURE ONLY — never reachable from real navigation. The routed
+// path (/mgd/present?id=...) always fetches a real, persisted report by id
+// (see MGDPresentationMode below); this constant is used only when a caller
+// directly renders <MGDPresentationMode useMock /> outside the router, e.g.
+// for isolated visual testing. It must never become the fallback for a
+// missing or failed real report — see the "status" state machine below,
+// which shows an explicit error/empty state instead.
 
 const MOCK_REPORT: MGDReport = {
   metadata: {
@@ -185,11 +198,15 @@ function ConfBar({ pct, color = "#3b82f6", width = 120 }: { pct: number; color?:
   );
 }
 
-function HealthRing({ score, size = 140 }: { score: number; size?: number }) {
+function HealthRing({ score, size = 140 }: { score: number | null; size?: number }) {
+  // null means "not assessed" — no transactional evidence existed. Rendered
+  // as an empty, neutral-gray ring with "—" rather than a filled, colored
+  // ring for score 0 (which would visually read as "measured, critical").
+  const notAssessed = score == null;
   const r = (size - 16) / 2;
   const circ = 2 * Math.PI * r;
-  const dash = (score / 100) * circ;
-  const color = score >= 80 ? "#34d399" : score >= 65 ? "#fbbf24" : score >= 50 ? "#fb923c" : "#f87171";
+  const dash = notAssessed ? 0 : (score / 100) * circ;
+  const color = notAssessed ? "#64748b" : score >= 80 ? "#34d399" : score >= 65 ? "#fbbf24" : score >= 50 ? "#fb923c" : "#f87171";
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -204,7 +221,7 @@ function HealthRing({ score, size = 140 }: { score: number; size?: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-bold text-white leading-none" style={{ fontSize: size * 0.23 }}>{score}</span>
+        <span className="font-bold text-white leading-none" style={{ fontSize: size * 0.23 }}>{notAssessed ? "—" : score}</span>
         <span className="text-white/40 font-medium" style={{ fontSize: size * 0.085 }}>/100</span>
       </div>
     </div>
@@ -279,7 +296,9 @@ function SlideTransition({ children, slideKey }: { children: React.ReactNode; sl
 // ── SLIDE 1 — Executive Health Overview ───────────────────────────────────────
 
 function Slide1Cover({ report }: { report: MGDReport }) {
-  const score = report.metadata.operationalHealthScore ?? 0;
+  // Preserve null (not assessed) rather than coalescing to 0 — 0 is a
+  // legitimate real score (catastrophic, measured) with a different meaning.
+  const score = report.metadata.operationalHealthScore ?? null;
   const { operationalHealthLabel, operationalRiskLevel, benchmarkStatusBreakdown: bsd } = report.visualMetrics;
 
   return (
@@ -331,7 +350,7 @@ function Slide1Cover({ report }: { report: MGDReport }) {
         <div className="flex flex-col items-center gap-6">
           <div className="relative">
             <div className="absolute inset-0 rounded-full blur-2xl opacity-30"
-              style={{ background: score >= 65 ? "#fbbf24" : "#f87171", transform: "scale(1.3)" }} />
+              style={{ background: score == null ? "#94a3b8" : score >= 65 ? "#fbbf24" : "#f87171", transform: "scale(1.3)" }} />
             <HealthRing score={score} size={180} />
           </div>
           <div className="text-center">
@@ -641,45 +660,59 @@ function Slide5Recommendations({ report }: { report: MGDReport }) {
 
 function Slide6Strategic({ report }: { report: MGDReport }) {
   const sec = report.narrative?.strategicDirection;
-  const health = report.narrative?.operationalHealth;
+  // "Recommendations by timeframe" is real, report-derived data — the closest
+  // thing this platform actually computes to an operational-maturity roadmap.
+  // (The six fixed "maturity dimension" percentages this slide used to show —
+  // Process Automation 22%, Workforce Cross-Training 35%, etc. — were never
+  // derived from any report; they were the same six hardcoded numbers on
+  // every single presentation, real or not. Removed rather than replaced
+  // with another invented number.)
+  const byTimeframe = TF_ORDER
+    .map(tf => ({ tf, items: report.recommendations.filter(r => r.timeframe === tf) }))
+    .filter(g => g.items.length > 0);
 
   return (
     <div className="h-full flex flex-col">
       <PresentationHeader slideNum={6} total={7} title="Strategic Direction"
-        subtitle="Operational maturity roadmap and forward-state positioning"
+        subtitle="Recommended roadmap, sequenced by implementation timeframe"
         icon={TrendingUp} />
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 content-start">
-        {/* Maturity dimensions */}
-        {[
-          { label: "Process Automation Maturity", pct: 22, color: "#f87171", note: "Currently manual-dominant — immediate automation opportunity" },
-          { label: "Workforce Cross-Training",     pct: 35, color: "#fb923c", note: "Key personnel concentration risk — cross-training critical" },
-          { label: "Inventory Control Maturity",   pct: 41, color: "#fbbf24", note: "Manual reconciliation — barcode tracking needed" },
-          { label: "Demand Forecast Capability",   pct: 28, color: "#fb923c", note: "Reactive staffing model — forecast model required" },
-          { label: "Financial Governance",          pct: 48, color: "#fbbf24", note: "Refund leakage — contract governance required" },
-          { label: "KPI Visibility",                pct: 15, color: "#f87171", note: "No unified dashboard — operational blindspots persist" },
-        ].map(dim => (
-          <GlassCard key={dim.label} className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-white/60 font-medium">{dim.label}</span>
-              <span className="text-xs font-bold" style={{ color: dim.color }}>{dim.pct}%</span>
-            </div>
-            <div className="w-full bg-white/5 rounded-full h-2 mb-2">
-              <div className="h-2 rounded-full transition-all duration-700" style={{ width: `${dim.pct}%`, background: dim.color, boxShadow: `0 0 8px ${dim.color}60` }} />
-            </div>
-            <p className="text-[10px] text-white/30 leading-relaxed">{dim.note}</p>
-          </GlassCard>
-        ))}
-
+      <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
         {/* Narrative text */}
-        {sec?.content && (
-          <GlassCard className="p-5 lg:col-span-2">
+        {sec?.content ? (
+          <GlassCard className="p-5">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-1.5 h-5 rounded-full bg-blue-400" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400/70">Strategic Direction</span>
             </div>
             <p className="text-sm text-white/55 leading-7">{sec.content}</p>
           </GlassCard>
+        ) : (
+          <div className="flex items-center gap-2 py-4 justify-center text-white/25 text-[13px]">
+            No strategic direction narrative was generated for this diagnostic.
+          </div>
+        )}
+
+        {/* Roadmap by timeframe — real recommendation data */}
+        {byTimeframe.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {byTimeframe.map(({ tf, items }) => (
+              <GlassCard key={tf} className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 rounded-full" style={{ background: TF_COLORS[tf] }} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: TF_COLORS[tf] }}>
+                    {TF_LABELS[tf]}
+                  </span>
+                  <span className="text-[9px] text-white/25">{items.length} action{items.length !== 1 ? "s" : ""}</span>
+                </div>
+                <ul className="space-y-1">
+                  {items.slice(0, 3).map(r => (
+                    <li key={r.id} className="text-[11px] text-white/50 leading-relaxed">{r.title}</li>
+                  ))}
+                </ul>
+              </GlassCard>
+            ))}
+          </div>
         )}
       </div>
     </div>
@@ -690,7 +723,24 @@ function Slide6Strategic({ report }: { report: MGDReport }) {
 
 function Slide7Conclusion({ report }: { report: MGDReport }) {
   const sec  = report.narrative?.finalConclusion;
-  const score = report.metadata.operationalHealthScore ?? 0;
+  const score = report.metadata.operationalHealthScore ?? null;
+
+  // Real, report-derived "what to do right now" — the IMMEDIATE-timeframe
+  // recommendations this diagnostic actually produced, already sorted by
+  // priority/confidence (report-composer.ts). Falls back to the next
+  // earliest timeframe with any recommendations at all if none are tagged
+  // IMMEDIATE, so the slide never silently drops real content; shows an
+  // honest empty state only if there are truly no recommendations.
+  // (This used to be four fixed strings — "Implement standard refund
+  // governance framework," etc. — identical on every presentation
+  // regardless of what the diagnostic actually found.)
+  const immediateActions = report.recommendations
+    .filter(r => r.timeframe === "IMMEDIATE")
+    .slice(0, 4)
+    .map(r => r.title);
+  const fallbackActions = immediateActions.length > 0
+    ? immediateActions
+    : report.recommendations.slice(0, 4).map(r => r.title);
 
   return (
     <div className="h-full flex flex-col">
@@ -713,20 +763,19 @@ function Slide7Conclusion({ report }: { report: MGDReport }) {
 
           {/* Outlook block */}
           <GlassCard className="p-4">
-            <div className="text-[9px] text-white/25 uppercase tracking-widest mb-3">Recommended Immediate Actions</div>
-            {[
-              "Implement standard refund governance framework",
-              "Deploy no-code automation for top-5 manual workflows",
-              "Cross-train backup operatives for all critical functions",
-              "Deploy barcode inventory tracking system",
-            ].map((action, i) => (
-              <div key={i} className="flex items-start gap-2.5 mb-2">
-                <div className="w-4 h-4 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-[8px] font-bold text-blue-400">{i + 1}</span>
+            <div className="text-[9px] text-white/25 uppercase tracking-widest mb-3">Recommended Priority Actions</div>
+            {fallbackActions.length > 0 ? (
+              fallbackActions.map((action, i) => (
+                <div key={i} className="flex items-start gap-2.5 mb-2">
+                  <div className="w-4 h-4 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-[8px] font-bold text-blue-400">{i + 1}</span>
+                  </div>
+                  <span className="text-xs text-white/55">{action}</span>
                 </div>
-                <span className="text-xs text-white/55">{action}</span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-xs text-white/25 italic">No recommendations were generated for this diagnostic.</p>
+            )}
           </GlassCard>
         </div>
 
@@ -773,9 +822,81 @@ interface MGDPresentationModeProps {
   useMock?: boolean;
 }
 
-export default function MGDPresentationMode({ report: propReport, useMock = false }: MGDPresentationModeProps) {
-  const report = (propReport && !useMock) ? propReport : MOCK_REPORT;
+/** Minimal loading/error/empty chrome, matching the Report Viewer's own
+ * states (mgd-report-viewer.tsx) in spirit — kept local rather than shared
+ * since this milestone does not consolidate the two pages' components. */
+function CenteredState({ icon: Icon, title, subtitle, backHref, backLabel }: {
+  icon: React.ElementType; title: string; subtitle?: string; backHref: string; backLabel: string;
+}) {
+  return (
+    <div className="min-h-screen flex items-center justify-center text-white"
+      style={{ background: "linear-gradient(135deg, #070b14 0%, #0d1526 50%, #07111f 100%)" }}>
+      <div className="flex flex-col items-center gap-5 text-center px-6">
+        <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+          <Icon className="w-7 h-7 text-white/40" />
+        </div>
+        <div>
+          <p className="text-white/70 text-sm font-medium">{title}</p>
+          {subtitle && <p className="text-white/30 text-xs mt-1 max-w-xs">{subtitle}</p>}
+        </div>
+        <Link href={backHref}>
+          <a className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/60 text-sm hover:bg-white/10 hover:text-white transition-all">
+            <ArrowLeft className="w-3.5 h-3.5" />
+            {backLabel}
+          </a>
+        </Link>
+      </div>
+    </div>
+  );
+}
 
+export default function MGDPresentationMode({ report: propReport, useMock = false }: MGDPresentationModeProps) {
+  const search = useSearch();
+  const reportId = new URLSearchParams(search).get("id");
+  const [, navigate] = useLocation();
+
+  // `propReport`/`useMock` are only ever populated by a caller rendering this
+  // component directly (isolated testing) — the real route
+  // (/mgd/present?id=...) supplies neither, so real navigation always takes
+  // the fetch-by-id path below. MOCK_REPORT is reachable only when a caller
+  // explicitly opts into it via `useMock` — never as a silent fallback.
+  const [fetchedReport, setFetchedReport] = useState<MGDReport | null>(null);
+  const [status, setStatus] = useState<"loading" | "loaded" | "empty" | "error">(
+    propReport || useMock ? "loaded" : "loading",
+  );
+  const [errMsg, setErrMsg] = useState("");
+
+  useEffect(() => {
+    if (propReport || useMock) return; // isolated-rendering path — nothing to fetch
+    if (!reportId) { setStatus("empty"); return; }
+
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(`/api/mgd/reports/${reportId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.report?.report) {
+            if (!cancelled) { setFetchedReport(data.report.report); setStatus("loaded"); }
+            return;
+          }
+        }
+        if (!cancelled) { setErrMsg(`Report "${reportId}" not found.`); setStatus("error"); }
+      } catch (e: unknown) {
+        if (!cancelled) { setErrMsg(e instanceof Error ? e.message : "Network error"); setStatus("error"); }
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [reportId, propReport, useMock]);
+
+  const report = useMock ? MOCK_REPORT : (propReport ?? fetchedReport);
+  const effectiveReportId = reportId || report?.id || null;
+
+  // ── Every hook below is declared unconditionally, before any early return,
+  // per the Rules of Hooks — the loading/empty/error/no-report branches are
+  // checked further down, after all hooks exist, so hook call order/count
+  // never changes between renders (e.g. loading → loaded).
   const [slide,         setSlide]         = useState(0);
   const [slideKey,      setSlideKey]      = useState(0);
   const [isFullscreen,  setIsFullscreen]  = useState(false);
@@ -832,13 +953,6 @@ export default function MGDPresentationMode({ report: propReport, useMock = fals
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
-  // Mouse move — show/hide controls
-  function handleMouseMove() {
-    setShowControls(true);
-    if (hideTimeout.current) clearTimeout(hideTimeout.current);
-    hideTimeout.current = setTimeout(() => setShowControls(false), 3500);
-  }
-
   // Fullscreen API listener
   useEffect(() => {
     function onFSChange() { setIsFullscreen(!!document.fullscreenElement); }
@@ -846,16 +960,59 @@ export default function MGDPresentationMode({ report: propReport, useMock = fals
     return () => document.removeEventListener("fullscreenchange", onFSChange);
   }, []);
 
+  // Mouse move — show/hide controls
+  function handleMouseMove() {
+    setShowControls(true);
+    if (hideTimeout.current) clearTimeout(hideTimeout.current);
+    hideTimeout.current = setTimeout(() => setShowControls(false), 3500);
+  }
+
+  // ── Loading / empty / error / no-report states — checked only after every
+  // hook above has already been called, so the hook sequence never changes
+  // across these branches. NEVER falls through to MOCK_REPORT here.
+  if (!propReport && !useMock) {
+    if (status === "loading") {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, #070b14 0%, #0d1526 50%, #07111f 100%)" }}>
+          <Loader2 className="w-8 h-8 text-white/30 animate-spin" />
+        </div>
+      );
+    }
+    if (status === "empty") {
+      return (
+        <CenteredState icon={Inbox} title="No report selected"
+          subtitle="Open a report from the archive or the report viewer, then choose Present."
+          backHref="/mgd/reports" backLabel="Go to Archive" />
+      );
+    }
+    if (status === "error" || !report) {
+      return (
+        <CenteredState icon={AlertTriangle} title="Failed to load report" subtitle={errMsg || "This report could not be found."}
+          backHref="/mgd/reports" backLabel="Back to Archive" />
+      );
+    }
+  }
+  if (!report) {
+    // Unreachable in practice (covered above), but keeps every slide
+    // component's `report: MGDReport` prop genuinely non-null.
+    return null;
+  }
+  // Narrowed, stable reference — `report` above is `MGDReport | null` to
+  // TypeScript inside the `renderSlide` closure below (a nested function
+  // declaration doesn't retain the null-check narrowing); this is the same
+  // guaranteed-non-null value, just typed accurately for that closure.
+  const loadedReport: MGDReport = report;
+
   // Render current slide
   function renderSlide() {
     switch (slide) {
-      case 0: return <Slide1Cover         report={report} />;
-      case 1: return <Slide2Benchmarks    report={report} />;
-      case 2: return <Slide3Findings      report={report} />;
-      case 3: return <Slide4RootCauses    report={report} />;
-      case 4: return <Slide5Recommendations report={report} />;
-      case 5: return <Slide6Strategic     report={report} />;
-      case 6: return <Slide7Conclusion    report={report} />;
+      case 0: return <Slide1Cover         report={loadedReport} />;
+      case 1: return <Slide2Benchmarks    report={loadedReport} />;
+      case 2: return <Slide3Findings      report={loadedReport} />;
+      case 3: return <Slide4RootCauses    report={loadedReport} />;
+      case 4: return <Slide5Recommendations report={loadedReport} />;
+      case 5: return <Slide6Strategic     report={loadedReport} />;
+      case 6: return <Slide7Conclusion    report={loadedReport} />;
       default: return null;
     }
   }
@@ -879,7 +1036,7 @@ export default function MGDPresentationMode({ report: propReport, useMock = fals
         className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 py-3 transition-opacity duration-500"
         style={{ opacity: showControls ? 1 : 0 }}
       >
-        <Link href="/mgd">
+        <Link href={effectiveReportId ? `/mgd/report?id=${effectiveReportId}` : "/mgd"}>
           <button className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors text-xs">
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Exit Presentation</span>

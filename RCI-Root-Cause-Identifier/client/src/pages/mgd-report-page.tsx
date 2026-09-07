@@ -52,7 +52,11 @@ interface ExecutiveNarrative {
   metadata: { generatedAt: string; industry?: string; findingsCount: number; rootCauseCount: number; recommendationCount: number; operationalHealthScore?: number; };
 }
 interface MGDReport {
-  metadata: { generatedAt: string; clientName?: string; industry?: string; operationalHealthScore?: number; reportVersion: string; };
+  metadata: {
+    generatedAt: string; clientName?: string; industry?: string;
+    operationalHealthScore?: number; reportVersion: string;
+    evidence?: { level: "NONE" | "PARTIAL" | "SUFFICIENT"; reasons: string[] };
+  };
   summary: ReportSummary;
   narrative: ExecutiveNarrative;
   findings: Finding[];
@@ -328,7 +332,15 @@ interface MGDReportPageProps {
   useMock?: boolean;
 }
 
-export default function MGDReportPage({ report: propReport, isLoading = false, useMock = true }: MGDReportPageProps) {
+// `useMock` defaults to false — mock data must be an explicit opt-in, never
+// a silent fallback. This component is not itself mounted as a route today
+// (its one production caller, mgd-runner-page.tsx, already passes an
+// explicit `useMock={false}` alongside a real report), but defaulting to
+// true meant any future caller that rendered <MGDReportPage /> with no
+// props at all would silently show the fictional "Acme Events Sdn. Bhd."
+// MOCK_REPORT as if it were a real diagnostic result. Mirrors the same
+// isolation already applied to mgd-presentation-mode.tsx's MOCK_REPORT.
+export default function MGDReportPage({ report: propReport, isLoading = false, useMock = false }: MGDReportPageProps) {
   const [activeSection, setActiveSection] = useState<string>("overview");
 
   if (isLoading) return <MGDReportSkeleton />;
