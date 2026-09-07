@@ -224,7 +224,7 @@ function Step1Client({
   return (
     <div className="space-y-5">
       <div>
-        <Label>Select Existing Client</Label>
+        <Label>Client Organization</Label>
 
         {/* Search */}
         <div className="relative mb-3">
@@ -255,21 +255,25 @@ function Step1Client({
           {!loading && filtered.map(c => {
             const isSelected = c.id === selectedId;
             return (
+              // Single-choice radio-card, not a checkbox — only one client
+              // can ever be selected (onSelect toggle logic below is
+              // unchanged), so the visual must not imply multi-select.
               <button
                 key={c.id}
                 onClick={() => onSelect(isSelected ? "" : c.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all
-                  ${isSelected ? "bg-blue-500/10" : "hover:bg-white/[0.04]"}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-l-2
+                  ${isSelected
+                    ? "bg-blue-500/10 border-l-blue-500"
+                    : "border-l-transparent hover:bg-white/[0.04] hover:border-l-white/20"}`}
               >
-                <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all
-                  ${isSelected ? "bg-blue-500 border-blue-400" : "border-white/20 bg-white/[0.03]"}`}>
-                  {isSelected && <Check className="w-3 h-3 text-white"/>}
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all
+                  ${isSelected ? "border-blue-400" : "border-white/20"}`}>
+                  {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-400"/>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{c.name}</p>
+                  <p className={`text-sm truncate transition-colors ${isSelected ? "text-white font-semibold" : "text-white/80 font-medium"}`}>{c.name}</p>
                   <p className="text-[11px] text-white/35">{industryLabel(c.industry)}</p>
                 </div>
-                {isSelected && <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0"/>}
               </button>
             );
           })}
@@ -349,7 +353,7 @@ function Step2Documents({
       {/* Available client documents */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <Label>Available Client Documents</Label>
+          <Label>Evidence on File</Label>
           {clientDocs.length > 0 && (
             <button onClick={toggleAll} className="text-[11px] text-blue-400/70 hover:text-blue-300 transition-colors">
               {allSelected ? "Deselect All" : "Select All"}
@@ -366,7 +370,7 @@ function Step2Documents({
           {!loadingDocs && clientDocs.length === 0 && (
             <div className="p-6 text-center">
               <Package className="w-6 h-6 text-white/15 mx-auto mb-2"/>
-              <p className="text-[13px] text-white/25">No documents on file for this client</p>
+              <p className="text-[13px] text-white/25">No evidence on file for this client yet</p>
             </div>
           )}
           {!loadingDocs && clientDocs.map(doc => {
@@ -401,7 +405,7 @@ function Step2Documents({
 
       {/* Upload additional files */}
       <div>
-        <Label>Upload Additional Files</Label>
+        <Label>Add More Evidence</Label>
         <div
           onDragOver={e => { e.preventDefault(); if (!uploading) setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
@@ -437,8 +441,31 @@ function Step2Documents({
       {/* Classification panel */}
       {uploadedClassified.length > 0 && (
         <div>
-          <Label>Detected Document Types</Label>
-          <DocumentClassificationPanel documents={uploadedClassified} title="Uploaded Files" defaultCollapsed={false}/>
+          <Label>Recognized Document Types</Label>
+
+          {/* Concise per-file confirmation — what the consultant sees by
+              default. Same plain-text treatment already used for existing
+              client documents above (category slug, spaced + capitalized),
+              just reused here for consistency rather than a second scheme.
+              Full classifier detail (confidence scores, matched keywords)
+              is unchanged in the panel below — only its defaultCollapsed
+              value changed, so that detail stays one click away instead of
+              competing with this summary by default. */}
+          <div className="space-y-1.5 mb-3">
+            {uploadedClassified.map((doc, i) => (
+              <div key={`${doc.fileName}-${i}`} className="flex items-center gap-2 text-[12px]">
+                <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${doc.category !== "unknown" ? "text-emerald-400/70" : "text-white/20"}`}/>
+                <span className="text-white/60 truncate">{doc.fileName}</span>
+                <span className="text-white/30 shrink-0">
+                  {doc.category !== "unknown"
+                    ? <>— Recognized as: <span className="capitalize">{doc.category.replace(/_/g, " ")}</span></>
+                    : "— Not yet recognized"}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <DocumentClassificationPanel documents={uploadedClassified} title="Uploaded Files" defaultCollapsed/>
         </div>
       )}
     </div>
@@ -462,10 +489,24 @@ function Step3Concerns({
     }
   }
 
+  // Local-only UI disclosure state — which concerns currently show their
+  // area-tagging picker. Keyed by concern text (not index) so removing one
+  // concern can never shift another concern's expand/collapse state.
+  // Nothing here is persisted or sent to the server; Concern.areas remains
+  // the sole source of truth for what's actually selected.
+  const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
+  function toggleExpanded(text: string) {
+    setExpandedAreas(prev => {
+      const next = new Set(prev);
+      if (next.has(text)) next.delete(text); else next.add(text);
+      return next;
+    });
+  }
+
   return (
     <div className="space-y-5">
       <div>
-        <Label>What concerns does the client want reviewed?</Label>
+        <Label>What's happening in the business?</Label>
         <div className="flex gap-2">
           <TextInput
             value={input} onChange={setInput} placeholder="e.g. Inventory losses…"
@@ -502,7 +543,7 @@ function Step3Concerns({
       {/* Added concerns */}
       {concerns.length > 0 && (
         <div>
-          <p className="text-[10px] text-white/25 uppercase tracking-widest mb-2">Added concerns ({concerns.length})</p>
+          <p className="text-[10px] text-white/25 uppercase tracking-widest mb-2">Concerns noted ({concerns.length})</p>
           <div className="space-y-2">
             {concerns.map((c, i) => (
               <div key={i} className="rounded-xl border border-blue-500/15 bg-blue-500/[0.05] px-4 py-2.5">
@@ -514,29 +555,60 @@ function Step3Concerns({
                   </button>
                 </div>
                 <div className="mt-2 pl-6">
-                  <p className="text-[10px] text-white/25 mb-1.5">
-                    Which diagnostic area is this about? <span className="text-white/15">(optional — your choice, MGD won't guess)</span>
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {DIAGNOSTIC_AREAS.map(area => {
-                      const selected = c.areas.includes(area.value);
-                      return (
-                        <button
-                          key={area.value}
-                          type="button"
-                          onClick={() => toggleConcernArea(i, area.value)}
-                          className={`text-[10.5px] px-2 py-1 rounded-md border transition-all ${
-                            selected
-                              ? "border-blue-500/50 bg-blue-500/20 text-blue-200"
-                              : "border-white/10 bg-white/[0.02] text-white/35 hover:border-white/20 hover:text-white/55"
-                          }`}
-                        >
-                          {selected && <Check className="w-2.5 h-2.5 inline mr-1 -mt-0.5"/>}
-                          {area.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {expandedAreas.has(c.text) ? (
+                    <>
+                      <p className="text-[10px] text-white/25 mb-1.5">
+                        Area <span className="text-white/15">(optional — your choice, MGD won't guess)</span>
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 mb-1.5">
+                        {DIAGNOSTIC_AREAS.map(area => {
+                          const selected = c.areas.includes(area.value);
+                          return (
+                            <button
+                              key={area.value}
+                              type="button"
+                              onClick={() => toggleConcernArea(i, area.value)}
+                              className={`text-[10.5px] px-2 py-1 rounded-md border transition-all ${
+                                selected
+                                  ? "border-blue-500/50 bg-blue-500/20 text-blue-200"
+                                  : "border-white/10 bg-white/[0.02] text-white/35 hover:border-white/20 hover:text-white/55"
+                              }`}
+                            >
+                              {selected && <Check className="w-2.5 h-2.5 inline mr-1 -mt-0.5"/>}
+                              {area.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(c.text)}
+                        className="text-[10.5px] text-white/25 hover:text-white/50 transition-colors"
+                      >
+                        Hide area options
+                      </button>
+                    </>
+                  ) : (
+                    // Collapsed default — a single restrained secondary
+                    // control. If areas are already selected, they stay
+                    // apparent here so the consultant never has to reopen
+                    // the picker just to see what's tagged.
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(c.text)}
+                      className="flex items-center gap-1.5 text-[10.5px] text-white/30 hover:text-blue-300 transition-colors"
+                    >
+                      <Plus className="w-2.5 h-2.5 shrink-0"/>
+                      {c.areas.length > 0 ? (
+                        <span>
+                          Area: <span className="text-blue-300/80">{c.areas.map(a => DIAGNOSTIC_AREAS.find(d => d.value === a)?.label ?? a).join(", ")}</span>
+                          <span className="text-white/20"> · Edit</span>
+                        </span>
+                      ) : (
+                        "Add an area (optional)"
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -547,7 +619,7 @@ function Step3Concerns({
       {concerns.length === 0 && (
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 text-center">
           <MessageSquare className="w-6 h-6 text-white/15 mx-auto mb-2"/>
-          <p className="text-[13px] text-white/25">Add at least one concern to guide the diagnostic</p>
+          <p className="text-[13px] text-white/25">Add at least one concern to guide MGD's investigation</p>
         </div>
       )}
     </div>
@@ -571,39 +643,54 @@ function Step4Observations({
 
   return (
     <div className="space-y-5">
-      {/* Add note form */}
+      {/* Add note form — observation text is the primary control; title and
+          category/area are progressively de-emphasized below it. No change
+          to ConsultantNote, canAdd's validation, or any handler — purely a
+          reordering/restyling of the same fields. */}
       <GlassCard className="p-5 space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <StickyNote className="w-4 h-4 text-amber-400"/>
-          <span className="text-[13px] font-semibold text-white">Add Observation</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <Label>Title</Label>
-            <TextInput value={title} onChange={setTitle} placeholder="e.g. Fleet Capacity Issue"/>
-          </div>
-          <div>
-            <Label>Category</Label>
-            <Select value={category} onChange={setCategory}
-              options={NOTE_CATEGORIES.map(c => ({ value: c, label: c }))} placeholder="Select category…"/>
-          </div>
-        </div>
         <div>
-          <Label>Observation</Label>
-          <textarea
-            value={observation}
-            onChange={e => setObservation(e.target.value)}
-            placeholder="Describe what was observed or noted during the client briefing…"
-            rows={3}
-            className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white
-              placeholder-white/25 focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.07] transition-all resize-none"
-          />
+          <div className="flex items-center gap-2 mb-1">
+            <StickyNote className="w-4 h-4 text-amber-400"/>
+            <span className="text-[13px] font-semibold text-white">What have you noticed?</span>
+          </div>
+          <p className="text-[11px] text-white/30">Capture what you observed, heard, or noticed.</p>
         </div>
+
+        {/* Observation — primary control */}
+        <textarea
+          value={observation}
+          onChange={e => setObservation(e.target.value)}
+          placeholder="Describe what was observed or noted during the client briefing…"
+          rows={5}
+          className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-3 text-[14px] text-white
+            placeholder-white/25 focus:outline-none focus:border-amber-500/50 focus:bg-white/[0.07] transition-all resize-none leading-relaxed"
+        />
+
+        {/* Title — kept (required, part of ConsultantNote), visually subordinate */}
         <div>
-          <Label>Related diagnostic area <span className="text-white/15 normal-case font-normal">(optional — your choice, MGD won't guess)</span></Label>
-          <Select value={area} onChange={setArea}
-            options={DIAGNOSTIC_AREAS} placeholder="No specific area…"/>
+          <Label>What would you call this?</Label>
+          <TextInput value={title} onChange={setTitle} placeholder="e.g. Fleet Capacity Issue"/>
         </div>
+
+        {/* Optional context — category/area, visually secondary. Category
+            remains functionally required (canAdd unchanged below); this is
+            a hierarchy change only, not a validation change. */}
+        <div className="pt-3 border-t border-white/[0.06]">
+          <p className="text-[10px] text-white/25 uppercase tracking-widest mb-2">Optional context</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <Label>Category</Label>
+              <Select value={category} onChange={setCategory}
+                options={NOTE_CATEGORIES.map(c => ({ value: c, label: c }))} placeholder="Select category…"/>
+            </div>
+            <div>
+              <Label>Related area <span className="text-white/15 normal-case font-normal">(optional — your choice, MGD won't guess)</span></Label>
+              <Select value={area} onChange={setArea}
+                options={DIAGNOSTIC_AREAS} placeholder="No specific area…"/>
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={addNote}
           disabled={!canAdd}
@@ -618,26 +705,29 @@ function Step4Observations({
       {/* Notes list */}
       {notes.length > 0 ? (
         <div className="space-y-3">
-          <p className="text-[10px] text-white/25 uppercase tracking-widest">Observations added ({notes.length})</p>
+          <p className="text-[10px] text-white/25 uppercase tracking-widest">Observations noted ({notes.length})</p>
           {notes.map(n => (
+            // Primary: title + the actual observation text. Secondary:
+            // category/area badges, moved below the observation instead of
+            // crowding the title. Same removeNote(n.id) handler, unchanged.
             <div key={n.id} className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] p-4">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div>
-                  <p className="text-sm font-semibold text-white">{n.title}</p>
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                    {n.category}
-                  </span>
-                  {n.relatedArea && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-300 ml-1.5">
-                      {DIAGNOSTIC_AREAS.find(a => a.value === n.relatedArea)?.label ?? n.relatedArea}
-                    </span>
-                  )}
-                </div>
-                <button onClick={() => removeNote(n.id)} className="text-white/20 hover:text-red-400 transition-colors mt-0.5">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-semibold text-white">{n.title}</p>
+                <button onClick={() => removeNote(n.id)} className="text-white/20 hover:text-red-400 transition-colors mt-0.5 shrink-0">
                   <Trash2 className="w-3.5 h-3.5"/>
                 </button>
               </div>
-              <p className="text-[13px] text-white/55 leading-relaxed">{n.observation}</p>
+              <p className="text-[13px] text-white/65 leading-relaxed mt-1.5">{n.observation}</p>
+              <div className="flex items-center gap-1.5 mt-2.5">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                  {n.category}
+                </span>
+                {n.relatedArea && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-300">
+                    {DIAGNOSTIC_AREAS.find(a => a.value === n.relatedArea)?.label ?? n.relatedArea}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -701,28 +791,39 @@ function Step5Review({
         </div>
       )}
 
+      {/* Observations preview — same card pattern Step4Observations already
+          uses to display a ConsultantNote, minus the delete action (this is
+          a read-only review, not an editable list). */}
+      {notes.length > 0 && (
+        <div>
+          <p className="text-[10px] text-white/25 uppercase tracking-widest mb-2">Consultant Observations</p>
+          <div className="space-y-3">
+            {notes.map(n => (
+              <div key={n.id} className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] p-4">
+                <div className="mb-2">
+                  <p className="text-sm font-semibold text-white">{n.title}</p>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                    {n.category}
+                  </span>
+                  {n.relatedArea && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-300 ml-1.5">
+                      {DIAGNOSTIC_AREAS.find(a => a.value === n.relatedArea)?.label ?? n.relatedArea}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[13px] text-white/55 leading-relaxed">{n.observation}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/[0.07] px-4 py-3 flex items-center gap-2.5">
           <AlertTriangle className="w-4 h-4 text-red-400 shrink-0"/>
           <p className="text-[13px] text-red-300">{error}</p>
         </div>
       )}
-
-      {/* CTA */}
-      <button
-        onClick={onRun}
-        disabled={running}
-        className="w-full flex items-center justify-center gap-3 py-4 rounded-xl
-          bg-gradient-to-r from-blue-600/40 to-indigo-600/40 border border-blue-500/40
-          text-white text-base font-bold tracking-tight
-          hover:from-blue-600/55 hover:to-indigo-600/55 hover:border-blue-400/60
-          disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/10"
-      >
-        {running
-          ? <><Loader2 className="w-5 h-5 animate-spin"/> Running Diagnostic…</>
-          : <><Play className="w-5 h-5"/> Run Diagnostic</>
-        }
-      </button>
     </div>
   );
 }
@@ -956,7 +1057,7 @@ export default function MGDDiagnosticWizard() {
     { title: "Select Documents",        sub: "Choose documents to include and upload additional files" },
     { title: "Business Situation",      sub: "What is happening in the business that you want MGD to investigate?" },
     { title: "Consultant Observations", sub: "Add field notes from your client conversation" },
-    { title: "Review & Run",            sub: "Confirm the diagnostic configuration and start analysis" },
+    { title: "Review & Run",            sub: "Here's what you're asking MGD to investigate" },
   ];
   const meta = STEP_META[step - 1];
 
