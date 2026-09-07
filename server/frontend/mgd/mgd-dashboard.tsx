@@ -7,7 +7,7 @@ import {
   Monitor, Play, Plus,
   Users,
   Circle, ArrowRight,
-  Database,
+  Database, Sparkles,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -199,6 +199,40 @@ function ActivityTimeline({ items }: { items: AdminStats["recentActivity"] }) {
   );
 }
 
+// ── First-Client Empty State ──────────────────────────────────────────────────
+// Shown in place of the Intelligence Run Panel when the consultant/admin has
+// zero client organizations — deterministic on `clients.length === 0` from
+// the real GET /api/admin/clients response, never a first-login flag or any
+// invented state. A diagnostic genuinely cannot run without a client to
+// attach it to (server/system/routes.ts's own institutional rule), so an
+// enabled-looking run panel with a disabled selector is actively misleading
+// here; this replaces it with an honest, intentional empty state instead.
+
+function FirstClientEmptyState() {
+  return (
+    <GlassCard className="p-8 sm:p-10 h-full relative overflow-hidden text-center">
+      <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-10 pointer-events-none"
+        style={{ background: "radial-gradient(circle, #3b82f6, transparent 70%)" }} />
+      <div className="relative z-10 max-w-md mx-auto">
+        <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-5">
+          <Sparkles className="w-5 h-5 text-blue-400" />
+        </div>
+        <h2 className="text-xl font-bold text-white mb-2">Your diagnostic workspace is ready.</h2>
+        <p className="text-sm text-white/40 mb-6">No client organizations have been created yet.</p>
+        <Link href="/admin/clients/new">
+          <button className="inline-flex items-center gap-2 py-3 px-6 rounded-lg font-semibold text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300">
+            <Plus className="w-4 h-4" />
+            Create Your First Client
+          </button>
+        </Link>
+        <p className="text-xs text-white/25 mt-5 leading-relaxed">
+          Create a client organization to begin collecting evidence, capturing observations, and running a diagnostic.
+        </p>
+      </div>
+    </GlassCard>
+  );
+}
+
 // ── Intelligence Run Panel ────────────────────────────────────────────────────
 
 function IntelligenceRunPanel({ clients }: { clients: Client[] }) {
@@ -354,12 +388,12 @@ export default function MGDDashboard() {
               <div className="flex items-center gap-2 mb-2">
                 <LivePulse />
                 <span className="text-white/15">·</span>
-                <span className="text-[10px] text-white/20 uppercase tracking-widest">MGD-V1</span>
+                <span className="text-[10px] text-white/20 uppercase tracking-widest">Margin Guard</span>
               </div>
               <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight tracking-tight">
-                MGD Operational{" "}
+                Margin Guard{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
-                  Intelligence
+                  Diagnostics
                 </span>
               </h1>
               <p className="text-sm text-white/35 mt-1.5 max-w-md leading-relaxed">
@@ -454,6 +488,8 @@ export default function MGDDashboard() {
               <div className="h-10 bg-white/10 rounded mb-4" />
               <div className="h-10 bg-white/10 rounded" />
             </GlassCard>
+          ) : allClients.length === 0 ? (
+            <FirstClientEmptyState />
           ) : (
             <IntelligenceRunPanel clients={allClients} />
           )}
@@ -553,7 +589,7 @@ export default function MGDDashboard() {
         */}
         <div className="mt-10 pt-6 border-t border-white/5">
           <div className="text-[9px] text-white/15 uppercase tracking-widest">
-            MGD Operational Intelligence · Scope Optix Sdn. Bhd.
+            Margin Guard Diagnostics · Scope Optix Sdn. Bhd.
           </div>
         </div>
 

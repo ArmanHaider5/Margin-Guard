@@ -59,16 +59,12 @@ function Router() {
     );
   }
 
-  if (user && !user.onboardingComplete) {
-    return (
-      <Switch>
-        <Route path="/" component={Onboarding} />
-        <Route component={Onboarding} />
-      </Switch>
-    );
-  }
-
-  // Admin routes - for users with admin role
+  // Admin/consultant routing decision happens BEFORE the generic onboarding
+  // gate below. That onboarding flow ("Tell us about your business", an
+  // industry picker) is genuinely a CLIENT self-onboarding form — an
+  // authenticated admin/consultant must never see it; they have their own
+  // workspace (MGDDashboard) regardless of `onboardingComplete`, which is a
+  // client-only concept. See docs/MGD_ONBOARDING_ROUTING.md.
   if (user?.role === "admin") {
     return (
       <Switch>
@@ -101,6 +97,18 @@ function Router() {
         <Route path="/results/:sessionId" component={Results} />
         <Route path="/history" component={History} />
         <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
+  // Client business-profile onboarding — unlinked/business CLIENT users
+  // only, never admin/consultant (handled above). Unchanged behavior for
+  // this role: same Onboarding component, same `onboardingComplete` gate.
+  if (user && !user.onboardingComplete) {
+    return (
+      <Switch>
+        <Route path="/" component={Onboarding} />
+        <Route component={Onboarding} />
       </Switch>
     );
   }

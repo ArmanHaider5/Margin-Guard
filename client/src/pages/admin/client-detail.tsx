@@ -27,6 +27,7 @@ import {
   Zap,
   Search,
   FileStack,
+  Sparkles,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -236,6 +237,14 @@ export default function ClientDetail() {
     : null;
   const docCount = documents?.length ?? 0;
 
+  // A genuinely fresh client — nothing added yet in any of the three
+  // sections below. Guidance only; nothing here is a forced step, and it
+  // disappears the moment any real activity exists (evidence uploaded, a
+  // diagnostic run, or a saved case).
+  const isFreshClient =
+    !analysesLoading && !documentsLoading && !casesLoading &&
+    (analyses?.length ?? 0) === 0 && docCount === 0 && (cases?.length ?? 0) === 0;
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
 
@@ -352,6 +361,55 @@ export default function ClientDetail() {
           </div>
         </div>
       </div>
+
+      {/* ── GETTING STARTED (fresh clients only) ─────────────────── */}
+      {isFreshClient && (
+        <Card className="overflow-hidden shadow-sm border-primary/20 bg-primary/[0.03]" data-testid="card-getting-started">
+          <div className="p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Client created — next steps</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Proceed in any order — nothing below is required before the next.
+                </p>
+              </div>
+            </div>
+            <ol className="space-y-2 text-sm">
+              <li className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground flex items-center justify-center shrink-0">1</span>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-foreground hover:text-primary transition-colors text-left"
+                  data-testid="link-getting-started-evidence"
+                >
+                  Add evidence <span className="text-muted-foreground">— upload client documents</span>
+                </button>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground flex items-center justify-center shrink-0">2</span>
+                <span className="text-muted-foreground">Add business concerns <span className="text-muted-foreground/70">— captured when you run a diagnostic</span></span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground flex items-center justify-center shrink-0">3</span>
+                <span className="text-muted-foreground">Add consultant observations <span className="text-muted-foreground/70">— captured when you run a diagnostic</span></span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground flex items-center justify-center shrink-0">4</span>
+                <button
+                  onClick={() => navigate(`/clients/${id}/diagnostics/new`)}
+                  className="text-foreground hover:text-primary transition-colors text-left"
+                  data-testid="link-getting-started-diagnostic"
+                >
+                  Run diagnostic
+                </button>
+              </li>
+            </ol>
+          </div>
+        </Card>
+      )}
 
       {/* ── CLIENT PROFILE CARD ───────────────────────────────────── */}
       <Card className="overflow-hidden shadow-sm border-border/80" data-testid="card-client-profile">

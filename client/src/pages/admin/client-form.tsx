@@ -122,14 +122,17 @@ export default function ClientForm() {
       const response = await apiRequest("POST", "/api/admin/clients", data);
       return response.json();
     },
-    onSuccess: () => {
+    // Land on the new client's own workspace (client-detail.tsx), not the
+    // list — matches the intended flow (create → client workspace → next
+    // steps) rather than dropping the consultant back where they started.
+    onSuccess: (created: { id: string }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/clients"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
       toast({
         title: "Client created",
         description: "The client organization has been created successfully.",
       });
-      navigate("/admin/clients");
+      navigate(`/admin/clients/${created.id}`);
     },
     onError: (error: Error) => {
       toast({
