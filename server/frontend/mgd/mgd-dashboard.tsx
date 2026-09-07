@@ -7,7 +7,7 @@ import {
   Monitor, Play, Plus,
   Users,
   Circle, ArrowRight,
-  Database, Sparkles,
+  Database, Sparkles, LogOut,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -233,12 +233,15 @@ function FirstClientEmptyState() {
   );
 }
 
-// ── Intelligence Run Panel ────────────────────────────────────────────────────
+// ── Start Diagnostic Panel ────────────────────────────────────────────────────
+// The dashboard's one primary diagnostic entry point. Previously a
+// client-selector + "Launch Diagnostic Run" panel whose CTA link never
+// actually carried the selected client through to the wizard (a dead
+// control, not a real preselection). Consolidated onto the canonical
+// /mgd/diagnostic wizard (Milestone 18A) — client selection is Step 1 of
+// that wizard itself, not duplicated here.
 
-function IntelligenceRunPanel({ clients }: { clients: Client[] }) {
-  const [selectedClient, setSelectedClient] = useState<string>("");
-  const activeClient = clients.find(c => c.id === selectedClient);
-
+function StartDiagnosticPanel() {
   return (
     <GlassCard className="p-6 h-full relative overflow-hidden">
       {/* Ambient gradient */}
@@ -252,54 +255,18 @@ function IntelligenceRunPanel({ clients }: { clients: Client[] }) {
           <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ boxShadow: "0 0 6px #60a5fa" }} />
           <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400/70">Intelligence Engine</span>
         </div>
-        <h2 className="text-xl font-bold text-white mb-1">Launch Diagnostic Run</h2>
+        <h2 className="text-xl font-bold text-white mb-1">Start Diagnostic</h2>
         <p className="text-xs text-white/35 mb-6 leading-relaxed">
-          Select a client and execute the MGD operational intelligence pipeline — findings, root causes, benchmarks, and narrative in one run.
+          Select a client, gather evidence, and execute the MGD operational intelligence pipeline — findings, root causes, benchmarks, and narrative in one guided workflow.
         </p>
-
-        {/* Client selector */}
-        <div className="mb-4">
-          <label className="text-[9px] font-bold uppercase tracking-widest text-white/30 block mb-2">Client</label>
-          <select
-            value={selectedClient}
-            onChange={e => setSelectedClient(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 outline-none focus:border-blue-500/50 focus:bg-white/8 transition-all appearance-none"
-          >
-            <option value="" className="bg-slate-900 text-white/60">— Select client —</option>
-            {clients.map(c => (
-              <option key={c.id} value={c.id} className="bg-slate-900 text-white">
-                {c.clientName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Industry display */}
-        {activeClient && (
-          <div className="mb-4 p-3 rounded-lg bg-white/3 border border-white/8">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-[9px] text-white/25 uppercase tracking-wider mb-0.5">Industry</div>
-                <div className="text-sm text-white/70">{industryLabel(activeClient.industry)}</div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span className="text-[10px] text-emerald-400/70 capitalize">{activeClient.status}</span>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* CTA */}
         <Link href="/mgd/diagnostic">
-          <button className={`w-full flex items-center justify-center gap-2 py-3 px-5 rounded-lg font-semibold text-sm transition-all duration-300 ${
-            selectedClient
-              ? "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30"
-              : "bg-white/5 text-white/30 border border-white/10 cursor-not-allowed"
-          }`}>
+          <button className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-lg font-semibold text-sm transition-all duration-300
+            bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30">
             <Play className="w-4 h-4" />
-            {selectedClient ? `Run Diagnostic — ${activeClient?.clientName}` : "Select a client to begin"}
-            {selectedClient && <ArrowRight className="w-3.5 h-3.5 ml-auto" />}
+            Start Diagnostic
+            <ArrowRight className="w-3.5 h-3.5 ml-auto" />
           </button>
         </Link>
       </div>
@@ -410,7 +377,7 @@ export default function MGDDashboard() {
               <Link href="/mgd/diagnostic">
                 <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-semibold text-white transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30">
                   <Play className="w-3.5 h-3.5" />
-                  New Diagnostic
+                  Start Diagnostic
                 </button>
               </Link>
               <Link href="/mgd/reports">
@@ -431,6 +398,19 @@ export default function MGDDashboard() {
                   Report Viewer
                 </button>
               </Link>
+              {/* Uses the existing GET /api/logout endpoint and the same
+                  window.location.href mechanism as client/src/components/
+                  auth-header.tsx — no new auth code, no session/schema
+                  change. This is the admin dashboard's only logout
+                  affordance. */}
+              <button
+                onClick={() => { window.location.href = "/api/logout"; }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium text-white/40 hover:text-white/70 border border-white/10 transition-all"
+                data-testid="button-logout"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Log out
+              </button>
             </div>
           </div>
 
@@ -491,7 +471,7 @@ export default function MGDDashboard() {
           ) : allClients.length === 0 ? (
             <FirstClientEmptyState />
           ) : (
-            <IntelligenceRunPanel clients={allClients} />
+            <StartDiagnosticPanel />
           )}
         </div>
 

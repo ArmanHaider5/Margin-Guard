@@ -315,11 +315,11 @@ export default function ClientDetail() {
             <Button
               size="lg"
               className="font-semibold px-5"
-              onClick={() => navigate(`/clients/${id}/diagnostics/new`)}
+              onClick={() => navigate(`/mgd/diagnostic?clientId=${id}`)}
               data-testid="button-run-diagnostic"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Run New Diagnostic
+              Start Diagnostic
             </Button>
 
             <AlertDialog>
@@ -399,11 +399,11 @@ export default function ClientDetail() {
               <li className="flex items-center gap-2.5">
                 <span className="w-5 h-5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground flex items-center justify-center shrink-0">4</span>
                 <button
-                  onClick={() => navigate(`/clients/${id}/diagnostics/new`)}
+                  onClick={() => navigate(`/mgd/diagnostic?clientId=${id}`)}
                   className="text-foreground hover:text-primary transition-colors text-left"
                   data-testid="link-getting-started-diagnostic"
                 >
-                  Run diagnostic
+                  Start Diagnostic
                 </button>
               </li>
             </ol>
@@ -491,10 +491,10 @@ export default function ClientDetail() {
             variant="outline"
             size="sm"
             className="font-medium"
-            onClick={() => navigate(`/clients/${id}/diagnostics/new`)}
+            onClick={() => navigate(`/mgd/diagnostic?clientId=${id}`)}
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />
-            New Diagnostic
+            Start Diagnostic
           </Button>
         </div>
 
@@ -579,10 +579,10 @@ export default function ClientDetail() {
             </p>
             <Button
               size="sm"
-              onClick={() => navigate(`/clients/${id}/diagnostics/new`)}
+              onClick={() => navigate(`/mgd/diagnostic?clientId=${id}`)}
             >
               <Plus className="w-3.5 h-3.5 mr-1.5" />
-              Run First Diagnostic
+              Start Diagnostic
             </Button>
           </div>
         )}

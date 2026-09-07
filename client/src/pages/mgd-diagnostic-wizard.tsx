@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import {
   ArrowLeft, ArrowRight, Building2, Check, CheckCircle2,
   ChevronDown, FileText, Loader2, Plus, Search, Trash2,
@@ -733,10 +733,19 @@ export default function MGDDiagnosticWizard() {
   const [, navigate] = useLocation();
   const [step, setStep] = useState(1);
 
+  // Client preselection (Milestone 18A) — when launched from a specific
+  // client's workspace via /mgd/diagnostic?clientId=<id>, that client is
+  // preselected here instead of asking the consultant to search for and
+  // reselect the client they're already viewing. Read once on first render
+  // (the wizard is always a fresh mount when navigated to); Step 1 still
+  // displays the selection normally, it's simply already made.
+  const search = useSearch();
+  const preselectedClientId = new URLSearchParams(search).get("clientId") ?? "";
+
   // ── Step 1 state ───────────────────────────────────────────────────────────
   const [clients,      setClients]      = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
-  const [selectedId,   setSelectedId]   = useState("");
+  const [selectedId,   setSelectedId]   = useState(preselectedClientId);
   const [showNew,      setShowNew]      = useState(false);
   const [newName,      setNewName]      = useState("");
   const [newIndustry,  setNewIndustry]  = useState("");
@@ -945,7 +954,7 @@ export default function MGDDiagnosticWizard() {
   const STEP_META = [
     { title: "Select Client",           sub: "Choose an existing client or create a new one" },
     { title: "Select Documents",        sub: "Choose documents to include and upload additional files" },
-    { title: "Business Concerns",       sub: "What areas does the client want the diagnostic to focus on?" },
+    { title: "Business Situation",      sub: "What is happening in the business that you want MGD to investigate?" },
     { title: "Consultant Observations", sub: "Add field notes from your client conversation" },
     { title: "Review & Run",            sub: "Confirm the diagnostic configuration and start analysis" },
   ];
@@ -971,7 +980,7 @@ export default function MGDDiagnosticWizard() {
 
         {/* Page title */}
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-white tracking-tight mb-1">New Diagnostic</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight mb-1">Start Diagnostic</h1>
           <p className="text-[13px] text-white/35">Margin Guard Diagnostics · Scope Optix</p>
         </div>
 

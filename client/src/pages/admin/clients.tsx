@@ -121,7 +121,7 @@ export default function AdminClients() {
                         <Link href={`/admin/clients/${client.id}`}>
                           <DropdownMenuItem>View Details</DropdownMenuItem>
                         </Link>
-                        <Link href={`/clients/${client.id}/diagnostics/new`}>
+                        <Link href={`/mgd/diagnostic?clientId=${client.id}`}>
                           <DropdownMenuItem>Start Diagnostic</DropdownMenuItem>
                         </Link>
                       </DropdownMenuContent>
@@ -172,10 +172,10 @@ export default function AdminClients() {
                             View
                           </Button>
                         </Link>
-                        <Link href={`/clients/${client.id}/diagnostics/new`}>
+                        <Link href={`/mgd/diagnostic?clientId=${client.id}`}>
                           <Button variant="ghost" size="sm" className="h-7 px-2" data-testid={`button-analyze-${client.id}`}>
                             <BarChart3 className="w-3 h-3 mr-1" />
-                            Analyze
+                            Start Diagnostic
                           </Button>
                         </Link>
                       </div>
