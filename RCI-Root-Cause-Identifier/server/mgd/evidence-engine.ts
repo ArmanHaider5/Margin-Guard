@@ -15,6 +15,8 @@
 //   • [MGD][EVIDENCE] prefix on all log lines.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { FINDING_CATEGORIES } from "./finding-categories";
+
 // ── Exported interfaces ───────────────────────────────────────────────────────
 
 export interface FindingEvidence {
@@ -240,13 +242,13 @@ function detectLogisticsCoordination(txs: NormTx[], docs: NormDoc[]): FindingEvi
     if (uniqueLogSources.size >= 2) {
       evidences.push({
         observation: `Logistics activity was recorded across ${uniqueLogSources.size} distinct source systems (${Array.from(uniqueLogSources).join(", ")}), indicating potential coordination fragmentation between logistics units.`,
-        source:      "logistics_coordination",
+        source:      FINDING_CATEGORIES.LOGISTICS_COORDINATION,
         confidence:  clamp(CONF.MED_HI),
       });
     } else if (logisticsSrc.length >= 2) {
       evidences.push({
         observation: `${logisticsSrc.length} logistics dispatch records were detected in the transaction dataset, representing ${pct(logisticsSrc.length, total)}% of total operational activity.`,
-        source:      "logistics_coordination",
+        source:      FINDING_CATEGORIES.LOGISTICS_COORDINATION,
         confidence:  clamp(CONF.MED),
       });
     }
@@ -265,7 +267,7 @@ function detectLogisticsCoordination(txs: NormTx[], docs: NormDoc[]): FindingEvi
     if (unclassifiedLogistics.length > 0) {
       evidences.push({
         observation: `${unclassifiedLogistics.length} transaction${unclassifiedLogistics.length !== 1 ? "s" : ""} contain logistics activity keywords but are not classified under a logistics source — suggesting shadow logistics activity outside formal tracking systems.`,
-        source:      "logistics_coordination",
+        source:      FINDING_CATEGORIES.LOGISTICS_COORDINATION,
         confidence:  clamp(CONF.MED_LO),
       });
     }
@@ -500,11 +502,15 @@ function detectWarehouseOperations(txs: NormTx[], docs: NormDoc[]): FindingEvide
 
 // ── Category router ────────────────────────────────────────────────────────────
 
+// Keys are computed from the one authoritative Finding Category vocabulary
+// (findings-engine.ts's FINDING_CATEGORIES) rather than freehand string
+// literals. Only 4 of the 9 categories have a detector here — that gap is
+// pre-existing and unchanged; see docs/MGD_FINDING_CATEGORY_GOVERNANCE_ADR.md.
 const DETECTORS: Record<string, (txs: NormTx[], docs: NormDoc[]) => FindingEvidence[]> = {
-  inventory_visibility:    detectInventoryVisibility,
-  logistics_coordination:  detectLogisticsCoordination,
-  manpower_dependency:     detectManpowerDependency,
-  warehouse_operations:    detectWarehouseOperations,
+  [FINDING_CATEGORIES.INVENTORY_VISIBILITY]:   detectInventoryVisibility,
+  [FINDING_CATEGORIES.LOGISTICS_COORDINATION]: detectLogisticsCoordination,
+  [FINDING_CATEGORIES.MANPOWER_DEPENDENCY]:    detectManpowerDependency,
+  [FINDING_CATEGORIES.WAREHOUSE_OPERATIONS]:   detectWarehouseOperations,
 };
 
 // ── Exported functions ────────────────────────────────────────────────────────

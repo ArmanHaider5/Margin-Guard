@@ -17,8 +17,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { OperationalFinding }       from "./findings-engine";
+import { FINDING_CATEGORIES }             from "./finding-categories";
 import type { RootCause }                from "./root-cause-engine";
 import type { OperationalRecommendation } from "./recommendation-engine";
+import type { EvidenceLevel }             from "./evidence-sufficiency";
 
 // ── Exported interfaces ────────────────────────────────────────────────────────
 
@@ -45,6 +47,8 @@ export interface ExecutiveNarrativeReport {
     rootCauseCount:           number;
     recommendationCount:      number;
     operationalHealthScore?:  number;
+    /** See NarrativeParams.hasIncompleteAnalysis. Optional/additive — absent on any historical report generated before this field existed. */
+    hasIncompleteAnalysis?:   boolean;
   };
 }
 
@@ -54,21 +58,49 @@ export interface NarrativeParams {
   recommendations:        OperationalRecommendation[];
   operationalHealthScore?: number;
   industry?:              string;
+
+  /**
+   * Gates Operational Health, Strategic Direction, and Final Conclusion —
+   * the three sections that (unlike Key Findings/Root Cause Summary/Priority
+   * Actions) previously had no evidence-volume check at all and would
+   * generate confident, evidence-sounding prose even with zero real
+   * findings. Defaults to "SUFFICIENT" (today's unconstrained behaviour) so
+   * this stays backward compatible for any caller that does not yet pass
+   * it — the one production caller, mgd-pipeline.ts, always does.
+   */
+  evidenceLevel?: EvidenceLevel;
+
+  /**
+   * True if any Finding/Root Cause/Recommendation detector FAILED (threw)
+   * during this run — see server/mgd/pipeline-trace.ts's
+   * DetectorExecutionRecord and docs/MGD_DETECTOR_FAILURE_DISCLOSURE_ADR.md.
+   * Distinct from, and independent of, `evidenceLevel`: this reflects
+   * whether the analytical code that was supposed to run actually completed,
+   * not whether enough input data existed. Defaults to false (today's
+   * unconstrained behaviour) so this stays backward compatible for any
+   * caller that does not yet pass it.
+   */
+  hasIncompleteAnalysis?: boolean;
 }
 
 // ── Finding/RC category labels ─────────────────────────────────────────────────
 
+// Keys are computed from the one authoritative Finding Category vocabulary
+// (findings-engine.ts's FINDING_CATEGORIES) rather than freehand string
+// literals, so this label map can never silently drift from the real
+// category set. Values are this file's own human-readable labels — a
+// different concern from the category identifiers themselves.
 const CATEGORY_LABEL: Record<string, string> = {
-  inventory_visibility:  "inventory management",
-  logistics_coordination: "logistics coordination",
-  warehouse_operations:  "warehouse operations",
-  manpower_dependency:   "manpower dependency",
-  financial_leakage:     "financial leakage",
-  workflow_scalability:  "workflow scalability",
+  [FINDING_CATEGORIES.INVENTORY_VISIBILITY]:   "inventory management",
+  [FINDING_CATEGORIES.LOGISTICS_COORDINATION]: "logistics coordination",
+  [FINDING_CATEGORIES.WAREHOUSE_OPERATIONS]:   "warehouse operations",
+  [FINDING_CATEGORIES.MANPOWER_DEPENDENCY]:    "manpower dependency",
+  [FINDING_CATEGORIES.FINANCIAL_LEAKAGE]:      "financial leakage",
+  [FINDING_CATEGORIES.WORKFLOW_SCALABILITY]:   "workflow scalability",
   // Event Management categories
-  event_readiness:       "event readiness control",
-  dispatch_operations:   "dispatch reliability",
-  asset_management:      "asset accountability",
+  [FINDING_CATEGORIES.EVENT_READINESS]:        "event readiness control",
+  [FINDING_CATEGORIES.DISPATCH_OPERATIONS]:    "dispatch reliability",
+  [FINDING_CATEGORIES.ASSET_MANAGEMENT]:       "asset accountability",
 };
 
 const SEVERITY_ORDER: Record<string, number> = {
@@ -177,6 +209,78 @@ function formatSection(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EVIDENCE GATING (shared by Operational Health, Strategic Direction, and
+// Final Conclusion — see docs/MGD_V1_EVIDENCE_SUFFICIENCY_ADR.md).
+//
+// Key Findings, Root Cause Summary, and Priority Actions already had their
+// own honest "insufficient data" fallback, keyed on their own input array
+// being empty (top.length === 0 / rootCauses.length === 0) — that pattern is
+// left exactly as-is. These three sections had NO such check at all and
+// would generate confident, evidence-sounding prose unconditionally; this is
+// the one shared mechanism that fixes all three the same way rather than
+// three separate ad hoc patches.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * NONE — this section is replaced entirely by an honest fallback, the same
+ * way Key Findings/Root Cause Summary/Priority Actions already behave.
+ * PARTIAL — the section runs normally but must prepend a limitation caveat.
+ * SUFFICIENT (or unspecified, for backward compatibility) — unchanged.
+ */
+function insufficientEvidenceSection(
+  id: string,
+  title: string,
+  priority: number,
+  message: string,
+): ExecutiveNarrativeSection {
+  return formatSection(id, title, message, priority);
+}
+
+const PARTIAL_EVIDENCE_CAVEAT =
+  "This assessment is based on limited operational evidence and should be treated as provisional pending additional documented data.";
+
+/** Prepends the partial-evidence caveat when evidenceLevel is "PARTIAL"; a no-op otherwise. */
+function withEvidenceCaveat(content: string, evidenceLevel?: EvidenceLevel): string {
+  return evidenceLevel === "PARTIAL" ? `${PARTIAL_EVIDENCE_CAVEAT} ${content}` : content;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DETECTOR FAILURE DISCLOSURE (see docs/MGD_DETECTOR_FAILURE_DISCLOSURE_ADR.md)
+//
+// Independent of, and orthogonal to, the evidence-caveat mechanism above:
+// evidenceLevel answers "was there enough input data?"; hasIncompleteAnalysis
+// answers "did the analytical code that runs on that data finish running?"
+// A detector that threw is never presented as though it completed and found
+// nothing — this caveat exists so no section's confident language (a health
+// classification, a "no findings" statement) can be read as a complete,
+// clean result when part of the analysis did not finish. It never suppresses
+// or alters any successfully-produced finding, root cause, or recommendation
+// — those render exactly as they otherwise would, with this caveat merely
+// prepended alongside them.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const INCOMPLETE_ANALYSIS_CAVEAT =
+  "One or more analytical checks in this review could not be completed due to a processing issue; this assessment reflects only the checks that completed successfully and should not be read as a confirmed clean result for every operational area.";
+
+/** Prepends the incomplete-analysis caveat when hasIncompleteAnalysis is true; a no-op otherwise. */
+function withIncompleteAnalysisCaveat(content: string, hasIncompleteAnalysis?: boolean): string {
+  return hasIncompleteAnalysis ? `${INCOMPLETE_ANALYSIS_CAVEAT} ${content}` : content;
+}
+
+/**
+ * The honest "zero results" fallback for a section whose own detectors may
+ * have failed rather than legitimately found nothing. Used only when the
+ * section's real result count is 0 AND hasIncompleteAnalysis is true —
+ * the pre-existing "insufficient data" wording (used when hasIncompleteAnalysis
+ * is false) is left completely unchanged for the legitimate SUCCESS/0 case.
+ */
+function incompleteAnalysisFallback(domain: string): string {
+  return `One or more analytical checks required to assess ${domain} could not be completed due to a processing issue. ` +
+    `This does not confirm the absence of findings in this area — the relevant assessment did not finish running, and the result should be treated as inconclusive rather than clean. ` +
+    `Re-running the diagnostic is recommended.`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SECTION GENERATORS
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -188,6 +292,7 @@ export function generateExecutiveOverview(
   recommendations: OperationalRecommendation[],
   healthScore?: number,
   industry?: string,
+  hasIncompleteAnalysis?: boolean,
 ): ExecutiveNarrativeSection {
   const health       = classifyHealth(healthScore);
   const seed         = seedFrom(findings, rootCauses);
@@ -196,20 +301,20 @@ export function generateExecutiveOverview(
   const critRCCount  = countBySeverity(rootCauses, "CRITICAL");
   const cats         = uniqueCategories(findings);
   const catLabels    = cats.map(c => CATEGORY_LABEL[c] ?? c).filter(Boolean);
-  const hasLeakage   = hasCategory(findings, "financial_leakage");
-  const hasLogistics = hasCategory(findings, "logistics_coordination");
-  const hasInv       = hasCategory(findings, "inventory_visibility");
-  const hasMano      = hasCategory(findings, "manpower_dependency");
-  const hasScaling   = hasCategory(findings, "workflow_scalability");
-  const hasWarehouse = hasCategory(findings, "warehouse_operations");
+  const hasLeakage   = hasCategory(findings, FINDING_CATEGORIES.FINANCIAL_LEAKAGE);
+  const hasLogistics = hasCategory(findings, FINDING_CATEGORIES.LOGISTICS_COORDINATION);
+  const hasInv       = hasCategory(findings, FINDING_CATEGORIES.INVENTORY_VISIBILITY);
+  const hasMano      = hasCategory(findings, FINDING_CATEGORIES.MANPOWER_DEPENDENCY);
+  const hasScaling   = hasCategory(findings, FINDING_CATEGORIES.WORKFLOW_SCALABILITY);
+  const hasWarehouse = hasCategory(findings, FINDING_CATEGORIES.WAREHOUSE_OPERATIONS);
   // Event Management signals
-  const hasEMDispatch  = hasCategory(findings, "dispatch_operations");
-  const hasEMReadiness = hasCategory(findings, "event_readiness");
-  const hasEMAsset     = hasCategory(findings, "asset_management");
+  const hasEMDispatch  = hasCategory(findings, FINDING_CATEGORIES.DISPATCH_OPERATIONS);
+  const hasEMReadiness = hasCategory(findings, FINDING_CATEGORIES.EVENT_READINESS);
+  const hasEMAsset     = hasCategory(findings, FINDING_CATEGORIES.ASSET_MANAGEMENT);
   const hasDispatchFail  = findings.some(f => f.title === "Dispatch Reliability Risk");
   const hasMissingItems  = findings.some(f => f.title === "Inventory Shortage Pattern");
   const hasSubstitutions = findings.some(f => f.title.toLowerCase().includes("substitut") &&
-    (f.category === "dispatch_operations" || f.category === "event_readiness"));
+    (f.category === FINDING_CATEGORIES.DISPATCH_OPERATIONS || f.category === FINDING_CATEGORIES.EVENT_READINESS));
   const hasDamageLeakage = findings.some(f => f.title === "Asset Damage Recovery Leakage");
 
   const openings = [
@@ -288,18 +393,24 @@ export function generateExecutiveOverview(
     ...themeLines,
   ].join(" ");
 
-  console.log(`[MGD][NARRATIVE] generateExecutiveOverview — health=${health.label} themes=${themeLines.length}`);
-  return formatSection("executive-overview", "Executive Overview", content, 1);
+  console.log(`[MGD][NARRATIVE] generateExecutiveOverview — health=${health.label} themes=${themeLines.length} hasIncompleteAnalysis=${!!hasIncompleteAnalysis}`);
+  return formatSection("executive-overview", "Executive Overview", withIncompleteAnalysisCaveat(content, hasIncompleteAnalysis), 1);
 }
 
 // ── 2. Key Findings ───────────────────────────────────────────────────────────
 
 export function generateKeyFindingsNarrative(
   findings: OperationalFinding[],
+  hasIncompleteAnalysis?: boolean,
 ): ExecutiveNarrativeSection {
   const top = pickTopFindings(findings, 6);
 
   if (top.length === 0) {
+    if (hasIncompleteAnalysis) {
+      console.log("[MGD][NARRATIVE] generateKeyFindingsNarrative — no findings AND incomplete analysis, using honest fallback");
+      return formatSection("key-findings", "Key Operational Findings",
+        incompleteAnalysisFallback("operational findings"), 2);
+    }
     console.log("[MGD][NARRATIVE] generateKeyFindingsNarrative — no findings, using fallback");
     return formatSection("key-findings", "Key Operational Findings",
       "Insufficient operational data was available to generate specific findings at this time. A structured data collection process is recommended before proceeding with targeted corrective action.",
@@ -347,7 +458,7 @@ export function generateKeyFindingsNarrative(
   lines.push(`\n${closing[top.length % closing.length]}`);
 
   console.log(`[MGD][NARRATIVE] generateKeyFindingsNarrative — top=${top.length} critical=${critical.length} high=${high.length}`);
-  return formatSection("key-findings", "Key Operational Findings", lines.join("\n"), 2);
+  return formatSection("key-findings", "Key Operational Findings", withIncompleteAnalysisCaveat(lines.join("\n"), hasIncompleteAnalysis), 2);
 }
 
 // ── 3. Root Cause Summary ─────────────────────────────────────────────────────
@@ -355,8 +466,14 @@ export function generateKeyFindingsNarrative(
 export function generateRootCauseNarrative(
   rootCauses: RootCause[],
   findings:   OperationalFinding[],
+  hasIncompleteAnalysis?: boolean,
 ): ExecutiveNarrativeSection {
   if (rootCauses.length === 0) {
+    if (hasIncompleteAnalysis) {
+      console.log("[MGD][NARRATIVE] generateRootCauseNarrative — no root causes AND incomplete analysis, using honest fallback");
+      return formatSection("root-cause-summary", "Root Cause Analysis",
+        incompleteAnalysisFallback("root cause patterns"), 3);
+    }
     console.log("[MGD][NARRATIVE] generateRootCauseNarrative — no root causes, using fallback");
     return formatSection("root-cause-summary", "Root Cause Analysis",
       "Root cause synthesis requires sufficient operational finding data. Once findings are confirmed, the MGD engine will identify and map the systemic causes driving operational strain.",
@@ -398,7 +515,7 @@ export function generateRootCauseNarrative(
   lines.push(pick(closes, seed));
 
   console.log(`[MGD][NARRATIVE] generateRootCauseNarrative — rootCauses=${rootCauses.length} critical=${critCount} high=${highCount}`);
-  return formatSection("root-cause-summary", "Root Cause Analysis", lines.join("\n"), 3);
+  return formatSection("root-cause-summary", "Root Cause Analysis", withIncompleteAnalysisCaveat(lines.join("\n"), hasIncompleteAnalysis), 3);
 }
 
 // ── 4. Operational Health ─────────────────────────────────────────────────────
@@ -407,7 +524,18 @@ export function generateOperationalHealthNarrative(
   findings:    OperationalFinding[],
   rootCauses:  RootCause[],
   healthScore?: number,
+  evidenceLevel?: EvidenceLevel,
+  hasIncompleteAnalysis?: boolean,
 ): ExecutiveNarrativeSection {
+  if (evidenceLevel === "NONE") {
+    console.log("[MGD][NARRATIVE] generateOperationalHealthNarrative — no evidence, using fallback");
+    return insufficientEvidenceSection(
+      "operational-health", "Operational Health Assessment", 4,
+      "Operational health could not be assessed — no transactional evidence was available for this diagnostic. " +
+      "A health classification requires at minimum a partial data set; connect documents or transaction data to enable this assessment.",
+    );
+  }
+
   const health    = classifyHealth(healthScore);
   const seed      = seedFrom(findings, rootCauses);
   const catLabels = uniqueCategories(findings).map(c => CATEGORY_LABEL[c] ?? c).filter(Boolean);
@@ -452,8 +580,12 @@ export function generateOperationalHealthNarrative(
     implicationsByTone[health.tone],
   ];
 
-  console.log(`[MGD][NARRATIVE] generateOperationalHealthNarrative — score=${healthScore} classification=${health.label}`);
-  return formatSection("operational-health", "Operational Health Assessment", lines.join(" "), 4);
+  console.log(`[MGD][NARRATIVE] generateOperationalHealthNarrative — score=${healthScore} classification=${health.label} evidence=${evidenceLevel ?? "SUFFICIENT"} hasIncompleteAnalysis=${!!hasIncompleteAnalysis}`);
+  return formatSection(
+    "operational-health", "Operational Health Assessment",
+    withIncompleteAnalysisCaveat(withEvidenceCaveat(lines.join(" "), evidenceLevel), hasIncompleteAnalysis),
+    4,
+  );
 }
 
 // ── 5. Priority Actions ───────────────────────────────────────────────────────
@@ -462,10 +594,16 @@ export function generatePriorityActionsNarrative(
   recommendations: OperationalRecommendation[],
   findings:         OperationalFinding[],
   rootCauses:       RootCause[],
+  hasIncompleteAnalysis?: boolean,
 ): ExecutiveNarrativeSection {
   const top = pickTopRecommendations(recommendations, 8);
 
   if (top.length === 0) {
+    if (hasIncompleteAnalysis) {
+      console.log("[MGD][NARRATIVE] generatePriorityActionsNarrative — no recs AND incomplete analysis, using honest fallback");
+      return formatSection("priority-actions", "Priority Actions",
+        incompleteAnalysisFallback("recommendation generation"), 5);
+    }
     console.log("[MGD][NARRATIVE] generatePriorityActionsNarrative — no high/critical recs");
     return formatSection("priority-actions", "Priority Actions",
       "No high-priority recommendations were generated from the current data set. As operational data is enriched, the MGD engine will identify and prioritise corrective actions.",
@@ -533,7 +671,7 @@ export function generatePriorityActionsNarrative(
   }
 
   console.log(`[MGD][NARRATIVE] generatePriorityActionsNarrative — total=${top.length} immediate=${immediate.length} workflow=${workflow.length} scalability=${scalability.length}`);
-  return formatSection("priority-actions", "Priority Actions", lines.join("\n"), 5);
+  return formatSection("priority-actions", "Priority Actions", withIncompleteAnalysisCaveat(lines.join("\n"), hasIncompleteAnalysis), 5);
 }
 
 // ── 6. Strategic Direction ────────────────────────────────────────────────────
@@ -543,11 +681,22 @@ export function generateStrategicDirectionNarrative(
   rootCauses:      RootCause[],
   recommendations: OperationalRecommendation[],
   industry?:       string,
+  evidenceLevel?:  EvidenceLevel,
+  hasIncompleteAnalysis?: boolean,
 ): ExecutiveNarrativeSection {
+  if (evidenceLevel === "NONE") {
+    console.log("[MGD][NARRATIVE] generateStrategicDirectionNarrative — no evidence, using fallback");
+    return insufficientEvidenceSection(
+      "strategic-direction", "Strategic Direction", 6,
+      "A strategic direction cannot be responsibly proposed without operational evidence to base it on. " +
+      "Once findings and root causes are established from real operational data, this section will outline the phased improvement path.",
+    );
+  }
+
   const seed        = seedFrom(findings, rootCauses);
-  const hasScaling  = hasCategory(findings, "workflow_scalability") || rootCauses.some(rc => rc.title.toLowerCase().includes("scalability"));
-  const hasInv      = hasCategory(findings, "inventory_visibility");
-  const hasLog      = hasCategory(findings, "logistics_coordination");
+  const hasScaling  = hasCategory(findings, FINDING_CATEGORIES.WORKFLOW_SCALABILITY) || rootCauses.some(rc => rc.title.toLowerCase().includes("scalability"));
+  const hasInv      = hasCategory(findings, FINDING_CATEGORIES.INVENTORY_VISIBILITY);
+  const hasLog      = hasCategory(findings, FINDING_CATEGORIES.LOGISTICS_COORDINATION);
   const longTermRec = recommendations.filter(r => r.timeframe === "LONG_TERM" || r.timeframe === "90_DAYS");
 
   const openings = [
@@ -591,8 +740,12 @@ export function generateStrategicDirectionNarrative(
     );
   }
 
-  console.log(`[MGD][NARRATIVE] generateStrategicDirectionNarrative — hasScaling=${hasScaling} hasInv=${hasInv} longTerm=${longTermRec.length}`);
-  return formatSection("strategic-direction", "Strategic Direction", lines.join(" "), 6);
+  console.log(`[MGD][NARRATIVE] generateStrategicDirectionNarrative — hasScaling=${hasScaling} hasInv=${hasInv} longTerm=${longTermRec.length} evidence=${evidenceLevel ?? "SUFFICIENT"} hasIncompleteAnalysis=${!!hasIncompleteAnalysis}`);
+  return formatSection(
+    "strategic-direction", "Strategic Direction",
+    withIncompleteAnalysisCaveat(withEvidenceCaveat(lines.join(" "), evidenceLevel), hasIncompleteAnalysis),
+    6,
+  );
 }
 
 // ── 7. Final Conclusion ───────────────────────────────────────────────────────
@@ -602,7 +755,18 @@ export function generateFinalConclusionNarrative(
   rootCauses:      RootCause[],
   recommendations: OperationalRecommendation[],
   healthScore?:    number,
+  evidenceLevel?:  EvidenceLevel,
+  hasIncompleteAnalysis?: boolean,
 ): ExecutiveNarrativeSection {
+  if (evidenceLevel === "NONE") {
+    console.log("[MGD][NARRATIVE] generateFinalConclusionNarrative — no evidence, using fallback");
+    return insufficientEvidenceSection(
+      "final-conclusion", "Conclusion", 7,
+      "This diagnostic could not reach a conclusion — no operational evidence was available to analyse. " +
+      "Supply transaction data or documents and re-run the diagnostic to receive a substantiated assessment.",
+    );
+  }
+
   const health  = classifyHealth(healthScore);
   const seed    = seedFrom(findings, rootCauses);
   const critRec = recommendations.filter(r => r.priority === "CRITICAL").length;
@@ -642,8 +806,12 @@ export function generateFinalConclusionNarrative(
   lines.push(pick(actionableClose, seed));
   lines.push(pick(positiveClose, seed));
 
-  console.log(`[MGD][NARRATIVE] generateFinalConclusionNarrative — critRec=${critRec} highRec=${highRec} health=${health.label}`);
-  return formatSection("final-conclusion", "Conclusion", lines.join(" "), 7);
+  console.log(`[MGD][NARRATIVE] generateFinalConclusionNarrative — critRec=${critRec} highRec=${highRec} health=${health.label} evidence=${evidenceLevel ?? "SUFFICIENT"} hasIncompleteAnalysis=${!!hasIncompleteAnalysis}`);
+  return formatSection(
+    "final-conclusion", "Conclusion",
+    withIncompleteAnalysisCaveat(withEvidenceCaveat(lines.join(" "), evidenceLevel), hasIncompleteAnalysis),
+    7,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -661,6 +829,8 @@ export function generateExecutiveNarrative(params: NarrativeParams): ExecutiveNa
     recommendations = [],
     operationalHealthScore,
     industry,
+    evidenceLevel   = "SUFFICIENT",
+    hasIncompleteAnalysis = false,
   } = params ?? {};
 
   // Sanitise inputs
@@ -674,7 +844,8 @@ export function generateExecutiveNarrative(params: NarrativeParams): ExecutiveNa
     `${safeRootCauses.length} rootCauses, ` +
     `${safeRecs.length} recommendations, ` +
     `healthScore=${operationalHealthScore ?? "n/a"}, ` +
-    `industry=${industry ?? "unspecified"}`,
+    `industry=${industry ?? "unspecified"}, ` +
+    `evidenceLevel=${evidenceLevel}`,
   );
 
   const fallbackSection = (id: string, title: string, priority?: number): ExecutiveNarrativeSection =>
@@ -688,25 +859,25 @@ export function generateExecutiveNarrative(params: NarrativeParams): ExecutiveNa
   let strategicDirection: ExecutiveNarrativeSection;
   let finalConclusion:    ExecutiveNarrativeSection;
 
-  try { executiveOverview  = generateExecutiveOverview(safeFindings, safeRootCauses, safeRecs, operationalHealthScore, industry); }
+  try { executiveOverview  = generateExecutiveOverview(safeFindings, safeRootCauses, safeRecs, operationalHealthScore, industry, hasIncompleteAnalysis); }
   catch (e) { console.error("[MGD][NARRATIVE] executiveOverview failed:", e); executiveOverview = fallbackSection("executive-overview", "Executive Overview", 1); }
 
-  try { keyFindings        = generateKeyFindingsNarrative(safeFindings); }
+  try { keyFindings        = generateKeyFindingsNarrative(safeFindings, hasIncompleteAnalysis); }
   catch (e) { console.error("[MGD][NARRATIVE] keyFindings failed:", e); keyFindings = fallbackSection("key-findings", "Key Operational Findings", 2); }
 
-  try { rootCauseSummary   = generateRootCauseNarrative(safeRootCauses, safeFindings); }
+  try { rootCauseSummary   = generateRootCauseNarrative(safeRootCauses, safeFindings, hasIncompleteAnalysis); }
   catch (e) { console.error("[MGD][NARRATIVE] rootCauseSummary failed:", e); rootCauseSummary = fallbackSection("root-cause-summary", "Root Cause Analysis", 3); }
 
-  try { operationalHealth  = generateOperationalHealthNarrative(safeFindings, safeRootCauses, operationalHealthScore); }
+  try { operationalHealth  = generateOperationalHealthNarrative(safeFindings, safeRootCauses, operationalHealthScore, evidenceLevel, hasIncompleteAnalysis); }
   catch (e) { console.error("[MGD][NARRATIVE] operationalHealth failed:", e); operationalHealth = fallbackSection("operational-health", "Operational Health Assessment", 4); }
 
-  try { priorityActions    = generatePriorityActionsNarrative(safeRecs, safeFindings, safeRootCauses); }
+  try { priorityActions    = generatePriorityActionsNarrative(safeRecs, safeFindings, safeRootCauses, hasIncompleteAnalysis); }
   catch (e) { console.error("[MGD][NARRATIVE] priorityActions failed:", e); priorityActions = fallbackSection("priority-actions", "Priority Actions", 5); }
 
-  try { strategicDirection = generateStrategicDirectionNarrative(safeFindings, safeRootCauses, safeRecs, industry); }
+  try { strategicDirection = generateStrategicDirectionNarrative(safeFindings, safeRootCauses, safeRecs, industry, evidenceLevel, hasIncompleteAnalysis); }
   catch (e) { console.error("[MGD][NARRATIVE] strategicDirection failed:", e); strategicDirection = fallbackSection("strategic-direction", "Strategic Direction", 6); }
 
-  try { finalConclusion    = generateFinalConclusionNarrative(safeFindings, safeRootCauses, safeRecs, operationalHealthScore); }
+  try { finalConclusion    = generateFinalConclusionNarrative(safeFindings, safeRootCauses, safeRecs, operationalHealthScore, evidenceLevel, hasIncompleteAnalysis); }
   catch (e) { console.error("[MGD][NARRATIVE] finalConclusion failed:", e); finalConclusion = fallbackSection("final-conclusion", "Conclusion", 7); }
 
   const report: ExecutiveNarrativeReport = {
@@ -724,6 +895,7 @@ export function generateExecutiveNarrative(params: NarrativeParams): ExecutiveNa
       rootCauseCount:         safeRootCauses.length,
       recommendationCount:    safeRecs.length,
       operationalHealthScore,
+      hasIncompleteAnalysis,
     },
   };
 

@@ -20,6 +20,8 @@ import type { OperationalRecommendation } from "./recommendation-engine";
 import type { BenchmarkResult }           from "./benchmark-engine";
 import type { ExecutiveNarrativeReport }  from "./executive-narrative-engine";
 import type { EventSignals }              from "./event-signals";
+import type { EvidenceSufficiency }       from "./evidence-sufficiency";
+import { buildDiagnosticScope, attachRelevantFindings, type DiagnosticScopeItem, type BusinessConcernInput } from "./diagnostic-scope.js";
 import {
   generateIndustryInsights,
   type IndustryRule,
@@ -49,12 +51,36 @@ const PRIORITY_ORDER: Record<string, number> = {
 // ── Exported interfaces ────────────────────────────────────────────────────────
 
 export interface MGDReport {
+  /**
+   * The canonical, stable identifier for this report — identical to the
+   * `StoredMGDReport.id` it is persisted under (server/mgd/report-store.ts).
+   * Populated by the /api/mgd/run route handler after persistence, so that
+   * every consumer of the report object (sessionStorage, the Report Viewer,
+   * Presentation Mode, PDF export) can reference the exact same persisted
+   * record via GET /api/mgd/reports/:id — the single canonical handoff
+   * mechanism, replacing ad hoc prop/sessionStorage passing. Optional and
+   * absent on reports composed before this field existed, or on reports
+   * that were never persisted (e.g. a failed save) — every consumer must
+   * treat its absence as "no stable id available," never as an error.
+   */
+  id?: string;
+
   metadata: {
     generatedAt:              string;
     clientName?:              string;
     industry?:                string;
     operationalHealthScore?:  number;
     reportVersion:            string;
+
+    /**
+     * What evidence this report was actually built from — see
+     * server/mgd/evidence-sufficiency.ts and
+     * docs/MGD_V1_EVIDENCE_SUFFICIENCY_ADR.md. Optional and absent on
+     * reports composed before this field existed; every consumer must
+     * treat its absence as "unknown / not assessed", never assume
+     * SUFFICIENT and never attempt to reconstruct it retroactively.
+     */
+    evidence?: EvidenceSufficiency;
   };
 
   summary: {
@@ -96,8 +122,32 @@ export interface MGDReport {
   consultantInsights?: {
     executiveObservations: string[];
     operationalConcerns:   string[];
-    notes:                 { title: string; category: string; observation: string }[];
+    notes: {
+      title: string; category: string; observation: string;
+      /** Consultant-selected diagnostic area, if any — see ConsultantNote in consultant-notes-engine.ts. */
+      relatedArea?: string;
+      /** Findings whose category matches relatedArea — display cross-reference only, never evidence. */
+      relevantFindingIds?: string[];
+    }[];
   };
+
+  /**
+   * Structured Diagnostic Scope — "what the client asked MGD to investigate"
+   * (each business concern), kept explicitly distinct from evidence,
+   * findings, and conclusions. See
+   * docs/MGD_STRUCTURED_DIAGNOSTIC_SCOPE_ADR.md. Additive: absent on reports
+   * composed before this field existed, or when no business concerns were
+   * supplied — every consumer must treat its absence as "no scope recorded,"
+   * never as an error, and must never treat a scope item as evidence or as
+   * a finding. `consultantInsights.operationalConcerns` (above) still also
+   * carries business concerns, unchanged, for backward-compatible display —
+   * this field is an additional, explicitly-labeled representation, not a
+   * replacement. Each item may additionally carry consultant-selected
+   * `selectedAreas` and a read-only `relevantFindingIds` cross-reference —
+   * see docs/MGD_BUSINESS_CONCERN_CORRELATION_ADR.md. Both are optional;
+   * historical reports and reports with no selected areas simply omit them.
+   */
+  diagnosticScope?: DiagnosticScopeItem[];
 
   eventDiagnostics?: {
     dispatchesAnalysed:       number;
@@ -132,8 +182,9 @@ export interface ReportComposerParams {
   narrative:               ExecutiveNarrativeReport;
   operationalHealthScore?: number;
   consultantNotes?:        ConsultantNote[];
-  businessConcerns?:       string[];
+  businessConcerns?:       BusinessConcernInput[];
   eventSignals?:           EventSignals;
+  evidence?:               EvidenceSufficiency;
 }
 
 // ── Sorting helpers ────────────────────────────────────────────────────────────
@@ -247,10 +298,18 @@ export function buildVisualMetrics(
       operationalHealthLabel = "Critical Operational Instability";
     }
 
-    // Risk level from critical finding count
+    // Risk level from critical finding count — but a health score of null
+    // means there was no evidence to derive ANY finding from, so "0 critical
+    // findings" here means "nothing was evaluated," not "evaluated and
+    // controlled." Without this guard, an unassessed diagnostic would
+    // report a reassuring "Controlled" risk level next to its "Not
+    // Assessed" health label — the same class of mismatch this field exists
+    // to prevent.
     const critCount = findings.filter(f => f?.severity === "CRITICAL").length;
     let operationalRiskLevel: string;
-    if (critCount <= 1) {
+    if (operationalHealthScore == null) {
+      operationalRiskLevel = "Not Assessed";
+    } else if (critCount <= 1) {
       operationalRiskLevel = "Controlled";
     } else if (critCount <= 3) {
       operationalRiskLevel = "Elevated";
@@ -299,6 +358,7 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
       consultantNotes,
       businessConcerns,
       eventSignals,
+      evidence,
     } = params;
 
     // Sanitise arrays — remove null/undefined elements
@@ -328,19 +388,55 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
     const summary       = buildSummaryMetrics(sortedFindings, sortedRootCauses, sortedRecommendations, sortedBenchmarks);
     const visualMetrics = buildVisualMetrics(operationalHealthScore, sortedFindings, sortedBenchmarks);
 
+    // generateConsultantInsights formats plain concern TEXT only — it has no
+    // knowledge of, and no need for, consultant-selected diagnostic areas
+    // (those are handled entirely by diagnostic-scope.ts below). Extract the
+    // text from either the legacy plain-string form or the richer
+    // {text, selectedAreas} form so that function's signature and logic stay
+    // completely untouched.
+    const businessConcernTexts: string[] = (businessConcerns ?? [])
+      .map(c => typeof c === "string" ? c : (c?.text ?? ""))
+      .filter((t): t is string => typeof t === "string" && t.trim().length > 0);
+
     // Consultant insights — deterministic, never throws
     const hasConsultantInput = (consultantNotes && consultantNotes.length > 0)
-      || (businessConcerns && businessConcerns.length > 0);
+      || businessConcernTexts.length > 0;
     const consultantInsights = hasConsultantInput
       ? {
-          ...generateConsultantInsights({ consultantNotes, businessConcerns }),
-          notes: (consultantNotes ?? []).map(n => ({
-            title:       n.title,
-            category:    n.category,
-            observation: n.observation,
-          })),
+          ...generateConsultantInsights({ consultantNotes, businessConcerns: businessConcernTexts }),
+          notes: (consultantNotes ?? []).map(n => {
+            // Read-only cross-reference, same spirit as
+            // attachRelevantFindings for Diagnostic Scope below — a
+            // consultant-selected relatedArea surfaces findings that share
+            // its category, purely for display; it is never evidence and
+            // never influences the note itself or any analytical output.
+            const relevantFindingIds = n.relatedArea
+              ? sortedFindings.filter(f => f.category === n.relatedArea).map(f => f.id)
+              : undefined;
+            return {
+              title:       n.title,
+              category:    n.category,
+              observation: n.observation,
+              relatedArea: n.relatedArea,
+              ...(relevantFindingIds && relevantFindingIds.length > 0 ? { relevantFindingIds } : {}),
+            };
+          }),
         }
       : undefined;
+
+    // Structured Diagnostic Scope — reads only businessConcerns and the
+    // already-computed report-level evidence.level; never recomputes
+    // evidence, never touches findings/root causes/recommendations/
+    // benchmarks/health score. See diagnostic-scope.ts and
+    // docs/MGD_STRUCTURED_DIAGNOSTIC_SCOPE_ADR.md and
+    // docs/MGD_BUSINESS_CONCERN_CORRELATION_ADR.md. attachRelevantFindings
+    // is a separate, read-only, additive pass — it runs strictly AFTER the
+    // full, unfiltered diagnostic already produced sortedFindings, and it
+    // never changes which findings exist or their content (Model A —
+    // scoping/display only, never analytical filtering).
+    const scopeItemsRaw = buildDiagnosticScope(businessConcerns, evidence?.level);
+    const scopeItems = attachRelevantFindings(scopeItemsRaw, sortedFindings);
+    const diagnosticScope = scopeItems.length > 0 ? scopeItems : undefined;
 
     // Industry insights — deterministic, never throws
     const insightsResult = generateIndustryInsights({
@@ -363,6 +459,7 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
         industry,
         operationalHealthScore,
         reportVersion:          REPORT_VERSION,
+        evidence,
       },
       summary,
       narrative,
@@ -378,7 +475,13 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
         topOpportunities,
       },
       consultantInsights,
-      eventDiagnostics: eventSignals ? {
+      diagnosticScope,
+      // Only included when there was actually a dispatch-shaped record to
+      // measure (eventSignals.assessed) — omitted, not fabricated as a
+      // "perfect 100/0%" block, when there was nothing to measure. Mirrors
+      // the same "included only when there's something to say" pattern
+      // already used above for industryInsights/consultantInsights.
+      eventDiagnostics: eventSignals?.assessed ? {
         dispatchesAnalysed:       eventSignals.totalDispatches,
         dispatchFailureRate:      eventSignals.dispatchFailureRate,
         dispatchDelayRate:        eventSignals.dispatchDelayRate,
@@ -411,9 +514,10 @@ export function composeMGDReport(params: ReportComposerParams | null | undefined
       `maturity=${insightsResult.maturityLevel}, ` +
       `industryRules=${insightsResult.rules.length} (risks=${topRisks.length} opps=${topOpportunities.length}), ` +
       `consultantObs=${consultantInsights?.executiveObservations.length ?? 0}, ` +
-      `consultantConcerns=${consultantInsights?.operationalConcerns.length ?? 0}`,
+      `consultantConcerns=${consultantInsights?.operationalConcerns.length ?? 0}, ` +
+      `diagnosticScope=${diagnosticScope?.length ?? 0}`,
     );
-    console.log(`[MGD][REPORT]   Health: ${visualMetrics.operationalHealthLabel} | Risk: ${visualMetrics.operationalRiskLevel}`);
+    console.log(`[MGD][REPORT]   Health: ${visualMetrics.operationalHealthLabel} | Risk: ${visualMetrics.operationalRiskLevel} | Evidence: ${evidence?.level ?? "unknown"}`);
     console.log(
       `[MGD][REPORT]   Benchmarks — ` +
       `CRITICAL=${visualMetrics.benchmarkStatusBreakdown.critical}, ` +

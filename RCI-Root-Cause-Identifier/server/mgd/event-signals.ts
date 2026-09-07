@@ -10,6 +10,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EventSignals {
+  // Whether any dispatch-shaped record was actually found in the input.
+  // false means every numeric field below is a "nothing to measure" default
+  // (dispatchReliabilityScore/eventReadinessScore/etc. all read 100, every
+  // rate reads 0%) — NOT a measured, confirmed-perfect result. Consumers
+  // (report-composer.ts) must gate on this before presenting these numbers
+  // as findings; never display them as measured performance when false.
+  assessed: boolean;
+
   // ── Dispatch reliability ──────────────────────────────────────────────────
   dispatchFailureRate:      number;   // incomplete dispatches / total dispatches
   dispatchDelayRate:        number;   // delayed dispatches / total dispatches (alias: deliveryDelayRate)
@@ -81,6 +89,7 @@ function extract(rawText: string, key: string): string | null {
  */
 export function computeEventSignals(transactions: any[]): EventSignals {
   const NEUTRAL: EventSignals = {
+    assessed: false,
     dispatchFailureRate: 0, dispatchDelayRate: 0, deliveryDelayRate: 0,
     averageDelayMinutes: 0, substitutionRate: 0,
     missingItemRate: 0, inventoryShortageRate: 0,
@@ -257,6 +266,12 @@ export function computeEventSignals(transactions: any[]): EventSignals {
   const assetDamageExposure      = Math.round(totalDamageValue);   // total recorded damage RM
 
   return {
+    // Even when transactions.length > 0, none of them may be dispatch-shaped
+    // (e.g. a purely inventory/logistics dataset with no dispatch signals) —
+    // in that case every rate/score below computed as if "no failures", the
+    // same "nothing to measure" outcome as the NEUTRAL early-return above.
+    // assessed reflects that real condition, not merely "were there any rows".
+    assessed: totalDispatches > 0,
     dispatchFailureRate,
     dispatchDelayRate,
     deliveryDelayRate,

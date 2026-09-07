@@ -8,11 +8,18 @@
 // All routes are wrapped in try/catch — never crash the process.
 // All responses are valid JSON with { success: true|false, ... }.
 //
-// No auth guard applied at this layer — attach isAuthenticated in registerRoutes
-// if you need it per-route.
+// Auth: every route below is registered with `authMiddleware` (passed in by
+// the caller — server/system/routes.ts passes [isAuthenticated, isAdmin],
+// its own existing, already-established admin-route pattern) EXCEPT
+// GET /api/mgd/health, a liveness probe that reveals no client data and is
+// left public by design, matching common health-check convention. Frontend
+// route gating in client/src/App.tsx (only admin-role users are ever routed
+// to an /mgd/* page) is preserved unchanged and untouched — this is a
+// defense-in-depth addition, not a replacement for it.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { Express, Request, Response } from "express";
+import crypto from "crypto";
+import type { Express, Request, RequestHandler, Response } from "express";
 import {
   runMGDPipeline,
   estimateOperationalHealth,
@@ -37,11 +44,58 @@ import { storage }      from "../system/storage";
 import { detectBlocks } from "../cil/block-detector";
 import { mapColumns }   from "../cil/column-mapper";
 import { parseRow }     from "../cil/row-parser";
+import { FINDING_CATEGORIES } from "../mgd/finding-categories";
+import type { BusinessConcernInput } from "../mgd/diagnostic-scope";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function safeArray(v: unknown): any[] {
   return Array.isArray(v) ? v.filter(x => x != null) : [];
+}
+
+// Human-selected diagnostic area validation — see
+// docs/MGD_BUSINESS_CONCERN_CORRELATION_ADR.md. Restricts any
+// consultant-selected area to the exact, fixed Finding Category vocabulary;
+// this is an integrity check against a known enum, never a classification
+// or inference of the value from anything the consultant typed.
+const VALID_DIAGNOSTIC_AREAS: ReadonlySet<string> = new Set(Object.values(FINDING_CATEGORIES));
+
+function safeAreas(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const a of v) {
+    if (typeof a === "string" && VALID_DIAGNOSTIC_AREAS.has(a) && !seen.has(a)) {
+      seen.add(a);
+      out.push(a);
+    }
+  }
+  return out;
+}
+
+/**
+ * Parse the request body's businessConcerns into the richer
+ * BusinessConcernInput[] shape: plain strings pass through unchanged
+ * (legacy/back-compat callers); an object entry is normalised to
+ * {text, selectedAreas} with selectedAreas validated via safeAreas above.
+ * Never infers selectedAreas from the concern's own text.
+ */
+function parseBusinessConcerns(v: unknown): BusinessConcernInput[] {
+  return safeArray(v)
+    .map((c: unknown): BusinessConcernInput | null => {
+      if (typeof c === "string") {
+        const text = c.trim();
+        return text ? text : null;
+      }
+      if (c && typeof c === "object") {
+        const text = String((c as any).text ?? "").trim();
+        if (!text) return null;
+        const selectedAreas = safeAreas((c as any).selectedAreas);
+        return selectedAreas.length > 0 ? { text, selectedAreas } : text;
+      }
+      return null;
+    })
+    .filter((c): c is BusinessConcernInput => c !== null);
 }
 
 function safeMetrics(v: unknown): Record<string, number> {
@@ -61,10 +115,18 @@ function fail(res: Response, status: number, message: string): void {
 
 // ── Route registration ────────────────────────────────────────────────────────
 
-export function registerMGDRoutes(app: Express): void {
+/**
+ * @param authMiddleware Applied, in order, to every route below except
+ *   GET /api/mgd/health. Defaults to `[]` (no guard) only so this function
+ *   remains directly callable/testable in isolation — server/system/routes.ts,
+ *   the sole production caller, always passes [isAuthenticated, isAdmin].
+ */
+export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[] = []): void {
+  const guard = authMiddleware;
 
   // ── GET /api/mgd/health ─────────────────────────────────────────────────────
-  // Health probe — no pipeline invocation, returns immediately.
+  // Health probe — no pipeline invocation, returns immediately. Deliberately
+  // NOT behind `guard` — see file header.
   app.get("/api/mgd/health", (_req: Request, res: Response) => {
     console.log("[MGD][API] GET /api/mgd/health");
     ok(res, {
@@ -216,7 +278,7 @@ export function registerMGDRoutes(app: Express): void {
   // this handler loads each document from storage, extracts transactions from
   // any structured spreadsheet sheets via detectBlocks → mapColumns → parseRow,
   // and continues as baseline analysis if no transactions could be extracted.
-  app.post("/api/mgd/run", async (req: Request, res: Response) => {
+  app.post("/api/mgd/run", ...guard, async (req: Request, res: Response) => {
     console.log("[MGD][ROUTE_VERSION]", "EXTRACTION_BUILD_V1");
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/run — start");
@@ -225,15 +287,19 @@ export function registerMGDRoutes(app: Express): void {
 
       // ── Consultant context ─────────────────────────────────────────────────
       const rawNotes = safeArray(body.consultantNotes);
-      const consultantNotes = rawNotes.map((n: any) => ({
-        title:       String(n.title       ?? "").trim(),
-        category:    String(n.category    ?? "").trim(),
-        observation: String(n.observation ?? "").trim(),
-      })).filter((n: any) => n.title || n.observation);
+      const consultantNotes = rawNotes.map((n: any) => {
+        const relatedArea = typeof n.relatedArea === "string" && VALID_DIAGNOSTIC_AREAS.has(n.relatedArea)
+          ? n.relatedArea
+          : undefined;
+        return {
+          title:       String(n.title       ?? "").trim(),
+          category:    String(n.category    ?? "").trim(),
+          observation: String(n.observation ?? "").trim(),
+          ...(relatedArea ? { relatedArea } : {}),
+        };
+      }).filter((n: any) => n.title || n.observation);
 
-      const businessConcerns: string[] = safeArray(body.businessConcerns)
-        .map((c: unknown) => String(c ?? "").trim())
-        .filter(Boolean);
+      const businessConcerns: BusinessConcernInput[] = parseBusinessConcerns(body.businessConcerns);
 
       // ── Document → transaction extraction ─────────────────────────────────
       const selectedDocIds: string[] = safeArray(body.selectedDocuments)
@@ -458,21 +524,42 @@ export function registerMGDRoutes(app: Express): void {
         `pipelineMs=${result.runtimeMs}, totalMs=${Date.now() - t0}`,
       );
 
+      // ── Canonical report identity ───────────────────────────────────────
+      // Generated up front and embedded into the composed report BEFORE
+      // persistence and BEFORE the response is sent, so `saved.id` (the
+      // StoredMGDReport this becomes) and `report.id` (what every consumer —
+      // Report Viewer, Presentation Mode, PDF export — sees) are always the
+      // exact same value. This is the one canonical report handoff: every
+      // later stage resolves the report via GET /api/mgd/reports/:id using
+      // this id, never via a passed-around copy of the object itself.
+      const reportId = crypto.randomUUID();
+      const reportWithId = { ...result.report, id: reportId };
+
+      const saved = await saveReport({
+        id:         reportId,
+        clientId:   body.clientId   ?? undefined,
+        clientName: body.clientName ?? undefined,
+        industry:   body.industry   ?? undefined,
+        report:     reportWithId,
+        runtimeMs:  result.runtimeMs,
+      });
+
+      if (!saved) {
+        // Persistence failed — the diagnostic itself still succeeded, so we
+        // still return the computed report (with its id, even though that
+        // id was never actually saved) rather than discarding real work.
+        // Every consumer must already tolerate `report.id` referring to a
+        // record that GET /api/mgd/reports/:id cannot find (see the Report
+        // Viewer's and Presentation Mode's own "report not found" states).
+        console.error("[MGD][API] POST /api/mgd/run — saveReport failed; report was not persisted");
+      }
+
       ok(res, {
-        report:    result.report,
+        report:    reportWithId,
         runtimeMs: result.runtimeMs,
         traceId:   result.traceId,
         steps:     result.steps,
       });
-
-      // Fire-and-forget persistence — never blocks the response
-      saveReport({
-        clientId:   body.clientId   ?? undefined,
-        clientName: body.clientName ?? undefined,
-        industry:   body.industry   ?? undefined,
-        report:     result.report,
-        runtimeMs:  result.runtimeMs,
-      }).catch(err => console.error("[MGD][API] POST /api/mgd/run — saveReport failed (non-fatal):", err));
 
     } catch (err) {
       console.error("[MGD][API] POST /api/mgd/run — FATAL:", err);
@@ -482,7 +569,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── POST /api/mgd/estimate-health ──────────────────────────────────────────
   // Estimate operational health score from findings, root causes, benchmarks.
-  app.post("/api/mgd/estimate-health", (req: Request, res: Response) => {
+  app.post("/api/mgd/estimate-health", ...guard, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/estimate-health — start");
     try {
@@ -506,7 +593,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── POST /api/mgd/findings ──────────────────────────────────────────────────
   // Generate operational findings from transaction data.
-  app.post("/api/mgd/findings", (req: Request, res: Response) => {
+  app.post("/api/mgd/findings", ...guard, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/findings — start");
     try {
@@ -528,7 +615,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── POST /api/mgd/root-causes ───────────────────────────────────────────────
   // Map findings to systemic root causes.
-  app.post("/api/mgd/root-causes", (req: Request, res: Response) => {
+  app.post("/api/mgd/root-causes", ...guard, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/root-causes — start");
     try {
@@ -549,7 +636,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── POST /api/mgd/recommendations ──────────────────────────────────────────
   // Generate prioritised corrective recommendations.
-  app.post("/api/mgd/recommendations", (req: Request, res: Response) => {
+  app.post("/api/mgd/recommendations", ...guard, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/recommendations — start");
     try {
@@ -571,7 +658,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── POST /api/mgd/benchmarks ────────────────────────────────────────────────
   // Compare operational metrics against industry benchmarks.
-  app.post("/api/mgd/benchmarks", (req: Request, res: Response) => {
+  app.post("/api/mgd/benchmarks", ...guard, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/benchmarks — start");
     try {
@@ -592,7 +679,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── POST /api/mgd/narrative ─────────────────────────────────────────────────
   // Generate a 7-section executive narrative from pipeline outputs.
-  app.post("/api/mgd/narrative", (req: Request, res: Response) => {
+  app.post("/api/mgd/narrative", ...guard, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/narrative — start");
     try {
@@ -627,32 +714,42 @@ export function registerMGDRoutes(app: Express): void {
   });
 
   // ── POST /api/mgd/export-pdf ────────────────────────────────────────────────
-  // Run the full pipeline then generate and stream a PDF report.
-  app.post("/api/mgd/export-pdf", async (req: Request, res: Response) => {
+  // Export the EXACT persisted report identified by `reportId` — never a
+  // freshly re-run diagnostic. This deliberately does not accept raw
+  // transactions/documents/metrics: the report a user is viewing is already
+  // fully composed and persisted (POST /api/mgd/run), so exporting it means
+  // reading that same record back, not re-deriving a new one from scratch.
+  // A missing or unknown reportId is a clear 400/404 error — never a
+  // fallback to an empty or freshly-computed "successful" report.
+  app.post("/api/mgd/export-pdf", ...guard, async (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/export-pdf — start");
     try {
       const body = req.body ?? {};
+      const reportId = typeof body.reportId === "string" ? body.reportId.trim() : "";
 
-      // Run the pipeline first to get a fully composed MGDReport
-      const result = await runMGDPipeline({
-        clientName:   body.clientName   ?? undefined,
-        industry:     body.industry     ?? undefined,
-        transactions: safeArray(body.transactions),
-        documents:    safeArray(body.documents),
-        metrics:      safeMetrics(body.metrics),
-      });
+      if (!reportId) {
+        console.log("[MGD][API] POST /api/mgd/export-pdf — missing reportId");
+        return fail(res, 400, "reportId is required — export always targets an already-generated, persisted report.");
+      }
 
-      // Generate PDF from the composed report
-      const pdfBuffer = await generateMGDPdfReport(result.report);
+      const stored = await getReport(reportId);
+      if (!stored) {
+        console.log(`[MGD][API] POST /api/mgd/export-pdf — report "${reportId}" not found`);
+        return fail(res, 404, `Report "${reportId}" not found`);
+      }
 
-      const safeName = (body.clientName ?? "mgd-report")
+      // Generate PDF directly from the persisted, already-composed report —
+      // no pipeline invocation, no re-derivation of any analytical content.
+      const pdfBuffer = await generateMGDPdfReport(stored.report);
+
+      const safeName = (stored.clientName ?? stored.report.metadata.clientName ?? "mgd-report")
         .replace(/[^a-z0-9]/gi, "-").toLowerCase().replace(/-+/g, "-").slice(0, 40);
       const filename = `${safeName}-mgd-report.pdf`;
 
       console.log(
-        `[MGD][API] POST /api/mgd/export-pdf — ` +
-        `pdf=${pdfBuffer.length} bytes, pipelineMs=${result.runtimeMs}, totalMs=${Date.now() - t0}`,
+        `[MGD][API] POST /api/mgd/export-pdf — reportId=${reportId} ` +
+        `pdf=${pdfBuffer.length} bytes, totalMs=${Date.now() - t0}`,
       );
 
       res
@@ -668,7 +765,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── GET /api/mgd/reports ────────────────────────────────────────────────────
   // List all stored reports, optionally filtered by ?clientId=
-  app.get("/api/mgd/reports", async (req: Request, res: Response) => {
+  app.get("/api/mgd/reports", ...guard, async (req: Request, res: Response) => {
     try {
       const clientId = typeof req.query.clientId === "string" ? req.query.clientId : undefined;
       console.log(`[MGD][REPORTS] GET /api/mgd/reports — clientId=${clientId ?? "all"}`);
@@ -683,7 +780,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── GET /api/mgd/reports/:id ─────────────────────────────────────────────────
   // Retrieve a single stored report by id.
-  app.get("/api/mgd/reports/:id", async (req: Request, res: Response) => {
+  app.get("/api/mgd/reports/:id", ...guard, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       console.log(`[MGD][REPORTS] GET /api/mgd/reports/${id}`);
@@ -702,7 +799,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── DELETE /api/mgd/reports/:id ──────────────────────────────────────────────
   // Delete a single stored report by id.
-  app.delete("/api/mgd/reports/:id", async (req: Request, res: Response) => {
+  app.delete("/api/mgd/reports/:id", ...guard, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       console.log(`[MGD][REPORTS] DELETE /api/mgd/reports/${id}`);
@@ -721,7 +818,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── GET /api/mgd/traces ──────────────────────────────────────────────────────
   // List all stored pipeline traces, newest first.
-  app.get("/api/mgd/traces", async (_req: Request, res: Response) => {
+  app.get("/api/mgd/traces", ...guard, async (_req: Request, res: Response) => {
     try {
       console.log("[MGD][TRACES] GET /api/mgd/traces");
       const traces = await listTraces();
@@ -735,7 +832,7 @@ export function registerMGDRoutes(app: Express): void {
 
   // ── GET /api/mgd/traces/:id ───────────────────────────────────────────────────
   // Retrieve a single pipeline trace by traceId.
-  app.get("/api/mgd/traces/:id", async (req: Request, res: Response) => {
+  app.get("/api/mgd/traces/:id", ...guard, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       console.log(`[MGD][TRACES] GET /api/mgd/traces/${id}`);

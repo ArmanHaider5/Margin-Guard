@@ -22,7 +22,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { OperationalFinding } from "./findings-engine";
+import { FINDING_CATEGORIES } from "./finding-categories";
 import type { RootCause } from "./root-cause-engine";
+import { TRACE_STEPS, type DetectorExecutionRecord } from "./pipeline-trace";
 
 // ── Recommendation priority ───────────────────────────────────────────────────
 
@@ -116,22 +118,28 @@ const RC_EM = {
 } as const;
 
 // ── Finding category constants ─────────────────────────────────────────────────
+// Short local aliases into the one authoritative Finding Category vocabulary
+// (server/mgd/findings-engine.ts's FINDING_CATEGORIES) — these are the
+// *input* finding categories this engine reads to decide which
+// recommendations to trigger, distinct from REC_CATEGORIES above (this
+// engine's own *output* category vocabulary — not the same thing, not
+// merged; see docs/MGD_FINDING_CATEGORY_GOVERNANCE_ADR.md).
 
 const FC = {
-  INV:  "inventory_visibility",
-  LOG:  "logistics_coordination",
-  WH:   "warehouse_operations",
-  MAN:  "manpower_dependency",
-  FIN:  "financial_leakage",
-  WFL:  "workflow_scalability",
+  INV:  FINDING_CATEGORIES.INVENTORY_VISIBILITY,
+  LOG:  FINDING_CATEGORIES.LOGISTICS_COORDINATION,
+  WH:   FINDING_CATEGORIES.WAREHOUSE_OPERATIONS,
+  MAN:  FINDING_CATEGORIES.MANPOWER_DEPENDENCY,
+  FIN:  FINDING_CATEGORIES.FINANCIAL_LEAKAGE,
+  WFL:  FINDING_CATEGORIES.WORKFLOW_SCALABILITY,
 } as const;
 
 // ── Event Management finding category constants ────────────────────────────────
 
 const FC_EM = {
-  READINESS: "event_readiness",
-  DISPATCH:  "dispatch_operations",
-  ASSET:     "asset_management",
+  READINESS: FINDING_CATEGORIES.EVENT_READINESS,
+  DISPATCH:  FINDING_CATEGORIES.DISPATCH_OPERATIONS,
+  ASSET:     FINDING_CATEGORIES.ASSET_MANAGEMENT,
 } as const;
 
 // ── Priority ordering (for sort) ───────────────────────────────────────────────
@@ -1310,14 +1318,28 @@ const CONFIDENCE_THRESHOLD = 30;
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Generate structured operational recommendations from findings and root causes.
- *
- * Returns recommendations sorted: priority DESC (CRITICAL first), then
- * confidence DESC.  Suppressed below confidence 30.  Never throws.
+ * Shared implementation: runs every registered detector against
+ * findings/rootCauses, building both the final recommendations array
+ * (identical to this function's historical behaviour) and, alongside it, a
+ * per-detector execution ledger for trace-level observability (see
+ * pipeline-trace.ts's DetectorExecutionRecord). Extracted so
+ * `generateOperationalRecommendations` (unchanged signature, for every
+ * pre-existing caller) and `generateOperationalRecommendationsWithExecutions`
+ * (new, used only by mgd-pipeline.ts) run the exact same detector loop
+ * rather than two diverging copies of it.
  */
-export function generateOperationalRecommendations(
+function runRecommendationDetectors(
   params: RecommendationParams,
-): OperationalRecommendation[] {
+  // Test-only injection seam: defaults to the real, production DETECTORS
+  // registry in every real call path (mgd-pipeline.ts never passes this).
+  // Exists solely so regression tests can prove FAILED/SUCCESS execution
+  // recording against a deliberately-throwing detector without ever
+  // modifying a real production detector function — see
+  // server/mgd/__tests__/detector-failure-observability.test.ts.
+  detectorsOverride: DetectorFn[] = DETECTORS,
+): { recommendations: OperationalRecommendation[]; executions: DetectorExecutionRecord[] } {
+  const executions: DetectorExecutionRecord[] = [];
+
   try {
     const { findings, rootCauses, industry } = params;
 
@@ -1333,7 +1355,7 @@ export function generateOperationalRecommendations(
 
     if (safeFindings.length === 0 && safeRootCauses.length === 0) {
       console.log("[MGD][RECOMMENDATIONS] No input data — returning []");
-      return [];
+      return { recommendations: [], executions };
     }
 
     console.log(
@@ -1343,7 +1365,8 @@ export function generateOperationalRecommendations(
 
     const recommendations: OperationalRecommendation[] = [];
 
-    for (const detector of DETECTORS) {
+    for (const detector of detectorsOverride) {
+      const detectorName = detector.name || "anonymousRecommendationDetector";
       try {
         const rec = detector(safeFindings, safeRootCauses);
         if (rec && rec.confidence >= CONFIDENCE_THRESHOLD) {
@@ -1352,14 +1375,27 @@ export function generateOperationalRecommendations(
             `[MGD][RECOMMENDATIONS] ✓ "${rec.title}" ` +
             `[${rec.priority}/${rec.timeframe}] confidence=${rec.confidence}`,
           );
+          executions.push({ detectorName, stage: TRACE_STEPS.RECOMMENDATION_GENERATION, status: "SUCCESS", outputCount: 1 });
         } else if (rec) {
           console.log(
             `[MGD][RECOMMENDATIONS] ✗ Suppressed "${rec.title}" ` +
             `(confidence=${rec.confidence} < threshold=${CONFIDENCE_THRESHOLD})`,
           );
+          // Ran cleanly and proposed a recommendation, but it did not clear
+          // the confidence bar — still a genuine "nothing (actionable) found",
+          // not a failure, same as a detector that returned null outright.
+          executions.push({ detectorName, stage: TRACE_STEPS.RECOMMENDATION_GENERATION, status: "SUCCESS", outputCount: 0 });
+        } else {
+          executions.push({ detectorName, stage: TRACE_STEPS.RECOMMENDATION_GENERATION, status: "SUCCESS", outputCount: 0 });
         }
       } catch (err) {
         console.error("[MGD][RECOMMENDATIONS] Detector error (skipped):", err);
+        executions.push({
+          detectorName,
+          stage:  TRACE_STEPS.RECOMMENDATION_GENERATION,
+          status: "FAILED",
+          error:  { name: (err as Error)?.name ?? "Error", message: (err as Error)?.message ?? String(err) },
+        });
       }
     }
 
@@ -1395,10 +1431,37 @@ export function generateOperationalRecommendations(
       );
     }
 
-    return unique;
+    return { recommendations: unique, executions };
 
   } catch (err) {
     console.error("[MGD][RECOMMENDATIONS] generateOperationalRecommendations failed:", err);
-    return [];
+    return { recommendations: [], executions };
   }
+}
+
+/**
+ * Generate structured operational recommendations from findings and root causes.
+ *
+ * Returns recommendations sorted: priority DESC (CRITICAL first), then
+ * confidence DESC.  Suppressed below confidence 30.  Never throws.
+ */
+export function generateOperationalRecommendations(
+  params: RecommendationParams,
+): OperationalRecommendation[] {
+  return runRecommendationDetectors(params).recommendations;
+}
+
+/**
+ * Same as generateOperationalRecommendations, plus a per-detector execution
+ * ledger for PipelineTrace observability (see
+ * MGD_DETECTOR_FAILURE_OBSERVABILITY_ADR.md). Used only by mgd-pipeline.ts —
+ * every pre-existing caller of generateOperationalRecommendations is
+ * unaffected.
+ */
+export function generateOperationalRecommendationsWithExecutions(
+  params: RecommendationParams,
+  /** Test-only — see runRecommendationDetectors. Never passed by mgd-pipeline.ts. */
+  __testDetectors?: DetectorFn[],
+): { recommendations: OperationalRecommendation[]; executions: DetectorExecutionRecord[] } {
+  return __testDetectors ? runRecommendationDetectors(params, __testDetectors) : runRecommendationDetectors(params);
 }

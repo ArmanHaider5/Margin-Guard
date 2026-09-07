@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useSearch } from "wouter";
+import { Link, useSearch, useLocation } from "wouter";
 import {
   ArrowLeft, Monitor, FileDown, AlertTriangle, AlertCircle,
   Info, CheckCircle2, ChevronDown, ChevronUp, Activity,
@@ -52,7 +52,14 @@ interface IndustryRule {
   confidence: number;
 }
 interface MGDReport {
-  metadata: { generatedAt: string; clientName?: string; industry?: string; operationalHealthScore?: number; reportVersion: string; };
+  id?: string;
+  metadata: {
+    generatedAt: string; clientName?: string; industry?: string;
+    operationalHealthScore?: number; reportVersion: string;
+    // Absent on reports composed before this field existed — must be
+    // treated as "unknown", never assumed SUFFICIENT.
+    evidence?: { level: "NONE" | "PARTIAL" | "SUFFICIENT"; reasons: string[] };
+  };
   summary: { criticalFindings: number; highFindings: number; criticalRootCauses: number; highPriorityRecommendations: number; benchmarkAlerts: number; };
   narrative?: ExecutiveNarrative;
   findings: Finding[];
@@ -69,8 +76,21 @@ interface MGDReport {
   consultantInsights?: {
     executiveObservations: string[];
     operationalConcerns:   string[];
-    notes:                 { title: string; category: string; observation: string }[];
+    notes: {
+      title: string; category: string; observation: string;
+      relatedArea?: string; relevantFindingIds?: string[];
+    }[];
   };
+  // See docs/MGD_STRUCTURED_DIAGNOSTIC_SCOPE_ADR.md and
+  // docs/MGD_BUSINESS_CONCERN_CORRELATION_ADR.md. `selectedAreas` and
+  // `relevantFindingIds` are additive/optional — absent on reports composed
+  // before they existed, or when the consultant selected no area.
+  diagnosticScope?: {
+    id: string; concernText: string; origin: "BUSINESS_CONCERN";
+    status: "UNVALIDATED" | "INSUFFICIENT_EVIDENCE" | "SUPPORTED" | "NOT_SUPPORTED";
+    selectedAreas?: string[];
+    relevantFindingIds?: string[];
+  }[];
   eventDiagnostics?: {
     dispatchesAnalysed:       number;
     dispatchFailureRate:      number;
@@ -117,7 +137,12 @@ const BM: Record<string, { bg: string; text: string; border: string; bar: string
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function healthConfig(score: number) {
+function healthConfig(score: number | null) {
+  // null means "not assessed" — no transactional evidence existed to derive
+  // a score from. This must render as a neutral, unclassified state, never
+  // as "Critical" (which a naive `?? 0` coalesce would produce, since 0
+  // falls into the same band as a real catastrophic measured score).
+  if (score == null) return { label:"Not Assessed", ring:"#64748b", text:"text-white/40", bg:"bg-white/5", border:"border-white/10" };
   if (score >= 80) return { label:"Operationally Stable",          ring:"#10b981", text:"text-emerald-400", bg:"bg-emerald-500/15", border:"border-emerald-500/30" };
   if (score >= 65) return { label:"Moderate Operational Strain",   ring:"#3b82f6", text:"text-blue-400",    bg:"bg-blue-500/15",    border:"border-blue-500/30"    };
   if (score >= 50) return { label:"Elevated Operational Strain",   ring:"#f59e0b", text:"text-amber-400",   bg:"bg-amber-500/15",   border:"border-amber-500/30"   };
@@ -191,10 +216,10 @@ function ConfBar({ value }: { value: number }) {
 
 // ── Health Score Ring ──────────────────────────────────────────────────────────
 
-function HealthRing({ score }: { score: number }) {
+function HealthRing({ score }: { score: number | null }) {
   const R    = 70;
   const circ = 2 * Math.PI * R;
-  const pct  = Math.min(100, Math.max(0, score));
+  const pct  = score == null ? 0 : Math.min(100, Math.max(0, score));
   const dash = (pct / 100) * circ;
   const { ring, label, text } = healthConfig(score);
 
@@ -210,7 +235,7 @@ function HealthRing({ score }: { score: number }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-bold text-white tracking-tight leading-none">{score > 0 ? score : "—"}</span>
+          <span className="text-4xl font-bold text-white tracking-tight leading-none">{score != null && score > 0 ? score : "—"}</span>
           <span className="text-[10px] text-white/35 mt-1 uppercase tracking-widest">/ 100</span>
         </div>
       </div>
@@ -793,6 +818,127 @@ function EventDiagnosticsPanel({ report }: { report: MGDReport }) {
   );
 }
 
+// ── Diagnostic Scope Section ───────────────────────────────────────────────────
+// "What did the client ask us to look at, and what did MGD actually find in
+// that area?" — see docs/MGD_STRUCTURED_DIAGNOSTIC_SCOPE_ADR.md and
+// docs/MGD_BUSINESS_CONCERN_CORRELATION_ADR.md. Every statement here must
+// preserve: Concern ≠ evidence. Scope ≠ finding. A relevant finding is
+// never presented as proof the concern is confirmed; its absence is never
+// presented as the concern being disproven.
+
+// Mirrors mgd-diagnostic-wizard.tsx's DIAGNOSTIC_AREAS labels exactly.
+const AREA_LABEL: Record<string, string> = {
+  inventory_visibility:   "Inventory Management",
+  logistics_coordination: "Logistics Coordination",
+  warehouse_operations:   "Warehouse Operations",
+  manpower_dependency:    "Manpower Dependency",
+  financial_leakage:      "Financial Leakage",
+  workflow_scalability:   "Workflow Scalability",
+  event_readiness:        "Event Readiness Control",
+  dispatch_operations:    "Dispatch Reliability",
+  asset_management:       "Asset Accountability",
+};
+
+function areaLabel(v: string): string {
+  return AREA_LABEL[v] ?? v.replace(/_/g, " ");
+}
+
+function ScopeStatusBadge({ status }: { status: string }) {
+  if (status === "INSUFFICIENT_EVIDENCE") {
+    return (
+      <span className="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border border-red-500/25 bg-red-500/10 text-red-300">
+        Insufficient evidence
+      </span>
+    );
+  }
+  // UNVALIDATED is the honest default — evidence exists in the report, but
+  // no deterministic mechanism correlates it specifically to this concern.
+  // Never rendered as "confirmed" or "validated" — see the ADR §9 rules.
+  return (
+    <span className="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border border-white/15 bg-white/[0.04] text-white/40">
+      Not independently validated
+    </span>
+  );
+}
+
+function DiagnosticScopeSection({ report }: { report: MGDReport }) {
+  const items = report.diagnosticScope ?? [];
+  if (!items.length) return null;
+
+  const findingById = new Map(report.findings.map(f => [f.id, f]));
+
+  return (
+    <GlassCard className="p-6">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-500/15 border border-blue-500/25">
+          <Compass className="w-4 h-4 text-blue-400"/>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-[15px] font-bold text-white tracking-tight">Diagnostic Scope</h3>
+          <p className="text-[11px] text-white/30 mt-0.5">
+            What the client asked MGD to examine — shown separately from what MGD concluded.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {items.map(item => {
+          const areas = item.selectedAreas ?? [];
+          const relevant = (item.relevantFindingIds ?? [])
+            .map(id => findingById.get(id))
+            .filter((f): f is Finding => !!f);
+
+          return (
+            <div key={item.id} className="rounded-xl border border-blue-500/15 bg-blue-500/[0.04] p-4">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <p className="text-[13px] font-semibold text-white leading-snug flex-1">
+                  “{item.concernText}”
+                </p>
+                <ScopeStatusBadge status={item.status}/>
+              </div>
+
+              {areas.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  <span className="text-[10px] text-white/25">Requested area:</span>
+                  {areas.map(a => (
+                    <span key={a} className="text-[10px] px-2 py-0.5 rounded-md border border-blue-500/25 bg-blue-500/10 text-blue-300">
+                      {areaLabel(a)}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-white/25 mb-2">No specific diagnostic area was selected for this concern.</p>
+              )}
+
+              {areas.length > 0 && (
+                relevant.length > 0 ? (
+                  <div className="mt-2 pt-2 border-t border-white/[0.06]">
+                    <p className="text-[10px] text-white/30 mb-1.5">
+                      Findings relevant to this area ({relevant.length}) — these are not proof the concern above is confirmed, only findings MGD produced in the same requested area:
+                    </p>
+                    <div className="space-y-1">
+                      {relevant.map(f => (
+                        <div key={f.id} className="flex items-center gap-2 text-[11px]">
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${SEV[f.severity]?.dot ?? "bg-white/30"}`}/>
+                          <span className="text-white/60">{f.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-white/25 mt-2 pt-2 border-t border-white/[0.06]">
+                    No findings were produced in the requested area for this run. This does not mean the concern is disproven — it means no detector in that area surfaced a finding from the evidence available.
+                  </p>
+                )
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </GlassCard>
+  );
+}
+
 // ── Consultant Observations Section ───────────────────────────────────────────
 
 const CATEGORY_ACCENT: Record<string, { bg: string; border: string; text: string }> = {
@@ -811,6 +957,7 @@ function ConsultantObservationsSection({ report }: { report: MGDReport }) {
   const ci = report.consultantInsights;
   const notes = ci?.notes ?? [];
   if (!notes.length) return null;
+  const findingById = new Map(report.findings.map(f => [f.id, f]));
 
   return (
     <GlassCard className="p-6">
@@ -879,6 +1026,34 @@ function ConsultantObservationsSection({ report }: { report: MGDReport }) {
                 <p className="text-[12px] text-white/55 leading-relaxed">
                   {note.observation}
                 </p>
+              )}
+
+              {/* Consultant-selected diagnostic area + relevant findings — a
+                  display cross-reference only; this observation remains a
+                  consultant statement, never documentary evidence, even
+                  when a finding shares its selected area. */}
+              {note.relatedArea && (
+                <div className="mt-2.5 pt-2.5 border-t border-amber-500/10">
+                  <span className="text-[10px] px-2 py-0.5 rounded-md border border-blue-500/25 bg-blue-500/10 text-blue-300">
+                    {areaLabel(note.relatedArea)}
+                  </span>
+                  {(note.relevantFindingIds ?? []).length > 0 ? (
+                    <div className="mt-1.5 space-y-1">
+                      {(note.relevantFindingIds ?? []).map(id => {
+                        const f = findingById.get(id);
+                        if (!f) return null;
+                        return (
+                          <div key={id} className="flex items-center gap-2 text-[11px]">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${SEV[f.severity]?.dot ?? "bg-white/30"}`}/>
+                            <span className="text-white/50">{f.title}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-white/25 mt-1.5">No findings in this area for this run — the observation stands on its own as consultant context.</p>
+                  )}
+                </div>
               )}
             </div>
           );
@@ -1006,33 +1181,20 @@ export default function MGDReportViewer() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const reportId = params.get("id");
+  const [, navigate] = useLocation();
 
   const [report, setReport]   = useState<MGDReport | null>(null);
   const [status, setStatus]   = useState<"loading" | "loaded" | "empty" | "error">("loading");
   const [errMsg, setErrMsg]   = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError]     = useState("");
 
   useEffect(() => {
     async function load() {
-      // 1. Primary key — written by archive View button
-      const raw1 = sessionStorage.getItem("mgd-selected-report");
-      if (raw1) {
-        try {
-          setReport(JSON.parse(raw1));
-          setStatus("loaded");
-          return;
-        } catch {}
-      }
-      // 2. Legacy fallback key
-      const raw2 = sessionStorage.getItem("mgd_archive_report");
-      if (raw2) {
-        try {
-          setReport(JSON.parse(raw2));
-          setStatus("loaded");
-          return;
-        } catch {}
-      }
-      // 3. Try URL id → API
+      // 1. Canonical path — the URL's ?id= is the single source of truth for
+      // "which report," resolved via the persisted store. Works across
+      // reloads, tabs, and shared links, unlike passing the report object
+      // itself through route state.
       if (reportId) {
         try {
           const res = await fetch(`/api/mgd/reports/${reportId}`);
@@ -1052,28 +1214,44 @@ export default function MGDReportViewer() {
         }
         return;
       }
+      // 2. Same-tab fallback only — covers the rare case where a diagnostic
+      // just ran but its report failed to persist (no id was ever minted),
+      // so there is genuinely no id to put in the URL. Never consulted when
+      // a ?id= is present, so it can never override or race a real,
+      // shareable report link.
+      const raw = sessionStorage.getItem("mgd-selected-report");
+      if (raw) {
+        try {
+          setReport(JSON.parse(raw));
+          setStatus("loaded");
+          return;
+        } catch {}
+      }
       setStatus("empty");
     }
     load();
   }, [reportId]);
 
+  const effectiveReportId = reportId || report?.id || null;
+
   async function handleExportPdf() {
     if (!report) return;
+    if (!effectiveReportId) {
+      setPdfError("This report was not saved, so it has no id to export — re-run the diagnostic to generate a saved report first.");
+      return;
+    }
     try {
       setPdfLoading(true);
+      setPdfError("");
       const res = await fetch("/api/mgd/export-pdf", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          findings: report.findings ?? [],
-          rootCauses: report.rootCauses ?? [],
-          recommendations: report.recommendations ?? [],
-          benchmarks: report.benchmarks ?? [],
-          narrative: report.narrative ?? null,
-          report,
-        }),
+        body: JSON.stringify({ reportId: effectiveReportId }),
       });
-      if (!res.ok) throw new Error("PDF export failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "PDF export failed");
+      }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a");
@@ -1083,18 +1261,20 @@ export default function MGDReportViewer() {
       URL.revokeObjectURL(url);
     } catch (e) {
       console.error("[MGD][VIEWER] PDF export error:", e);
+      setPdfError(e instanceof Error ? e.message : "PDF export failed");
     } finally {
       setPdfLoading(false);
     }
   }
 
   function handlePresent() {
-    if (!report) return;
-    try { sessionStorage.setItem("mgd_archive_report", JSON.stringify(report)); } catch {}
-    window.location.href = "/mgd/present";
+    if (!effectiveReportId) return;
+    navigate(`/mgd/present?id=${effectiveReportId}`);
   }
 
-  const score = report?.metadata?.operationalHealthScore ?? 0;
+  // Preserve null (not assessed) rather than coalescing to 0 — 0 is a
+  // legitimate real score (catastrophic, measured) with a different meaning.
+  const score = report?.metadata?.operationalHealthScore ?? null;
   const { ring: _r, label: _l, text: healthText, bg: healthBg, border: healthBorder } = healthConfig(score);
 
   // Grouped recommendations
@@ -1181,15 +1361,18 @@ export default function MGDReportViewer() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       onClick={handlePresent}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-medium hover:bg-violet-500/25 transition-all"
+                      disabled={!effectiveReportId}
+                      title={effectiveReportId ? undefined : "This report has no saved id yet — it can't be opened in Presentation Mode."}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-medium hover:bg-violet-500/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <Monitor className="w-3.5 h-3.5"/>
                       Present
                     </button>
                     <button
                       onClick={handleExportPdf}
-                      disabled={pdfLoading}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm font-medium hover:bg-emerald-500/25 transition-all disabled:opacity-50"
+                      disabled={pdfLoading || !effectiveReportId}
+                      title={effectiveReportId ? undefined : "This report has no saved id yet — it can't be exported."}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm font-medium hover:bg-emerald-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {pdfLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}
                       Export PDF
@@ -1202,6 +1385,12 @@ export default function MGDReportViewer() {
                     </Link>
                   </div>
                 </div>
+                {pdfError && (
+                  <p className="mt-3 text-[12px] text-red-400 flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0"/>
+                    {pdfError}
+                  </p>
+                )}
               </GlassCard>
 
               {/* SECTION 2 — Executive Summary Cards */}
@@ -1243,6 +1432,9 @@ export default function MGDReportViewer() {
                   </div>
                 </div>
               </GlassCard>
+
+              {/* SECTION 3.4 — Diagnostic Scope (what the client asked us to examine) */}
+              <DiagnosticScopeSection report={report}/>
 
               {/* SECTION 3.5 — Industry Assessment */}
               <IndustryAssessmentSection report={report}/>

@@ -23,6 +23,7 @@
 
 import { FindingEvidence, attachEvidenceToFindings } from "./evidence-engine";
 import { type EventSignals } from "./event-signals";
+import { TRACE_STEPS, type DetectorExecutionRecord } from "./pipeline-trace";
 
 // ── Exported interface ─────────────────────────────────────────────────────────
 
@@ -90,19 +91,17 @@ export interface FindingsParams {
 }
 
 // ── Finding categories ─────────────────────────────────────────────────────────
-
-export const FINDING_CATEGORIES = {
-  INVENTORY_VISIBILITY:    "inventory_visibility",
-  LOGISTICS_COORDINATION:  "logistics_coordination",
-  WAREHOUSE_OPERATIONS:    "warehouse_operations",
-  MANPOWER_DEPENDENCY:     "manpower_dependency",
-  FINANCIAL_LEAKAGE:       "financial_leakage",
-  WORKFLOW_SCALABILITY:    "workflow_scalability",
-  // Event Management operational categories
-  EVENT_READINESS:         "event_readiness",
-  DISPATCH_OPERATIONS:     "dispatch_operations",
-  ASSET_MANAGEMENT:        "asset_management",
-} as const;
+//
+// The authoritative declaration lives in ./finding-categories.ts, a leaf
+// module with zero imports — this file imports it (for its own 17 internal
+// usages below) and re-exports it so `import { FINDING_CATEGORIES } from
+// "./findings-engine"` keeps working for existing/external consumers.
+// Declaring the vocabulary directly in this file was tried and reverted: this
+// module imports evidence-engine.ts (below), and evidence-engine.ts also
+// needs these category values — declaring them here would create a circular
+// import between the two.
+import { FINDING_CATEGORIES, type FindingCategory } from "./finding-categories";
+export { FINDING_CATEGORIES, type FindingCategory };
 
 // ── Thresholds ─────────────────────────────────────────────────────────────────
 
@@ -1436,26 +1435,33 @@ export function detectClientConcentration(
   };
 }
 
-const DETECTORS: DetectorFn[] = [
-  (s, t) => detectManualDependency(s, t),
-  (s, t) => detectInventoryStrain(s, t),
-  (s, t) => detectLogisticsPressure(s, t),
-  (s, t) => detectFinancialLeakage(s, t),
-  (s, t) => detectWorkflowScalabilityRisk(s, t),
-  (s, t) => detectWarehouseOperations(s, t),
+// Each entry pairs a stable detector name (used only for trace observability
+// — see MGD_DETECTOR_FAILURE_OBSERVABILITY_ADR.md) with its existing call
+// wrapper. The wrappers themselves are unchanged from before this milestone;
+// only the surrounding `{ name, run }` shape is new, because these are
+// inline arrow functions (needed to normalise mixed 2-/3-arg detector
+// signatures) whose own `.name` is not reliably the underlying detector's
+// name at runtime.
+const DETECTORS: { name: string; run: DetectorFn }[] = [
+  { name: "detectManualDependency",               run: (s, t) => detectManualDependency(s, t) },
+  { name: "detectInventoryStrain",                run: (s, t) => detectInventoryStrain(s, t) },
+  { name: "detectLogisticsPressure",              run: (s, t) => detectLogisticsPressure(s, t) },
+  { name: "detectFinancialLeakage",               run: (s, t) => detectFinancialLeakage(s, t) },
+  { name: "detectWorkflowScalabilityRisk",        run: (s, t) => detectWorkflowScalabilityRisk(s, t) },
+  { name: "detectWarehouseOperations",            run: (s, t) => detectWarehouseOperations(s, t) },
   // ── Event Management Pack V2 ────────────────────────────────────────────
-  (s, t, p) => detectEMInventoryVisibilityWeakness(s, t, p),
-  (s, t, p) => detectRecurringDispatchFailure(s, t, p),
-  (s, t, p) => detectInventoryShortageExposure(s, t, p),
-  (s, t, p) => detectAssetDamageRecoveryLeakage(s, t, p),
-  (s, t, p) => detectEventReadinessRisk(s, t, p),
-  (s, t, p) => detectLogisticsReliabilityDegradation(s, t, p),
+  { name: "detectEMInventoryVisibilityWeakness",  run: (s, t, p) => detectEMInventoryVisibilityWeakness(s, t, p) },
+  { name: "detectRecurringDispatchFailure",       run: (s, t, p) => detectRecurringDispatchFailure(s, t, p) },
+  { name: "detectInventoryShortageExposure",      run: (s, t, p) => detectInventoryShortageExposure(s, t, p) },
+  { name: "detectAssetDamageRecoveryLeakage",     run: (s, t, p) => detectAssetDamageRecoveryLeakage(s, t, p) },
+  { name: "detectEventReadinessRisk",             run: (s, t, p) => detectEventReadinessRisk(s, t, p) },
+  { name: "detectLogisticsReliabilityDegradation",run: (s, t, p) => detectLogisticsReliabilityDegradation(s, t, p) },
   // ── Event Management Pack V2 — Extended ─────────────────────────────────
-  (s, t, p) => detectDispatchReliabilityRisk(s, t, p),
-  (s, t, p) => detectEventReadinessExposure(s, t, p),
-  (s, t, p) => detectInventoryShortagePattern(s, t, p),
+  { name: "detectDispatchReliabilityRisk",        run: (s, t, p) => detectDispatchReliabilityRisk(s, t, p) },
+  { name: "detectEventReadinessExposure",         run: (s, t, p) => detectEventReadinessExposure(s, t, p) },
+  { name: "detectInventoryShortagePattern",       run: (s, t, p) => detectInventoryShortagePattern(s, t, p) },
   // ── Customer Frequency Analysis ──────────────────────────────────────────
-  (s, t) => detectClientConcentration(s, t),
+  { name: "detectClientConcentration",            run: (s, t) => detectClientConcentration(s, t) },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1463,12 +1469,28 @@ const DETECTORS: DetectorFn[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Run all deterministic detectors against the CIL transaction array and
- * document metadata.  Returns findings sorted by confidence descending.
- *
- * Never throws — returns [] if transactions is empty or malformed.
+ * Shared implementation: runs every registered detector against the built
+ * stats, building both the final findings array (identical to this
+ * function's historical behaviour) and, alongside it, a per-detector
+ * execution ledger for trace-level observability (see pipeline-trace.ts's
+ * DetectorExecutionRecord). Extracted so `generateOperationalFindings`
+ * (unchanged signature, for every pre-existing caller) and
+ * `generateOperationalFindingsWithExecutions` (new, used only by
+ * mgd-pipeline.ts) run the exact same detector loop rather than two
+ * diverging copies of it.
  */
-export function generateOperationalFindings(params: FindingsParams): OperationalFinding[] {
+function runFindingsDetectors(
+  params: FindingsParams,
+  // Test-only injection seam: defaults to the real, production DETECTORS
+  // registry in every real call path (mgd-pipeline.ts never passes this).
+  // Exists solely so regression tests can prove FAILED/SUCCESS execution
+  // recording against a deliberately-throwing detector without ever
+  // modifying a real production detector function — see
+  // server/mgd/__tests__/detector-failure-observability.test.ts.
+  detectorsOverride: { name: string; run: DetectorFn }[] = DETECTORS,
+): { findings: OperationalFinding[]; executions: DetectorExecutionRecord[] } {
+  const executions: DetectorExecutionRecord[] = [];
+
   try {
     const { transactions, documents, industry } = params;
 
@@ -1479,7 +1501,7 @@ export function generateOperationalFindings(params: FindingsParams): Operational
 
     if (!Array.isArray(transactions) || transactions.length === 0) {
       console.log("[MGD][FINDINGS] No transactions supplied — returning empty findings");
-      return [];
+      return { findings: [], executions };
     }
 
     // ── Pre-processing ───────────────────────────────────────────────────────
@@ -1505,18 +1527,28 @@ export function generateOperationalFindings(params: FindingsParams): Operational
     // ── Run detectors ────────────────────────────────────────────────────────
     const findings: OperationalFinding[] = [];
 
-    for (const detector of DETECTORS) {
+    for (const { name: detectorName, run } of detectorsOverride) {
       try {
-        const finding = detector(stats, transactions, params);
+        const finding = run(stats, transactions, params);
         if (finding) {
           findings.push(finding);
           console.log(
             `[MGD][FINDINGS] ✓ "${finding.title}" ` +
             `[${finding.category}] severity=${finding.severity} confidence=${finding.confidence}`,
           );
+          executions.push({ detectorName, stage: TRACE_STEPS.FINDINGS_GENERATION, status: "SUCCESS", outputCount: 1 });
+        } else {
+          // Ran cleanly; returned null — a genuine "found nothing", not a failure.
+          executions.push({ detectorName, stage: TRACE_STEPS.FINDINGS_GENERATION, status: "SUCCESS", outputCount: 0 });
         }
       } catch (detectorErr) {
         console.error("[MGD][FINDINGS] Detector error (skipped):", detectorErr);
+        executions.push({
+          detectorName,
+          stage:  TRACE_STEPS.FINDINGS_GENERATION,
+          status: "FAILED",
+          error:  { name: (detectorErr as Error)?.name ?? "Error", message: (detectorErr as Error)?.message ?? String(detectorErr) },
+        });
       }
     }
 
@@ -1582,10 +1614,34 @@ export function generateOperationalFindings(params: FindingsParams): Operational
       documents,
     });
 
-    return enrichedFindings as OperationalFinding[];
+    return { findings: enrichedFindings as OperationalFinding[], executions };
 
   } catch (err) {
     console.error("[MGD][FINDINGS] generateOperationalFindings failed:", err);
-    return [];
+    return { findings: [], executions };
   }
+}
+
+/**
+ * Run all deterministic detectors against the CIL transaction array and
+ * document metadata.  Returns findings sorted by confidence descending.
+ *
+ * Never throws — returns [] if transactions is empty or malformed.
+ */
+export function generateOperationalFindings(params: FindingsParams): OperationalFinding[] {
+  return runFindingsDetectors(params).findings;
+}
+
+/**
+ * Same as generateOperationalFindings, plus a per-detector execution ledger
+ * for PipelineTrace observability (see MGD_DETECTOR_FAILURE_OBSERVABILITY_ADR.md).
+ * Used only by mgd-pipeline.ts — every pre-existing caller of
+ * generateOperationalFindings is unaffected.
+ */
+export function generateOperationalFindingsWithExecutions(
+  params: FindingsParams,
+  /** Test-only — see runFindingsDetectors. Never passed by mgd-pipeline.ts. */
+  __testDetectors?: { name: string; run: DetectorFn }[],
+): { findings: OperationalFinding[]; executions: DetectorExecutionRecord[] } {
+  return __testDetectors ? runFindingsDetectors(params, __testDetectors) : runFindingsDetectors(params);
 }

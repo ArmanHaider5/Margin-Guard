@@ -1,7 +1,28 @@
+// Consultant Observation (human-origin context) — distinct from Business
+// Concern (a plain string, see MGDRunParams.businessConcerns in
+// mgd-pipeline.ts) and from Documentary/System Evidence (FindingEvidence,
+// evidence-engine.ts). Neither this type nor businessConcerns may ever
+// become a FindingEvidence or influence findings/root-cause/recommendation/
+// benchmark/health scoring — see
+// docs/MGD_DIAGNOSTIC_CONTEXT_AND_EVIDENCE_PROVENANCE_ADR.md for the full
+// four-class model and the future work this boundary is designed to support.
 export interface ConsultantNote {
   title:       string;
   category:    string;
   observation: string;
+
+  /**
+   * Diagnostic area the CONSULTANT explicitly selected for this observation
+   * — never inferred from `title`/`observation`/`category`. Restricted to
+   * the Finding Category vocabulary (finding-categories.ts), validated at
+   * the point of entry (mgd-routes.ts). Distinct from `category` above,
+   * which is this note's own, unrelated, informal bucketing vocabulary
+   * (Logistics/Inventory/Finance/…) used only by generateConsultantInsights
+   * below — the two are deliberately never merged. See
+   * docs/MGD_BUSINESS_CONCERN_CORRELATION_ADR.md. Optional: a note with no
+   * `relatedArea` remains a fully valid, purely contextual observation.
+   */
+  relatedArea?: string;
 }
 
 interface ConsultantInsights {

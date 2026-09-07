@@ -23,13 +23,15 @@
 //   • A PipelineTrace is created at start and every step is recorded.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { generateOperationalFindings }        from "./findings-engine";
-import { generateRootCauses }                 from "./root-cause-engine";
-import { generateOperationalRecommendations } from "./recommendation-engine";
+import { generateOperationalFindingsWithExecutions }        from "./findings-engine";
+import { generateRootCausesWithExecutions }                 from "./root-cause-engine";
+import { generateOperationalRecommendationsWithExecutions } from "./recommendation-engine";
 import { generateBenchmarkResults }           from "./benchmark-engine";
 import { generateExecutiveNarrative }         from "./executive-narrative-engine";
 import { composeMGDReport }                   from "./report-composer";
+import type { BusinessConcernInput }          from "./diagnostic-scope";
 import { computeEventSignals, type EventSignals } from "./event-signals";
+import { computeEvidenceSufficiency, type EvidenceSufficiency } from "./evidence-sufficiency";
 import {
   startTrace,
   addTraceStep,
@@ -37,6 +39,7 @@ import {
   makeStep,
   TRACE_STEPS,
   type PipelineTraceStep,
+  type DetectorExecutionRecord,
 } from "./pipeline-trace";
 
 import type { OperationalFinding }        from "./findings-engine";
@@ -56,7 +59,14 @@ export interface MGDRunParams {
   documents?:   any[];
 
   consultantNotes?:  ConsultantNote[];
-  businessConcerns?: string[];
+  // Business Concern (human-origin context: "what management is worried
+  // about") — deliberately kept out of every analytical function's
+  // signature below (findings/root-causes/recommendations/benchmarks/
+  // narrative all take only `industry`, `transactions`, `documents`,
+  // `metrics`). Reaches only composeMGDReport → consultantInsights, never
+  // evidence, never scoring. See
+  // docs/MGD_DIAGNOSTIC_CONTEXT_AND_EVIDENCE_PROVENANCE_ADR.md.
+  businessConcerns?: BusinessConcernInput[];
 
   metrics?: {
     inventoryLossRate?:          number;
@@ -81,8 +91,12 @@ export interface MGDPipelineResult {
     rootCauseCount:      number;
     recommendationCount: number;
     benchmarkCount:      number;
-    healthScore:         number;
-    healthScoreSource:   "provided" | "estimated";
+    // null when evidence is insufficient to assess health at all — see
+    // STEP 5 below and server/mgd/evidence-sufficiency.ts. Never a
+    // confident-looking default number standing in for "not assessed".
+    healthScore:         number | null;
+    healthScoreSource:   "provided" | "estimated" | "not_assessed";
+    evidence:            EvidenceSufficiency;
     traceSteps:          PipelineTraceStep[];
   };
 }
@@ -254,7 +268,8 @@ export async function runMGDPipeline(
     traceId,
     steps: {
       findingsCount: 0, rootCauseCount: 0, recommendationCount: 0,
-      benchmarkCount: 0, healthScore: 0, healthScoreSource: "estimated",
+      benchmarkCount: 0, healthScore: null, healthScoreSource: "not_assessed",
+      evidence: computeEvidenceSufficiency({ transactions: [], documents: [], metrics: {} }),
       traceSteps,
     },
   });
@@ -272,12 +287,22 @@ export async function runMGDPipeline(
     const documents    = Array.isArray(params.documents)
       ? params.documents.filter(d => d != null)    : [];
 
+    // ── Evidence sufficiency ────────────────────────────────────────────────
+    // Computed once, up front, from the same transactions/documents/metrics
+    // every downstream step already receives — see evidence-sufficiency.ts.
+    // Drives: whether a health score is presented as measured vs "not
+    // assessed" (STEP 5), and whether Operational Health/Strategic
+    // Direction/Final Conclusion narrative may make confident claims
+    // (STEP 6) — see executive-narrative-engine.ts's evidenceLevel gating.
+    const evidence = computeEvidenceSufficiency({ transactions, documents, metrics });
+
     console.log(
       `[MGD][PIPELINE] runMGDPipeline START — ` +
       `client="${clientName ?? "unknown"}", ` +
       `industry="${industry ?? "unspecified"}", ` +
       `transactions=${transactions.length}, ` +
       `documents=${documents.length}, ` +
+      `evidenceLevel=${evidence.level} (${evidence.documentStatus}), ` +
       `traceId=${traceId}`,
     );
 
@@ -368,14 +393,26 @@ export async function runMGDPipeline(
       }));
     }
 
+    // Derived, internal-only signal for report truthfulness (see
+    // MGD_DETECTOR_FAILURE_DISCLOSURE_ADR.md) — true if ANY Finding/Root
+    // Cause/Recommendation detector failed this run. Never persisted as its
+    // own schema; it is folded into each step's existing `metadata` for
+    // trace visibility and passed to generateExecutiveNarrative so report
+    // language never implies a failed detector "found nothing."
+    let hasIncompleteAnalysis = false;
+
     // ── STEP 1: Findings ────────────────────────────────────────────────────
     let findings: OperationalFinding[] = [];
     {
       const t0 = new Date().toISOString();
       let status: "completed" | "failed" = "completed";
+      let executions: DetectorExecutionRecord[] = [];
       try {
-        findings = generateOperationalFindings({ transactions, documents, industry, eventSignals });
-        console.log(`[MGD][PIPELINE] STEP 1 — findings=${findings.length}`);
+        ({ findings, executions } = generateOperationalFindingsWithExecutions({ transactions, documents, industry, eventSignals }));
+        console.log(`[MGD][PIPELINE] STEP 1 — findings=${findings.length}` +
+          ` (detectors: ${executions.filter(e => e.status === "SUCCESS").length} ok, ` +
+          `${executions.filter(e => e.status === "FAILED").length} failed)`);
+        if (executions.some(e => e.status === "FAILED")) hasIncompleteAnalysis = true;
       } catch (err) {
         status = "failed";
         console.error("[MGD][PIPELINE] STEP 1 (findings) failed:", err);
@@ -393,6 +430,10 @@ export async function runMGDPipeline(
           medium:       findings.filter(f => f.severity === "MEDIUM").length,
           low:          findings.filter(f => f.severity === "LOW").length,
           industry:     industry ?? null,
+          // Per-detector execution observability — see
+          // MGD_DETECTOR_FAILURE_OBSERVABILITY_ADR.md. Purely additive: older
+          // persisted traces simply have no `detectorExecutions` key.
+          detectorExecutions: executions,
         },
       }));
     }
@@ -402,9 +443,13 @@ export async function runMGDPipeline(
     {
       const t0 = new Date().toISOString();
       let status: "completed" | "failed" = "completed";
+      let executions: DetectorExecutionRecord[] = [];
       try {
-        rootCauses = generateRootCauses({ findings, industry });
-        console.log(`[MGD][PIPELINE] STEP 2 — rootCauses=${rootCauses.length}`);
+        ({ rootCauses, executions } = generateRootCausesWithExecutions({ findings, industry }));
+        console.log(`[MGD][PIPELINE] STEP 2 — rootCauses=${rootCauses.length}` +
+          ` (detectors: ${executions.filter(e => e.status === "SUCCESS").length} ok, ` +
+          `${executions.filter(e => e.status === "FAILED").length} failed)`);
+        if (executions.some(e => e.status === "FAILED")) hasIncompleteAnalysis = true;
       } catch (err) {
         status = "failed";
         console.error("[MGD][PIPELINE] STEP 2 (rootCauses) failed:", err);
@@ -419,6 +464,7 @@ export async function runMGDPipeline(
           rootCauses: rootCauses.length,
           critical:   rootCauses.filter(r => r.severity === "CRITICAL").length,
           high:       rootCauses.filter(r => r.severity === "HIGH").length,
+          detectorExecutions: executions,
         },
       }));
     }
@@ -444,9 +490,13 @@ export async function runMGDPipeline(
     {
       const t0 = new Date().toISOString();
       let status: "completed" | "failed" = "completed";
+      let executions: DetectorExecutionRecord[] = [];
       try {
-        recommendations = generateOperationalRecommendations({ findings, rootCauses, industry });
-        console.log(`[MGD][PIPELINE] STEP 3 — recommendations=${recommendations.length}`);
+        ({ recommendations, executions } = generateOperationalRecommendationsWithExecutions({ findings, rootCauses, industry }));
+        console.log(`[MGD][PIPELINE] STEP 3 — recommendations=${recommendations.length}` +
+          ` (detectors: ${executions.filter(e => e.status === "SUCCESS").length} ok, ` +
+          `${executions.filter(e => e.status === "FAILED").length} failed)`);
+        if (executions.some(e => e.status === "FAILED")) hasIncompleteAnalysis = true;
       } catch (err) {
         status = "failed";
         console.error("[MGD][PIPELINE] STEP 3 (recommendations) failed:", err);
@@ -463,6 +513,7 @@ export async function runMGDPipeline(
           thirtyDays:      recommendations.filter(r => r.timeframe === "30_DAYS").length,
           ninetyDays:      recommendations.filter(r => r.timeframe === "90_DAYS").length,
           longTerm:        recommendations.filter(r => r.timeframe === "LONG_TERM").length,
+          detectorExecutions: executions,
         },
       }));
     }
@@ -496,18 +547,30 @@ export async function runMGDPipeline(
     }
 
     // ── STEP 5: Operational Health Score ────────────────────────────────────
-    let operationalHealthScore: number;
-    let healthScoreSource: "provided" | "estimated";
+    // A caller-provided score (metrics.operationalHealthScore) is an explicit
+    // external assertion — e.g. a value known through other means — and is
+    // always honoured regardless of evidence level. An *estimated* score is
+    // only ever derived from findings/root causes/benchmarks that were
+    // themselves derived from real transactions, so it is only computed when
+    // there is at least partial evidence; with NONE, `estimateOperationalHealth`
+    // would otherwise return its 85 "no detected issues" baseline — a
+    // confident-looking number for a diagnostic that measured nothing.
+    let operationalHealthScore: number | null;
+    let healthScoreSource: "provided" | "estimated" | "not_assessed";
 
     if (metrics.operationalHealthScore != null && isFinite(metrics.operationalHealthScore)) {
       operationalHealthScore = Math.max(0, Math.min(100, Math.round(metrics.operationalHealthScore)));
       healthScoreSource = "provided";
       console.log(`[MGD][PIPELINE] STEP 5 — healthScore=${operationalHealthScore} (provided)`);
+    } else if (evidence.level === "NONE") {
+      operationalHealthScore = null;
+      healthScoreSource = "not_assessed";
+      console.log(`[MGD][PIPELINE] STEP 5 — healthScore=null (not_assessed — no transactional evidence)`);
     } else {
       operationalHealthScore = estimateOperationalHealth(findings, rootCauses, benchmarks);
       healthScoreSource = "estimated";
       console.log(
-        `[MGD][PIPELINE] STEP 5 — healthScore=${operationalHealthScore} (estimated) ` +
+        `[MGD][PIPELINE] STEP 5 — healthScore=${operationalHealthScore} (estimated, evidence=${evidence.level}) ` +
         `[critFindings=${countCriticalFindings(findings)}, critBM=${countCriticalBenchmarks(benchmarks)}]`,
       );
     }
@@ -522,14 +585,16 @@ export async function runMGDPipeline(
           findings,
           rootCauses,
           recommendations,
-          operationalHealthScore,
+          operationalHealthScore: operationalHealthScore ?? undefined,
           industry,
+          evidenceLevel: evidence.level,
+          hasIncompleteAnalysis,
         });
-        console.log(`[MGD][PIPELINE] STEP 6 — narrative generated (7 sections)`);
+        console.log(`[MGD][PIPELINE] STEP 6 — narrative generated (7 sections, evidenceLevel=${evidence.level}, hasIncompleteAnalysis=${hasIncompleteAnalysis})`);
       } catch (err) {
         status = "failed";
         console.error("[MGD][PIPELINE] STEP 6 (narrative) failed:", err);
-        narrative = generateExecutiveNarrative({ findings: [], rootCauses: [], recommendations: [] });
+        narrative = generateExecutiveNarrative({ findings: [], rootCauses: [], recommendations: [], evidenceLevel: evidence.level, hasIncompleteAnalysis });
       }
       await record(makeStep({
         step:        TRACE_STEPS.NARRATIVE_GENERATION,
@@ -542,6 +607,10 @@ export async function runMGDPipeline(
           operationalHealthScore,
           healthScoreSource,
           industry:            industry ?? null,
+          // Report-truthfulness signal — see MGD_DETECTOR_FAILURE_DISCLOSURE_ADR.md.
+          // Derived from the detectorExecutions already recorded on the
+          // Findings/Root Cause/Recommendation steps above; not a new schema.
+          hasIncompleteAnalysis,
         },
       }));
     }
@@ -560,10 +629,11 @@ export async function runMGDPipeline(
           recommendations,
           benchmarks,
           narrative,
-          operationalHealthScore,
+          operationalHealthScore: operationalHealthScore ?? undefined,
           consultantNotes,
           businessConcerns,
           eventSignals,
+          evidence,
         });
         console.log(`[MGD][PIPELINE] STEP 7 — report composed (version=${report.metadata.reportVersion})`);
       } catch (err) {
@@ -619,6 +689,7 @@ export async function runMGDPipeline(
         benchmarkCount:      benchmarks.length,
         healthScore:         operationalHealthScore,
         healthScoreSource,
+        evidence,
         traceSteps,
       },
     };

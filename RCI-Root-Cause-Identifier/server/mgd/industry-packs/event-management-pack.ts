@@ -13,6 +13,8 @@
 //   • Each rule has a stable `id` string for downstream deduplication.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { FINDING_CATEGORIES } from "../finding-categories";
+
 // ── Exported types ─────────────────────────────────────────────────────────────
 
 export interface IndustryRule {
@@ -80,13 +82,13 @@ function clamp(v: number): number {
  * Trigger: logistics_coordination finding with severity HIGH or CRITICAL.
  */
 function ruleLogisticsBottleneck(findings: AnyFinding[]): IndustryRule | null {
-  const matches = byCategory(findings, "logistics_coordination");
+  const matches = byCategory(findings, FINDING_CATEGORIES.LOGISTICS_COORDINATION);
   if (!hasHighPlus(matches)) return null;
 
   const conf = clamp(maxConf(matches) + 5);
   return {
     id:          "em-logistics-bottleneck",
-    category:    "logistics_coordination",
+    category:    FINDING_CATEGORIES.LOGISTICS_COORDINATION,
     title:       "Logistics Bottleneck Risk",
     description:
       "High-severity logistics coordination failures have been detected. " +
@@ -103,8 +105,8 @@ function ruleLogisticsBottleneck(findings: AnyFinding[]): IndustryRule | null {
  * Trigger: logistics_coordination AND manpower_dependency findings present together.
  */
 function ruleRevenueFulfilmentConstraint(findings: AnyFinding[]): IndustryRule | null {
-  const logistics  = byCategory(findings, "logistics_coordination");
-  const manpower   = byCategory(findings, "manpower_dependency");
+  const logistics  = byCategory(findings, FINDING_CATEGORIES.LOGISTICS_COORDINATION);
+  const manpower   = byCategory(findings, FINDING_CATEGORIES.MANPOWER_DEPENDENCY);
   if (!logistics.length || !manpower.length) return null;
 
   const conf = clamp((maxConf(logistics) + maxConf(manpower)) / 2 + 8);
@@ -127,13 +129,13 @@ function ruleRevenueFulfilmentConstraint(findings: AnyFinding[]): IndustryRule |
  * Trigger: inventory_visibility finding with severity HIGH or CRITICAL.
  */
 function ruleInventoryVisibilityWeakness(findings: AnyFinding[]): IndustryRule | null {
-  const matches = byCategory(findings, "inventory_visibility");
+  const matches = byCategory(findings, FINDING_CATEGORIES.INVENTORY_VISIBILITY);
   if (!hasHighPlus(matches)) return null;
 
   const conf = clamp(maxConf(matches) + 3);
   return {
     id:          "em-inventory-visibility-weakness",
-    category:    "inventory_visibility",
+    category:    FINDING_CATEGORIES.INVENTORY_VISIBILITY,
     title:       "Inventory Visibility Weakness",
     description:
       "Critical gaps in inventory tracking have been identified. Without real-time " +
@@ -150,14 +152,14 @@ function ruleInventoryVisibilityWeakness(findings: AnyFinding[]): IndustryRule |
  * Trigger: inventory_visibility AND financial_leakage findings present together.
  */
 function ruleAssetLeakageExposure(findings: AnyFinding[]): IndustryRule | null {
-  const inv = byCategory(findings, "inventory_visibility");
-  const fin = byCategory(findings, "financial_leakage");
+  const inv = byCategory(findings, FINDING_CATEGORIES.INVENTORY_VISIBILITY);
+  const fin = byCategory(findings, FINDING_CATEGORIES.FINANCIAL_LEAKAGE);
   if (!inv.length || !fin.length) return null;
 
   const conf = clamp((maxConf(inv) + maxConf(fin)) / 2 + 10);
   return {
     id:          "em-asset-leakage-exposure",
-    category:    "financial_leakage",
+    category:    FINDING_CATEGORIES.FINANCIAL_LEAKAGE,
     title:       "Asset Leakage Exposure",
     description:
       "The combination of inventory visibility gaps and financial leakage " +
@@ -175,13 +177,13 @@ function ruleAssetLeakageExposure(findings: AnyFinding[]): IndustryRule | null {
  * Trigger: warehouse_operations finding present.
  */
 function ruleReconciliationDependency(findings: AnyFinding[]): IndustryRule | null {
-  const matches = byCategory(findings, "warehouse_operations");
+  const matches = byCategory(findings, FINDING_CATEGORIES.WAREHOUSE_OPERATIONS);
   if (!matches.length) return null;
 
   const conf = clamp(maxConf(matches));
   return {
     id:          "em-reconciliation-dependency",
-    category:    "warehouse_operations",
+    category:    FINDING_CATEGORIES.WAREHOUSE_OPERATIONS,
     title:       "Reconciliation Dependency",
     description:
       "Warehouse operations findings indicate a reliance on manual stock " +
@@ -198,14 +200,14 @@ function ruleReconciliationDependency(findings: AnyFinding[]): IndustryRule | nu
  * Trigger: manpower_dependency AND logistics_coordination findings present together.
  */
 function ruleDriverDependencyRisk(findings: AnyFinding[]): IndustryRule | null {
-  const manpower  = byCategory(findings, "manpower_dependency");
-  const logistics = byCategory(findings, "logistics_coordination");
+  const manpower  = byCategory(findings, FINDING_CATEGORIES.MANPOWER_DEPENDENCY);
+  const logistics = byCategory(findings, FINDING_CATEGORIES.LOGISTICS_COORDINATION);
   if (!manpower.length || !logistics.length) return null;
 
   const conf = clamp(Math.max(maxConf(manpower), maxConf(logistics)) + 6);
   return {
     id:          "em-driver-dependency-risk",
-    category:    "manpower_dependency",
+    category:    FINDING_CATEGORIES.MANPOWER_DEPENDENCY,
     title:       "Driver Dependency Risk",
     description:
       "Manpower dependency and logistics coordination issues are occurring " +
@@ -222,13 +224,13 @@ function ruleDriverDependencyRisk(findings: AnyFinding[]): IndustryRule | null {
  * Trigger: workflow_scalability finding present.
  */
 function ruleEventScalabilityConstraint(findings: AnyFinding[]): IndustryRule | null {
-  const matches = byCategory(findings, "workflow_scalability");
+  const matches = byCategory(findings, FINDING_CATEGORIES.WORKFLOW_SCALABILITY);
   if (!matches.length) return null;
 
   const conf = clamp(maxConf(matches) + 4);
   return {
     id:          "em-event-scalability-constraint",
-    category:    "workflow_scalability",
+    category:    FINDING_CATEGORIES.WORKFLOW_SCALABILITY,
     title:       "Event Scalability Constraint",
     description:
       "Workflow scalability findings indicate the team is absorbing growth " +

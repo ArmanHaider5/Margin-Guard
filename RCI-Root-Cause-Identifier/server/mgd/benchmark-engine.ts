@@ -17,6 +17,8 @@
 //     as separate detector arrays and merged at the top level.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { FINDING_CATEGORIES } from "./finding-categories";
+
 // ── Exported interfaces ────────────────────────────────────────────────────────
 
 export interface BenchmarkResult {
@@ -237,7 +239,7 @@ export function benchmarkRefundLeakage(
   return {
     id:            hashMetric("refund_leakage_rate"),
     metric:        "Refund Leakage Rate",
-    category:      "financial_leakage",
+    category:      FINDING_CATEGORIES.FINANCIAL_LEAKAGE,
     actualValue:   value,
     benchmarkRange:{ low: thresholds[0], medium: thresholds[1], high: thresholds[2] },
     status,
@@ -281,7 +283,7 @@ export function benchmarkLogisticsCapacity(
   return {
     id:            hashMetric("logistics_utilization"),
     metric:        "Logistics Capacity Utilisation",
-    category:      "logistics_coordination",
+    category:      FINDING_CATEGORIES.LOGISTICS_COORDINATION,
     actualValue:   value,
     benchmarkRange:{ low: thresholds[0], medium: thresholds[1], high: thresholds[2] },
     status,
@@ -359,7 +361,7 @@ export function benchmarkReconciliationDelays(
   return {
     id:            hashMetric("reconciliation_delay_rate"),
     metric:        "Reconciliation Delay Rate",
-    category:      "workflow_scalability",
+    category:      FINDING_CATEGORIES.WORKFLOW_SCALABILITY,
     actualValue:   value,
     benchmarkRange:{ low: thresholds[0], medium: thresholds[1], high: thresholds[2] },
     status,
@@ -402,7 +404,7 @@ export function benchmarkManualDependency(
   return {
     id:            hashMetric("manual_workflow_dependency"),
     metric:        "Manual Workflow Dependency",
-    category:      "workflow_scalability",
+    category:      FINDING_CATEGORIES.WORKFLOW_SCALABILITY,
     actualValue:   value,
     benchmarkRange:{ low: thresholds[0], medium: thresholds[1], high: thresholds[2] },
     status,
@@ -480,7 +482,7 @@ export function benchmarkManpowerDependency(
   return {
     id:            hashMetric("manpower_dependency_rate"),
     metric:        "Manpower Dependency Rate",
-    category:      "manpower_dependency",
+    category:      FINDING_CATEGORIES.MANPOWER_DEPENDENCY,
     actualValue:   value,
     benchmarkRange:{ low: thresholds[0], medium: thresholds[1], high: thresholds[2] },
     status,
@@ -523,7 +525,7 @@ export function benchmarkOvertimeExposure(
   return {
     id:            hashMetric("overtime_exposure_rate"),
     metric:        "Overtime Exposure Rate",
-    category:      "manpower_dependency",
+    category:      FINDING_CATEGORIES.MANPOWER_DEPENDENCY,
     actualValue:   value,
     benchmarkRange:{ low: thresholds[0], medium: thresholds[1], high: thresholds[2] },
     status,
@@ -566,7 +568,7 @@ export function benchmarkRejectedJobs(
   return {
     id:            hashMetric("rejected_jobs_rate"),
     metric:        "Rejected Jobs Rate",
-    category:      "logistics_coordination",
+    category:      FINDING_CATEGORIES.LOGISTICS_COORDINATION,
     actualValue:   value,
     benchmarkRange:{ low: thresholds[0], medium: thresholds[1], high: thresholds[2] },
     status,

@@ -85,8 +85,15 @@ function newestFirst(records: StoredMGDReport[]): StoredMGDReport[] {
 /**
  * Persist a new MGD report and return the stored record.
  * Returns null on any failure.
+ *
+ * `params.id`, when supplied, becomes this record's id instead of a freshly
+ * generated one — used by POST /api/mgd/run so the id it embeds into the
+ * response's `report.id` (report-composer.ts) is the exact same id the
+ * record is persisted under, making the two always agree. Callers that omit
+ * it keep the original behaviour (a fresh random id per save).
  */
 export async function saveReport(params: {
+  id?:         string;
   clientId?:   string;
   clientName?: string;
   industry?:   string;
@@ -95,7 +102,7 @@ export async function saveReport(params: {
 }): Promise<StoredMGDReport | null> {
   try {
     const record: StoredMGDReport = {
-      id:          crypto.randomUUID(),
+      id:          params.id ?? crypto.randomUUID(),
       clientId:    params.clientId,
       clientName:  params.clientName,
       industry:    params.industry,

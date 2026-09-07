@@ -32,6 +32,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { OperationalFinding } from "./findings-engine";
+import { FINDING_CATEGORIES } from "./finding-categories";
+import { TRACE_STEPS, type DetectorExecutionRecord } from "./pipeline-trace";
 
 // ── Exported interfaces ───────────────────────────────────────────────────────
 
@@ -73,17 +75,21 @@ export interface RootCauseParams {
 
 // ── Finding category constants ─────────────────────────────────────────────────
 
+// Short local aliases into the one authoritative Finding Category vocabulary
+// (server/mgd/findings-engine.ts's FINDING_CATEGORIES) — kept for this
+// file's own dense byCategory(findings, CAT.XXX) call sites; no longer an
+// independent re-declaration of the category strings themselves.
 const CAT = {
-  INV:         "inventory_visibility",
-  LOG:         "logistics_coordination",
-  WH:          "warehouse_operations",
-  MAN:         "manpower_dependency",
-  FIN:         "financial_leakage",
-  WFL:         "workflow_scalability",
+  INV:         FINDING_CATEGORIES.INVENTORY_VISIBILITY,
+  LOG:         FINDING_CATEGORIES.LOGISTICS_COORDINATION,
+  WH:          FINDING_CATEGORIES.WAREHOUSE_OPERATIONS,
+  MAN:         FINDING_CATEGORIES.MANPOWER_DEPENDENCY,
+  FIN:         FINDING_CATEGORIES.FINANCIAL_LEAKAGE,
+  WFL:         FINDING_CATEGORIES.WORKFLOW_SCALABILITY,
   // Event Management categories
-  EM_READINESS: "event_readiness",
-  EM_DISPATCH:  "dispatch_operations",
-  EM_ASSET:     "asset_management",
+  EM_READINESS: FINDING_CATEGORIES.EVENT_READINESS,
+  EM_DISPATCH:  FINDING_CATEGORIES.DISPATCH_OPERATIONS,
+  EM_ASSET:     FINDING_CATEGORIES.ASSET_MANAGEMENT,
 } as const;
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
@@ -855,7 +861,7 @@ export function detectDispatchPlanningDependency(
 
   console.log(
     `[MGD][ROOT_CAUSE] detectDispatchPlanningDependency → ` +
-    `confidence=${confidence} (dispatch=${dispFinds.length}, strong=${strongDispatch.length})`,
+    `confidence=${confidence} (dispatch=${dispFinds.length}, log=${logFinds.length})`,
   );
 
   return {
@@ -915,13 +921,27 @@ const CONFIDENCE_THRESHOLD = 25;
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Analyse the operational findings array and generate executive-level root
- * causes from multi-finding patterns.
- *
- * Returns root causes sorted by confidence descending, suppressed below 25.
- * Never throws.
+ * Shared implementation: runs every registered detector against `findings`,
+ * building both the final root-cause array (identical to this function's
+ * historical behaviour) and, alongside it, a per-detector execution ledger
+ * for trace-level observability (see pipeline-trace.ts's
+ * DetectorExecutionRecord). Extracted so `generateRootCauses` (unchanged
+ * signature, for every pre-existing caller) and
+ * `generateRootCausesWithExecutions` (new, used only by mgd-pipeline.ts) run
+ * the exact same detector loop rather than two diverging copies of it.
  */
-export function generateRootCauses(params: RootCauseParams): RootCause[] {
+function runRootCauseDetectors(
+  params: RootCauseParams,
+  // Test-only injection seam: defaults to the real, production DETECTORS
+  // registry in every real call path (mgd-pipeline.ts never passes this).
+  // Exists solely so regression tests can prove FAILED/SUCCESS execution
+  // recording against a deliberately-throwing detector without ever
+  // modifying a real production detector function — see
+  // server/mgd/__tests__/detector-failure-observability.test.ts.
+  detectorsOverride: RootCauseDetector[] = DETECTORS,
+): { rootCauses: RootCause[]; executions: DetectorExecutionRecord[] } {
+  const executions: DetectorExecutionRecord[] = [];
+
   try {
     const { findings, industry } = params;
 
@@ -932,7 +952,7 @@ export function generateRootCauses(params: RootCauseParams): RootCause[] {
 
     if (!Array.isArray(findings) || findings.length === 0) {
       console.log("[MGD][ROOT_CAUSE] No findings supplied — returning []");
-      return [];
+      return { rootCauses: [], executions };
     }
 
     console.log(
@@ -942,7 +962,8 @@ export function generateRootCauses(params: RootCauseParams): RootCause[] {
 
     const rootCauses: RootCause[] = [];
 
-    for (const detector of DETECTORS) {
+    for (const detector of detectorsOverride) {
+      const detectorName = detector.name || "anonymousRootCauseDetector";
       try {
         const rc = detector(findings);
         if (rc && rc.confidence >= CONFIDENCE_THRESHOLD) {
@@ -952,9 +973,20 @@ export function generateRootCauses(params: RootCauseParams): RootCause[] {
             `[${rc.severity}] confidence=${rc.confidence} ` +
             `contributing=${rc.contributingFindings.length} findings`,
           );
+          executions.push({ detectorName, stage: TRACE_STEPS.ROOT_CAUSE_GENERATION, status: "SUCCESS", outputCount: 1 });
+        } else {
+          // Ran cleanly; returned null or was suppressed below threshold —
+          // a genuine "found nothing (yet)" result, not a failure.
+          executions.push({ detectorName, stage: TRACE_STEPS.ROOT_CAUSE_GENERATION, status: "SUCCESS", outputCount: 0 });
         }
       } catch (err) {
         console.error("[MGD][ROOT_CAUSE] Detector error (skipped):", err);
+        executions.push({
+          detectorName,
+          stage:  TRACE_STEPS.ROOT_CAUSE_GENERATION,
+          status: "FAILED",
+          error:  { name: (err as Error)?.name ?? "Error", message: (err as Error)?.message ?? String(err) },
+        });
       }
     }
 
@@ -985,10 +1017,35 @@ export function generateRootCauses(params: RootCauseParams): RootCause[] {
       console.log(`[MGD][ROOT_CAUSE]   • [${rc.severity.padEnd(8)}] "${rc.title}" (${rc.confidence}%)`);
     }
 
-    return unique;
+    return { rootCauses: unique, executions };
 
   } catch (err) {
     console.error("[MGD][ROOT_CAUSE] generateRootCauses failed:", err);
-    return [];
+    return { rootCauses: [], executions };
   }
+}
+
+/**
+ * Analyse the operational findings array and generate executive-level root
+ * causes from multi-finding patterns.
+ *
+ * Returns root causes sorted by confidence descending, suppressed below 25.
+ * Never throws.
+ */
+export function generateRootCauses(params: RootCauseParams): RootCause[] {
+  return runRootCauseDetectors(params).rootCauses;
+}
+
+/**
+ * Same as generateRootCauses, plus a per-detector execution ledger for
+ * PipelineTrace observability (see MGD_DETECTOR_FAILURE_OBSERVABILITY_ADR.md).
+ * Used only by mgd-pipeline.ts — every pre-existing caller of
+ * generateRootCauses is unaffected.
+ */
+export function generateRootCausesWithExecutions(
+  params: RootCauseParams,
+  /** Test-only — see runRootCauseDetectors. Never passed by mgd-pipeline.ts. */
+  __testDetectors?: RootCauseDetector[],
+): { rootCauses: RootCause[]; executions: DetectorExecutionRecord[] } {
+  return __testDetectors ? runRootCauseDetectors(params, __testDetectors) : runRootCauseDetectors(params);
 }

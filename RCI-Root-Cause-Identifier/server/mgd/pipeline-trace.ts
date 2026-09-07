@@ -49,6 +49,31 @@ export interface PipelineTrace {
   steps: PipelineTraceStep[];
 }
 
+// ── Detector execution observability (additive; see MGD_DETECTOR_FAILURE_OBSERVABILITY_ADR.md) ─
+//
+// Per-detector execution record for the three detector-loop engines
+// (Findings, Root Causes, Recommendations). Carried inside a
+// PipelineTraceStep's existing, already-optional `metadata` field under the
+// key `detectorExecutions` — never a new top-level field on PipelineTrace or
+// PipelineTraceStep, so every historical trace already on disk (which has no
+// `detectorExecutions` key) remains valid and requires no migration.
+//
+// This is execution bookkeeping only: it distinguishes "the detector ran and
+// found nothing" (SUCCESS, outputCount 0) from "the detector threw before
+// producing a result" (FAILED) — it never feeds into, or is derived from,
+// Findings/Root Causes/Recommendations/health score/Evidence Sufficiency/
+// Diagnostic Scope. `error` intentionally carries only `name`/`message` —
+// never a stack trace — to avoid leaking internal detail into a trace
+// payload that is returned as-is by GET /api/mgd/traces(/:id).
+
+export interface DetectorExecutionRecord {
+  detectorName: string;
+  stage:        string;
+  status:       "SUCCESS" | "FAILED";
+  outputCount?: number;                       // present when status === "SUCCESS"
+  error?:       { name: string; message: string }; // present when status === "FAILED"
+}
+
 // ── Step name constants ───────────────────────────────────────────────────────
 
 export const TRACE_STEPS = {

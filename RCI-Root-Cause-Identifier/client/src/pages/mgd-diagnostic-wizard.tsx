@@ -33,6 +33,25 @@ const NOTE_CATEGORIES = [
   "Operations", "Procurement", "Sales", "Technology", "Other",
 ];
 
+// Mirrors server/mgd/finding-categories.ts's FINDING_CATEGORIES exactly (the
+// one authoritative source — see docs/MGD_FINDING_CATEGORY_GOVERNANCE_ADR.md)
+// and the human-readable labels in server/mgd/executive-narrative-engine.ts's
+// CATEGORY_LABEL, so a concern/observation's selected area always reads the
+// same way here as it does in the composed report. This is a picklist for a
+// CONSULTANT to explicitly choose from — MGD never infers an area from what
+// they type. See docs/MGD_BUSINESS_CONCERN_CORRELATION_ADR.md.
+const DIAGNOSTIC_AREAS: { value: string; label: string }[] = [
+  { value: "inventory_visibility",   label: "Inventory Management"        },
+  { value: "logistics_coordination", label: "Logistics Coordination"      },
+  { value: "warehouse_operations",   label: "Warehouse Operations"        },
+  { value: "manpower_dependency",    label: "Manpower Dependency"         },
+  { value: "financial_leakage",      label: "Financial Leakage"           },
+  { value: "workflow_scalability",   label: "Workflow Scalability"        },
+  { value: "event_readiness",        label: "Event Readiness Control"     },
+  { value: "dispatch_operations",    label: "Dispatch Reliability"        },
+  { value: "asset_management",       label: "Asset Accountability"        },
+];
+
 const CONCERN_EXAMPLES = [
   "Inventory losses", "Logistics bottlenecks", "Profitability",
   "Catering expansion", "Staff dependency", "Fleet capacity",
@@ -90,7 +109,14 @@ function industryLabel(raw?: string) {
 
 interface Client { id: string; name: string; industry: string; }
 interface ClientDoc { id: string; fileName: string; fileType?: string; status?: string; }
-interface ConsultantNote { id: string; title: string; observation: string; category: string; }
+interface ConsultantNote {
+  id: string; title: string; observation: string; category: string;
+  /** Consultant-selected diagnostic area (Finding Category), optional. */
+  relatedArea?: string;
+}
+/** A Business Concern with 0+ consultant-selected diagnostic areas — never
+ *  inferred from `text`. See docs/MGD_BUSINESS_CONCERN_CORRELATION_ADR.md. */
+interface Concern { text: string; areas: string[]; }
 
 // ── Design primitives ─────────────────────────────────────────────────────────
 
@@ -422,14 +448,15 @@ function Step2Documents({
 // ── Step 3 — Business Concerns ────────────────────────────────────────────────
 
 function Step3Concerns({
-  concerns, addConcern, removeConcern, input, setInput,
+  concerns, addConcern, removeConcern, toggleConcernArea, input, setInput,
 }: {
-  concerns: string[]; addConcern: (c: string) => void; removeConcern: (i: number) => void;
+  concerns: Concern[]; addConcern: (c: string) => void; removeConcern: (i: number) => void;
+  toggleConcernArea: (i: number, area: string) => void;
   input: string; setInput: (v: string) => void;
 }) {
   function handleAdd() {
     const trimmed = input.trim();
-    if (trimmed && !concerns.includes(trimmed)) {
+    if (trimmed && !concerns.some(c => c.text === trimmed)) {
       addConcern(trimmed);
       setInput("");
     }
@@ -459,7 +486,7 @@ function Step3Concerns({
       <div>
         <p className="text-[10px] text-white/25 uppercase tracking-widest mb-2">Common concerns</p>
         <div className="flex flex-wrap gap-2">
-          {CONCERN_EXAMPLES.filter(e => !concerns.includes(e)).map(ex => (
+          {CONCERN_EXAMPLES.filter(e => !concerns.some(c => c.text === e)).map(ex => (
             <button
               key={ex}
               onClick={() => addConcern(ex)}
@@ -478,12 +505,39 @@ function Step3Concerns({
           <p className="text-[10px] text-white/25 uppercase tracking-widest mb-2">Added concerns ({concerns.length})</p>
           <div className="space-y-2">
             {concerns.map((c, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-blue-500/15 bg-blue-500/[0.05]">
-                <MessageSquare className="w-3.5 h-3.5 text-blue-400 shrink-0"/>
-                <span className="flex-1 text-[13px] text-white/70">{c}</span>
-                <button onClick={() => removeConcern(i)} className="text-white/20 hover:text-red-400 transition-colors">
-                  <X className="w-3.5 h-3.5"/>
-                </button>
+              <div key={i} className="rounded-xl border border-blue-500/15 bg-blue-500/[0.05] px-4 py-2.5">
+                <div className="flex items-center gap-3">
+                  <MessageSquare className="w-3.5 h-3.5 text-blue-400 shrink-0"/>
+                  <span className="flex-1 text-[13px] text-white/70">{c.text}</span>
+                  <button onClick={() => removeConcern(i)} className="text-white/20 hover:text-red-400 transition-colors">
+                    <X className="w-3.5 h-3.5"/>
+                  </button>
+                </div>
+                <div className="mt-2 pl-6">
+                  <p className="text-[10px] text-white/25 mb-1.5">
+                    Which diagnostic area is this about? <span className="text-white/15">(optional — your choice, MGD won't guess)</span>
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {DIAGNOSTIC_AREAS.map(area => {
+                      const selected = c.areas.includes(area.value);
+                      return (
+                        <button
+                          key={area.value}
+                          type="button"
+                          onClick={() => toggleConcernArea(i, area.value)}
+                          className={`text-[10.5px] px-2 py-1 rounded-md border transition-all ${
+                            selected
+                              ? "border-blue-500/50 bg-blue-500/20 text-blue-200"
+                              : "border-white/10 bg-white/[0.02] text-white/35 hover:border-white/20 hover:text-white/55"
+                          }`}
+                        >
+                          {selected && <Check className="w-2.5 h-2.5 inline mr-1 -mt-0.5"/>}
+                          {area.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -505,11 +559,13 @@ function Step3Concerns({
 function Step4Observations({
   notes, addNote, removeNote,
   title, setTitle, observation, setObservation, category, setCategory,
+  area, setArea,
 }: {
   notes: ConsultantNote[]; addNote: () => void; removeNote: (id: string) => void;
   title: string; setTitle: (v: string) => void;
   observation: string; setObservation: (v: string) => void;
   category: string; setCategory: (v: string) => void;
+  area: string; setArea: (v: string) => void;
 }) {
   const canAdd = title.trim() && observation.trim() && category;
 
@@ -543,6 +599,11 @@ function Step4Observations({
               placeholder-white/25 focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.07] transition-all resize-none"
           />
         </div>
+        <div>
+          <Label>Related diagnostic area <span className="text-white/15 normal-case font-normal">(optional — your choice, MGD won't guess)</span></Label>
+          <Select value={area} onChange={setArea}
+            options={DIAGNOSTIC_AREAS} placeholder="No specific area…"/>
+        </div>
         <button
           onClick={addNote}
           disabled={!canAdd}
@@ -566,6 +627,11 @@ function Step4Observations({
                   <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400">
                     {n.category}
                   </span>
+                  {n.relatedArea && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-300 ml-1.5">
+                      {DIAGNOSTIC_AREAS.find(a => a.value === n.relatedArea)?.label ?? n.relatedArea}
+                    </span>
+                  )}
                 </div>
                 <button onClick={() => removeNote(n.id)} className="text-white/20 hover:text-red-400 transition-colors mt-0.5">
                   <Trash2 className="w-3.5 h-3.5"/>
@@ -591,7 +657,7 @@ function Step5Review({
   client, selectedDocCount, uploadedCount, concerns, notes, running, error, onRun,
 }: {
   client: Client | null; selectedDocCount: number; uploadedCount: number;
-  concerns: string[]; notes: ConsultantNote[];
+  concerns: Concern[]; notes: ConsultantNote[];
   running: boolean; error: string; onRun: () => void;
 }) {
   const rows: { icon: React.ElementType; label: string; value: string; accent: string }[] = [
@@ -625,7 +691,10 @@ function Step5Review({
           <div className="flex flex-wrap gap-2">
             {concerns.map((c, i) => (
               <span key={i} className="text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/20 bg-blue-500/[0.06] text-blue-300">
-                {c}
+                {c.text}
+                {c.areas.length > 0 && (
+                  <span className="text-blue-400/60"> · {c.areas.map(a => DIAGNOSTIC_AREAS.find(d => d.value === a)?.label ?? a).join(", ")}</span>
+                )}
               </span>
             ))}
           </div>
@@ -685,13 +754,14 @@ export default function MGDDiagnosticWizard() {
 
   // ── Step 3 state ───────────────────────────────────────────────────────────
   const [concernInput,     setConcernInput]      = useState("");
-  const [businessConcerns, setBusinessConcerns]  = useState<string[]>([]);
+  const [businessConcerns, setBusinessConcerns]  = useState<Concern[]>([]);
 
   // ── Step 4 state ───────────────────────────────────────────────────────────
   const [notes,         setNotes]         = useState<ConsultantNote[]>([]);
   const [noteTitle,     setNoteTitle]     = useState("");
   const [noteObs,       setNoteObs]       = useState("");
   const [noteCat,       setNoteCat]       = useState("");
+  const [noteArea,      setNoteArea]      = useState("");
 
   // ── Step 5 state ───────────────────────────────────────────────────────────
   const [running, setRunning] = useState(false);
@@ -796,8 +866,15 @@ export default function MGDDiagnosticWizard() {
   }, [clientDocs]);
 
   // Add / remove concern
-  const addConcern    = (c: string) => setBusinessConcerns(prev => [...prev, c]);
+  const addConcern    = (c: string) => setBusinessConcerns(prev => [...prev, { text: c, areas: [] }]);
   const removeConcern = (i: number) => setBusinessConcerns(prev => prev.filter((_, idx) => idx !== i));
+  // Toggle a diagnostic area on/off for one concern — consultant-driven only.
+  const toggleConcernArea = (i: number, area: string) =>
+    setBusinessConcerns(prev => prev.map((c, idx) => {
+      if (idx !== i) return c;
+      const areas = c.areas.includes(area) ? c.areas.filter(a => a !== area) : [...c.areas, area];
+      return { ...c, areas };
+    }));
 
   // Add / remove note
   function addNote() {
@@ -807,8 +884,9 @@ export default function MGDDiagnosticWizard() {
       title: noteTitle.trim(),
       observation: noteObs.trim(),
       category: noteCat,
+      ...(noteArea ? { relatedArea: noteArea } : {}),
     }]);
-    setNoteTitle(""); setNoteObs(""); setNoteCat("");
+    setNoteTitle(""); setNoteObs(""); setNoteCat(""); setNoteArea("");
   }
   const removeNote = (id: string) => setNotes(prev => prev.filter(n => n.id !== id));
 
@@ -835,7 +913,13 @@ export default function MGDDiagnosticWizard() {
         clientName:         selectedClient.name,
         industry:           selectedClient.industry,
         selectedDocuments:  Array.from(selectedDocIds),
-        businessConcerns,
+        // Send the richer {text, selectedAreas} shape only when the
+        // consultant actually selected an area — a plain string otherwise,
+        // so the wire payload stays minimal. See
+        // docs/MGD_BUSINESS_CONCERN_CORRELATION_ADR.md.
+        businessConcerns: businessConcerns.map(c =>
+          c.areas.length > 0 ? { text: c.text, selectedAreas: c.areas } : c.text,
+        ),
         consultantNotes:    notes,
         transactions:       [],   // pipeline will use selectedDocuments
         documents:          [],
@@ -925,6 +1009,7 @@ export default function MGDDiagnosticWizard() {
           {step === 3 && (
             <Step3Concerns
               concerns={businessConcerns} addConcern={addConcern} removeConcern={removeConcern}
+              toggleConcernArea={toggleConcernArea}
               input={concernInput} setInput={setConcernInput}
             />
           )}
@@ -934,6 +1019,7 @@ export default function MGDDiagnosticWizard() {
               title={noteTitle} setTitle={setNoteTitle}
               observation={noteObs} setObservation={setNoteObs}
               category={noteCat} setCategory={setNoteCat}
+              area={noteArea} setArea={setNoteArea}
             />
           )}
           {step === 5 && (
