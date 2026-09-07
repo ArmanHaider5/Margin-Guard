@@ -2661,7 +2661,7 @@ async function generateManufacturingV2Result(
   const industry =
     detectedIndustry !== "other"
       ? detectedIndustry
-      : (analysis.industry || "manufacturing");
+      : (input.industry || "manufacturing");
 
   const industryProfile =
     industryProfiles[industry];
