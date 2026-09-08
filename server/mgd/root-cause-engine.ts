@@ -895,7 +895,19 @@ export function detectDispatchPlanningDependency(
 
 type RootCauseDetector = (findings: OperationalFinding[]) => RootCause | null;
 
-const DETECTORS: RootCauseDetector[] = [
+// ── Industry isolation ────────────────────────────────────────────────────────
+// Canonical Event Management value, matching the exact convention already
+// used by server/mgd/industry-engine.ts's PACK_REGISTRY key and its own
+// `industry.trim().toLowerCase()` normalisation — reused here, not
+// reinvented, so both gates agree on what "Event Management" means.
+// Fail-closed by construction: undefined/null/empty/unrecognised/future
+// industries all normalise to something other than this exact value.
+const EVENT_MANAGEMENT_INDUSTRY = "event_management";
+function isEventManagementIndustry(industry: string | undefined): boolean {
+  return typeof industry === "string" && industry.trim().toLowerCase() === EVENT_MANAGEMENT_INDUSTRY;
+}
+
+const GENERIC_DETECTORS: RootCauseDetector[] = [
   detectReactiveOperations,
   detectScalabilityMismatch,
   detectInventoryVisibilityWeakness,
@@ -904,6 +916,9 @@ const DETECTORS: RootCauseDetector[] = [
   detectLogisticsCompressionRisk,
   detectWorkflowSyncFailure,
   detectDelayedInventoryCertainty,
+];
+
+const EVENT_MANAGEMENT_DETECTORS: RootCauseDetector[] = [
   // ── Event Management Pack V2 ──────────────────────────────────────────────
   detectInventoryGovernanceDeficiency,
   detectEventReadinessControlFailure,
@@ -913,6 +928,11 @@ const DETECTORS: RootCauseDetector[] = [
   detectInventoryControlBreakdown,
   detectDispatchPlanningDependency,
 ];
+
+// Full registry — used only for the event_management branch below. Kept as
+// a single concatenation (not a second hand-maintained list) so the two
+// group arrays above remain the one place detectors are registered.
+const DETECTORS: RootCauseDetector[] = [...GENERIC_DETECTORS, ...EVENT_MANAGEMENT_DETECTORS];
 
 const CONFIDENCE_THRESHOLD = 25;
 
@@ -938,7 +958,7 @@ function runRootCauseDetectors(
   // recording against a deliberately-throwing detector without ever
   // modifying a real production detector function — see
   // server/mgd/__tests__/detector-failure-observability.test.ts.
-  detectorsOverride: RootCauseDetector[] = DETECTORS,
+  detectorsOverride?: RootCauseDetector[],
 ): { rootCauses: RootCause[]; executions: DetectorExecutionRecord[] } {
   const executions: DetectorExecutionRecord[] = [];
 
@@ -960,9 +980,19 @@ function runRootCauseDetectors(
       findings.map(f => `${f.category}[${f.severity}/${f.confidence}%]`).join(", "),
     );
 
+    // Fail-closed industry gate: an explicit test override always wins
+    // (unchanged test-seam behaviour, see comment above); otherwise the
+    // Event Management Pack detectors run only when industry is exactly
+    // "event_management" — every other value, including undefined, empty,
+    // manufacturing, unknown, or a future industry, runs GENERIC_DETECTORS
+    // only.
+    const activeDetectors = detectorsOverride ?? (
+      isEventManagementIndustry(industry) ? DETECTORS : GENERIC_DETECTORS
+    );
+
     const rootCauses: RootCause[] = [];
 
-    for (const detector of detectorsOverride) {
+    for (const detector of activeDetectors) {
       const detectorName = detector.name || "anonymousRootCauseDetector";
       try {
         const rc = detector(findings);

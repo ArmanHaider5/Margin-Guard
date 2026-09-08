@@ -1286,7 +1286,19 @@ type DetectorFn = (
   rootCauses: RootCause[],
 ) => OperationalRecommendation | null;
 
-const DETECTORS: DetectorFn[] = [
+// ── Industry isolation ────────────────────────────────────────────────────────
+// Canonical Event Management value, matching the exact convention already
+// used by server/mgd/industry-engine.ts's PACK_REGISTRY key and its own
+// `industry.trim().toLowerCase()` normalisation — reused here, not
+// reinvented, so both gates agree on what "Event Management" means.
+// Fail-closed by construction: undefined/null/empty/unrecognised/future
+// industries all normalise to something other than this exact value.
+const EVENT_MANAGEMENT_INDUSTRY = "event_management";
+function isEventManagementIndustry(industry: string | undefined): boolean {
+  return typeof industry === "string" && industry.trim().toLowerCase() === EVENT_MANAGEMENT_INDUSTRY;
+}
+
+const GENERIC_DETECTORS: DetectorFn[] = [
   detectCoordinationStabilization,
   detectLogisticsOptimization,
   detectInventoryControlImprovements,
@@ -1297,6 +1309,9 @@ const DETECTORS: DetectorFn[] = [
   detectWarehouseStabilization,
   detectDepartmentSync,
   detectCrossTraining,
+];
+
+const EVENT_MANAGEMENT_DETECTORS: DetectorFn[] = [
   // ── Event Management Pack V2 ──────────────────────────────────────────────
   detectPreEventInventoryVerification,
   detectDispatchReadinessChecklist,
@@ -1310,6 +1325,11 @@ const DETECTORS: DetectorFn[] = [
   detectDamageRecoveryProgramme,
   detectDispatchControlTower,
 ];
+
+// Full registry — used only for the event_management branch below. Kept as
+// a single concatenation (not a second hand-maintained list) so the two
+// group arrays above remain the one place detectors are registered.
+const DETECTORS: DetectorFn[] = [...GENERIC_DETECTORS, ...EVENT_MANAGEMENT_DETECTORS];
 
 const CONFIDENCE_THRESHOLD = 30;
 
@@ -1336,7 +1356,7 @@ function runRecommendationDetectors(
   // recording against a deliberately-throwing detector without ever
   // modifying a real production detector function — see
   // server/mgd/__tests__/detector-failure-observability.test.ts.
-  detectorsOverride: DetectorFn[] = DETECTORS,
+  detectorsOverride?: DetectorFn[],
 ): { recommendations: OperationalRecommendation[]; executions: DetectorExecutionRecord[] } {
   const executions: DetectorExecutionRecord[] = [];
 
@@ -1363,9 +1383,19 @@ function runRecommendationDetectors(
       safeRootCauses.map(rc => `"${rc.title}"[${rc.severity}/${rc.confidence}%]`).join(", ") || "none",
     );
 
+    // Fail-closed industry gate: an explicit test override always wins
+    // (unchanged test-seam behaviour, see comment above); otherwise the
+    // Event Management Pack detectors run only when industry is exactly
+    // "event_management" — every other value, including undefined, empty,
+    // manufacturing, unknown, or a future industry, runs GENERIC_DETECTORS
+    // only.
+    const activeDetectors = detectorsOverride ?? (
+      isEventManagementIndustry(industry) ? DETECTORS : GENERIC_DETECTORS
+    );
+
     const recommendations: OperationalRecommendation[] = [];
 
-    for (const detector of detectorsOverride) {
+    for (const detector of activeDetectors) {
       const detectorName = detector.name || "anonymousRecommendationDetector";
       try {
         const rec = detector(safeFindings, safeRootCauses);

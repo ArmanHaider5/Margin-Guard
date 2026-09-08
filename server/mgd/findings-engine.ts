@@ -1442,13 +1442,30 @@ export function detectClientConcentration(
 // inline arrow functions (needed to normalise mixed 2-/3-arg detector
 // signatures) whose own `.name` is not reliably the underlying detector's
 // name at runtime.
-const DETECTORS: { name: string; run: DetectorFn }[] = [
+// ── Industry isolation ────────────────────────────────────────────────────────
+// Canonical Event Management value, matching the exact convention already
+// used by server/mgd/industry-engine.ts's PACK_REGISTRY key and its own
+// `industry.trim().toLowerCase()` normalisation — reused here, not
+// reinvented, so both gates agree on what "Event Management" means.
+// Fail-closed by construction: undefined/null/empty/unrecognised/future
+// industries all normalise to something other than this exact value.
+const EVENT_MANAGEMENT_INDUSTRY = "event_management";
+function isEventManagementIndustry(industry: string | undefined): boolean {
+  return typeof industry === "string" && industry.trim().toLowerCase() === EVENT_MANAGEMENT_INDUSTRY;
+}
+
+const GENERIC_DETECTORS: { name: string; run: DetectorFn }[] = [
   { name: "detectManualDependency",               run: (s, t) => detectManualDependency(s, t) },
   { name: "detectInventoryStrain",                run: (s, t) => detectInventoryStrain(s, t) },
   { name: "detectLogisticsPressure",              run: (s, t) => detectLogisticsPressure(s, t) },
   { name: "detectFinancialLeakage",               run: (s, t) => detectFinancialLeakage(s, t) },
   { name: "detectWorkflowScalabilityRisk",        run: (s, t) => detectWorkflowScalabilityRisk(s, t) },
   { name: "detectWarehouseOperations",            run: (s, t) => detectWarehouseOperations(s, t) },
+  // ── Customer Frequency Analysis ──────────────────────────────────────────
+  { name: "detectClientConcentration",            run: (s, t) => detectClientConcentration(s, t) },
+];
+
+const EVENT_MANAGEMENT_DETECTORS: { name: string; run: DetectorFn }[] = [
   // ── Event Management Pack V2 ────────────────────────────────────────────
   { name: "detectEMInventoryVisibilityWeakness",  run: (s, t, p) => detectEMInventoryVisibilityWeakness(s, t, p) },
   { name: "detectRecurringDispatchFailure",       run: (s, t, p) => detectRecurringDispatchFailure(s, t, p) },
@@ -1460,9 +1477,12 @@ const DETECTORS: { name: string; run: DetectorFn }[] = [
   { name: "detectDispatchReliabilityRisk",        run: (s, t, p) => detectDispatchReliabilityRisk(s, t, p) },
   { name: "detectEventReadinessExposure",         run: (s, t, p) => detectEventReadinessExposure(s, t, p) },
   { name: "detectInventoryShortagePattern",       run: (s, t, p) => detectInventoryShortagePattern(s, t, p) },
-  // ── Customer Frequency Analysis ──────────────────────────────────────────
-  { name: "detectClientConcentration",            run: (s, t) => detectClientConcentration(s, t) },
 ];
+
+// Full registry — used only for the event_management branch below. Kept as
+// a single concatenation (not a second hand-maintained list) so the two
+// group arrays above remain the one place detectors are registered.
+const DETECTORS: { name: string; run: DetectorFn }[] = [...GENERIC_DETECTORS, ...EVENT_MANAGEMENT_DETECTORS];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN EXPORT
@@ -1487,7 +1507,7 @@ function runFindingsDetectors(
   // recording against a deliberately-throwing detector without ever
   // modifying a real production detector function — see
   // server/mgd/__tests__/detector-failure-observability.test.ts.
-  detectorsOverride: { name: string; run: DetectorFn }[] = DETECTORS,
+  detectorsOverride?: { name: string; run: DetectorFn }[],
 ): { findings: OperationalFinding[]; executions: DetectorExecutionRecord[] } {
   const executions: DetectorExecutionRecord[] = [];
 
@@ -1525,9 +1545,19 @@ function runFindingsDetectors(
     });
 
     // ── Run detectors ────────────────────────────────────────────────────────
+    // Fail-closed industry gate: an explicit test override always wins
+    // (unchanged test-seam behaviour, see comment above); otherwise the
+    // Event Management Pack detectors run only when industry is exactly
+    // "event_management" — every other value, including undefined, empty,
+    // manufacturing, unknown, or a future industry, runs GENERIC_DETECTORS
+    // only.
+    const activeDetectors = detectorsOverride ?? (
+      isEventManagementIndustry(industry) ? DETECTORS : GENERIC_DETECTORS
+    );
+
     const findings: OperationalFinding[] = [];
 
-    for (const { name: detectorName, run } of detectorsOverride) {
+    for (const { name: detectorName, run } of activeDetectors) {
       try {
         const finding = run(stats, transactions, params);
         if (finding) {
