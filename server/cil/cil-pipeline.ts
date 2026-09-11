@@ -142,6 +142,13 @@ export async function runCilPipeline(
 
           const { columnMap, mappingTrace } = mapColumns(block.headers);
 
+          // Classify at block level using ONLY this block's own headers and
+          // data rows — not the workbook-wide docClass or rawText — since a
+          // single sheet can contain multiple operationally distinct blocks,
+          // and document-classifier.ts's Tier 2 probe scans raw text too.
+          const blockRawText = blockDataRows.map(row => row.join(" ")).join(" ");
+          const { docClass: blockDocClass } = classifyDocument(blockRawText, block.headers);
+
           console.log(
             `[CIL]   Block "${entityName}" ` +
             `[${block.blockType}] ` +
@@ -168,7 +175,7 @@ export async function runCilPipeline(
             if (nonEmpty.length === 0) { skippedRows++; continue; }
 
             const parsedTxs = parseRow(
-              row, block.headers, columnMap, docClass,
+              row, block.headers, columnMap, blockDocClass,
               entityName,  // entity name from block header
             );
 
@@ -198,6 +205,14 @@ export async function runCilPipeline(
 
         const { columnMap, mappingTrace } = mapColumns(headers);
 
+        // Classify at sheet level using ONLY this sheet's own headers and
+        // data rows — not the workbook-wide docClass or rawText — since
+        // different sheets in one workbook can be operationally distinct
+        // document types, and document-classifier.ts's Tier 2 probe scans
+        // raw text too.
+        const sheetRawText = dataRows.map(row => row.join(" ")).join(" ");
+        const { docClass: sheetDocClass } = classifyDocument(sheetRawText, headers);
+
         console.log(
           `[CIL] Sheet "${sheetName}" → FLAT MODE — column mapping:`, mappingTrace,
         );
@@ -223,7 +238,7 @@ export async function runCilPipeline(
           const nonEmpty = row.filter(c => c.trim() !== "");
           if (nonEmpty.length === 0) { skippedRows++; continue; }
 
-          const parsedTxs = parseRow(row, headers, columnMap, docClass);
+          const parsedTxs = parseRow(row, headers, columnMap, sheetDocClass);
           if (parsedTxs.length === 0) { skippedRows++; continue; }
 
           for (const tx of parsedTxs) {
