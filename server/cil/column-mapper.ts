@@ -66,7 +66,7 @@ const SYNONYM_TABLE: [StandardKey, string[]][] = [
     // Explicit keyword list (user-specified)
     "outgoing", "out", "dispatch", "qty out",
     // Extended synonyms
-    "issued", "dispatched", "delivery",
+    "issued", "dispatched",
     "sold", "quantity out", "out qty", "loaded", "debit",
     // Event Management — missing / lost items
     "missing items", "missing item", "lost items", "items missing",
