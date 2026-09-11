@@ -19,6 +19,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import crypto from "crypto";
+import { promises as fs } from "fs";
 import type { Express, Request, RequestHandler, Response } from "express";
 import {
   runMGDPipeline,
@@ -46,6 +47,7 @@ import { mapColumns }   from "../cil/column-mapper";
 import { parseRow }     from "../cil/row-parser";
 import { FINDING_CATEGORIES } from "../mgd/finding-categories";
 import type { BusinessConcernInput } from "../mgd/diagnostic-scope";
+import { deriveContentHash } from "../v2/shared/utils/deterministic-id";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -311,6 +313,12 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
       if (selectedDocIds.length > 0) {
         console.log(`[MGD][EXTRACT] Loading ${selectedDocIds.length} selected document(s)`);
 
+        // Request-scoped only — never persisted, never shared across requests.
+        // Guards against byte-identical evidence being selected more than once
+        // in the same diagnostic run, without touching upload persistence, the
+        // schema, or the wizard. See duplicate-evidence forensic investigation.
+        const seenContentHashes = new Set<string>();
+
         for (const docId of selectedDocIds) {
           try {
             const doc = await storage.getClientDocument(docId);
@@ -318,6 +326,20 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
               console.log(`[AUDIT] ${docId} — NOT FOUND IN DB`);
               continue;
             }
+
+            // ── Duplicate-content guard (Phase 1) ──────────────────────────
+            // Hashes the actual uploaded file bytes — never filename, never
+            // file size alone — so two distinct documents sharing a name are
+            // never conflated, and content genuinely re-selected within this
+            // same request is excluded from both extraction and the
+            // downstream `documents` collection, not just extraction.
+            const fileBytes   = await fs.readFile(doc.filePath);
+            const contentHash = deriveContentHash(fileBytes);
+            if (seenContentHashes.has(contentHash)) {
+              console.log(`[MGD][EXTRACT] Skipping duplicate document content: ${doc.fileName}`);
+              continue;
+            }
+            seenContentHashes.add(contentHash);
 
             documents.push(doc);
 
