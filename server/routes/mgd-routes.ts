@@ -45,6 +45,7 @@ import { storage }      from "../system/storage";
 import { detectBlocks } from "../cil/block-detector";
 import { mapColumns }   from "../cil/column-mapper";
 import { parseRow }     from "../cil/row-parser";
+import { classifyDocument } from "../cil/document-classifier";
 import { FINDING_CATEGORIES } from "../mgd/finding-categories";
 import type { BusinessConcernInput } from "../mgd/diagnostic-scope";
 import { deriveContentHash } from "../v2/shared/utils/deterministic-id";
@@ -178,6 +179,15 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
     );
     console.log(`[MGD][FLAT] "${srcName}" — header row ${headerIdx}: ${JSON.stringify(headers.slice(0, 8))}`);
 
+    // Classify using ONLY this source's own headers and data rows — not
+    // workbook-wide text — so each flat table is classified on its own
+    // evidence boundary.
+    const sheetRawText = rawRows
+      .slice(headerIdx + 1)
+      .map((r: any[]) => (Array.isArray(r) ? r : []).map((c: any) => String(c ?? "")).join(" "))
+      .join(" ");
+    const { docClass: sheetDocClass } = classifyDocument(sheetRawText, headers);
+
     // ── 2. Map recognised columns ────────────────────────────────────────
     const { columnMap } = mapColumns(headers);
     let valueColIdx: number | undefined =
@@ -262,6 +272,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
           quantity:        qty,
           quantityOut:     qty,
           value:           qty,
+          documentClassification: sheetDocClass,
           sourceFile:      fileName,
           documentId,
           clientId,
@@ -440,6 +451,12 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
 
                 const { columnMap, mappingTrace } = mapColumns(block.headers);
 
+                // Classify using ONLY this block's own headers and data
+                // rows — not workbook-wide text — so each block is
+                // classified on its own evidence boundary.
+                const blockRawText = blockDataRows.map(r => r.join(" ")).join(" ");
+                const { docClass: blockDocClass } = classifyDocument(blockRawText, block.headers);
+
                 // FIX 3: accept traditional financial columns OR EM operational signals
                 const hasMeaningful =
                   columnMap.quantityOut             !== undefined ||
@@ -472,7 +489,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
                     row,
                     block.headers,
                     columnMap,
-                    "unknown" as any,
+                    blockDocClass,
                     block.entityName ?? "",
                   );
 
