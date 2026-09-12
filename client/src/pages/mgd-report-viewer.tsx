@@ -341,7 +341,10 @@ function FindingCard({ finding }: { finding: Finding }) {
     summary:   finding.summary,
     confidence:finding.confidence,
     signals:   (finding.signals as string[]) ?? [],
-    evidence:  undefined,
+    // Pass through unchanged rather than discarding — FindingEvidencePanel
+    // falls back to `signals` above when this is empty/absent, so existing
+    // FindingEvidence[] data (if a finding ever carries it) is preserved.
+    evidence:  finding.evidence as OperationalFinding["evidence"],
   };
 
   return (

@@ -23,6 +23,12 @@ export interface OperationalFinding {
   confidence:        number;
 }
 
+/**
+ * A signal is the raw evidence string a detector already produced
+ * (server/mgd/findings-engine.ts's `signals: string[]`) — the same content,
+ * rendered as-is, never reinterpreted or reworded here.
+ */
+
 // ── Severity config ────────────────────────────────────────────────────────────
 
 const SEVERITY_CONFIG: Record<
@@ -86,6 +92,24 @@ function ConfidenceBar({ value }: { value: number }) {
   );
 }
 
+// ── Signal item ───────────────────────────────────────────────────────────────
+// Renders one raw detector signal string exactly as produced — no rewording,
+// no reinterpretation, no fabricated source/date/percentage beyond what the
+// string itself already contains.
+
+function SignalItem({ text, index }: { text: string; index: number }) {
+  return (
+    <div className="group flex gap-3 p-3 rounded-lg bg-white/[0.035] border border-white/[0.07] hover:bg-white/[0.06] hover:border-white/[0.12] transition-all">
+      <div className="shrink-0 mt-0.5">
+        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white/10 text-[10px] font-semibold text-white/50">
+          {index + 1}
+        </span>
+      </div>
+      <p className="flex-1 min-w-0 text-sm text-white/80 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
 // ── Evidence item ─────────────────────────────────────────────────────────────
 
 function EvidenceItem({ item, index }: { item: FindingEvidence; index: number }) {
@@ -138,8 +162,15 @@ interface Props {
 export default function FindingEvidencePanel({ finding }: Props) {
   const sev      = SEVERITY_CONFIG[finding.severity] ?? SEVERITY_CONFIG.LOW;
   const evidence = finding.evidence ?? [];
+  const signals  = finding.signals ?? [];
+  // Structured FindingEvidence[] takes priority where it is genuinely
+  // populated (preserving existing behaviour); otherwise fall back to the
+  // detector's own signal strings — the same data, just not previously
+  // wired through to this panel.
   const hasEvidence = evidence.length > 0;
-  const scrollable  = evidence.length > 5;
+  const hasSignals  = !hasEvidence && signals.length > 0;
+  const itemCount   = hasEvidence ? evidence.length : signals.length;
+  const scrollable  = itemCount > 5;
 
   return (
     <div
@@ -193,9 +224,9 @@ export default function FindingEvidencePanel({ finding }: Props) {
           <span className="text-[11px] font-semibold uppercase tracking-widest text-white/35">
             Supporting Evidence
           </span>
-          {hasEvidence && (
+          {(hasEvidence || hasSignals) && (
             <span className="text-[10px] text-white/25 tabular-nums">
-              {evidence.length} item{evidence.length !== 1 ? "s" : ""}
+              {itemCount} item{itemCount !== 1 ? "s" : ""}
             </span>
           )}
         </div>
@@ -206,6 +237,14 @@ export default function FindingEvidencePanel({ finding }: Props) {
           >
             {evidence.map((item, i) => (
               <EvidenceItem key={i} item={item} index={i} />
+            ))}
+          </div>
+        ) : hasSignals ? (
+          <div
+            className={`space-y-2 ${scrollable ? "overflow-y-auto max-h-[320px] pr-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent" : ""}`}
+          >
+            {signals.map((text, i) => (
+              <SignalItem key={i} text={text} index={i} />
             ))}
           </div>
         ) : (
