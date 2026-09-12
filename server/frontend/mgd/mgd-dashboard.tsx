@@ -145,7 +145,11 @@ function DiagnosticProcessCard() {
         ))}
       </div>
 
-      <div className="mt-8 flex justify-center">
+      {/* Full-width divider + generous top spacing so this CTA visually
+          belongs to the five-stage process as a whole, not to whichever
+          stage happens to sit above its horizontal center (previously read
+          as associated with Step 03). */}
+      <div className="mt-10 pt-6 border-t border-border flex justify-center">
         <Link href="/mgd/diagnostic">
           <button
             className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:opacity-90"
