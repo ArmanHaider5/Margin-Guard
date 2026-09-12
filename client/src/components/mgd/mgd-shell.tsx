@@ -171,13 +171,16 @@ export function MGDShell({ children }: { children: ReactNode }) {
       </Sidebar>
 
       <SidebarInset>
+        {/* SidebarInset already renders as the page's <main> landmark — a
+            second nested <main> here was invalid HTML (two <main> landmarks)
+            and is replaced with a plain <div>. */}
         <header className="flex h-14 flex-shrink-0 items-center gap-3 border-b border-border bg-background px-4">
           <SidebarTrigger data-testid="button-mgd-shell-sidebar-toggle" />
           <span className="text-sm font-medium text-foreground">Margin Guard Diagnostics</span>
         </header>
-        <main className="flex-1 overflow-y-auto bg-background">
+        <div className="flex-1 overflow-y-auto bg-background">
           {children}
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

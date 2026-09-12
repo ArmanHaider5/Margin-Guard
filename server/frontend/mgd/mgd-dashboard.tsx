@@ -62,6 +62,16 @@ const ACT_TINTS: Record<string, string> = {
   client:   "bg-emerald-50 text-emerald-600",
 };
 
+// Plain-language action label for each of the three EXISTING activity types
+// (client/analysis/document) — no new activity types invented, no data
+// fabricated. `item.name` (whatever it actually is — a filename, a client
+// name, a report name) remains the true, secondary detail underneath.
+const ACT_LABELS: Record<string, string> = {
+  client:   "Client added",
+  analysis: "Report generated",
+  document: "Document uploaded",
+};
+
 // ── Hero ────────────────────────────────────────────────────────────────────
 
 function Hero() {
@@ -262,13 +272,15 @@ function ActivityFeed({ items }: { items: AdminStats["recentActivity"] }) {
     <div className="space-y-1">
       {augmented.map(item => {
         const Icon = item.icon;
+        const label = ACT_LABELS[item.type] ?? "Activity";
         return (
           <div key={item.id} className="flex items-start gap-3 py-2">
             <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md ${item.tint}`}>
               <Icon className="h-3 w-3" />
             </div>
             <div className="flex-1 min-w-0 pt-0.5">
-              <div className="text-xs text-foreground truncate">{item.name}</div>
+              <div className="text-xs font-medium text-foreground">{label}</div>
+              <div className="text-[11px] text-muted-foreground truncate" title={item.name}>{item.name}</div>
               <div className="text-[11px] text-muted-foreground/70 mt-0.5">{relativeTime(item.date)}</div>
             </div>
           </div>
@@ -280,6 +292,15 @@ function ActivityFeed({ items }: { items: AdminStats["recentActivity"] }) {
 
 // ── Existing clients / recent activity section ─────────────────────────────────
 
+function StatChip({ value, label, loading }: { value: number; label: string; loading: boolean }) {
+  return (
+    <div className="flex-1 min-w-[160px] rounded-md border border-border bg-card px-4 py-3">
+      <div className="text-xl font-semibold text-foreground">{loading ? "—" : value}</div>
+      <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+    </div>
+  );
+}
+
 function ExistingDataSection({
   stats, statsLoading, allClients, activeList, clientsLoading,
 }: {
@@ -287,29 +308,28 @@ function ExistingDataSection({
   allClients: Client[]; activeList: Client[]; clientsLoading: boolean;
 }) {
   const recentAct = stats?.recentActivity ?? [];
+  const totalClients   = stats?.totalClients ?? 0;
+  const totalAnalyses  = stats?.totalAnalyses ?? 0;
+  const totalDocuments = stats?.totalDocuments ?? 0;
 
   return (
     <section className="pt-4 pb-12 border-t border-border">
-      {/* Compact, non-animated summary numbers — preserved from the prior
-          dashboard, restyled without counters/glow per the milestone brief. */}
-      <div className="flex flex-wrap gap-x-8 gap-y-2 py-6 text-sm">
-        <div>
-          <span className="font-semibold text-foreground">{statsLoading ? "—" : stats?.totalClients ?? 0}</span>
-          <span className="text-muted-foreground ml-1.5">clients registered</span>
-        </div>
-        <div>
-          <span className="font-semibold text-foreground">{statsLoading ? "—" : stats?.totalAnalyses ?? 0}</span>
-          <span className="text-muted-foreground ml-1.5">reports generated</span>
-        </div>
-        <div>
-          <span className="font-semibold text-foreground">{statsLoading ? "—" : stats?.totalDocuments ?? 0}</span>
-          <span className="text-muted-foreground ml-1.5">documents processed</span>
-        </div>
+      {/* Compact, non-animated summary metrics — each its own bordered chip
+          so the values are unambiguously separated (not just CSS gap-spaced
+          inline text). */}
+      <div className="flex flex-wrap gap-3 py-6">
+        <StatChip value={totalClients}   label={`Client${totalClients === 1 ? "" : "s"} Registered`}   loading={statsLoading} />
+        <StatChip value={totalAnalyses}  label={`Report${totalAnalyses === 1 ? "" : "s"} Generated`}    loading={statsLoading} />
+        <StatChip value={totalDocuments} label={`Document${totalDocuments === 1 ? "" : "s"} Processed`} loading={statsLoading} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Active clients */}
-        <div className="lg:col-span-2">
+      {/* Active Clients and Recent Activity are stacked full-width sections
+          rather than a forced side-by-side split — with only one or two real
+          clients, a side-by-side column made the page look lopsided next to
+          a longer activity list. Stacking keeps each section's height driven
+          only by its own content. */}
+      <div className="space-y-8">
+        <div>
           <div className="flex items-end justify-between mb-4">
             <div className="flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-primary">
@@ -330,8 +350,8 @@ function ExistingDataSection({
           </div>
 
           {clientsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {[0, 1].map(i => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[0, 1, 2].map(i => (
                 <div key={i} className="animate-pulse rounded-lg border border-border bg-card p-4">
                   <div className="h-4 w-2/3 rounded bg-muted mb-3" />
                   <div className="h-3 w-1/2 rounded bg-muted" />
@@ -341,7 +361,7 @@ function ExistingDataSection({
           ) : allClients.length === 0 ? (
             <FirstClientEmptyState />
           ) : activeList.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {activeList.map(c => <ClientCard key={c.id} client={c} />)}
             </div>
           ) : (
@@ -357,10 +377,9 @@ function ExistingDataSection({
           )}
         </div>
 
-        {/* Recent activity */}
         <div>
           <h2 className="text-sm font-semibold text-foreground mb-4">Recent Activity</h2>
-          <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+          <div className="rounded-lg border border-border bg-card p-4 shadow-sm max-w-2xl">
             {statsLoading ? (
               <div className="space-y-3">
                 {[0, 1, 2].map(i => (
