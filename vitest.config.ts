@@ -20,6 +20,7 @@ export default defineConfig({
       "server/v2/**/__tests__/**/*.test.ts", "server/v2/**/*.test.ts",
       "server/mgd/**/__tests__/**/*.test.ts",
       "server/routes/**/__tests__/**/*.test.ts",
+      "server/cil/**/__tests__/**/*.test.ts",
       "server/__tests__/**/*.test.ts",
     ],
   },

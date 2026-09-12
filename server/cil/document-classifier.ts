@@ -94,6 +94,17 @@ const KEYWORD_RULES: ClassifierRule[] = [
     ],
   },
   {
+    // Execution/capacity log for an already-scheduled dispatch run — distinct
+    // from logistics_schedule's per-order delivery tracking/schedule vocabulary.
+    docClass: "dispatch_log",
+    weight: 3,
+    keywords: [
+      "orders planned", "orders dispatched", "capacity utilization",
+      "capacity utilisation", "planned departure", "actual departure",
+      "scheduling method",
+    ],
+  },
+  {
     docClass: "loss_record",
     weight: 3,
     keywords: [
@@ -202,6 +213,21 @@ const STRUCTURAL_SIGNALS: StructuralSignal[] = [
       /\bwaybill\b/i,
       /\bconsignment\b/i,
       /\btrip\s*(no|id|date)?\b/i,
+    ],
+  },
+
+  // ── dispatch_log ──────────────────────────────────────────────────────────
+  // Execution/capacity log for an already-scheduled dispatch run (planned vs.
+  // actual departure, orders planned vs. dispatched, capacity utilisation) —
+  // distinct from logistics_schedule's per-order delivery tracking/schedule.
+  {
+    docClass: "dispatch_log",
+    score: 8,
+    patterns: [
+      /\borders?\s*(planned|dispatched)\b/i,
+      /\bcapacity\s*utili[sz]ation\b/i,
+      /\b(planned|actual)\s*departure\b/i,
+      /\bscheduling\s*method\b/i,
     ],
   },
 ];
