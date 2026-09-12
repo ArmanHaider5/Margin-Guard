@@ -42,7 +42,12 @@ describe("Canonical route wiring (client/src/App.tsx)", () => {
 
   it("/mgd/diagnostic is registered and mounts MGDDiagnosticWizard — the canonical entry point", () => {
     expect(appTsx).toMatch(/import MGDDiagnosticWizard from "@\/pages\/mgd-diagnostic-wizard"/);
-    expect(appTsx).toMatch(/<Route path="\/mgd\/diagnostic" component=\{MGDDiagnosticWizard\}\s*\/>/);
+    // Accepts either a bare `component={MGDDiagnosticWizard}` registration or
+    // the MGDShell-wrapped children-function form introduced by the MGD
+    // white-theme redesign (Milestone A) — the invariant this test protects
+    // (the wizard is still the sole, canonical destination for this path) is
+    // unchanged by that wrapping; only the JSX syntax used to register it is.
+    expect(appTsx).toMatch(/<Route path="\/mgd\/diagnostic"[^>]*>[\s\S]{0,120}MGDDiagnosticWizard/);
   });
 
   it("/mgd/run is still registered (not deleted — demo/developer harness, not retired) but mounts only MGDRunnerPage", () => {

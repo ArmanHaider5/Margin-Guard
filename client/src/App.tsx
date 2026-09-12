@@ -36,6 +36,7 @@ import MGDRunnerPage from "@/pages/mgd-runner-page";
 import MGDPresentationMode from "@/pages/mgd-presentation-mode";
 import MGDReportArchive from "@/pages/mgd-report-archive";
 import MGDDiagnosticWizard from "@/pages/mgd-diagnostic-wizard";
+import { MGDShell } from "@/components/mgd/mgd-shell";
 import { Loader2 } from "lucide-react";
 
 function Router() {
@@ -69,8 +70,13 @@ function Router() {
     return (
       <Switch>
         {/* Counsellor View (full access) */}
-        <Route path="/" component={MGDDashboard} />
-        <Route path="/admin" component={MGDDashboard} />
+        {/* MGD product surface renders inside the shared MGDShell (persistent
+            sidebar + header) — Milestone A of the white-theme redesign. Only
+            layout/chrome changes here; each page's own content/behavior is
+            untouched. /mgd/run is deliberately excluded — it is an internal
+            pipeline-debugging tool, not part of the MGD product surface. */}
+        <Route path="/">{() => <MGDShell><MGDDashboard /></MGDShell>}</Route>
+        <Route path="/admin">{() => <MGDShell><MGDDashboard /></MGDShell>}</Route>
         <Route path="/admin/clients" component={AdminClients} />
         <Route path="/admin/clients/new" component={ClientForm} />
         <Route path="/admin/clients/:id/edit" component={ClientForm} />
@@ -81,12 +87,12 @@ function Router() {
         <Route path="/admin/cases" component={CasesPage} />
         <Route path="/admin/cases/:id" component={CaseDetailPage} />
         <Route path="/admin/documents/:id" component={DocumentDetail} />
-        <Route path="/mgd" component={MGDDashboard} />
-        <Route path="/mgd/reports" component={MGDReportArchive} />
-        <Route path="/mgd/report" component={MGDReportViewer} />
-        <Route path="/mgd/diagnostic" component={MGDDiagnosticWizard} />
+        <Route path="/mgd">{() => <MGDShell><MGDDashboard /></MGDShell>}</Route>
+        <Route path="/mgd/reports">{() => <MGDShell><MGDReportArchive /></MGDShell>}</Route>
+        <Route path="/mgd/report">{() => <MGDShell><MGDReportViewer /></MGDShell>}</Route>
+        <Route path="/mgd/diagnostic">{() => <MGDShell><MGDDiagnosticWizard /></MGDShell>}</Route>
         <Route path="/mgd/run" component={MGDRunnerPage} />
-        <Route path="/mgd/present" component={MGDPresentationMode} />
+        <Route path="/mgd/present">{() => <MGDShell><MGDPresentationMode /></MGDShell>}</Route>
         
         {/* Management View (read-only summary) */}
         <Route path="/management" component={ManagementDashboard} />
