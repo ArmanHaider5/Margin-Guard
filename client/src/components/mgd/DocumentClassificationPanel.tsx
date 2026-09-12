@@ -37,27 +37,28 @@ export interface DocumentClassificationPanelProps {
 }
 
 // ── Category metadata ─────────────────────────────────────────────────────────
+// Icon + label per category; colors now map to the shared semantic token
+// palette (white MGD design system) instead of hardcoded dark-theme hex/tint
+// values — same categories, same icons, no logic change.
 
 interface CategoryMeta {
-  label:  string;
-  icon:   React.ElementType;
-  color:  string;
-  accent: string;
+  label: string;
+  icon:  React.ElementType;
 }
 
 const CATEGORY_META: Record<DocumentCategory, CategoryMeta> = {
-  inventory_movement:  { label:"Inventory Movement Reports", icon:Package,       color:"text-blue-400",    accent:"#3b82f6" },
-  inventory_summary:   { label:"Inventory Summaries",         icon:ClipboardList, color:"text-sky-400",     accent:"#0ea5e9" },
-  lost_items:          { label:"Lost Item Reports",            icon:AlertTriangle, color:"text-red-400",     accent:"#ef4444" },
-  damaged_items:       { label:"Damage Reports",               icon:AlertTriangle, color:"text-orange-400",  accent:"#f97316" },
-  logistics_schedule:  { label:"Logistics Schedules",          icon:Truck,         color:"text-violet-400",  accent:"#8b5cf6" },
-  driver_assignment:   { label:"Driver Assignments",            icon:Truck,         color:"text-purple-400",  accent:"#a855f7" },
-  invoice_register:    { label:"Invoice Registers",             icon:Receipt,       color:"text-emerald-400", accent:"#10b981" },
-  quotation_register:  { label:"Quotation Registers",           icon:FileText,      color:"text-teal-400",    accent:"#14b8a6" },
-  sales_report:        { label:"Sales Reports",                 icon:BarChart3,     color:"text-amber-400",   accent:"#f59e0b" },
-  hr_document:         { label:"HR Documents",                  icon:Users,         color:"text-pink-400",    accent:"#ec4899" },
-  job_description:     { label:"Job Descriptions",              icon:FileSpreadsheet,color:"text-rose-400",   accent:"#f43f5e" },
-  unknown:             { label:"Unknown Files",                  icon:FileQuestion,  color:"text-white/30",   accent:"#ffffff33" },
+  inventory_movement:  { label: "Inventory Movement Reports", icon: Package       },
+  inventory_summary:   { label: "Inventory Summaries",        icon: ClipboardList },
+  lost_items:          { label: "Lost Item Reports",          icon: AlertTriangle },
+  damaged_items:       { label: "Damage Reports",             icon: AlertTriangle },
+  logistics_schedule:  { label: "Logistics Schedules",        icon: Truck         },
+  driver_assignment:   { label: "Driver Assignments",         icon: Truck         },
+  invoice_register:    { label: "Invoice Registers",          icon: Receipt       },
+  quotation_register:  { label: "Quotation Registers",        icon: FileText      },
+  sales_report:        { label: "Sales Reports",              icon: BarChart3     },
+  hr_document:         { label: "HR Documents",                icon: Users         },
+  job_description:     { label: "Job Descriptions",            icon: FileSpreadsheet },
+  unknown:             { label: "Unknown Files",                icon: FileQuestion  },
 };
 
 // The display order for known categories (unknown always last)
@@ -74,18 +75,18 @@ function avgConf(docs: ClassifiedDocument[]): number {
   return Math.round(docs.reduce((s, d) => s + d.confidence, 0) / docs.length);
 }
 
-function confColor(conf: number): string {
-  if (conf >= 80) return "text-emerald-400";
-  if (conf >= 60) return "text-amber-400";
-  if (conf >= 40) return "text-orange-400";
-  return "text-white/30";
-}
-
 function confBarColor(conf: number): string {
   if (conf >= 80) return "bg-emerald-500";
   if (conf >= 60) return "bg-amber-500";
   if (conf >= 40) return "bg-orange-500";
-  return "bg-white/20";
+  return "bg-muted-foreground/30";
+}
+
+function confTextColor(conf: number): string {
+  if (conf >= 80) return "text-emerald-600";
+  if (conf >= 60) return "text-amber-600";
+  if (conf >= 40) return "text-orange-600";
+  return "text-muted-foreground";
 }
 
 function shortName(fileName: string): string {
@@ -100,13 +101,13 @@ function ConfBar({ value }: { value: number }) {
   const pct = Math.min(100, Math.max(0, value));
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-0.5 rounded-full bg-white/10 overflow-hidden">
+      <div className="flex-1 h-0.5 rounded-full bg-muted overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${confBarColor(pct)}`}
           style={{ width:`${pct}%` }}
         />
       </div>
-      <span className={`text-[10px] tabular-nums shrink-0 ${confColor(pct)}`}>{pct}%</span>
+      <span className={`text-[10px] tabular-nums shrink-0 ${confTextColor(pct)}`}>{pct}%</span>
     </div>
   );
 }
@@ -124,30 +125,27 @@ function CategoryGroup({ category, docs }: CategoryGroupProps) {
   const isUnknown = category === "unknown";
 
   return (
-    <div className={`rounded-xl border ${isUnknown ? "border-white/[0.06] bg-white/[0.02]" : "border-white/[0.08] bg-white/[0.03]"} overflow-hidden`}>
+    <div className={`rounded-md border ${isUnknown ? "border-border bg-background" : "border-border bg-card"} overflow-hidden`}>
       {/* Row header */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors text-left"
       >
         {/* Icon */}
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background:`${meta.accent}18`, border:`1px solid ${meta.accent}33` }}
-        >
-          <Icon className="w-3.5 h-3.5" style={{ color: isUnknown ? "rgba(255,255,255,0.3)" : meta.accent }}/>
+        <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${isUnknown ? "bg-muted" : "bg-accent"}`}>
+          <Icon className={`w-3.5 h-3.5 ${isUnknown ? "text-muted-foreground" : "text-primary"}`}/>
         </div>
 
         {/* Label + count */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             {!isUnknown && (
-              <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0"/>
+              <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0"/>
             )}
-            <span className={`text-[13px] font-medium ${isUnknown ? "text-white/35" : "text-white/80"} truncate`}>
+            <span className={`text-[13px] font-medium ${isUnknown ? "text-muted-foreground" : "text-foreground"} truncate`}>
               {meta.label}
             </span>
-            <span className={`text-[11px] font-bold tabular-nums shrink-0 ${isUnknown ? "text-white/25" : meta.color}`}>
+            <span className={`text-[11px] font-semibold tabular-nums shrink-0 ${isUnknown ? "text-muted-foreground" : "text-primary"}`}>
               ({docs.length})
             </span>
           </div>
@@ -160,29 +158,29 @@ function CategoryGroup({ category, docs }: CategoryGroupProps) {
         </div>
 
         {/* Expand chevron */}
-        <div className="shrink-0 text-white/20">
+        <div className="shrink-0 text-muted-foreground">
           {open ? <ChevronUp className="w-3.5 h-3.5"/> : <ChevronDown className="w-3.5 h-3.5"/>}
         </div>
       </button>
 
       {/* Expanded file list */}
       {open && (
-        <div className="border-t border-white/[0.06] divide-y divide-white/[0.04]">
+        <div className="border-t border-border divide-y divide-border">
           {docs.map((doc, i) => (
             <div key={`${doc.fileName}-${i}`} className="flex items-center gap-3 px-4 py-2.5">
-              <FileSpreadsheet className="w-3 h-3 text-white/20 shrink-0"/>
-              <span className="flex-1 text-[12px] text-white/50 truncate" title={doc.fileName}>
+              <FileSpreadsheet className="w-3 h-3 text-muted-foreground shrink-0"/>
+              <span className="flex-1 text-[12px] text-foreground/80 truncate" title={doc.fileName}>
                 {shortName(doc.fileName)}
               </span>
               {doc.matchedKeywords.length > 0 && (
                 <div className="hidden md:flex items-center gap-1 flex-wrap max-w-[180px]">
                   {doc.matchedKeywords.slice(0, 3).map(kw => (
-                    <span key={kw} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/[0.07] text-white/25 capitalize">
+                    <span key={kw} className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">
                       {kw}
                     </span>
                   ))}
                   {doc.matchedKeywords.length > 3 && (
-                    <span className="text-[9px] text-white/20">+{doc.matchedKeywords.length - 3}</span>
+                    <span className="text-[9px] text-muted-foreground">+{doc.matchedKeywords.length - 3}</span>
                   )}
                 </div>
               )}
@@ -223,34 +221,33 @@ export default function DocumentClassificationPanel({
   if (docs.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden">
+    <div className="rounded-md border border-border bg-card overflow-hidden">
 
       {/* ── Panel header ────────────────────────────────────────────────────── */}
       <button
         onClick={() => setCollapsed(c => !c)}
-        className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.04] transition-colors text-left"
+        className="w-full flex items-center gap-3 px-5 py-4 hover:bg-accent/50 transition-colors text-left"
       >
         {/* Left icon */}
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background:"#3b82f622", border:"1px solid #3b82f644" }}>
-          <FileSpreadsheet className="w-4 h-4 text-blue-400"/>
+        <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center shrink-0">
+          <FileSpreadsheet className="w-4 h-4 text-primary"/>
         </div>
 
         {/* Title + meta */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[14px] font-bold text-white tracking-tight">{title}</span>
-            <span className="text-[11px] text-white/30 tabular-nums">
+            <span className="text-[14px] font-semibold text-foreground tracking-tight">{title}</span>
+            <span className="text-[11px] text-muted-foreground tabular-nums">
               {docs.length} file{docs.length !== 1 ? "s" : ""}
             </span>
             {knownCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
                 <CheckCircle2 className="w-3 h-3"/>
                 {knownCount} classified
               </span>
             )}
             {unknownDocs.length > 0 && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-white/25">
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
                 <FileQuestion className="w-3 h-3"/>
                 {unknownDocs.length} unknown
               </span>
@@ -259,21 +256,21 @@ export default function DocumentClassificationPanel({
           {/* Overall confidence bar */}
           {knownCount > 0 && !collapsed && (
             <div className="mt-1 flex items-center gap-2 max-w-[200px]">
-              <span className="text-[9px] text-white/25 uppercase tracking-widest shrink-0">Avg confidence</span>
+              <span className="text-[9px] text-muted-foreground uppercase tracking-widest shrink-0">Avg confidence</span>
               <ConfBar value={totalConf}/>
             </div>
           )}
         </div>
 
         {/* Chevron */}
-        <div className="shrink-0 text-white/25">
+        <div className="shrink-0 text-muted-foreground">
           {collapsed ? <ChevronDown className="w-4 h-4"/> : <ChevronUp className="w-4 h-4"/>}
         </div>
       </button>
 
       {/* ── Panel body ──────────────────────────────────────────────────────── */}
       {!collapsed && (
-        <div className="border-t border-white/[0.07] px-4 py-4 space-y-2">
+        <div className="border-t border-border px-4 py-4 space-y-2">
 
           {/* Known categories */}
           {knownCategories.map(cat => (
@@ -285,9 +282,9 @@ export default function DocumentClassificationPanel({
             <>
               {knownCategories.length > 0 && (
                 <div className="flex items-center gap-2 pt-1">
-                  <div className="flex-1 h-px bg-white/[0.05]"/>
-                  <span className="text-[9px] text-white/20 uppercase tracking-widest">Unclassified</span>
-                  <div className="flex-1 h-px bg-white/[0.05]"/>
+                  <div className="flex-1 h-px bg-border"/>
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Unclassified</span>
+                  <div className="flex-1 h-px bg-border"/>
                 </div>
               )}
               <CategoryGroup category="unknown" docs={unknownDocs}/>
