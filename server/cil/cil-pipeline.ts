@@ -147,7 +147,7 @@ export async function runCilPipeline(
           // single sheet can contain multiple operationally distinct blocks,
           // and document-classifier.ts's Tier 2 probe scans raw text too.
           const blockRawText = blockDataRows.map(row => row.join(" ")).join(" ");
-          const { docClass: blockDocClass } = classifyDocument(blockRawText, block.headers);
+          const { docClass: blockDocClass } = classifyDocument(blockRawText, block.headers, { structuredEvidence: true });
 
           console.log(
             `[CIL]   Block "${entityName}" ` +
@@ -211,7 +211,7 @@ export async function runCilPipeline(
         // document types, and document-classifier.ts's Tier 2 probe scans
         // raw text too.
         const sheetRawText = dataRows.map(row => row.join(" ")).join(" ");
-        const { docClass: sheetDocClass } = classifyDocument(sheetRawText, headers);
+        const { docClass: sheetDocClass } = classifyDocument(sheetRawText, headers, { structuredEvidence: true });
 
         console.log(
           `[CIL] Sheet "${sheetName}" → FLAT MODE — column mapping:`, mappingTrace,

@@ -276,6 +276,15 @@ function normalizeHeader(h: any): string {
 export function classifyDocument(
   rawText: string,
   headers: string[],
+  options?: {
+    // When true, the caller is asserting that `rawText` was built from
+    // structured tabular evidence (e.g. spreadsheet row cells joined into a
+    // string), not genuine free text — see the Tier 2 comment below for why
+    // that distinction matters. Omitted (default) preserves today's exact
+    // unbounded behavior, so every existing caller (PDF/Word free-text
+    // classification included) is unaffected unless it explicitly opts in.
+    structuredEvidence?: boolean;
+  },
 ): {
   docClass:   CilDocClass;
   confidence: number;
@@ -308,11 +317,24 @@ export function classifyDocument(
     ...normHeaders,
   ].join(" ");
 
+  // For structured tabular evidence, `rawText` is not prose — it's often a
+  // caller-constructed join of many repeated row-cell values (e.g. a driver
+  // or route name repeated once per row). Uncapped occurrence counting would
+  // let that repetition scale linearly with row count and overwhelm Tier 1's
+  // fixed per-class score, inverting the documented "Tier 1 >> Tier 2" intent.
+  // Capping each keyword's contribution to a single occurrence converts Tier 2
+  // from frequency scoring to presence scoring for this mode only — a keyword
+  // still counts (so classes with no Tier 1 signal, like loss_record, keep
+  // their only signal source) but repeating it many times no longer inflates
+  // the score. Free-text callers (the default, no options passed) are
+  // completely unaffected — this only ever activates via explicit opt-in.
+  const keywordCap = options?.structuredEvidence === true ? 1 : Infinity;
+
   for (const rule of KEYWORD_RULES) {
     let kwScore = 0;
     for (const kw of rule.keywords) {
       const count = (probe.match(new RegExp(kw, "g")) ?? []).length;
-      kwScore += count * rule.weight;
+      kwScore += Math.min(count, keywordCap) * rule.weight;
     }
     if (kwScore > 0) add(rule.docClass, kwScore);
   }

@@ -186,7 +186,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
       .slice(headerIdx + 1)
       .map((r: any[]) => (Array.isArray(r) ? r : []).map((c: any) => String(c ?? "")).join(" "))
       .join(" ");
-    const { docClass: sheetDocClass } = classifyDocument(sheetRawText, headers);
+    const { docClass: sheetDocClass } = classifyDocument(sheetRawText, headers, { structuredEvidence: true });
 
     // ── 2. Map recognised columns ────────────────────────────────────────
     const { columnMap } = mapColumns(headers);
@@ -455,7 +455,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
                 // rows — not workbook-wide text — so each block is
                 // classified on its own evidence boundary.
                 const blockRawText = blockDataRows.map(r => r.join(" ")).join(" ");
-                const { docClass: blockDocClass } = classifyDocument(blockRawText, block.headers);
+                const { docClass: blockDocClass } = classifyDocument(blockRawText, block.headers, { structuredEvidence: true });
 
                 // FIX 3: accept traditional financial columns OR EM operational signals
                 const hasMeaningful =
