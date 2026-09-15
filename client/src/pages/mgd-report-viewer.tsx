@@ -331,7 +331,12 @@ function SumCard({ label, value, icon:Icon, accent="#3b82f6" }: {
 function FindingCard({ finding }: { finding: Finding }) {
   const [open, setOpen] = useState(false);
   const sev = SEV[finding.severity] ?? SEV.LOW;
-  const evidenceCount = (finding.evidence?.length ?? 0) + (finding.signals?.length ?? 0);
+  // Same priority/fallback semantics as FindingEvidencePanel: structured
+  // evidence[] when present, otherwise signals[] — never summed, since the
+  // panel only ever displays one source, not both.
+  const evidenceCount = (finding.evidence?.length ?? 0) > 0
+    ? finding.evidence!.length
+    : (finding.signals?.length ?? 0);
 
   const adapted: OperationalFinding = {
     id:        finding.id,
