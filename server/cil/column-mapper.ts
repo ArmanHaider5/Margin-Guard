@@ -28,10 +28,22 @@ export interface ColumnMap {
   customer?:                number;
   quantityOut?:             number;
   quantityIn?:              number;
+  // Manufacturing Evidence Contract (E.2) — production quantity, kept fully
+  // independent of quantityOut/quantityIn (movement events, not production
+  // events). Populated only from an explicit, narrowly-qualified header —
+  // see SYNONYM_TABLE below — never derived from quantityOut/quantityIn.
+  plannedQuantity?:         number;
+  actualQuantity?:          number;
   balance?:                 number;
   value?:                   number;
   refund?:                  number;
   date?:                    number;
+  // Manufacturing Evidence Contract (E.2) — promised/actual date pair, kept
+  // fully independent of the generic `date` key so both can coexist on the
+  // same row. Populated only from an explicit, narrowly-qualified header;
+  // never derived from one another or from `date`.
+  promisedDate?:            number;
+  actualDate?:              number;
   referenceId?:             number;
   remarks?:                 number;
   driver?:                  number;
@@ -78,6 +90,17 @@ const SYNONYM_TABLE: [StandardKey, string[]][] = [
     "returned", "receipt",
     "qty in", "quantity in", "in qty", "unloaded", "credit", "balance in",
   ]],
+  // ── Manufacturing Evidence Contract (E.2) ──────────────────────────────────
+  // Deliberately narrow: exactly the approved explicit header form, nothing
+  // broader. "Orders Planned"/"Orders Dispatched" (dispatch_log vocabulary)
+  // and bare "Qty"/"Quantity"/"Qty Out"/"Qty In" must never match — only the
+  // literal phrase below does, via an exact (score 100) match.
+  ["plannedQuantity", [
+    "planned production",
+  ]],
+  ["actualQuantity", [
+    "actual qty produced",
+  ]],
   ["balance", [
     // Explicit keyword list (user-specified)
     "balance", "stock",
@@ -102,6 +125,20 @@ const SYNONYM_TABLE: [StandardKey, string[]][] = [
   ["date", [
     "date", "transaction date", "invoice date", "doc date", "delivery date",
     "movement date", "period", "posting date", "created",
+  ]],
+  // ── Manufacturing Evidence Contract (E.2) ──────────────────────────────────
+  // Exact-match-only synonyms. A header like "Promised Date" scores 100
+  // against "promised date" here, which always outscores `date`'s 60-point
+  // substring match on the same header (`date` is a whole word inside
+  // "promised date") — so this key wins and `date` is never assigned to it,
+  // with no ordering dependency on where this entry sits in the table.
+  // "Delivery Date" / "Dispatch Date" / bare "Date" are NOT listed here and
+  // continue to map to `date` exactly as before.
+  ["promisedDate", [
+    "promised date",
+  ]],
+  ["actualDate", [
+    "actual date",
   ]],
   ["referenceId", [
     "invoice no", "invoice number", "inv no", "ref", "reference",
@@ -171,6 +208,20 @@ function matchesSynonym(norm: string, syn: string): number {
   return 0;
 }
 
+// ── Manufacturing Evidence Contract (E.2) — exact-match-only keys ─────────────
+// Regression-discovered: matchesSynonym()'s reverse-match tier (score 40)
+// let the disapproved bare header "Actual Qty" claim `actualQuantity` because
+// "actual qty" is a whitespace-bounded prefix of the approved synonym
+// "actual qty produced". The shared matchesSynonym() tiering is correct and
+// intentional for every pre-existing key (e.g. "qty" matching "qty out") and
+// is left untouched here. Instead, for exactly these four newly introduced
+// keys, any score below 100 (exact) is treated as no match at all — so only
+// their one approved literal synonym can ever claim a column, and no other
+// existing key's matching behaviour changes.
+const EXACT_MATCH_ONLY_KEYS: ReadonlySet<StandardKey> = new Set<StandardKey>([
+  "promisedDate", "actualDate", "plannedQuantity", "actualQuantity",
+]);
+
 export function mapColumns(headers: string[]): {
   columnMap:    ColumnMap;
   mappingTrace: Record<string, string | null>;
@@ -190,7 +241,8 @@ export function mapColumns(headers: string[]): {
       if (columnMap[key] !== undefined) continue;
 
       for (const syn of synonyms) {
-        const score = matchesSynonym(norm, syn);
+        let score = matchesSynonym(norm, syn);
+        if (EXACT_MATCH_ONLY_KEYS.has(key) && score !== 100) score = 0;
         if (score > bestScore) {
           bestScore = score;
           bestKey   = key;

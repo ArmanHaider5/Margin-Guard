@@ -32,6 +32,26 @@ export interface ParsedTransaction {
   netQuantity:          number | null;
   netValue:             number | null;
   documentClassification: CilDocClass;
+  /**
+   * Manufacturing Evidence Contract (E.2) — populated only when the source
+   * row has an explicit, narrowly-qualified "Promised Date"/"Actual Date"
+   * column (see column-mapper.ts). Independent of `date`; never derived
+   * from it or from one another. Null when the mapped column is absent or
+   * the cell is blank — never fabricated. Block mode only; always absent
+   * (undefined) on flat-mode transactions, since extractFlatTableTransactions()
+   * is unchanged by this contract.
+   */
+  promisedDate?:         string | null;
+  actualDate?:           string | null;
+  /**
+   * Manufacturing Evidence Contract (E.2) — populated only when the source
+   * row has an explicit, narrowly-qualified "Planned Production"/"Actual
+   * Qty Produced" column. Independent of quantityOut/quantityIn (movement
+   * events, not production events); never derived from them. Null when the
+   * mapped column is absent or the cell is blank. Block mode only.
+   */
+  plannedQuantity?:      number | null;
+  actualQuantity?:       number | null;
   debugTrace: {
     originalRow:    Record<string, string>;
     mappedFields:   Record<string, string | number | null>;
@@ -109,6 +129,13 @@ export function parseRow(
 
   const qtyOut        = toNum(cell(colMap.quantityOut));
   const qtyIn         = toNum(cell(colMap.quantityIn));
+  // Manufacturing Evidence Contract (E.2) — read strictly from their own
+  // mapped column, exactly like every other field here. Never computed
+  // from qtyOut/qtyIn/date, and never defaulted when unmapped or blank.
+  const promisedDate     = parseDate(cell(colMap.promisedDate));
+  const actualDate       = parseDate(cell(colMap.actualDate));
+  const plannedQuantity  = toNum(cell(colMap.plannedQuantity));
+  const actualQuantity   = toNum(cell(colMap.actualQuantity));
   const balance       = toNum(cell(colMap.balance));
   const value         = toNum(cell(colMap.value));
   const refund        = toNum(cell(colMap.refund));
@@ -166,6 +193,7 @@ export function parseRow(
       rawText, documentClassification: docClass,
       netQuantity: qtyOut - (qtyIn ?? 0),
       netValue:    (value ?? 0) - (refund ?? 0) || null,
+      promisedDate, actualDate, plannedQuantity, actualQuantity,
       debugTrace: { originalRow, mappedFields, txCount: 0 },
     });
   }
@@ -178,6 +206,7 @@ export function parseRow(
       rawText, documentClassification: docClass,
       netQuantity: (qtyOut ?? 0) - qtyIn,
       netValue: null,
+      promisedDate, actualDate, plannedQuantity, actualQuantity,
       debugTrace: { originalRow, mappedFields, txCount: 0 },
     });
   }
@@ -190,6 +219,7 @@ export function parseRow(
       rawText, documentClassification: docClass,
       netQuantity: null,
       netValue: (value ?? 0) - refund || null,
+      promisedDate, actualDate, plannedQuantity, actualQuantity,
       debugTrace: { originalRow, mappedFields, txCount: 0 },
     });
   }
@@ -208,6 +238,7 @@ export function parseRow(
       rawText, documentClassification: docClass,
       netQuantity: null,
       netValue: (value ?? 0) - (refund ?? 0) || null,
+      promisedDate, actualDate, plannedQuantity, actualQuantity,
       debugTrace: { originalRow, mappedFields, txCount: 0 },
     });
   }
@@ -229,6 +260,7 @@ export function parseRow(
       quantity: opDelay ?? substitutions ?? null, value: null, date, referenceId,
       rawText, documentClassification: docClass,
       netQuantity: null, netValue: null,
+      promisedDate, actualDate, plannedQuantity, actualQuantity,
       debugTrace: { originalRow, mappedFields, txCount: 0 },
     });
   }
@@ -240,6 +272,7 @@ export function parseRow(
       quantity: null, value, date, referenceId,
       rawText, documentClassification: docClass,
       netQuantity: null, netValue: null,
+      promisedDate, actualDate, plannedQuantity, actualQuantity,
       debugTrace: { originalRow, mappedFields, txCount: 0 },
     });
   }
