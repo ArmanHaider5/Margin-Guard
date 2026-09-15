@@ -20,6 +20,9 @@
 
 import crypto from "crypto";
 import { promises as fs } from "fs";
+import { existsSync, mkdirSync } from "fs";
+import path from "path";
+import multer from "multer";
 import type { Express, Request, RequestHandler, Response } from "express";
 import {
   runMGDPipeline,
@@ -49,6 +52,14 @@ import { classifyDocument } from "../cil/document-classifier";
 import { FINDING_CATEGORIES } from "../mgd/finding-categories";
 import type { BusinessConcernInput } from "../mgd/diagnostic-scope";
 import { deriveContentHash } from "../v2/shared/utils/deterministic-id";
+import { parseDocument, detectFileType } from "../documents/document-parser";
+// runCilPipeline is intentionally NOT statically imported here — it pulls in
+// server/system/db.ts at module load time (real DB connection setup), which
+// breaks this file's existing test suite (server/routes/__tests__/
+// mgd-routes.test.ts is designed to run without a real database — see its
+// own header comment). Imported dynamically inside
+// processMGDDocumentInBackground below, so it only loads when an upload is
+// actually processed, never merely by importing mgd-routes.ts.
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -116,6 +127,131 @@ function fail(res: Response, status: number, message: string): void {
   res.status(status).json({ success: false, error: message });
 }
 
+// ── MGD Consultant Access — authorization helpers ──────────────────────────────
+// The top-level `guard` (isAuthenticated + isAdminOrConsultant, passed in by
+// server/system/routes.ts) only proves the caller is an authenticated admin
+// or consultant. Everything below enforces the finer-grained rules on top of
+// that: certain routes stay admin-only regardless of the top-level guard,
+// and consultant access to any specific client's data is checked against
+// consultantClientAssignments — never trusted from the request body/query.
+
+/** Resolves the real authenticated user (id + role) for this request, via
+ *  the same req.user.claims.sub → storage.getUser lookup isAdmin/
+ *  isAdminOrConsultant already use. Returns null if unresolvable. */
+async function currentUser(req: Request): Promise<{ id: string; role: string } | null> {
+  const userId = (req as any).user?.claims?.sub;
+  if (!userId) return null;
+  const user = await storage.getUser(userId);
+  if (!user) return null;
+  return { id: user.id, role: user.role ?? "client" };
+}
+
+/** Extra middleware layered ON TOP OF `guard` for the handful of MGD routes
+ *  that must remain admin-only even though the top-level guard now also
+ *  admits consultants (DELETE reports/:id, export-pdf, traces, and the raw
+ *  pipeline-stage debugging endpoints). Does not affect any other route. */
+const requireAdmin: RequestHandler = async (req, res, next) => {
+  const user = await currentUser(req as Request);
+  if (!user || user.role !== "admin") {
+    fail(res as Response, 403, "Admin access required");
+    return;
+  }
+  next();
+};
+
+/** Extra middleware for routes scoped to one :id client param. Admins pass
+ *  through unrestricted; consultants must have an explicit assignment row
+ *  for that exact clientId — never inferred from anything else on the
+ *  request. Any other role (shouldn't reach here past `guard`) is rejected. */
+const requireClientAccess: RequestHandler = async (req, res, next) => {
+  const user = await currentUser(req as Request);
+  if (!user) { fail(res as Response, 401, "Unauthorized"); return; }
+  if (user.role === "admin") { next(); return; }
+  if (user.role !== "consultant") { fail(res as Response, 403, "MGD access required"); return; }
+  const clientId = (req as Request).params.id;
+  const assigned = await storage.isClientAssignedToUser(user.id, clientId);
+  if (!assigned) { fail(res as Response, 403, "You are not assigned to this client."); return; }
+  next();
+};
+
+// ── MGD-scoped document upload ─────────────────────────────────────────────────
+// Deliberately separate from server/system/routes.ts's admin `upload`
+// instance and `/api/admin/clients/:id/documents` route — consultants must
+// never be routed through the admin document endpoints. Same storage
+// location/limits/allowed-extensions as the admin uploader, just declared
+// locally so this route has no dependency on admin-route internals.
+const MGD_UPLOADS_DIR = path.join(process.cwd(), "uploads");
+if (!existsSync(MGD_UPLOADS_DIR)) {
+  mkdirSync(MGD_UPLOADS_DIR, { recursive: true });
+}
+
+const mgdUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, MGD_UPLOADS_DIR),
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, uniqueSuffix + '-' + file.originalname);
+    },
+  }),
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowedExtensions = ['.xlsx', '.xls', '.csv', '.docx', '.doc', '.pptx', '.ppt', '.pdf'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedExtensions.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Unsupported file type. Please upload Excel, Word, PowerPoint, or PDF files.'));
+    }
+  },
+});
+
+/** Parses + runs the CIL pipeline against one just-uploaded MGD document, the
+ *  same two-stage processing server/system/routes.ts's admin upload path
+ *  performs, so a consultant-uploaded document is just as usable by
+ *  POST /api/mgd/run's extraction step as an admin-uploaded one. Never
+ *  awaited by the request handler — fire-and-forget, matching the admin
+ *  path's own background-processing convention. */
+async function processMGDDocumentInBackground(docId: string): Promise<void> {
+  try {
+    const doc = await storage.getClientDocument(docId);
+    if (!doc) return;
+
+    await storage.updateClientDocument(doc.id, { status: "processing" });
+
+    let extractedData;
+    try {
+      extractedData = await parseDocument(doc.filePath, doc.fileType);
+    } catch (parseErr) {
+      await storage.updateClientDocument(doc.id, {
+        status: "error",
+        processingError: parseErr instanceof Error ? parseErr.message : "Failed to parse document",
+        processedAt: new Date(),
+      });
+      return;
+    }
+
+    await storage.updateClientDocument(doc.id, {
+      status: "processed",
+      extractedData,
+      processedAt: new Date(),
+    });
+
+    try {
+      const { runCilPipeline } = await import("../cil/cil-pipeline");
+      await runCilPipeline(doc.id, doc.clientId, doc.fileName, extractedData);
+    } catch (cilErr) {
+      console.error(`[MGD][CLIENTS] CIL pipeline error for "${doc.fileName}":`, cilErr);
+      // Non-fatal — the document is already marked processed.
+    }
+  } catch (err) {
+    console.error(`[MGD][CLIENTS] Document ${docId} processing failed:`, err);
+    await storage.updateClientDocument(docId, {
+      status: "error",
+      processingError: err instanceof Error ? err.message : "Failed to process document",
+    }).catch(() => {});
+  }
+}
+
 // ── Route registration ────────────────────────────────────────────────────────
 
 /**
@@ -126,6 +262,15 @@ function fail(res: Response, status: number, message: string): void {
  */
 export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[] = []): void {
   const guard = authMiddleware;
+  // Admin-only / client-scoped sub-guards, layered ON TOP OF `guard` for
+  // specific routes. Skipped (like `guard` itself) when authMiddleware is
+  // omitted — the same "no guard means fully open, for direct
+  // callability/testability" contract `guard`'s own default already
+  // establishes; in production `guard` is never empty (server/system/
+  // routes.ts always passes [isAuthenticated, isAdminOrConsultant]), so this
+  // has no production security effect.
+  const adminOnly: RequestHandler[]    = guard.length > 0 ? [requireAdmin]        : [];
+  const clientScoped: RequestHandler[] = guard.length > 0 ? [requireClientAccess] : [];
 
   // ── GET /api/mgd/health ─────────────────────────────────────────────────────
   // Health probe — no pipeline invocation, returns immediately. Deliberately
@@ -297,6 +442,24 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
     console.log("[MGD][API] POST /api/mgd/run — start");
     try {
       const body = req.body ?? {};
+
+      // ── MGD Consultant Access — client scoping ─────────────────────────────
+      // A consultant may only run a diagnostic against a client they are
+      // explicitly assigned to. Never trusts body.clientId on its own — it
+      // must be cross-checked against consultantClientAssignments. Rejected
+      // outright (403) rather than silently substituting an assigned client
+      // or proceeding without one.
+      const requester = await currentUser(req);
+      if (requester?.role === "consultant") {
+        const requestedClientId = typeof body.clientId === "string" ? body.clientId.trim() : "";
+        if (!requestedClientId) {
+          return fail(res, 403, "A clientId is required.");
+        }
+        const assigned = await storage.isClientAssignedToUser(requester.id, requestedClientId);
+        if (!assigned) {
+          return fail(res, 403, "You are not assigned to this client.");
+        }
+      }
 
       // ── Consultant context ─────────────────────────────────────────────────
       const rawNotes = safeArray(body.consultantNotes);
@@ -608,7 +771,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
 
   // ── POST /api/mgd/estimate-health ──────────────────────────────────────────
   // Estimate operational health score from findings, root causes, benchmarks.
-  app.post("/api/mgd/estimate-health", ...guard, (req: Request, res: Response) => {
+  app.post("/api/mgd/estimate-health", ...guard, ...adminOnly, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/estimate-health — start");
     try {
@@ -632,7 +795,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
 
   // ── POST /api/mgd/findings ──────────────────────────────────────────────────
   // Generate operational findings from transaction data.
-  app.post("/api/mgd/findings", ...guard, (req: Request, res: Response) => {
+  app.post("/api/mgd/findings", ...guard, ...adminOnly, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/findings — start");
     try {
@@ -654,7 +817,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
 
   // ── POST /api/mgd/root-causes ───────────────────────────────────────────────
   // Map findings to systemic root causes.
-  app.post("/api/mgd/root-causes", ...guard, (req: Request, res: Response) => {
+  app.post("/api/mgd/root-causes", ...guard, ...adminOnly, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/root-causes — start");
     try {
@@ -675,7 +838,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
 
   // ── POST /api/mgd/recommendations ──────────────────────────────────────────
   // Generate prioritised corrective recommendations.
-  app.post("/api/mgd/recommendations", ...guard, (req: Request, res: Response) => {
+  app.post("/api/mgd/recommendations", ...guard, ...adminOnly, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/recommendations — start");
     try {
@@ -697,7 +860,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
 
   // ── POST /api/mgd/benchmarks ────────────────────────────────────────────────
   // Compare operational metrics against industry benchmarks.
-  app.post("/api/mgd/benchmarks", ...guard, (req: Request, res: Response) => {
+  app.post("/api/mgd/benchmarks", ...guard, ...adminOnly, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/benchmarks — start");
     try {
@@ -718,7 +881,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
 
   // ── POST /api/mgd/narrative ─────────────────────────────────────────────────
   // Generate a 7-section executive narrative from pipeline outputs.
-  app.post("/api/mgd/narrative", ...guard, (req: Request, res: Response) => {
+  app.post("/api/mgd/narrative", ...guard, ...adminOnly, (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/narrative — start");
     try {
@@ -760,7 +923,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
   // reading that same record back, not re-deriving a new one from scratch.
   // A missing or unknown reportId is a clear 400/404 error — never a
   // fallback to an empty or freshly-computed "successful" report.
-  app.post("/api/mgd/export-pdf", ...guard, async (req: Request, res: Response) => {
+  app.post("/api/mgd/export-pdf", ...guard, ...adminOnly, async (req: Request, res: Response) => {
     const t0 = Date.now();
     console.log("[MGD][API] POST /api/mgd/export-pdf — start");
     try {
@@ -803,11 +966,41 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
   });
 
   // ── GET /api/mgd/reports ────────────────────────────────────────────────────
-  // List all stored reports, optionally filtered by ?clientId=
+  // List stored reports, optionally filtered by ?clientId=. Admins see every
+  // report, unrestricted, exactly as before. Consultants are ALWAYS scoped
+  // to their own assigned clients — an explicit ?clientId= is honoured only
+  // when it is itself one of their assigned clients (never a way to widen
+  // access beyond the assignment table); with no ?clientId=, the result is
+  // pre-filtered to assigned clients only rather than returned unfiltered.
   app.get("/api/mgd/reports", ...guard, async (req: Request, res: Response) => {
     try {
       const clientId = typeof req.query.clientId === "string" ? req.query.clientId : undefined;
       console.log(`[MGD][REPORTS] GET /api/mgd/reports — clientId=${clientId ?? "all"}`);
+
+      const requester = guard.length > 0 ? await currentUser(req) : null;
+
+      if (requester && requester.role !== "admin") {
+        if (requester.role !== "consultant") {
+          return fail(res, 403, "MGD access required");
+        }
+        const assigned = await storage.getAssignedClients(requester.id);
+        const assignedIds = new Set(assigned.map(c => c.id));
+
+        if (clientId) {
+          if (!assignedIds.has(clientId)) {
+            return fail(res, 403, "You are not assigned to this client.");
+          }
+          const reports = await listReports(clientId);
+          console.log(`[MGD][REPORTS] GET /api/mgd/reports — consultant scoped, returned ${reports.length} record(s)`);
+          return ok(res, { reports });
+        }
+
+        const all = await listReports();
+        const reports = all.filter(r => r.clientId != null && assignedIds.has(r.clientId));
+        console.log(`[MGD][REPORTS] GET /api/mgd/reports — consultant scoped, returned ${reports.length} record(s)`);
+        return ok(res, { reports });
+      }
+
       const reports = await listReports(clientId);
       console.log(`[MGD][REPORTS] GET /api/mgd/reports — returned ${reports.length} record(s)`);
       ok(res, { reports });
@@ -818,7 +1011,11 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
   });
 
   // ── GET /api/mgd/reports/:id ─────────────────────────────────────────────────
-  // Retrieve a single stored report by id.
+  // Retrieve a single stored report by id. Admins: unrestricted. Consultants:
+  // rejected unless the report has a clientId AND that client is one they
+  // are explicitly assigned to — a report with a missing/null clientId has
+  // nothing to verify against and is rejected outright, never allowed
+  // through by default.
   app.get("/api/mgd/reports/:id", ...guard, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -828,6 +1025,17 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
         console.log(`[MGD][REPORTS] GET /api/mgd/reports/${id} — not found`);
         return fail(res, 404, `Report "${id}" not found`);
       }
+
+      const requester = guard.length > 0 ? await currentUser(req) : null;
+      if (requester && requester.role !== "admin") {
+        if (requester.role !== "consultant") {
+          return fail(res, 403, "MGD access required");
+        }
+        if (!report.clientId || !(await storage.isClientAssignedToUser(requester.id, report.clientId))) {
+          return fail(res, 403, "You are not assigned to this client.");
+        }
+      }
+
       console.log(`[MGD][REPORTS] GET /api/mgd/reports/${id} — found`);
       ok(res, { report });
     } catch (err) {
@@ -837,8 +1045,10 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
   });
 
   // ── DELETE /api/mgd/reports/:id ──────────────────────────────────────────────
-  // Delete a single stored report by id.
-  app.delete("/api/mgd/reports/:id", ...guard, async (req: Request, res: Response) => {
+  // Delete a single stored report by id. Admin-only — even for a consultant
+  // who is assigned to that report's client; deletion is never granted by
+  // assignment alone.
+  app.delete("/api/mgd/reports/:id", ...guard, ...adminOnly, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       console.log(`[MGD][REPORTS] DELETE /api/mgd/reports/${id}`);
@@ -857,7 +1067,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
 
   // ── GET /api/mgd/traces ──────────────────────────────────────────────────────
   // List all stored pipeline traces, newest first.
-  app.get("/api/mgd/traces", ...guard, async (_req: Request, res: Response) => {
+  app.get("/api/mgd/traces", ...guard, ...adminOnly, async (_req: Request, res: Response) => {
     try {
       console.log("[MGD][TRACES] GET /api/mgd/traces");
       const traces = await listTraces();
@@ -871,7 +1081,7 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
 
   // ── GET /api/mgd/traces/:id ───────────────────────────────────────────────────
   // Retrieve a single pipeline trace by traceId.
-  app.get("/api/mgd/traces/:id", ...guard, async (req: Request, res: Response) => {
+  app.get("/api/mgd/traces/:id", ...guard, ...adminOnly, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       console.log(`[MGD][TRACES] GET /api/mgd/traces/${id}`);
@@ -888,5 +1098,90 @@ export function registerMGDRoutes(app: Express, authMiddleware: RequestHandler[]
     }
   });
 
-  console.log("[MGD][API] Routes registered: GET /api/mgd/{health,reports,reports/:id,traces,traces/:id}, DELETE /api/mgd/reports/:id, POST /api/mgd/{run,estimate-health,findings,root-causes,recommendations,benchmarks,narrative,export-pdf}");
+  // ── GET /api/mgd/clients ────────────────────────────────────────────────────
+  // MGD-scoped client listing — deliberately separate from GET
+  // /api/admin/clients (which returns every client, unrestricted, and stays
+  // admin-only). Admins get every client, same as the admin endpoint.
+  // Consultants get only their explicitly assigned clients.
+  app.get("/api/mgd/clients", ...guard, async (req: Request, res: Response) => {
+    try {
+      const requester = guard.length > 0 ? await currentUser(req) : null;
+      if (guard.length > 0 && !requester) {
+        return fail(res, 401, "Unauthorized");
+      }
+
+      const clientsList = (!requester || requester.role === "admin")
+        ? await storage.getAllClients()
+        : await storage.getAssignedClients(requester.id);
+
+      console.log(`[MGD][CLIENTS] GET /api/mgd/clients — returned ${clientsList.length} client(s)`);
+      ok(res, { clients: clientsList });
+    } catch (err) {
+      console.error("[MGD][CLIENTS] GET /api/mgd/clients — error:", err);
+      fail(res, 500, "Failed to list clients");
+    }
+  });
+
+  // ── GET /api/mgd/clients/:id/documents ──────────────────────────────────────
+  // MGD-scoped document listing for one client. Deliberately separate from
+  // GET /api/admin/clients/:id/documents. `clientScoped` enforces the
+  // assignment check for consultants (admins pass through unrestricted).
+  app.get("/api/mgd/clients/:id/documents", ...guard, ...clientScoped, async (req: Request, res: Response) => {
+    try {
+      const clientId = req.params.id;
+      const client = await storage.getClient(clientId);
+      if (!client) return fail(res, 404, "Client not found");
+
+      const documents = await storage.getClientDocuments(clientId);
+      console.log(`[MGD][CLIENTS] GET /api/mgd/clients/${clientId}/documents — returned ${documents.length} document(s)`);
+      ok(res, { documents });
+    } catch (err) {
+      console.error("[MGD][CLIENTS] GET /api/mgd/clients/:id/documents — error:", err);
+      fail(res, 500, "Failed to list client documents");
+    }
+  });
+
+  // ── POST /api/mgd/clients/:id/documents ─────────────────────────────────────
+  // MGD-scoped document upload for one client. Deliberately separate from
+  // POST /api/admin/clients/:id/documents — consultants must never be routed
+  // through the admin upload endpoint. `clientScoped` runs BEFORE the multer
+  // upload middleware, so an unassigned consultant's files are rejected
+  // before anything is written to disk. Does not support reprocessing or
+  // deletion — those remain admin-only, unavailable here by design.
+  app.post("/api/mgd/clients/:id/documents", ...guard, ...clientScoped, mgdUpload.array('files', 10), async (req: Request, res: Response) => {
+    try {
+      const clientId = req.params.id;
+      const client = await storage.getClient(clientId);
+      if (!client) return fail(res, 404, "Client not found");
+
+      const files = (req as any).files as Express.Multer.File[];
+      if (!files || files.length === 0) return fail(res, 400, "No files uploaded");
+
+      const uploadedDocs = [];
+      for (const file of files) {
+        const fileType = detectFileType(file.originalname);
+        const doc = await storage.createClientDocument({
+          clientId,
+          fileName: file.originalname,
+          fileType,
+          fileSize: file.size,
+          filePath: file.path,
+          status: "uploaded",
+        });
+        uploadedDocs.push(doc);
+      }
+
+      console.log(`[MGD][CLIENTS] POST /api/mgd/clients/${clientId}/documents — uploaded ${uploadedDocs.length} document(s)`);
+      ok(res, { documents: uploadedDocs });
+
+      for (const doc of uploadedDocs) {
+        processMGDDocumentInBackground(doc.id);
+      }
+    } catch (err) {
+      console.error("[MGD][CLIENTS] POST /api/mgd/clients/:id/documents — error:", err);
+      fail(res, 500, "Failed to upload documents");
+    }
+  });
+
+  console.log("[MGD][API] Routes registered: GET /api/mgd/{health,reports,reports/:id,traces,traces/:id,clients,clients/:id/documents}, POST /api/mgd/{run,estimate-health,findings,root-causes,recommendations,benchmarks,narrative,export-pdf,clients/:id/documents}, DELETE /api/mgd/reports/:id");
 }

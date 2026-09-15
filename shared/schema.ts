@@ -15,7 +15,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb, index, boolean, real } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, jsonb, index, uniqueIndex, boolean, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -41,7 +41,10 @@ export const sessions = pgTable(
 );
 
 // User roles
-export type UserRole = "admin" | "client";
+// "consultant" — MGD-only access, scoped to explicitly assigned clients via
+// consultantClientAssignments below. See docs on isAdminOrConsultant in
+// server/system/routes.ts for the authorization guard this role gates.
+export type UserRole = "admin" | "client" | "consultant";
 
 // User table - enhanced with industry profile and role
 export const users = pgTable("users", {
@@ -82,6 +85,32 @@ export const insertClientSchema = createInsertSchema(clients).omit({
 
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Client = typeof clients.$inferSelect;
+
+// Consultant → Client assignments (MGD Consultant Access). A consultant-role
+// user may only access MGD data for clients explicitly assigned here — this
+// is the sole source of truth for that scoping; it does NOT reinterpret or
+// touch users.clientId (which links CLIENT users to their own client, an
+// unrelated concept). One row per (userId, clientId) pair.
+export const consultantClientAssignments = pgTable(
+  "consultant_client_assignments",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id").notNull(),
+    clientId: varchar("client_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("IDX_consultant_client_unique").on(table.userId, table.clientId),
+  ],
+);
+
+export const insertConsultantClientAssignmentSchema = createInsertSchema(consultantClientAssignments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertConsultantClientAssignment = z.infer<typeof insertConsultantClientAssignmentSchema>;
+export type ConsultantClientAssignment = typeof consultantClientAssignments.$inferSelect;
 
 // Client Documents - uploaded files for analysis
 export type DocumentType = "excel" | "word" | "powerpoint" | "pdf" | "other";

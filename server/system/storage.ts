@@ -6,9 +6,11 @@ import {
   clientDocuments,
   clientAnalyses,
   diagnosticCases,
+  consultantClientAssignments,
   type User,
   type UpsertUser,
   type UserRole,
+  type ConsultantClientAssignment,
   type DiagnosticSession,
   type RootCause,
   type ManagementIndicator,
@@ -38,7 +40,7 @@ import {
   type RootCausePatternSnapshot,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, count, and } from "drizzle-orm";
+import { eq, desc, sql, count, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User Management
@@ -87,7 +89,15 @@ export interface IStorage {
   getAllClients(): Promise<Client[]>;
   updateClient(id: string, data: Partial<InsertClient>): Promise<Client | undefined>;
   deleteClient(id: string): Promise<boolean>;
-  
+
+  // Consultant-Client Assignments (MGD Consultant Access) — scopes which
+  // clients a consultant-role user may see/act on within MGD. Never used to
+  // interpret admin or client-role access, and never reinterprets users.clientId.
+  getAssignedClients(userId: string): Promise<Client[]>;
+  isClientAssignedToUser(userId: string, clientId: string): Promise<boolean>;
+  createConsultantClientAssignment(userId: string, clientId: string): Promise<ConsultantClientAssignment>;
+  deleteConsultantClientAssignment(userId: string, clientId: string): Promise<boolean>;
+
   // Client Documents
   createClientDocument(data: InsertClientDocument): Promise<ClientDocument>;
   getClientDocument(id: string): Promise<ClientDocument | undefined>;
@@ -425,6 +435,62 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(clients)
       .where(eq(clients.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Consultant-Client Assignments
+  async getAssignedClients(userId: string): Promise<Client[]> {
+    const assignments = await db
+      .select({ clientId: consultantClientAssignments.clientId })
+      .from(consultantClientAssignments)
+      .where(eq(consultantClientAssignments.userId, userId));
+    if (assignments.length === 0) return [];
+    const clientIds = assignments.map(a => a.clientId);
+    return await db
+      .select()
+      .from(clients)
+      .where(inArray(clients.id, clientIds))
+      .orderBy(desc(clients.createdAt));
+  }
+
+  async isClientAssignedToUser(userId: string, clientId: string): Promise<boolean> {
+    const [row] = await db
+      .select({ id: consultantClientAssignments.id })
+      .from(consultantClientAssignments)
+      .where(and(
+        eq(consultantClientAssignments.userId, userId),
+        eq(consultantClientAssignments.clientId, clientId),
+      ));
+    return !!row;
+  }
+
+  async createConsultantClientAssignment(userId: string, clientId: string): Promise<ConsultantClientAssignment> {
+    const [inserted] = await db
+      .insert(consultantClientAssignments)
+      .values({ userId, clientId })
+      .onConflictDoNothing()
+      .returning();
+    if (inserted) return inserted;
+    // Already existed — onConflictDoNothing() returns nothing on a
+    // collision, so return the existing row rather than undefined.
+    const [existing] = await db
+      .select()
+      .from(consultantClientAssignments)
+      .where(and(
+        eq(consultantClientAssignments.userId, userId),
+        eq(consultantClientAssignments.clientId, clientId),
+      ));
+    return existing;
+  }
+
+  async deleteConsultantClientAssignment(userId: string, clientId: string): Promise<boolean> {
+    const result = await db
+      .delete(consultantClientAssignments)
+      .where(and(
+        eq(consultantClientAssignments.userId, userId),
+        eq(consultantClientAssignments.clientId, clientId),
+      ))
       .returning();
     return result.length > 0;
   }

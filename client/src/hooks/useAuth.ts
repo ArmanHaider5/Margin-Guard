@@ -12,6 +12,11 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated: !!user,
+    // MGD product surface (dashboard, diagnostic wizard, reports) is
+    // available to admin AND consultant roles. The rest of /admin/* and
+    // /management/* stays admin-only — this is not a general "is staff"
+    // check. Mirrors server/system/routes.ts's isAdminOrConsultant guard.
+    canAccessMGD: user?.role === "admin" || user?.role === "consultant",
     error,
   };
 }

@@ -40,7 +40,7 @@ import { MGDShell } from "@/components/mgd/mgd-shell";
 import { Loader2 } from "lucide-react";
 
 function Router() {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, isLoading, isAuthenticated, canAccessMGD } = useAuth();
 
   if (isLoading) {
     return (
@@ -93,15 +93,38 @@ function Router() {
         <Route path="/mgd/diagnostic">{() => <MGDShell><MGDDiagnosticWizard /></MGDShell>}</Route>
         <Route path="/mgd/run" component={MGDRunnerPage} />
         <Route path="/mgd/present">{() => <MGDShell><MGDPresentationMode /></MGDShell>}</Route>
-        
+
         {/* Management View (read-only summary) */}
         <Route path="/management" component={ManagementDashboard} />
         <Route path="/management/clients/:id" component={ManagementClientDetail} />
         <Route path="/management/cases/:id" component={ManagementCaseDetail} />
-        
+
         <Route path="/demo" component={Diagnose} />
         <Route path="/results/:sessionId" component={Results} />
         <Route path="/history" component={History} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
+  // MGD Consultant Access — consultant-role users get the MGD product
+  // surface ONLY (dashboard, diagnostic wizard, report archive/viewer,
+  // presentation mode), never any /admin/*, /management/*, or /mgd/run
+  // route. Per-client scoping happens server-side (assignment checks in
+  // server/routes/mgd-routes.ts); these routes are reachable regardless of
+  // which clients this consultant is assigned to. Uses the real
+  // authenticated user from useAuth.ts — role-context.tsx is a legacy,
+  // unauthenticated, client-side-only UI toggle and is deliberately not
+  // used for this decision.
+  if (canAccessMGD) {
+    return (
+      <Switch>
+        <Route path="/">{() => <MGDShell><MGDDashboard /></MGDShell>}</Route>
+        <Route path="/mgd">{() => <MGDShell><MGDDashboard /></MGDShell>}</Route>
+        <Route path="/mgd/reports">{() => <MGDShell><MGDReportArchive /></MGDShell>}</Route>
+        <Route path="/mgd/report">{() => <MGDShell><MGDReportViewer /></MGDShell>}</Route>
+        <Route path="/mgd/diagnostic">{() => <MGDShell><MGDDiagnosticWizard /></MGDShell>}</Route>
+        <Route path="/mgd/present">{() => <MGDShell><MGDPresentationMode /></MGDShell>}</Route>
         <Route component={NotFound} />
       </Switch>
     );

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import {
   ArchiveIcon, RefreshCw, Play, Search, Filter, Trash2,
   Eye, Monitor, FileDown, Calendar, Building2,
@@ -212,6 +213,11 @@ const INDUSTRIES = [
 export default function MGDReportArchive() {
   const [, navigate]      = useLocation();
   const queryClient       = useQueryClient();
+  // MGD Consultant Access — report deletion is admin-only server-side (even
+  // for a report belonging to an assigned client), so the Delete affordance
+  // itself must not render for consultants.
+  const { user }          = useAuth();
+  const canDelete          = user?.role !== "consultant";
   const [search, setSearch]     = useState("");
   const [industry, setIndustry] = useState("All Industries");
   const [sort, setSort]         = useState<SortKey>("newest");
@@ -572,31 +578,33 @@ export default function MGDReportArchive() {
                         }
                       </button>
 
-                      {/* Delete */}
-                      {confirmId === r.id ? (
-                        <div className="flex items-center gap-1 ml-1">
+                      {/* Delete — admin-only, see canDelete above */}
+                      {canDelete && (
+                        confirmId === r.id ? (
+                          <div className="flex items-center gap-1 ml-1">
+                            <button
+                              onClick={() => deleteMutation.mutate(r.id)}
+                              disabled={isDeleting}
+                              className="px-2 py-1 rounded text-[10px] font-semibold bg-red-500/20 border border-red-500/35 text-red-400 hover:bg-red-500/30 transition-all disabled:opacity-50"
+                            >
+                              {isDeleting ? "…" : "Confirm"}
+                            </button>
+                            <button
+                              onClick={() => setConfirmId(null)}
+                              className="px-2 py-1 rounded text-[10px] font-semibold bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 transition-all"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
                           <button
-                            onClick={() => deleteMutation.mutate(r.id)}
-                            disabled={isDeleting}
-                            className="px-2 py-1 rounded text-[10px] font-semibold bg-red-500/20 border border-red-500/35 text-red-400 hover:bg-red-500/30 transition-all disabled:opacity-50"
+                            onClick={() => setConfirmId(r.id)}
+                            title="Delete Report"
+                            className="w-7 h-7 rounded flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-red-500/15 transition-all ml-1"
                           >
-                            {isDeleting ? "…" : "Confirm"}
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => setConfirmId(null)}
-                            className="px-2 py-1 rounded text-[10px] font-semibold bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 transition-all"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setConfirmId(r.id)}
-                          title="Delete Report"
-                          className="w-7 h-7 rounded flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-red-500/15 transition-all ml-1"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        )
                       )}
                     </div>
                   </div>

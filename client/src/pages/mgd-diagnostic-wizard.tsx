@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation, useSearch } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import {
   ArrowLeft, ArrowRight, Building2, Check, CheckCircle2,
   ChevronDown, FileText, Loader2, Plus, Search, Trash2,
@@ -228,13 +229,14 @@ function Stepper({ current }: { current: number }) {
 function Step1Client({
   clients, loading, selectedId, onSelect,
   showNew, setShowNew, newName, setNewName, newIndustry, setNewIndustry,
-  creating, onCreate,
+  creating, onCreate, canCreateClient,
 }: {
   clients: Client[]; loading: boolean; selectedId: string; onSelect: (id: string) => void;
   showNew: boolean; setShowNew: (v: boolean) => void;
   newName: string; setNewName: (v: string) => void;
   newIndustry: string; setNewIndustry: (v: string) => void;
   creating: boolean; onCreate: () => void;
+  canCreateClient: boolean;
 }) {
   const [search, setSearch] = useState("");
   const filtered = clients.filter(c =>
@@ -302,43 +304,46 @@ function Step1Client({
         </div>
       </div>
 
-      {/* New Client */}
-      <div className="relative">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="flex-1 h-px bg-border"/>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-widest">or</span>
-          <div className="flex-1 h-px bg-border"/>
-        </div>
-        <button
-          onClick={() => setShowNew(!showNew)}
-          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-md border text-sm font-medium transition-colors
-            ${showNew ? "bg-accent border-primary/30 text-primary" : "bg-background border-border text-muted-foreground hover:bg-accent hover:text-foreground"}`}
-        >
-          <Plus className="w-3.5 h-3.5"/>
-          New Client
-        </button>
-        {showNew && (
-          <div className="mt-3 rounded-md border border-border bg-accent/40 p-4 space-y-3">
-            <div>
-              <FieldLabel>Client name</FieldLabel>
-              <TextInput value={newName} onChange={setNewName} placeholder="e.g. Akasa Event Solutions"/>
-            </div>
-            <div>
-              <FieldLabel>Industry</FieldLabel>
-              <Select value={newIndustry} onChange={setNewIndustry} options={INDUSTRY_OPTIONS} placeholder="Select industry…"/>
-            </div>
-            <button
-              onClick={onCreate}
-              disabled={!newName.trim() || !newIndustry || creating}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md bg-primary
-                text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-            >
-              {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Plus className="w-3.5 h-3.5"/>}
-              {creating ? "Creating…" : "Create Client"}
-            </button>
+      {/* New Client — consultants may only work with assigned clients and
+          must never see client creation (unrestricted, admin-only). */}
+      {canCreateClient && (
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex-1 h-px bg-border"/>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest">or</span>
+            <div className="flex-1 h-px bg-border"/>
           </div>
-        )}
-      </div>
+          <button
+            onClick={() => setShowNew(!showNew)}
+            className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-md border text-sm font-medium transition-colors
+              ${showNew ? "bg-accent border-primary/30 text-primary" : "bg-background border-border text-muted-foreground hover:bg-accent hover:text-foreground"}`}
+          >
+            <Plus className="w-3.5 h-3.5"/>
+            New Client
+          </button>
+          {showNew && (
+            <div className="mt-3 rounded-md border border-border bg-accent/40 p-4 space-y-3">
+              <div>
+                <FieldLabel>Client name</FieldLabel>
+                <TextInput value={newName} onChange={setNewName} placeholder="e.g. Akasa Event Solutions"/>
+              </div>
+              <div>
+                <FieldLabel>Industry</FieldLabel>
+                <Select value={newIndustry} onChange={setNewIndustry} options={INDUSTRY_OPTIONS} placeholder="Select industry…"/>
+              </div>
+              <button
+                onClick={onCreate}
+                disabled={!newName.trim() || !newIndustry || creating}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md bg-primary
+                  text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+              >
+                {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Plus className="w-3.5 h-3.5"/>}
+                {creating ? "Creating…" : "Create Client"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Selected summary — clean, unambiguous selection card */}
       {selected && (
@@ -850,6 +855,13 @@ export default function MGDDiagnosticWizard() {
   const [, navigate] = useLocation();
   const [step, setStep] = useState(1);
 
+  // MGD Consultant Access — a consultant-role user may only work with
+  // clients they're explicitly assigned to (enforced server-side by
+  // GET/POST /api/mgd/clients*); they must not see client-creation, which
+  // is unrestricted and admin-only. Admins keep today's full behaviour.
+  const { user } = useAuth();
+  const canCreateClient = user?.role !== "consultant";
+
   // Client preselection (Milestone 18A) — when launched from a specific
   // client's workspace via /mgd/diagnostic?clientId=<id>, that client is
   // preselected here instead of asking the consultant to search for and
@@ -893,23 +905,26 @@ export default function MGDDiagnosticWizard() {
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState("");
 
-  // Load clients on mount
+  // Load clients on mount — MGD-scoped endpoint: admins get every client
+  // (same set /api/admin/clients returns), consultants get only their
+  // assigned clients. Response shape is {success, clients}, not a bare array.
   useEffect(() => {
-    fetch("/api/admin/clients")
+    fetch("/api/mgd/clients")
       .then(r => r.json())
-      .then((data: Client[]) => setClients(Array.isArray(data) ? data : []))
+      .then((data: { success: boolean; clients: Client[] }) => setClients(Array.isArray(data?.clients) ? data.clients : []))
       .catch(() => setClients([]))
       .finally(() => setLoadingClients(false));
   }, []);
 
-  // Load client documents when a client is selected
+  // Load client documents when a client is selected — MGD-scoped endpoint;
+  // response shape is {success, documents}, not a bare array.
   useEffect(() => {
     if (!selectedId) { setClientDocs([]); setSelectedDocIds(new Set()); return; }
     setLoadingDocs(true);
-    fetch(`/api/admin/clients/${selectedId}/documents`)
+    fetch(`/api/mgd/clients/${selectedId}/documents`)
       .then(r => r.json())
-      .then((data: ClientDoc[]) => {
-        const docs = Array.isArray(data) ? data : [];
+      .then((data: { success: boolean; documents: ClientDoc[] }) => {
+        const docs = Array.isArray(data?.documents) ? data.documents : [];
         setClientDocs(docs);
         setSelectedDocIds(new Set(docs.map(d => d.id)));
       })
@@ -955,18 +970,19 @@ export default function MGDDiagnosticWizard() {
       return merged;
     });
 
-    // Upload to server and refresh the Available Client Documents list
+    // Upload to server and refresh the Available Client Documents list —
+    // MGD-scoped endpoint (assignment-checked for consultants server-side).
     if (!selectedId) return;
     setUploading(true);
     try {
       const form = new FormData();
       arr.forEach(f => form.append("files", f));
-      await fetch(`/api/admin/clients/${selectedId}/documents`, { method: "POST", body: form });
+      await fetch(`/api/mgd/clients/${selectedId}/documents`, { method: "POST", body: form });
 
       // Refresh doc list and auto-select all (including new ones)
-      const res  = await fetch(`/api/admin/clients/${selectedId}/documents`);
-      const data = await res.json();
-      const docs: ClientDoc[] = Array.isArray(data) ? data : [];
+      const res  = await fetch(`/api/mgd/clients/${selectedId}/documents`);
+      const data: { success: boolean; documents: ClientDoc[] } = await res.json();
+      const docs: ClientDoc[] = Array.isArray(data?.documents) ? data.documents : [];
       setClientDocs(docs);
       setSelectedDocIds(new Set(docs.map(d => d.id)));
     } catch {
@@ -1097,6 +1113,7 @@ export default function MGDDiagnosticWizard() {
             newName={newName} setNewName={setNewName}
             newIndustry={newIndustry} setNewIndustry={setNewIndustry}
             creating={creating} onCreate={handleCreateClient}
+            canCreateClient={canCreateClient}
           />
         )}
         {step === 2 && (

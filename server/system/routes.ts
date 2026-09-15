@@ -511,12 +511,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  // MGD Consultant Access — independent guard, NEVER a widening of isAdmin
+  // above (isAdmin remains byte-identical and admin-only, still gating every
+  // /api/admin/* route). Grants /api/mgd/* access to admin OR consultant
+  // roles only; per-endpoint and per-client scoping is enforced inside
+  // server/routes/mgd-routes.ts itself (admin-only sub-guard on specific
+  // handlers, assignment checks for consultant-scoped client data).
+  const isAdminOrConsultant = async (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated() || !req.user?.claims?.sub) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const userId = req.user.claims.sub;
+    const user = await storage.getUser(userId);
+    if (!user || (user.role !== "admin" && user.role !== "consultant")) {
+      return res.status(403).json({ error: "MGD access required" });
+    }
+    next();
+  };
+
   // Mount MGD routes — every /api/mgd/* route except the health probe is
-  // guarded by [isAuthenticated, isAdmin], the same pattern every other
-  // /api/admin/* route in this file already uses. Previously mounted with
-  // no auth guard at all (server/routes/mgd-routes.ts's own file header
-  // used to say so explicitly); this closes that gap.
-  registerMGDRoutes(app, [isAuthenticated, isAdmin]);
+  // guarded by [isAuthenticated, isAdminOrConsultant]. Previously guarded by
+  // [isAuthenticated, isAdmin] (admin-only); widened here to also admit the
+  // consultant role, with finer-grained admin-only and client-assignment
+  // scoping enforced per-route inside mgd-routes.ts.
+  registerMGDRoutes(app, [isAuthenticated, isAdminOrConsultant]);
 
   // Get admin dashboard stats
   app.get("/api/admin/stats", isAuthenticated, isAdmin, async (req: any, res) => {
@@ -534,7 +552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { role } = req.body;
-      if (!["admin", "client"].includes(role)) {
+      if (!["admin", "client", "consultant"].includes(role)) {
         return res.status(400).json({ error: "Invalid role" });
       }
       const user = await storage.updateUserRole(id, role);
