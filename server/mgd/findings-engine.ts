@@ -69,6 +69,24 @@ export const CATEGORY_PRIORITY: Record<string, FindingPriorityValue> = {
   workflow_scalability:   FindingPriority.GENERIC_OPERATIONAL,
 };
 
+/**
+ * Bucket-scoped provenance for a single signal string in `signals[]`.
+ * `sourceFiles`/`documentClasses` are populated ONLY from the exact
+ * aggregation bucket(s) — a `TxStats.byEntity`/`byDate` entry, or a
+ * whole-run companion set (`logisticsBlockSourceFiles`,
+ * `adjustmentSourceFiles`, `returnsSourceFiles`) — that the corresponding
+ * detector's existing calculation actually used to produce that signal.
+ * Never a copy of `stats.uniqueSources`/`uniqueDocClasses` (the whole
+ * diagnostic run's sets) attached to a bucket-specific signal — see
+ * MGD Milestone D-series forensic audits on finding-level provenance.
+ */
+export interface FindingProvenance {
+  /** Index into this finding's own `signals[]` array. */
+  signalIndex:      number;
+  sourceFiles:      string[];
+  documentClasses:  string[];
+}
+
 export interface OperationalFinding {
   id:                string;
   title:             string;
@@ -79,6 +97,13 @@ export interface OperationalFinding {
   summary:           string;
   signals:           string[];
   evidence?:         FindingEvidence[];
+  /**
+   * Present only when at least one of this finding's signals has honest,
+   * bucket-scoped provenance (see FindingProvenance). Absent — never an
+   * empty array — when no signal in this finding could be attributed this
+   * way; absence means "not attempted," not "no evidence."
+   */
+  provenance?:       FindingProvenance[];
   operationalImpact?: string;
   confidence:        number;  // 0–100
 }
@@ -194,12 +219,28 @@ interface TxStats {
   totalQtyOut:        number;
   totalValueIn:       number;
   totalValueOut:      number;
-  byEntity:           Map<string, { in: number; out: number; adj: number; txCount: number }>;
-  byDate:             Map<string, number>;   // date → tx count on that day
+  byEntity:           Map<string, {
+    in: number; out: number; adj: number; txCount: number;
+    // Bucket-scoped provenance: only sourceFile/documentClassification
+    // values from transactions that actually landed in THIS entity's
+    // bucket — never the whole-run uniqueSources/uniqueDocClasses sets.
+    sourceFiles: Set<string>; documentClasses: Set<string>;
+  }>;
+  byDate:             Map<string, {
+    count: number;
+    // Same bucket-scoped provenance principle, scoped to this date.
+    sourceFiles: Set<string>; documentClasses: Set<string>;
+  }>;
   hasLogisticsBlock:    boolean;              // any tx debugTrace.blockType === "logistics_schedule"
   hasReturns:           boolean;              // rawText contains return/refund signals
   hasCustomerRefs:      boolean;              // rawText/remarks contain customer names
   isCustomerFrequency:  boolean;              // all/most transactions from a customer_frequency document
+  // ── Whole-run companion provenance sets ───────────────────────────────────
+  // Each is scoped to exactly the transactions responsible for setting its
+  // paired scalar/boolean signal above — never every source file in the run.
+  logisticsBlockSourceFiles: Set<string>;     // sourceFile of txs with blockType === "logistics_schedule"
+  adjustmentSourceFiles:     Set<string>;     // sourceFile of txs with transactionType === "adjustment"
+  returnsSourceFiles:        Set<string>;     // sourceFile of txs matching the hasReturns regex
 }
 
 function buildStats(transactions: any[]): TxStats {
@@ -210,6 +251,7 @@ function buildStats(transactions: any[]): TxStats {
     totalQtyIn: 0, totalQtyOut: 0, totalValueIn: 0, totalValueOut: 0,
     byEntity: new Map(), byDate: new Map(), hasLogisticsBlock: false,
     hasReturns: false, hasCustomerRefs: false, isCustomerFrequency: false,
+    logisticsBlockSourceFiles: new Set(), adjustmentSourceFiles: new Set(), returnsSourceFiles: new Set(),
   };
 
   for (const tx of transactions) {
@@ -224,6 +266,10 @@ function buildStats(transactions: any[]): TxStats {
     const eName = String(tx.entityName ?? "unknown").trim().toLowerCase();
     const raw   = String(tx.rawText ?? "").toLowerCase();
     const trace = tx.debugTrace ?? {};
+    // Read once per transaction, reused below for every bucket-scoped
+    // provenance set this transaction may contribute to.
+    const srcFile  = tx.sourceFile ? String(tx.sourceFile) : "";
+    const docClass = tx.documentClassification ? String(tx.documentClassification) : "";
 
     // Transaction type counts
     // CIL uses "incoming"/"outgoing"/"sale"/"loss"/"dispatch_event"/"inventory_loss"
@@ -237,6 +283,10 @@ function buildStats(transactions: any[]): TxStats {
     else if (type === "adjustment") stats.adjustments++;
     else if (type === "balance")    stats.balance++;
     else                            stats.unknown++;
+
+    // Adjustment provenance — same condition that increments stats.adjustments,
+    // recorded separately so it never touches the counting logic above.
+    if (type === "adjustment" && srcFile) stats.adjustmentSourceFiles.add(srcFile);
 
     // Quantity / value aggregation
     if (!isNaN(qty)) {
@@ -260,24 +310,42 @@ function buildStats(transactions: any[]): TxStats {
     if (isNaN(val))         stats.missingValue++;
 
     // Per-entity aggregation
-    if (!stats.byEntity.has(eName)) stats.byEntity.set(eName, { in: 0, out: 0, adj: 0, txCount: 0 });
+    if (!stats.byEntity.has(eName)) {
+      stats.byEntity.set(eName, { in: 0, out: 0, adj: 0, txCount: 0, sourceFiles: new Set(), documentClasses: new Set() });
+    }
     const ent = stats.byEntity.get(eName)!;
     ent.txCount++;
     if (isInbound)               ent.in++;
     if (isOutbound)              ent.out++;
     if (type === "adjustment")   ent.adj++;
+    // Bucket-scoped provenance: only this transaction's own source/class,
+    // not the whole run's uniqueSources/uniqueDocClasses.
+    if (srcFile)  ent.sourceFiles.add(srcFile);
+    if (docClass) ent.documentClasses.add(docClass);
 
     // Per-date count
     if (date) {
       const day = date.slice(0, 10); // normalise to YYYY-MM-DD prefix
-      stats.byDate.set(day, (stats.byDate.get(day) ?? 0) + 1);
+      if (!stats.byDate.has(day)) {
+        stats.byDate.set(day, { count: 0, sourceFiles: new Set(), documentClasses: new Set() });
+      }
+      const dayBucket = stats.byDate.get(day)!;
+      dayBucket.count++;
+      if (srcFile)  dayBucket.sourceFiles.add(srcFile);
+      if (docClass) dayBucket.documentClasses.add(docClass);
     }
 
     // Logistics block signal
-    if (String(trace.blockType ?? "") === "logistics_schedule") stats.hasLogisticsBlock = true;
+    if (String(trace.blockType ?? "") === "logistics_schedule") {
+      stats.hasLogisticsBlock = true;
+      if (srcFile) stats.logisticsBlockSourceFiles.add(srcFile);
+    }
 
     // Return / refund signal
-    if (/refund|return|balik|retur|credit note|cn /i.test(raw)) stats.hasReturns = true;
+    if (/refund|return|balik|retur|credit note|cn /i.test(raw)) {
+      stats.hasReturns = true;
+      if (srcFile) stats.returnsSourceFiles.add(srcFile);
+    }
 
     // Customer reference in raw text
     if (tx.remarks || (raw.length > 0 && /customer|client|pelngan|pelanggan/i.test(raw))) {
@@ -302,12 +370,17 @@ export function detectManualDependency(
   _transactions: any[],
 ): OperationalFinding | null {
   const evidence: string[]  = [];
+  const provenance: FindingProvenance[] = [];
   let score = 0;
 
-  const entCount    = stats.uniqueEntities.size;
-  const maxEntityTx = stats.byEntity.size > 0
-    ? Math.max(...Array.from(stats.byEntity.values()).map(e => e.txCount))
-    : 0;
+  const entCount = stats.uniqueEntities.size;
+  // Retain the entity KEY of the maximum, not just the numeric max, so the
+  // "highest movement volume per item" signal below can honestly cite that
+  // specific entity's own bucket provenance instead of discarding identity.
+  const maxEntityEntry = stats.byEntity.size > 0
+    ? Array.from(stats.byEntity.entries()).reduce((max, cur) => cur[1].txCount > max[1].txCount ? cur : max)
+    : undefined;
+  const maxEntityTx = maxEntityEntry ? maxEntityEntry[1].txCount : 0;
 
   if (stats.isCustomerFrequency) {
     // ── Customer-frequency data: use client-appropriate signals ────────────
@@ -323,7 +396,17 @@ export function detectManualDependency(
     if (entCount > 15) { score += 15; evidence.push(`Entity count exceeds 15 — manual reconciliation complexity is high`); }
 
     // Signal: high transaction volume per entity
-    if (maxEntityTx > 30) { score += 15; evidence.push(`Highest movement volume per item: ${maxEntityTx} transactions — indicates heavy manual throughput`); }
+    if (maxEntityTx > 30) {
+      score += 15;
+      evidence.push(`Highest movement volume per item: ${maxEntityTx} transactions — indicates heavy manual throughput`);
+      if (maxEntityEntry) {
+        provenance.push({
+          signalIndex:     evidence.length - 1,
+          sourceFiles:     Array.from(maxEntityEntry[1].sourceFiles),
+          documentClasses: Array.from(maxEntityEntry[1].documentClasses),
+        });
+      }
+    }
     if (stats.total > 100) { score += 10; evidence.push(`${stats.total} total movement records detected across documents`); }
 
     // Signal: outbound-only entities (no paired returns/inbound)
@@ -371,6 +454,7 @@ export function detectManualDependency(
     department:       stats.isCustomerFrequency ? "Sales / Client Management" : "Operations / Warehouse",
     summary:          summaryText,
     signals:          evidence,
+    ...(provenance.length > 0 ? { provenance } : {}),
     operationalImpact:
       stats.isCustomerFrequency
         ? "Manual client coordination increases response delays and error rates during peak event periods, " +
@@ -479,9 +563,10 @@ export function detectLogisticsPressure(
   _transactions: any[],
 ): OperationalFinding | null {
   const evidence: string[] = [];
+  const provenance: FindingProvenance[] = [];
   let score = 0;
 
-  const dateVolumes = Array.from(stats.byDate.values());
+  const dateVolumes = Array.from(stats.byDate.values()).map(d => d.count);
   const avgDaily    = dateVolumes.length > 0
     ? dateVolumes.reduce((s, v) => s + v, 0) / dateVolumes.length
     : 0;
@@ -491,17 +576,34 @@ export function detectLogisticsPressure(
   if (stats.hasLogisticsBlock) {
     score += 20;
     evidence.push("Logistics schedule blocks detected in uploaded documents — structured delivery routing data present");
+    // Only the sourceFile of transactions that actually set hasLogisticsBlock —
+    // documentClasses left empty: no companion document-class set exists for
+    // this condition (blockType is a block-detector concept, distinct from
+    // documentClassification), so none is fabricated here.
+    provenance.push({
+      signalIndex:     evidence.length - 1,
+      sourceFiles:     Array.from(stats.logisticsBlockSourceFiles),
+      documentClasses: [],
+    });
   }
 
   // Signal: peak day more than 3× average (date clustering / surge)
   if (avgDaily > 0 && peakDaily > 3 * avgDaily) {
-    const peakDate = Array.from(stats.byDate.entries())
-      .sort((a, b) => b[1] - a[1])[0]?.[0] ?? "unknown";
+    const peakEntry = Array.from(stats.byDate.entries())
+      .sort((a, b) => b[1].count - a[1].count)[0];
+    const peakDate = peakEntry?.[0] ?? "unknown";
     score += 20;
     evidence.push(
       `Peak single-day movement of ${peakDaily} transactions (${(peakDaily / avgDaily).toFixed(1)}× daily average) ` +
       `— detected on ${peakDate}`,
     );
+    if (peakEntry) {
+      provenance.push({
+        signalIndex:     evidence.length - 1,
+        sourceFiles:     Array.from(peakEntry[1].sourceFiles),
+        documentClasses: Array.from(peakEntry[1].documentClasses),
+      });
+    }
   }
 
   // Signal: outbound-dominant without paired inbound (one-way flow = delivery-only operations)
@@ -555,6 +657,7 @@ export function detectLogisticsPressure(
       `Logistics coordination is under pressure: volume spikes and fragmented records ` +
       `indicate reactive rather than planned dispatch management.`,
     signals: evidence,
+    ...(provenance.length > 0 ? { provenance } : {}),
     operationalImpact:
       "Reactive logistics scheduling increases last-minute coordination effort, raises delivery failure risk during peak days, " +
       "and limits the ability to optimise vehicle/driver utilisation across routes.",
@@ -573,6 +676,7 @@ export function detectFinancialLeakage(
   _transactions: any[],
 ): OperationalFinding | null {
   const evidence: string[] = [];
+  const provenance: FindingProvenance[] = [];
   let score = 0;
 
   // Signal: adjustment transactions (after-the-fact corrections = control gaps)
@@ -580,6 +684,11 @@ export function detectFinancialLeakage(
     const adjPct = Math.round((stats.adjustments / stats.total) * 100);
     score += 20;
     evidence.push(`${stats.adjustments} adjustment transaction(s) (${adjPct}% of total) — post-hoc corrections imply upstream recording errors`);
+    provenance.push({
+      signalIndex:     evidence.length - 1,
+      sourceFiles:     Array.from(stats.adjustmentSourceFiles),
+      documentClasses: [],
+    });
   }
 
   // Signal: net value imbalance (outbound value > inbound value)
@@ -599,6 +708,11 @@ export function detectFinancialLeakage(
   if (stats.hasReturns) {
     score += 15;
     evidence.push("Return or refund-related transactions detected — indicates operational leakage through asset returns");
+    provenance.push({
+      signalIndex:     evidence.length - 1,
+      sourceFiles:     Array.from(stats.returnsSourceFiles),
+      documentClasses: [],
+    });
   }
 
   // Signal: outbound transactions with no reference ID (undocumented dispatch)
@@ -637,6 +751,7 @@ export function detectFinancialLeakage(
       `and unmatched value flows. These patterns indicate unquantified operational ` +
       `leakage that is not currently captured in formal financial reporting.`,
     signals: evidence,
+    ...(provenance.length > 0 ? { provenance } : {}),
     operationalImpact:
       "Undocumented dispatch, unrecovered returns, and value imbalances accumulate into chronic margin erosion. " +
       "Without reference tracking on every outbound movement, recovery actions cannot be initiated systematically.",
@@ -693,7 +808,7 @@ export function detectWorkflowScalabilityRisk(
   }
 
   // Signal: irregular daily volume pattern (inconsistent workflow rhythm)
-  const dateVolumes = Array.from(stats.byDate.values());
+  const dateVolumes = Array.from(stats.byDate.values()).map(d => d.count);
   const cv = coefficientOfVariation(dateVolumes);
   if (cv > 0.9 && dateVolumes.length >= 5) {
     score += 15;
@@ -746,29 +861,56 @@ export function detectWarehouseOperations(
   _transactions: any[],
 ): OperationalFinding | null {
   const evidence: string[] = [];
+  const provenance: FindingProvenance[] = [];
   let score = 0;
 
   // Signal: a small number of entities dominate movement volume (concentration)
-  const entityTxCounts = Array.from(stats.byEntity.values()).map(e => e.txCount).sort((a, b) => b - a);
-  if (entityTxCounts.length >= 3) {
-    const top3Share = entityTxCounts.slice(0, 3).reduce((s, v) => s + v, 0) / stats.total;
+  // Sort by entries (not values) so the top-3 entities' identity — and thus
+  // their bucket provenance — is retained instead of discarded.
+  const entityEntries = Array.from(stats.byEntity.entries()).sort((a, b) => b[1].txCount - a[1].txCount);
+  if (entityEntries.length >= 3) {
+    const top3Entries = entityEntries.slice(0, 3);
+    const top3Share = top3Entries.reduce((s, [, e]) => s + e.txCount, 0) / stats.total;
     if (top3Share > 0.6) {
       score += 25;
       evidence.push(
         `Top 3 items account for ${Math.round(top3Share * 100)}% of all movements — ` +
         `warehouse throughput is highly concentrated on a small product subset`,
       );
+      const top3SourceFiles     = new Set<string>();
+      const top3DocumentClasses = new Set<string>();
+      for (const [, e] of top3Entries) {
+        e.sourceFiles.forEach(f => top3SourceFiles.add(f));
+        e.documentClasses.forEach(c => top3DocumentClasses.add(c));
+      }
+      provenance.push({
+        signalIndex:     evidence.length - 1,
+        sourceFiles:     Array.from(top3SourceFiles),
+        documentClasses: Array.from(top3DocumentClasses),
+      });
     }
   }
 
   // Signal: many entities with both inbound AND outbound on same dates = rapid turn
-  let rapidTurnEntities = 0;
-  for (const [, e] of stats.byEntity) {
-    if (e.in > 0 && e.out > 0 && (e.in + e.out) > 10) rapidTurnEntities++;
-  }
+  // Retain the qualifying entity keys (not just a count) so bucket provenance
+  // can be attached.
+  const rapidTurnEntries = Array.from(stats.byEntity.entries())
+    .filter(([, e]) => e.in > 0 && e.out > 0 && (e.in + e.out) > 10);
+  const rapidTurnEntities = rapidTurnEntries.length;
   if (rapidTurnEntities > 0) {
     score += 20;
     evidence.push(`${rapidTurnEntities} item(s) show both inbound and outbound activity at high frequency — rapid inventory turnover detected`);
+    const rapidTurnSourceFiles     = new Set<string>();
+    const rapidTurnDocumentClasses = new Set<string>();
+    for (const [, e] of rapidTurnEntries) {
+      e.sourceFiles.forEach(f => rapidTurnSourceFiles.add(f));
+      e.documentClasses.forEach(c => rapidTurnDocumentClasses.add(c));
+    }
+    provenance.push({
+      signalIndex:     evidence.length - 1,
+      sourceFiles:     Array.from(rapidTurnSourceFiles),
+      documentClasses: Array.from(rapidTurnDocumentClasses),
+    });
   }
 
   // Signal: high total movement with no balance/audit records
@@ -781,6 +923,11 @@ export function detectWarehouseOperations(
   if (stats.adjustments > 0) {
     score += 15;
     evidence.push(`${stats.adjustments} warehouse adjustment record(s) — physical handling discrepancies corrected post-movement`);
+    provenance.push({
+      signalIndex:     evidence.length - 1,
+      sourceFiles:     Array.from(stats.adjustmentSourceFiles),
+      documentClasses: [],
+    });
   }
 
   const confidence = cap(score);
@@ -800,6 +947,7 @@ export function detectWarehouseOperations(
       `adjustment records indicate that warehouse operations are absorbing correction ` +
       `effort that displaces productive throughput time.`,
     signals: evidence,
+    ...(provenance.length > 0 ? { provenance } : {}),
     operationalImpact:
       "Concentrated throughput on a few items creates bottleneck risk at the packing/dispatch stage. " +
       "Physical handling adjustments without digital audit trails prevent root-cause analysis of recurring discrepancies.",
